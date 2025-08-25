@@ -35,10 +35,12 @@ INSTALLED_APPS = [
     
     # Your apps
     'users',
+    'schools',
     
     # 3rd Party Apps
     'rest_framework',
     'rest_framework_simplejwt',
+    'django_seed',
 ]
 
 MIDDLEWARE = [
