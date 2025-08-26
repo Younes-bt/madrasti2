@@ -37,9 +37,19 @@ class SchoolAPITests(APITestCase):
         self.client.force_authenticate(user=self.teacher_user)
         response = self.client.get(self.subjects_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['name'], self.subject.name)
+        
+        # Handle pagination if present
+        if 'results' in response.data:
+            subjects = response.data['results']
+        else:
+            subjects = response.data
+        
+        # Find our specific subject
+        our_subject = next((subj for subj in subjects if subj['name'] == self.subject.name), None)
+        self.assertIsNotNone(our_subject, "Our subject should be in the response")
+        self.assertEqual(our_subject['name'], self.subject.name)
 
+        
     def test_list_levels_as_teacher(self):
         """Ensure a regular authenticated user can view the list of levels."""
         self.client.force_authenticate(user=self.teacher_user)

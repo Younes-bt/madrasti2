@@ -36,11 +36,15 @@ INSTALLED_APPS = [
     # Your apps
     'users',
     'schools',
+    'lessons',
+    'homework',
     
     # 3rd Party Apps
     'rest_framework',
     'rest_framework_simplejwt',
     'django_seed',
+    'django_filters',
+    'rest_framework_nested',
 ]
 
 MIDDLEWARE = [
@@ -62,6 +66,7 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
@@ -122,7 +127,7 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = 'static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']
+STATICFILES_DIRS = []  # Remove non-existent directory
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Cloudinary Configuration
@@ -149,7 +154,12 @@ AUTH_USER_MODEL = 'users.User'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
+    ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ]
 }
 
 # JWT Configuration
