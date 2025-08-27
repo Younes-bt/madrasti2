@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'schools',
     'lessons',
     'homework',
+    'attendance',
     
     # 3rd Party Apps
     'rest_framework',
