@@ -1,0 +1,73 @@
+{
+  "common": {
+    "loading": "جاري التحميل...",
+    "error": "خطأ",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "search": "بحث",
+    "logout": "تسجيل الخروج",
+    "profile": "الملف الشخصي",
+    "settings": "الإعدادات",
+    "notifications": "الإشعارات",
+    "dashboard": "لوحة التحكم",
+    "welcome": "مرحباً"
+  },
+  "auth": {
+    "login": "تسجيل الدخول",
+    "register": "إنشاء حساب",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "confirmPassword": "تأكيد كلمة المرور",
+    "forgotPassword": "هل نسيت كلمة المرور؟",
+    "loginSuccess": "تم تسجيل الدخول بنجاح",
+    "loginError": "فشل تسجيل الدخول",
+    "invalidCredentials": "بريد إلكتروني أو كلمة مرور غير صحيحة"
+  },
+  "navigation": {
+    "home": "الرئيسية",
+    "attendance": "الحضور والغياب",
+    "homework": "الواجبات",
+    "lessons": "الدروس",
+    "students": "الطلاب",
+    "teachers": "المعلمين",
+    "reports": "التقارير",
+    "administration": "الإدارة"
+  },
+  "roles": {
+    "admin": "مدير",
+    "teacher": "معلم",
+    "student": "طالب",
+    "parent": "ولي أمر",
+    "staff": "موظف",
+    "driver": "سائق"
+  },
+  "attendance": {
+    "title": "إدارة الحضور والغياب",
+    "markPresent": "تسجيل حضور",
+    "markAbsent": "تسجيل غياب",
+    "attendanceRate": "معدل الحضور",
+    "totalStudents": "إجمالي الطلاب",
+    "presentToday": "حاضر اليوم",
+    "absentToday": "غائب اليوم"
+  },
+  "homework": {
+    "title": "إدارة الواجبات",
+    "createAssignment": "إنشاء واجب",
+    "dueDate": "تاريخ التسليم",
+    "subject": "المادة",
+    "description": "الوصف",
+    "submitted": "مُسلم",
+    "pending": "في الانتظار",
+    "overdue": "متأخر"
+  },
+  "lessons": {
+    "title": "إدارة الدروس",
+    "createLesson": "إنشاء درس",
+    "schedule": "الجدول",
+    "duration": "المدة",
+    "classroom": "الفصل الدراسي",
+    "materials": "المواد التعليمية"
+  }
+}

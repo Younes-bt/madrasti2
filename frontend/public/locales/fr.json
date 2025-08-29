@@ -1,0 +1,73 @@
+{
+  "common": {
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "search": "Rechercher",
+    "logout": "Déconnexion",
+    "profile": "Profil",
+    "settings": "Paramètres",
+    "notifications": "Notifications",
+    "dashboard": "Tableau de bord",
+    "welcome": "Bienvenue"
+  },
+  "auth": {
+    "login": "Connexion",
+    "register": "S'inscrire",
+    "email": "Email",
+    "password": "Mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "forgotPassword": "Mot de passe oublié ?",
+    "loginSuccess": "Connexion réussie",
+    "loginError": "Échec de la connexion",
+    "invalidCredentials": "Email ou mot de passe invalide"
+  },
+  "navigation": {
+    "home": "Accueil",
+    "attendance": "Présences",
+    "homework": "Devoirs",
+    "lessons": "Cours",
+    "students": "Étudiants",
+    "teachers": "Enseignants",
+    "reports": "Rapports",
+    "administration": "Administration"
+  },
+  "roles": {
+    "admin": "Administrateur",
+    "teacher": "Enseignant",
+    "student": "Étudiant",
+    "parent": "Parent",
+    "staff": "Personnel",
+    "driver": "Chauffeur"
+  },
+  "attendance": {
+    "title": "Gestion des présences",
+    "markPresent": "Marquer présent",
+    "markAbsent": "Marquer absent",
+    "attendanceRate": "Taux de présence",
+    "totalStudents": "Total étudiants",
+    "presentToday": "Présents aujourd'hui",
+    "absentToday": "Absents aujourd'hui"
+  },
+  "homework": {
+    "title": "Gestion des devoirs",
+    "createAssignment": "Créer un devoir",
+    "dueDate": "Date limite",
+    "subject": "Matière",
+    "description": "Description",
+    "submitted": "Soumis",
+    "pending": "En attente",
+    "overdue": "En retard"
+  },
+  "lessons": {
+    "title": "Gestion des cours",
+    "createLesson": "Créer un cours",
+    "schedule": "Horaire",
+    "duration": "Durée",
+    "classroom": "Salle de classe",
+    "materials": "Matériel pédagogique"
+  }
+}

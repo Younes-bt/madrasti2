@@ -208,6 +208,10 @@ i18n
     fallbackLng: 'en',
     debug: false,
 
+    backend: {
+      loadPath: '/locales/{{lng}}.json',
+    },
+
     interpolation: {
       escapeValue: false,
     },

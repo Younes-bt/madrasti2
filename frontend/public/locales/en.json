@@ -1,0 +1,73 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "search": "Search",
+    "logout": "Logout",
+    "profile": "Profile",
+    "settings": "Settings",
+    "notifications": "Notifications",
+    "dashboard": "Dashboard",
+    "welcome": "Welcome"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "forgotPassword": "Forgot Password?",
+    "loginSuccess": "Login successful",
+    "loginError": "Login failed",
+    "invalidCredentials": "Invalid email or password"
+  },
+  "navigation": {
+    "home": "Home",
+    "attendance": "Attendance",
+    "homework": "Homework",
+    "lessons": "Lessons",
+    "students": "Students",
+    "teachers": "Teachers",
+    "reports": "Reports",
+    "administration": "Administration"
+  },
+  "roles": {
+    "admin": "Administrator",
+    "teacher": "Teacher",
+    "student": "Student",
+    "parent": "Parent",
+    "staff": "Staff",
+    "driver": "Driver"
+  },
+  "attendance": {
+    "title": "Attendance Management",
+    "markPresent": "Mark Present",
+    "markAbsent": "Mark Absent",
+    "attendanceRate": "Attendance Rate",
+    "totalStudents": "Total Students",
+    "presentToday": "Present Today",
+    "absentToday": "Absent Today"
+  },
+  "homework": {
+    "title": "Homework Management",
+    "createAssignment": "Create Assignment",
+    "dueDate": "Due Date",
+    "subject": "Subject",
+    "description": "Description",
+    "submitted": "Submitted",
+    "pending": "Pending",
+    "overdue": "Overdue"
+  },
+  "lessons": {
+    "title": "Lesson Management",
+    "createLesson": "Create Lesson",
+    "schedule": "Schedule",
+    "duration": "Duration",
+    "classroom": "Classroom",
+    "materials": "Materials"
+  }
+}

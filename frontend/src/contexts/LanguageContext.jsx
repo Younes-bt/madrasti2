@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getDirection, updateDocumentDirection } from '../lib/i18n'
 
-const LanguageContext = createContext()
+export const LanguageContext = createContext()
 
 export const useLanguage = () => {
   const context = useContext(LanguageContext)
