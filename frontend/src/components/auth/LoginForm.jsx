@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { Eye, EyeOff } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
@@ -7,14 +8,44 @@ import { useLanguage } from '../../hooks/useLanguage'
 import LoadingSpinner from '../shared/LoadingSpinner'
 
 const LoginForm = ({ onSuccess = () => {} }) => {
-  const { t } = useLanguage()
-  const { login } = useAuth()
+  const { t, isRTL } = useLanguage()
+  const { login, loading: authLoading, error: authError, clearError } = useAuth()
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   })
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [formErrors, setFormErrors] = useState({})
+
+  // Clear auth error when component mounts
+  useEffect(() => {
+    clearError()
+  }, [clearError])
+
+  // Clear form errors when auth error changes
+  useEffect(() => {
+    if (authError) {
+      setFormErrors({})
+    }
+  }, [authError])
+
+  const validateForm = () => {
+    const errors = {}
+    
+    if (!formData.email.trim()) {
+      errors.email = t('validation.emailRequired')
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      errors.email = t('validation.emailInvalid')
+    }
+    
+    if (!formData.password.trim()) {
+      errors.password = t('validation.passwordRequired')
+    } else if (formData.password.length < 8) {
+      errors.password = t('validation.passwordTooShort')
+    }
+    
+    return errors
+  }
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -22,55 +53,75 @@ const LoginForm = ({ onSuccess = () => {} }) => {
       ...prev,
       [name]: value,
     }))
+    
+    // Clear specific field error when user starts typing
+    if (formErrors[name]) {
+      setFormErrors(prev => ({
+        ...prev,
+        [name]: '',
+      }))
+    }
+    
+    // Clear auth error when user modifies form
+    if (authError) {
+      clearError()
+    }
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setLoading(true)
-    setError('')
-
+    clearError()
+    
+    // Validate form
+    const errors = validateForm()
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors)
+      return
+    }
+    
+    setFormErrors({})
+    
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      const mockUser = {
-        id: 1,
-        name: 'John Doe',
-        email: formData.email,
-        role: 'ADMIN',
-        school_info: {
-          name: 'Test School',
-          logo: null,
-        },
-      }
-      
-      const mockToken = 'mock-jwt-token'
-      
-      const success = await login(mockUser, mockToken)
-      if (success) {
+      const result = await login(formData)
+      if (result.success) {
         onSuccess()
-      } else {
-        setError(t('auth.loginError'))
       }
-    } catch (err) {
-      setError(err.message || t('auth.loginError'))
-    } finally {
-      setLoading(false)
+      // Error handling is done by the AuthContext
+    } catch (error) {
+      console.error('Login form error:', error)
+    }
+  }
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword)
+  }
+
+  const getPlaceholder = (key, fallback) => {
+    try {
+      return t(`auth.placeholders.${key}`)
+    } catch {
+      return fallback
     }
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle>{t('auth.login')}</CardTitle>
-        <CardDescription>
-          Enter your credentials to access your account
+    <Card className="w-full max-w-md mx-auto shadow-lg">
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-2xl font-bold text-center">
+          {t('auth.login')}
+        </CardTitle>
+        <CardDescription className="text-center text-muted-foreground">
+          {t('auth.loginDescription', 'Enter your credentials to access your account')}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="form-group">
-            <label htmlFor="email" className="text-sm font-medium">
+          {/* Email Field */}
+          <div className="space-y-2">
+            <label 
+              htmlFor="email" 
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
               {t('auth.email')}
             </label>
             <Input
@@ -79,51 +130,89 @@ const LoginForm = ({ onSuccess = () => {} }) => {
               type="email"
               value={formData.email}
               onChange={handleInputChange}
-              required
-              disabled={loading}
-              placeholder="Enter your email"
+              disabled={authLoading}
+              placeholder={getPlaceholder('email', 'Enter your email')}
+              className={`${formErrors.email ? 'border-red-500 focus-visible:ring-red-500' : ''} ${isRTL ? 'text-right' : 'text-left'}`}
+              dir={isRTL ? 'rtl' : 'ltr'}
             />
+            {formErrors.email && (
+              <p className="text-sm text-red-500 mt-1">{formErrors.email}</p>
+            )}
           </div>
 
-          <div className="form-group">
-            <label htmlFor="password" className="text-sm font-medium">
+          {/* Password Field */}
+          <div className="space-y-2">
+            <label 
+              htmlFor="password" 
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
               {t('auth.password')}
             </label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              value={formData.password}
-              onChange={handleInputChange}
-              required
-              disabled={loading}
-              placeholder="Enter your password"
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                value={formData.password}
+                onChange={handleInputChange}
+                disabled={authLoading}
+                placeholder={getPlaceholder('password', 'Enter your password')}
+                className={`${formErrors.password ? 'border-red-500 focus-visible:ring-red-500' : ''} ${isRTL ? 'text-right pr-10' : 'text-left pr-10'}`}
+                dir={isRTL ? 'rtl' : 'ltr'}
+              />
+              <button
+                type="button"
+                onClick={togglePasswordVisibility}
+                className={`absolute top-1/2 transform -translate-y-1/2 ${isRTL ? 'left-3' : 'right-3'} text-gray-400 hover:text-gray-600 focus:outline-none`}
+                tabIndex={-1}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
+            {formErrors.password && (
+              <p className="text-sm text-red-500 mt-1">{formErrors.password}</p>
+            )}
           </div>
 
-          {error && (
-            <div className="form-error">
-              {error}
+          {/* Auth Error Display */}
+          {authError && (
+            <div className="bg-red-50 border border-red-200 rounded-md p-3">
+              <p className="text-sm text-red-600 text-center">{authError}</p>
             </div>
           )}
 
+          {/* Submit Button */}
           <Button
             type="submit"
             className="w-full"
-            disabled={loading}
+            disabled={authLoading}
           >
-            {loading ? (
-              <LoadingSpinner size="sm" />
+            {authLoading ? (
+              <div className="flex items-center justify-center space-x-2">
+                <LoadingSpinner size="sm" />
+                <span>{t('common.loading')}</span>
+              </div>
             ) : (
               t('auth.login')
             )}
           </Button>
 
-          <div className="text-center">
-            <Button variant="link" size="sm">
-              {t('auth.forgotPassword')}
-            </Button>
-          </div>
+          {/* Demo Credentials (Development only) */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <p className="text-xs text-blue-700 font-medium mb-2">Demo Credentials:</p>
+              <div className="space-y-1 text-xs text-blue-600">
+                <p>Email: teacher@madrasti.ma</p>
+                <p>Email: student@madrasti.ma</p>
+                <p>Email: parent@madrasti.ma</p>
+                <p>Password: any password (8+ chars)</p>
+              </div>
+            </div>
+          )}
         </form>
       </CardContent>
     </Card>

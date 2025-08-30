@@ -23,7 +23,29 @@
     "forgotPassword": "هل نسيت كلمة المرور؟",
     "loginSuccess": "تم تسجيل الدخول بنجاح",
     "loginError": "فشل تسجيل الدخول",
-    "invalidCredentials": "بريد إلكتروني أو كلمة مرور غير صحيحة"
+    "invalidCredentials": "بريد إلكتروني أو كلمة مرور غير صحيحة",
+    "loginDescription": "أدخل بياناتك للوصول إلى حسابك",
+    "placeholders": {
+      "email": "أدخل عنوان بريدك الإلكتروني",
+      "password": "أدخل كلمة المرور"
+    }
+  },
+  "validation": {
+    "emailRequired": "البريد الإلكتروني مطلوب",
+    "emailInvalid": "يرجى إدخال عنوان بريد إلكتروني صحيح",
+    "passwordRequired": "كلمة المرور مطلوبة",
+    "passwordTooShort": "كلمة المرور يجب أن تكون 8 أحرف على الأقل"
+  },
+  "errors": {
+    "accessDenied": "تم رفض الوصول",
+    "insufficientPermissions": "ليس لديك صلاحيات كافية للوصول إلى هذه الصفحة.",
+    "accessRequirements": "متطلبات الوصول:",
+    "requiredRoles": "الأدوار المطلوبة:",
+    "requiredPermissions": "الصلاحيات المطلوبة:",
+    "yourRole": "دورك:",
+    "contactAdmin": "إذا كنت تعتقد أن هذا خطأ، يرجى الاتصال بمدير النظام.",
+    "goBack": "العودة",
+    "refresh": "تحديث"
   },
   "navigation": {
     "home": "الرئيسية",

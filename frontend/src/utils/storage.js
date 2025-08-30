@@ -6,7 +6,7 @@ import { STORAGE_KEYS } from './constants'
 
 class Storage {
   constructor(storageType = 'localStorage') {
-    this.storage = storageType === 'sessionStorage' ? sessionStorage : localStorage
+    this.storage = storageType === 'sessionStorage' ? window.sessionStorage : window.localStorage
     this.prefix = 'madrasti_'
   }
 
@@ -365,8 +365,8 @@ class Storage {
 }
 
 // Create instances for different storage types
-export const localStorage = new Storage('localStorage')
-export const sessionStorage = new Storage('sessionStorage')
+export const localStorageUtil = new Storage('localStorage')
+export const sessionStorageUtil = new Storage('sessionStorage')
 
 /**
  * Specialized storage utilities for specific data types
@@ -375,117 +375,130 @@ export const sessionStorage = new Storage('sessionStorage')
 // Authentication storage
 export const authStorage = {
   setTokens: (accessToken, refreshToken) => {
-    localStorage.set(STORAGE_KEYS.AUTH_TOKEN, accessToken)
-    localStorage.set(STORAGE_KEYS.REFRESH_TOKEN, refreshToken)
+    localStorageUtil.set(STORAGE_KEYS.AUTH_TOKEN, accessToken)
+    localStorageUtil.set(STORAGE_KEYS.REFRESH_TOKEN, refreshToken)
   },
 
   getAccessToken: () => {
-    return localStorage.get(STORAGE_KEYS.AUTH_TOKEN)
+    return localStorageUtil.get(STORAGE_KEYS.AUTH_TOKEN)
   },
 
   getRefreshToken: () => {
-    return localStorage.get(STORAGE_KEYS.REFRESH_TOKEN)
+    return localStorageUtil.get(STORAGE_KEYS.REFRESH_TOKEN)
   },
 
   clearTokens: () => {
-    localStorage.remove(STORAGE_KEYS.AUTH_TOKEN)
-    localStorage.remove(STORAGE_KEYS.REFRESH_TOKEN)
-    localStorage.remove(STORAGE_KEYS.USER_DATA)
+    localStorageUtil.remove(STORAGE_KEYS.AUTH_TOKEN)
+    localStorageUtil.remove(STORAGE_KEYS.REFRESH_TOKEN)
+    localStorageUtil.remove(STORAGE_KEYS.USER_DATA)
   },
 
   setUserData: (userData) => {
-    localStorage.set(STORAGE_KEYS.USER_DATA, userData)
+    localStorageUtil.set(STORAGE_KEYS.USER_DATA, userData)
   },
 
   getUserData: () => {
-    return localStorage.get(STORAGE_KEYS.USER_DATA)
+    return localStorageUtil.get(STORAGE_KEYS.USER_DATA)
+  },
+
+  // Additional methods for the auth system
+  set: (key, value) => {
+    return localStorageUtil.set(key, value)
+  },
+
+  get: (key, defaultValue = null) => {
+    return localStorageUtil.get(key, defaultValue)
+  },
+
+  remove: (key) => {
+    return localStorageUtil.remove(key)
   },
 }
 
 // Theme storage
 export const themeStorage = {
   setTheme: (theme) => {
-    localStorage.set(STORAGE_KEYS.THEME, theme)
+    localStorageUtil.set(STORAGE_KEYS.THEME, theme)
   },
 
   getTheme: () => {
-    return localStorage.get(STORAGE_KEYS.THEME, 'system')
+    return localStorageUtil.get(STORAGE_KEYS.THEME, 'system')
   },
 }
 
 // Language storage
 export const languageStorage = {
   setLanguage: (language) => {
-    localStorage.set(STORAGE_KEYS.LANGUAGE, language)
+    localStorageUtil.set(STORAGE_KEYS.LANGUAGE, language)
   },
 
   getLanguage: () => {
-    return localStorage.get(STORAGE_KEYS.LANGUAGE, 'en')
+    return localStorageUtil.get(STORAGE_KEYS.LANGUAGE, 'en')
   },
 }
 
 // UI state storage
 export const uiStorage = {
   setSidebarCollapsed: (collapsed) => {
-    localStorage.set(STORAGE_KEYS.SIDEBAR_COLLAPSED, collapsed)
+    localStorageUtil.set(STORAGE_KEYS.SIDEBAR_COLLAPSED, collapsed)
   },
 
   getSidebarCollapsed: () => {
-    return localStorage.get(STORAGE_KEYS.SIDEBAR_COLLAPSED, false)
+    return localStorageUtil.get(STORAGE_KEYS.SIDEBAR_COLLAPSED, false)
   },
 }
 
 // Cache storage with automatic expiration
 export const cacheStorage = {
   set: (key, value, expirationMinutes = 60) => {
-    return localStorage.setWithExpiration(`cache_${key}`, value, expirationMinutes)
+    return localStorageUtil.setWithExpiration(`cache_${key}`, value, expirationMinutes)
   },
 
   get: (key, defaultValue = null) => {
-    return localStorage.getWithExpiration(`cache_${key}`, defaultValue)
+    return localStorageUtil.getWithExpiration(`cache_${key}`, defaultValue)
   },
 
   remove: (key) => {
-    return localStorage.remove(`cache_${key}`)
+    return localStorageUtil.remove(`cache_${key}`)
   },
 
   clear: () => {
-    const keys = localStorage.keys()
+    const keys = localStorageUtil.keys()
     keys.forEach(key => {
       if (key.startsWith('cache_')) {
-        localStorage.remove(key)
+        localStorageUtil.remove(key)
       }
     })
   },
 
   clearExpired: () => {
-    return localStorage.clearExpired()
+    return localStorageUtil.clearExpired()
   },
 }
 
 // Form draft storage for auto-save functionality
 export const draftStorage = {
   saveDraft: (formId, formData) => {
-    return sessionStorage.setWithExpiration(`draft_${formId}`, formData, 60) // 1 hour
+    return sessionStorageUtil.setWithExpiration(`draft_${formId}`, formData, 60) // 1 hour
   },
 
   loadDraft: (formId) => {
-    return sessionStorage.getWithExpiration(`draft_${formId}`)
+    return sessionStorageUtil.getWithExpiration(`draft_${formId}`)
   },
 
   removeDraft: (formId) => {
-    return sessionStorage.remove(`draft_${formId}`)
+    return sessionStorageUtil.remove(`draft_${formId}`)
   },
 
   clearDrafts: () => {
-    const keys = sessionStorage.keys()
+    const keys = sessionStorageUtil.keys()
     keys.forEach(key => {
       if (key.startsWith('draft_')) {
-        sessionStorage.remove(key)
+        sessionStorageUtil.remove(key)
       }
     })
   },
 }
 
 // Export main storage instance as default
-export default localStorage
+export default localStorageUtil

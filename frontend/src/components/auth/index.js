@@ -1,1 +1,5 @@
 export { default as LoginForm } from './LoginForm'
+export { default as AuthGuard } from './AuthGuard'
+export { default as AuthenticatedApp } from './AuthenticatedApp'
+export { default as RoleBasedRoute } from './RoleBasedRoute'
+export { default as ProtectedComponent, withRoleProtection, useRoleAccess } from './ProtectedComponent'

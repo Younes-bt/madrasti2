@@ -89,6 +89,8 @@ export default {
         'arabic': ['Noto Sans Arabic', 'system-ui', 'sans-serif'],
       },
       animation: {
+        'spin': 'spin 1s linear infinite',
+        'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'fade-in': 'fadeIn 0.5s ease-in-out',
         'slide-in': 'slideIn 0.3s ease-out',
         'bounce-in': 'bounceIn 0.6s ease-out',
@@ -96,6 +98,14 @@ export default {
         "accordion-up": "accordion-up 0.2s ease-out",
       },
       keyframes: {
+        spin: {
+          '0%': { transform: 'rotate(0deg)' },
+          '100%': { transform: 'rotate(360deg)' },
+        },
+        pulse: {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '.5' },
+        },
         fadeIn: {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },

@@ -23,7 +23,29 @@
     "forgotPassword": "Mot de passe oublié ?",
     "loginSuccess": "Connexion réussie",
     "loginError": "Échec de la connexion",
-    "invalidCredentials": "Email ou mot de passe invalide"
+    "invalidCredentials": "Email ou mot de passe invalide",
+    "loginDescription": "Entrez vos identifiants pour accéder à votre compte",
+    "placeholders": {
+      "email": "Entrez votre adresse email",
+      "password": "Entrez votre mot de passe"
+    }
+  },
+  "validation": {
+    "emailRequired": "L'email est requis",
+    "emailInvalid": "Veuillez entrer une adresse email valide",
+    "passwordRequired": "Le mot de passe est requis",
+    "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères"
+  },
+  "errors": {
+    "accessDenied": "Accès refusé",
+    "insufficientPermissions": "Vous n'avez pas les permissions suffisantes pour accéder à cette page.",
+    "accessRequirements": "Exigences d'accès:",
+    "requiredRoles": "Rôles requis:",
+    "requiredPermissions": "Permissions requises:",
+    "yourRole": "Votre rôle:",
+    "contactAdmin": "Si vous pensez qu'il s'agit d'une erreur, veuillez contacter votre administrateur système.",
+    "goBack": "Retour",
+    "refresh": "Actualiser"
   },
   "navigation": {
     "home": "Accueil",

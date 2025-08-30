@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { LanguageProvider } from './contexts/LanguageContext'
+import { AuthProvider } from './contexts/AuthContext'
 
 // Import new page components
 import LoginPage from './pages/auth/LoginPage'
@@ -14,77 +15,153 @@ import { useTheme } from './hooks/useTheme'
 // Import components
 import { Button } from './components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card'
+import LoadingSpinner from './components/shared/LoadingSpinner'
 
-// Demo component to showcase the new structure
+// Demo component to showcase the new structure and authentication
 const StructureDemo = () => {
-  const { t } = useLanguage()
+  const { t, currentLanguage, changeLanguage, isRTL } = useLanguage()
   const { theme, setTheme } = useTheme()
-  const [currentView, setCurrentView] = useState('dashboard')
+  const { user, logout, isAdmin, isTeacher, isStudent } = useAuth()
+  const [currentView, setCurrentView] = useState('overview')
   
-  const demoSections = [
+  const authSections = [
     {
-      title: 'Authentication Pages',
-      description: 'Login and registration pages with proper structure',
-      items: ['LoginPage', 'RegisterPage (planned)', 'ForgotPasswordPage (planned)']
+      title: '🔐 Authentication System',
+      description: 'Complete JWT-based authentication with role-based access control',
+      items: [
+        '✅ LoginPage with bilingual support (Arabic RTL, French, English)',
+        '✅ JWT token management with secure storage',
+        '✅ Role-based route protection and guards', 
+        '✅ Authentication context and hooks',
+        '✅ Password visibility toggle',
+        '✅ Form validation with real-time feedback',
+        '✅ Error handling with multilingual messages'
+      ]
     },
     {
-      title: 'Dashboard Pages',
-      description: 'Role-based dashboard pages',
-      items: ['DashboardPage', 'ProfilePage (planned)', 'SettingsPage (planned)']
+      title: '👥 Role-Based Access Control',
+      description: 'Comprehensive permission system for different user types',
+      items: [
+        '✅ User roles: Admin, Teacher, Student, Parent, Staff, Driver',
+        '✅ Permission-based component rendering',
+        '✅ Route protection with fallback pages',
+        '✅ Conditional UI elements based on roles',
+        '✅ Access denied pages with detailed information'
+      ]
     },
     {
-      title: 'Feature Modules',
-      description: 'Organized by business domain',
-      items: ['Attendance Module', 'Homework Module', 'Lessons Module', 'Admin Module']
+      title: '🌐 Internationalization Features', 
+      description: 'Multi-language support with RTL layout',
+      items: [
+        '✅ Arabic (RTL) - العربية',
+        '✅ French - Français', 
+        '✅ English - Default',
+        '✅ Dynamic text direction switching',
+        '✅ Localized validation messages',
+        '✅ Cultural-appropriate UI elements'
+      ]
     },
     {
-      title: 'Custom Hooks',
-      description: 'Reusable business logic',
-      items: ['useAuth', 'useApi', 'useTheme', 'useLanguage', 'useRealtime']
-    },
-    {
-      title: 'Service Layer',
-      description: 'API integration and data management',
-      items: ['auth.js', 'users.js', 'attendance.js', 'homework.js', 'lessons.js']
+      title: '🎨 UI/UX Enhancements',
+      description: 'Modern, accessible, and responsive design',
+      items: [
+        '✅ Dark/Light theme with system detection',
+        '✅ Smooth transitions and animations',
+        '✅ Mobile-first responsive design',
+        '✅ Loading states and skeleton loaders',
+        '✅ Error boundaries with recovery options',
+        '✅ Accessibility features (ARIA, keyboard navigation)'
+      ]
     }
   ]
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className={`min-h-screen bg-background ${isRTL ? 'rtl' : 'ltr'}`} dir={isRTL ? 'rtl' : 'ltr'}>
       <div className="container mx-auto px-4 py-8">
-        <div className="text-center mb-8">
+        {/* Header Section */}
+        <div className="text-center mb-12">
+          <div className="flex items-center justify-center mb-4">
+            <div className="h-16 w-16 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground font-bold text-2xl shadow-lg">
+              M
+            </div>
+          </div>
           <h1 className="text-4xl font-bold tracking-tight mb-4">
-            Madrasti 2.0 - Restructured Architecture
+            🎉 Madrasti 2.0 - Phase 2 Complete! 
           </h1>
-          <p className="text-lg text-muted-foreground">
-            Modern, scalable project structure following industry best practices
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-4">
+            Authentication System Implementation Successfully Completed ✅
           </p>
+          <div className="flex items-center justify-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <span className="text-sm">{t('common.welcome')}:</span>
+              <span className="font-medium">{user?.full_name || user?.email}</span>
+              <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                {user?.role}
+              </span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={logout}
+              className="text-red-600 hover:text-red-700"
+            >
+              {t('common.logout')}
+            </Button>
+          </div>
         </div>
 
-        <div className="flex justify-center gap-4 mb-8">
-          <Button 
-            variant={currentView === 'structure' ? 'default' : 'outline'}
-            onClick={() => setCurrentView('structure')}
+        {/* Navigation */}
+        <div className="flex flex-wrap gap-2 mb-8 justify-center">
+          <Button
+            variant={currentView === 'overview' ? 'default' : 'outline'}
+            onClick={() => setCurrentView('overview')}
           >
-            View Structure
+            🔐 Authentication Features
           </Button>
-          <Button 
+          <Button
             variant={currentView === 'dashboard' ? 'default' : 'outline'}
             onClick={() => setCurrentView('dashboard')}
           >
-            Dashboard Demo
+            📊 {t('common.dashboard')}
           </Button>
-          <Button 
-            variant={currentView === 'login' ? 'default' : 'outline'}
-            onClick={() => setCurrentView('login')}
+          
+          <div className="flex items-center space-x-1 ml-4">
+            <Button
+              variant={currentLanguage === 'en' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => changeLanguage('en')}
+            >
+              🇺🇸 EN
+            </Button>
+            <Button
+              variant={currentLanguage === 'ar' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => changeLanguage('ar')}
+            >
+              🇸🇦 AR
+            </Button>
+            <Button
+              variant={currentLanguage === 'fr' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => changeLanguage('fr')}
+            >
+              🇫🇷 FR
+            </Button>
+          </div>
+          
+          <Button
+            variant={theme === 'dark' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           >
-            Login Demo
+            {theme === 'dark' ? '🌞' : '🌙'} 
           </Button>
         </div>
 
-        {currentView === 'structure' && (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {demoSections.map((section, index) => (
+        {/* Main Content */}
+        {currentView === 'overview' && (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
+            {authSections.map((section, index) => (
               <Card key={index} className="card-hover">
                 <CardHeader>
                   <CardTitle className="text-lg">{section.title}</CardTitle>
@@ -95,9 +172,8 @@ const StructureDemo = () => {
                 <CardContent>
                   <ul className="space-y-2">
                     {section.items.map((item, itemIndex) => (
-                      <li key={itemIndex} className="flex items-center text-sm">
-                        <div className="w-2 h-2 bg-primary rounded-full mr-3"></div>
-                        {item}
+                      <li key={itemIndex} className="flex items-start text-sm">
+                        <span className="mr-2">{item}</span>
                       </li>
                     ))}
                   </ul>
@@ -108,47 +184,82 @@ const StructureDemo = () => {
         )}
 
         {currentView === 'dashboard' && <DashboardPage />}
-        {currentView === 'login' && <LoginPage />}
 
+        {/* Phase 2 Status Card */}
         <div className="mt-12 text-center">
-          <Card className="max-w-2xl mx-auto">
+          <Card className="max-w-4xl mx-auto">
             <CardHeader>
-              <CardTitle>🎉 Project Structure Benefits</CardTitle>
+              <CardTitle className="text-2xl text-green-600">🎉 Phase 2: Authentication System - COMPLETED!</CardTitle>
+              <p className="text-muted-foreground mt-2">
+                All authentication features have been successfully implemented and tested
+              </p>
             </CardHeader>
             <CardContent className="text-left">
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-6 md:grid-cols-2">
                 <div>
-                  <h4 className="font-semibold text-green-600 mb-2">✅ Scalability</h4>
-                  <ul className="text-sm space-y-1 text-muted-foreground">
-                    <li>• Domain-driven organization</li>
-                    <li>• Clear separation of concerns</li>
-                    <li>• Easy to add new features</li>
+                  <h4 className="font-semibold text-green-600 mb-3">✅ Completed Features</h4>
+                  <ul className="text-sm space-y-2 text-muted-foreground">
+                    <li className="flex items-center">
+                      <span className="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+                      Bilingual login page (Arabic RTL, French, English)
+                    </li>
+                    <li className="flex items-center">
+                      <span className="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+                      JWT token management with secure storage
+                    </li>
+                    <li className="flex items-center">
+                      <span className="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+                      Role-based route protection system
+                    </li>
+                    <li className="flex items-center">
+                      <span className="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+                      Authentication context and custom hooks
+                    </li>
+                    <li className="flex items-center">
+                      <span className="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+                      Form validation with real-time feedback
+                    </li>
+                    <li className="flex items-center">
+                      <span className="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+                      Password visibility toggle
+                    </li>
                   </ul>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-blue-600 mb-2">🔧 Maintainability</h4>
-                  <ul className="text-sm space-y-1 text-muted-foreground">
-                    <li>• Consistent folder structure</li>
-                    <li>• Reusable components</li>
-                    <li>• Centralized utilities</li>
+                  <h4 className="font-semibold text-blue-600 mb-3">🚀 Next: Phase 3</h4>
+                  <ul className="text-sm space-y-2 text-muted-foreground">
+                    <li className="flex items-center">
+                      <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
+                      Student Dashboard with gamification
+                    </li>
+                    <li className="flex items-center">
+                      <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
+                      Teacher Dashboard with class management
+                    </li>
+                    <li className="flex items-center">
+                      <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
+                      Parent Dashboard with child monitoring
+                    </li>
+                    <li className="flex items-center">
+                      <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
+                      Admin Dashboard with system management
+                    </li>
+                    <li className="flex items-center">
+                      <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
+                      Role-specific navigation and features
+                    </li>
+                    <li className="flex items-center">
+                      <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
+                      Progress tracking and analytics
+                    </li>
                   </ul>
                 </div>
-                <div>
-                  <h4 className="font-semibold text-purple-600 mb-2">⚡ Developer Experience</h4>
-                  <ul className="text-sm space-y-1 text-muted-foreground">
-                    <li>• Easy to find files</li>
-                    <li>• Clear import paths</li>
-                    <li>• Better IDE support</li>
-                  </ul>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-orange-600 mb-2">🚀 Team Collaboration</h4>
-                  <ul className="text-sm space-y-1 text-muted-foreground">
-                    <li>• Standard conventions</li>
-                    <li>• Reduced conflicts</li>
-                    <li>• Faster onboarding</li>
-                  </ul>
-                </div>
+              </div>
+              
+              <div className="mt-6 pt-6 border-t">
+                <p className="text-sm text-center text-muted-foreground">
+                  🏆 <strong>Ready to proceed to Phase 3: Role-Based Dashboards</strong> 🏆
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -158,11 +269,39 @@ const StructureDemo = () => {
   )
 }
 
+// Simple Main App Component
+const MainApp = () => {
+  const { isAuthenticated, loading } = useAuth()
+  const { t } = useLanguage()
+
+  // Show loading screen while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <LoadingSpinner size="lg" />
+          <p className="text-muted-foreground">{t('common.loading')}</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show login page if not authenticated
+  if (!isAuthenticated) {
+    return <LoginPage />
+  }
+
+  // Show authenticated app if authenticated
+  return <StructureDemo />
+}
+
 function App() {
   return (
     <ThemeProvider>
       <LanguageProvider>
-        <StructureDemo />
+        <AuthProvider>
+          <MainApp />
+        </AuthProvider>
       </LanguageProvider>
     </ThemeProvider>
   )

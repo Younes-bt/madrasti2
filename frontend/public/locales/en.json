@@ -23,7 +23,29 @@
     "forgotPassword": "Forgot Password?",
     "loginSuccess": "Login successful",
     "loginError": "Login failed",
-    "invalidCredentials": "Invalid email or password"
+    "invalidCredentials": "Invalid email or password",
+    "loginDescription": "Enter your credentials to access your account",
+    "placeholders": {
+      "email": "Enter your email address",
+      "password": "Enter your password"
+    }
+  },
+  "validation": {
+    "emailRequired": "Email is required",
+    "emailInvalid": "Please enter a valid email address",
+    "passwordRequired": "Password is required",
+    "passwordTooShort": "Password must be at least 8 characters"
+  },
+  "errors": {
+    "accessDenied": "Access Denied",
+    "insufficientPermissions": "You do not have sufficient permissions to access this page.",
+    "accessRequirements": "Access Requirements:",
+    "requiredRoles": "Required Roles:",
+    "requiredPermissions": "Required Permissions:",
+    "yourRole": "Your Role:",
+    "contactAdmin": "If you believe this is an error, please contact your system administrator.",
+    "goBack": "Go Back",
+    "refresh": "Refresh"
   },
   "navigation": {
     "home": "Home",
