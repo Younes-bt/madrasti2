@@ -6,6 +6,7 @@ import { AuthProvider } from './contexts/AuthContext'
 // Import new page components
 import LoginPage from './pages/auth/LoginPage'
 import DashboardPage from './pages/dashboard/DashboardPage'
+import APIIntegrationDemo from './components/demo/APIIntegrationDemo'
 
 // Import hooks
 import { useAuth } from './hooks/useAuth'
@@ -123,6 +124,12 @@ const StructureDemo = () => {
             onClick={() => setCurrentView('dashboard')}
           >
             📊 {t('common.dashboard')}
+          </Button>
+          <Button
+            variant={currentView === 'api-demo' ? 'default' : 'outline'}
+            onClick={() => setCurrentView('api-demo')}
+          >
+            🚀 API Integration Demo
           </Button>
           
           <div className="flex items-center space-x-1 ml-4">
