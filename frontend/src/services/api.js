@@ -4,12 +4,12 @@
  */
 
 import axios from 'axios';
-import { getStoredData, removeStoredData } from '../utils/storage.js';
+import { authStorage } from '../utils/storage.js';
 
 // API Configuration
 const API_CONFIG = {
   baseURL: {
-    development: 'http://localhost:8000/api/',
+    development: '/api/',
     staging: 'https://staging-api.madrasti.ma/api/',
     production: 'https://api.madrasti.ma/api/'
   },
@@ -38,7 +38,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     // Add JWT token if available
-    const token = getStoredData('accessToken');
+    const token = authStorage.get('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -95,7 +95,7 @@ api.interceptors.response.use(
 
       try {
         // Try to refresh token
-        const refreshToken = getStoredData('refreshToken');
+        const refreshToken = authStorage.get('refreshToken');
         if (refreshToken) {
           const refreshResponse = await refreshAccessToken(refreshToken);
           
@@ -136,11 +136,7 @@ const refreshAccessToken = async (refreshToken) => {
 
     // Store new access token
     if (response.data.access) {
-      const tokenData = {
-        token: response.data.access,
-        expiresAt: Date.now() + (15 * 60 * 1000) // 15 minutes
-      };
-      localStorage.setItem('accessToken', JSON.stringify(tokenData));
+      authStorage.set('token', response.data.access);
     }
 
     return response.data;
@@ -153,9 +149,9 @@ const refreshAccessToken = async (refreshToken) => {
 // Handle authentication errors
 const handleAuthenticationError = () => {
   // Clear stored auth data
-  removeStoredData('accessToken');
-  removeStoredData('refreshToken');
-  removeStoredData('user');
+  authStorage.remove('token');
+  authStorage.remove('refreshToken');
+  authStorage.remove('user');
 
   // Trigger auth context update
   window.dispatchEvent(new CustomEvent('auth-error', { 

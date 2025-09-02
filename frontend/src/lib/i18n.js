@@ -3,199 +3,6 @@ import { initReactI18next } from 'react-i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
 import Backend from 'i18next-http-backend'
 
-// Language resources
-const resources = {
-  en: {
-    translation: {
-      // Navigation
-      dashboard: 'Dashboard',
-      attendance: 'Attendance',
-      homework: 'Homework',
-      lessons: 'Lessons',
-      profile: 'Profile',
-      logout: 'Logout',
-
-      // Common
-      welcome: 'Welcome',
-      loading: 'Loading...',
-      save: 'Save',
-      cancel: 'Cancel',
-      edit: 'Edit',
-      delete: 'Delete',
-      add: 'Add',
-      search: 'Search',
-      filter: 'Filter',
-
-      // Authentication
-      login: 'Login',
-      register: 'Register',
-      email: 'Email',
-      password: 'Password',
-      forgotPassword: 'Forgot Password?',
-
-      // Dashboard
-      todayOverview: "Today's Overview",
-      recentActivity: 'Recent Activity',
-      upcomingAssignments: 'Upcoming Assignments',
-
-      // Student specific
-      myPoints: 'My Points',
-      myBadges: 'My Badges',
-      leaderboard: 'Leaderboard',
-
-      // Teacher specific
-      myClasses: 'My Classes',
-      pendingGrading: 'Pending Grading',
-
-      // Time
-      today: 'Today',
-      yesterday: 'Yesterday',
-      thisWeek: 'This Week',
-      thisMonth: 'This Month',
-
-      // Status
-      present: 'Present',
-      absent: 'Absent',
-      late: 'Late',
-      excused: 'Excused',
-
-      // Roles
-      student: 'Student',
-      teacher: 'Teacher',
-      parent: 'Parent',
-      admin: 'Administrator',
-      staff: 'Staff',
-      driver: 'Driver',
-    },
-  },
-  ar: {
-    translation: {
-      // Navigation
-      dashboard: 'لوحة التحكم',
-      attendance: 'الحضور',
-      homework: 'الواجبات',
-      lessons: 'الدروس',
-      profile: 'الملف الشخصي',
-      logout: 'تسجيل الخروج',
-
-      // Common
-      welcome: 'مرحباً',
-      loading: 'جاري التحميل...',
-      save: 'حفظ',
-      cancel: 'إلغاء',
-      edit: 'تعديل',
-      delete: 'حذف',
-      add: 'إضافة',
-      search: 'بحث',
-      filter: 'تصفية',
-
-      // Authentication
-      login: 'تسجيل الدخول',
-      register: 'إنشاء حساب',
-      email: 'البريد الإلكتروني',
-      password: 'كلمة المرور',
-      forgotPassword: 'نسيت كلمة المرور؟',
-
-      // Dashboard
-      todayOverview: 'نظرة عامة على اليوم',
-      recentActivity: 'النشاط الأخير',
-      upcomingAssignments: 'الواجبات القادمة',
-
-      // Student specific
-      myPoints: 'نقاطي',
-      myBadges: 'شاراتي',
-      leaderboard: 'لوحة الصدارة',
-
-      // Teacher specific
-      myClasses: 'فصولي',
-      pendingGrading: 'في انتظار التصحيح',
-
-      // Time
-      today: 'اليوم',
-      yesterday: 'أمس',
-      thisWeek: 'هذا الأسبوع',
-      thisMonth: 'هذا الشهر',
-
-      // Status
-      present: 'حاضر',
-      absent: 'غائب',
-      late: 'متأخر',
-      excused: 'غياب مبرر',
-
-      // Roles
-      student: 'طالب',
-      teacher: 'معلم',
-      parent: 'ولي أمر',
-      admin: 'مدير النظام',
-      staff: 'موظف',
-      driver: 'سائق',
-    },
-  },
-  fr: {
-    translation: {
-      // Navigation
-      dashboard: 'Tableau de bord',
-      attendance: 'Présence',
-      homework: 'Devoirs',
-      lessons: 'Leçons',
-      profile: 'Profil',
-      logout: 'Déconnexion',
-
-      // Common
-      welcome: 'Bienvenue',
-      loading: 'Chargement...',
-      save: 'Enregistrer',
-      cancel: 'Annuler',
-      edit: 'Modifier',
-      delete: 'Supprimer',
-      add: 'Ajouter',
-      search: 'Recherche',
-      filter: 'Filtrer',
-
-      // Authentication
-      login: 'Connexion',
-      register: "S'inscrire",
-      email: 'Email',
-      password: 'Mot de passe',
-      forgotPassword: 'Mot de passe oublié?',
-
-      // Dashboard
-      todayOverview: "Aperçu d'aujourd'hui",
-      recentActivity: 'Activité récente',
-      upcomingAssignments: 'Devoirs à venir',
-
-      // Student specific
-      myPoints: 'Mes points',
-      myBadges: 'Mes badges',
-      leaderboard: 'Classement',
-
-      // Teacher specific
-      myClasses: 'Mes classes',
-      pendingGrading: 'En attente de notation',
-
-      // Time
-      today: "Aujourd'hui",
-      yesterday: 'Hier',
-      thisWeek: 'Cette semaine',
-      thisMonth: 'Ce mois',
-
-      // Status
-      present: 'Présent',
-      absent: 'Absent',
-      late: 'En retard',
-      excused: 'Absence justifiée',
-
-      // Roles
-      student: 'Étudiant',
-      teacher: 'Enseignant',
-      parent: 'Parent',
-      admin: 'Administrateur',
-      staff: 'Personnel',
-      driver: 'Chauffeur',
-    },
-  },
-}
-
 // RTL languages
 const rtlLanguages = ['ar']
 
@@ -204,26 +11,35 @@ i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
-    resources,
     fallbackLng: 'en',
     debug: false,
 
     backend: {
-      loadPath: '/locales/{{lng}}.json',
+      // Load translation files from public/locales directory
+      loadPath: '/locales/{{lng}}/{{lng}}.json',
     },
 
     interpolation: {
-      escapeValue: false,
+      escapeValue: false, // React already does escaping
     },
 
     detection: {
+      // Order of language detection methods
       order: ['queryString', 'cookie', 'localStorage', 'navigator'],
+      // Cache detected language in cookie and localStorage
       caches: ['cookie', 'localStorage'],
     },
 
     react: {
+      // Don't use Suspense for loading translations
       useSuspense: false,
     },
+
+    // Default namespace
+    defaultNS: 'translation',
+
+    // Languages to preload
+    preload: ['en', 'ar', 'fr'],
   })
 
 // Function to check if language is RTL
@@ -240,12 +56,19 @@ export const getDirection = (language) => {
 export const updateDocumentDirection = (language) => {
   document.documentElement.dir = getDirection(language)
   document.documentElement.lang = language
+  
+  // Add/remove RTL class for styling
+  if (isRTL(language)) {
+    document.documentElement.classList.add('rtl')
+  } else {
+    document.documentElement.classList.remove('rtl')
+  }
 }
 
 // Initialize direction on startup
 updateDocumentDirection(i18n.language)
 
-// Listen for language changes
+// Listen for language changes and update document direction
 i18n.on('languageChanged', (language) => {
   updateDocumentDirection(language)
 })

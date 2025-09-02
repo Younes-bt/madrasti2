@@ -6,7 +6,16 @@
 // Core API configuration
 export { default as api, apiMethods, checkAPIHealth, uploadFile } from './api.js';
 
-// Authentication service
+// Import all services first
+import authServiceImport from './auth.js';
+import usersServiceImport from './users.js';
+import schoolsServiceImport from './schools.js';
+import homeworkServiceImport from './homework.js';
+import attendanceServiceImport from './attendance.js';
+import lessonsServiceImport from './lessons.js';
+import errorHandlerImport from './errorHandler.js';
+
+// Re-export services
 export { default as authService } from './auth.js';
 export {
   login,
@@ -26,19 +35,10 @@ export {
   getAuthHeaders
 } from './auth.js';
 
-// Users service
 export { default as usersService } from './users.js';
-
-// Schools service  
 export { default as schoolsService } from './schools.js';
-
-// Homework service
 export { default as homeworkService } from './homework.js';
-
-// Attendance service
 export { default as attendanceService } from './attendance.js';
-
-// Lessons service
 export { default as lessonsService } from './lessons.js';
 
 // Error handling
@@ -56,12 +56,12 @@ export {
 
 // Service collections for easy import
 export const services = {
-  auth: authService,
-  users: usersService,
-  schools: schoolsService,
-  homework: homeworkService,
-  attendance: attendanceService,
-  lessons: lessonsService
+  auth: authServiceImport,
+  users: usersServiceImport,
+  schools: schoolsServiceImport,
+  homework: homeworkServiceImport,
+  attendance: attendanceServiceImport,
+  lessons: lessonsServiceImport
 };
 
 // API endpoints summary for reference

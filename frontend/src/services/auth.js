@@ -4,7 +4,7 @@
  */
 
 import { apiMethods } from './api.js';
-import { setStoredData, removeStoredData } from '../utils/storage.js';
+import { authStorage } from '../utils/storage.js';
 
 /**
  * Authentication Service Class
@@ -22,12 +22,13 @@ class AuthService {
       const response = await apiMethods.post('users/login/', credentials);
       
       if (response.access && response.refresh) {
-        // Store tokens securely
-        this.storeTokens(response.access, response.refresh);
+        // Store tokens securely using authStorage
+        authStorage.set('token', response.access);
+        authStorage.set('refreshToken', response.refresh);
         
         // Store user data
         if (response.user) {
-          this.storeUserData(response.user);
+          authStorage.set('user', response.user);
         }
       }
       
@@ -76,7 +77,7 @@ class AuthService {
       });
 
       if (response.access) {
-        this.storeAccessToken(response.access);
+        authStorage.set('token', response.access);
       }
 
       return response;
@@ -149,10 +150,10 @@ class AuthService {
    */
   logout() {
     try {
-      // Clear stored tokens and user data
-      removeStoredData('accessToken');
-      removeStoredData('refreshToken');
-      removeStoredData('user');
+      // Clear stored tokens and user data using authStorage
+      authStorage.remove('token');
+      authStorage.remove('refreshToken');
+      authStorage.remove('user');
       
       // Dispatch logout event
       window.dispatchEvent(new CustomEvent('auth-logout'));
@@ -165,57 +166,11 @@ class AuthService {
   }
 
   /**
-   * Store Access Token
-   * @param {string} token - Access token
-   */
-  storeAccessToken(token) {
-    const tokenData = {
-      token,
-      expiresAt: Date.now() + (15 * 60 * 1000) // 15 minutes
-    };
-    setStoredData('accessToken', tokenData, { expiresIn: 15 * 60 }); // 15 minutes
-  }
-
-  /**
-   * Store Refresh Token
-   * @param {string} token - Refresh token
-   */
-  storeRefreshToken(token) {
-    const tokenData = {
-      token,
-      expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 days
-    };
-    setStoredData('refreshToken', tokenData, { expiresIn: 7 * 24 * 60 * 60 }); // 7 days
-  }
-
-  /**
-   * Store Both Tokens
-   * @param {string} accessToken - Access token
-   * @param {string} refreshToken - Refresh token
-   */
-  storeTokens(accessToken, refreshToken) {
-    this.storeAccessToken(accessToken);
-    this.storeRefreshToken(refreshToken);
-  }
-
-  /**
-   * Store User Data
-   * @param {Object} userData - User data object
-   */
-  storeUserData(userData) {
-    setStoredData('user', userData, { expiresIn: 7 * 24 * 60 * 60 }); // 7 days
-  }
-
-  /**
    * Get Access Token
    * @returns {string|null} Access token or null
    */
   getAccessToken() {
-    const tokenData = JSON.parse(localStorage.getItem('accessToken') || 'null');
-    if (tokenData && tokenData.token && tokenData.expiresAt > Date.now()) {
-      return tokenData.token;
-    }
-    return null;
+    return authStorage.get('token');
   }
 
   /**
@@ -223,11 +178,7 @@ class AuthService {
    * @returns {string|null} Refresh token or null
    */
   getRefreshToken() {
-    const tokenData = JSON.parse(localStorage.getItem('refreshToken') || 'null');
-    if (tokenData && tokenData.token && tokenData.expiresAt > Date.now()) {
-      return tokenData.token;
-    }
-    return null;
+    return authStorage.get('refreshToken');
   }
 
   /**
@@ -235,7 +186,7 @@ class AuthService {
    * @returns {Object|null} User data or null
    */
   getUserData() {
-    return JSON.parse(localStorage.getItem('user') || 'null');
+    return authStorage.get('user');
   }
 
   /**

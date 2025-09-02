@@ -1,6 +1,8 @@
-import React, { createContext, useContext, useReducer, useEffect } from 'react'
+import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { authStorage } from '../utils/storage'
 import { USER_ROLES } from '../utils/constants'
+import { extractUserFromJWT, isJWTExpired } from '../utils/jwt'
 
 // Initial state
 const initialState = {
@@ -89,6 +91,8 @@ const AuthContext = createContext(null)
 // AuthProvider component
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState)
+  const navigate = useNavigate()
+  const location = useLocation()
 
   // Initialize auth state from storage
   useEffect(() => {
@@ -100,16 +104,74 @@ export const AuthProvider = ({ children }) => {
         const savedToken = authStorage.get('token')
         const savedRefreshToken = authStorage.get('refreshToken')
         
-        if (savedUser && savedToken) {
-          // TODO: Verify token validity with backend
-          dispatch({
-            type: AUTH_ACTIONS.LOGIN_SUCCESS,
-            payload: {
-              user: savedUser,
-              token: savedToken,
-              refreshToken: savedRefreshToken,
-            },
-          })
+        if (savedToken) {
+          try {
+            // Check if token is expired
+            if (isJWTExpired(savedToken)) {
+              throw new Error('Token expired')
+            }
+
+            // Extract user from token (in case stored user is outdated)
+            const userFromToken = extractUserFromJWT(savedToken)
+            
+            if (!userFromToken) {
+              throw new Error('Invalid token format')
+            }
+
+            // Import auth service dynamically to avoid circular dependencies
+            const { default: authService } = await import('../services/auth.js')
+            
+            // Verify token validity with backend
+            await authService.verifyToken(savedToken)
+            
+            // Token is valid, restore auth state with user from token
+            dispatch({
+              type: AUTH_ACTIONS.LOGIN_SUCCESS,
+              payload: {
+                user: userFromToken,
+                token: savedToken,
+                refreshToken: savedRefreshToken,
+              },
+            })
+          } catch (verifyError) {
+            console.log('Token verification failed, attempting refresh...')
+            
+            // Token invalid, try to refresh
+            if (savedRefreshToken) {
+              try {
+                const { default: authService } = await import('../services/auth.js')
+                const response = await authService.refreshToken(savedRefreshToken)
+                
+                // Update stored tokens
+                authStorage.set('token', response.access)
+                if (response.refresh) {
+                  authStorage.set('refreshToken', response.refresh)
+                }
+                
+                dispatch({
+                  type: AUTH_ACTIONS.LOGIN_SUCCESS,
+                  payload: {
+                    user: savedUser,
+                    token: response.access,
+                    refreshToken: response.refresh || savedRefreshToken,
+                  },
+                })
+              } catch (refreshError) {
+                console.log('Token refresh failed, clearing auth state')
+                // Clear invalid tokens
+                authStorage.remove('user')
+                authStorage.remove('token')
+                authStorage.remove('refreshToken')
+                dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: false })
+              }
+            } else {
+              // No refresh token available
+              authStorage.remove('user')
+              authStorage.remove('token')
+              authStorage.remove('refreshToken')
+              dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: false })
+            }
+          }
         } else {
           dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: false })
         }
@@ -131,35 +193,29 @@ export const AuthProvider = ({ children }) => {
       dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: true })
       dispatch({ type: AUTH_ACTIONS.CLEAR_ERROR })
 
-      // TODO: Replace with actual API call
-      // For now, using mock data for development
-      const mockResponse = {
-        access: 'mock-access-token-' + Date.now(),
-        refresh: 'mock-refresh-token-' + Date.now(),
-        user: {
-          id: 1,
-          email: credentials.email,
-          full_name: 'John Doe',
-          role: 'TEACHER',
-          permissions: ['can_manage_attendance', 'can_create_assignments'],
-          profile_picture: null,
-          profile_picture_url: null,
-          school_info: {
-            name: 'Madrasti School',
-            logo_url: null,
-          },
-        },
+      // Import auth service dynamically to avoid circular dependencies
+      const { default: authService } = await import('../services/auth.js')
+      
+      // Call actual API
+      const response = await authService.login(credentials)
+
+      console.log('Login response:', response) // Debug log
+
+      const { access: token, refresh: refreshToken } = response
+
+      // Validate response structure
+      if (!token || !refreshToken) {
+        throw new Error('Login response missing tokens')
       }
 
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
-      // Validate credentials (mock validation)
-      if (credentials.email === 'error@test.com') {
-        throw new Error('Invalid credentials')
+      // Extract user information from JWT token
+      const user = extractUserFromJWT(token)
+      
+      if (!user) {
+        throw new Error('Unable to extract user information from token')
       }
 
-      const { user, access: token, refresh: refreshToken } = mockResponse
+      console.log('Extracted user from JWT:', user) // Debug log
 
       // Store in secure storage
       authStorage.set('user', user)
@@ -172,10 +228,28 @@ export const AuthProvider = ({ children }) => {
         payload: { user, token, refreshToken },
       })
 
+      // Role-based redirection after successful login
+      const roleRoutes = {
+        'ADMIN': '/admin',
+        'TEACHER': '/teacher',
+        'STUDENT': '/student',
+        'PARENT': '/parent',
+        'STAFF': '/admin',
+        'DRIVER': '/admin'
+      }
+
+      // Get intended destination from location state or default to role-based route
+      const from = location.state?.from?.pathname || roleRoutes[user.role] || '/student'
+      
+      console.log('Redirecting to:', from, 'for role:', user.role) // Debug log
+      
+      // Navigate to appropriate dashboard
+      navigate(from, { replace: true })
+
       return { success: true, user }
     } catch (error) {
       console.error('Login error:', error)
-      const errorMessage = error.message || 'Login failed. Please try again.'
+      const errorMessage = error.userMessage || error.message || 'Login failed. Please try again.'
       
       dispatch({
         type: AUTH_ACTIONS.LOGIN_ERROR,
@@ -187,9 +261,15 @@ export const AuthProvider = ({ children }) => {
   }
 
   // Logout function
-  const logout = () => {
+  const logout = async () => {
     try {
-      // Clear storage
+      // Import auth service dynamically to avoid circular dependencies
+      const { default: authService } = await import('../services/auth.js')
+      
+      // Call auth service logout (clears storage)
+      authService.logout()
+
+      // Also clear from authStorage (our context storage)
       authStorage.remove('user')
       authStorage.remove('token')
       authStorage.remove('refreshToken')
@@ -217,12 +297,22 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  // Token refresh (for future implementation)
+  // Token refresh
   const refreshToken = async () => {
     try {
-      // TODO: Implement actual token refresh logic
-      const newToken = 'new-mock-token-' + Date.now()
-      const newRefreshToken = 'new-refresh-token-' + Date.now()
+      // Import auth service dynamically to avoid circular dependencies
+      const { default: authService } = await import('../services/auth.js')
+      
+      const currentRefreshToken = authStorage.get('refreshToken')
+      if (!currentRefreshToken) {
+        throw new Error('No refresh token available')
+      }
+
+      // Call actual API
+      const response = await authService.refreshToken(currentRefreshToken)
+      
+      const newToken = response.access
+      const newRefreshToken = response.refresh || currentRefreshToken
       
       authStorage.set('token', newToken)
       authStorage.set('refreshToken', newRefreshToken)
@@ -260,9 +350,9 @@ export const AuthProvider = ({ children }) => {
   }
 
   // Clear error
-  const clearError = () => {
+  const clearError = useCallback(() => {
     dispatch({ type: AUTH_ACTIONS.CLEAR_ERROR })
-  }
+  }, [])
 
   // Role shortcuts
   const isAdmin = hasRole(USER_ROLES.ADMIN)
