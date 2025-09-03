@@ -11,6 +11,12 @@ import TeacherDashboard from './pages/dashboard/TeacherDashboard'
 import ParentDashboard from './pages/dashboard/ParentDashboard'
 import AdminDashboard from './pages/dashboard/AdminDashboard'
 
+// Import feature pages
+import LessonsPage from './pages/lessons/LessonsPage'
+import AssignmentsPage from './pages/homework/AssignmentsPage'
+import AttendancePage from './pages/attendance/AttendancePage'
+import RewardsPage from './pages/rewards/RewardsPage'
+
 // Import auth components
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import { useAuth } from './hooks/useAuth'
@@ -78,6 +84,43 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF', 'DRIVER']}>
             <AdminDashboard />
+          </ProtectedRoute>
+        } 
+      />
+
+      {/* Feature pages - accessible to all authenticated users */}
+      <Route 
+        path="/lessons" 
+        element={
+          <ProtectedRoute requiredRoles={['STUDENT', 'TEACHER', 'PARENT', 'ADMIN', 'STAFF']}>
+            <LessonsPage />
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/homework" 
+        element={
+          <ProtectedRoute requiredRoles={['STUDENT', 'TEACHER', 'PARENT', 'ADMIN', 'STAFF']}>
+            <AssignmentsPage />
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/attendance" 
+        element={
+          <ProtectedRoute requiredRoles={['STUDENT', 'TEACHER', 'PARENT', 'ADMIN', 'STAFF', 'DRIVER']}>
+            <AttendancePage />
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/rewards" 
+        element={
+          <ProtectedRoute requiredRoles={['STUDENT', 'TEACHER', 'PARENT', 'ADMIN', 'STAFF']}>
+            <RewardsPage />
           </ProtectedRoute>
         } 
       />

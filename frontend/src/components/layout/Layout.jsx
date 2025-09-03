@@ -1,5 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { LanguageContext } from '../../contexts/LanguageContext'
+import { useAuth } from '../../contexts/AuthContext'
 import Header from './Header'
 import Sidebar from './Sidebar'
 import Footer from './Footer'
@@ -11,15 +13,11 @@ import { cn } from '../../lib/utils'
 
 const Layout = ({
   children,
-  currentPath = '/',
-  user = null,
   notifications = [],
   loading = false,
   error = null,
-  onNavigate = () => {},
   onNotificationClick = () => {},
   onProfileClick = () => {},
-  onLogout = () => {},
   showSidebar = true,
   showHeader = true,
   showFooter = true,
@@ -29,10 +27,14 @@ const Layout = ({
   contentClassName,
 }) => {
   const { language } = useContext(LanguageContext)
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   
   const isRTL = language === 'ar'
+  const currentPath = location.pathname
 
   // Load sidebar collapsed state from localStorage
   useEffect(() => {
@@ -58,8 +60,19 @@ const Layout = ({
   }
 
   const handleNavigate = (path) => {
-    onNavigate(path)
+    navigate(path)
     handleSidebarClose() // Close sidebar on mobile after navigation
+  }
+
+  const handleLogout = async () => {
+    try {
+      await logout() // Call the logout function from AuthContext
+      navigate('/login', { replace: true }) // Redirect to login page
+    } catch (error) {
+      console.error('Logout error:', error)
+      // Even if logout fails, still redirect to login
+      navigate('/login', { replace: true })
+    }
   }
 
   // Handle loading state
@@ -119,7 +132,7 @@ const Layout = ({
           notifications={notifications}
           onNotificationClick={onNotificationClick}
           onProfileClick={onProfileClick}
-          onLogout={onLogout}
+          onLogout={handleLogout}
         />
       )}
 
