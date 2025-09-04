@@ -52,16 +52,17 @@ export const getDirection = (language) => {
   return isRTL(language) ? 'rtl' : 'ltr'
 }
 
-// Function to update document direction
+// Function to update document direction - Keep main layout LTR
 export const updateDocumentDirection = (language) => {
-  document.documentElement.dir = getDirection(language)
+  // Always keep document direction as LTR for layout consistency
+  document.documentElement.dir = 'ltr'
   document.documentElement.lang = language
   
-  // Add/remove RTL class for styling
+  // Add/remove RTL class for content-specific styling only
   if (isRTL(language)) {
-    document.documentElement.classList.add('rtl')
+    document.documentElement.classList.add('rtl-content')
   } else {
-    document.documentElement.classList.remove('rtl')
+    document.documentElement.classList.remove('rtl-content')
   }
 }
 

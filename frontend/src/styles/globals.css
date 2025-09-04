@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Arabic:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700&family=Rubik:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @layer base {
@@ -23,10 +23,18 @@
     --radius: 0.5rem;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
+    --sidebar-background: 200 100% 50%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 0 0% 4%;
     --foreground: 210 40% 98%;
     --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
@@ -45,6 +53,14 @@
     --ring: 224.3 76.3% 94.1%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
+    --sidebar-background: 120 100% 75%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 94.1%;
+    --sidebar-primary-foreground: 240 5.9% 10%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   body {
@@ -59,12 +75,47 @@
     scroll-behavior: smooth;
   }
 
-  /* RTL Support */
-  [dir='rtl'] {
-    font-family: 'Noto Sans Arabic', system-ui, sans-serif;
+  /* RTL Support - Content only, keeping layout LTR */
+  .rtl-content {
+    font-family: 'Rubik', system-ui, sans-serif;
   }
 
-  [dir='ltr'] {
-    font-family: 'Inter', system-ui, sans-serif;
+  :not(.rtl-content) {
+    font-family: 'Nunito', system-ui, sans-serif;
+  }
+
+  /* RTL styles for card content only */
+  .rtl-content .card-content {
+    direction: rtl;
+    text-align: right;
+  }
+
+  .rtl-content .card-content h1,
+  .rtl-content .card-content h2,
+  .rtl-content .card-content h3,
+  .rtl-content .card-content h4,
+  .rtl-content .card-content h5,
+  .rtl-content .card-content h6,
+  .rtl-content .card-content p,
+  .rtl-content .card-content span,
+  .rtl-content .card-content div:not(.grid):not(.flex) {
+    text-align: right;
+  }
+
+  /* Keep icons and buttons aligned properly in RTL */
+  .rtl-content .card-content .flex {
+    flex-direction: row-reverse;
+  }
+
+  .rtl-content .card-content .justify-between {
+    flex-direction: row-reverse;
+  }
+
+  /* Keep sidebar and navigation LTR */
+  .rtl-content nav,
+  .rtl-content .sidebar,
+  .rtl-content [data-sidebar] {
+    direction: ltr;
+    text-align: left;
   }
 }

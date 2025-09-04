@@ -3,12 +3,13 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { LanguageContext } from '../../contexts/LanguageContext'
 import { useAuth } from '../../contexts/AuthContext'
 import Header from './Header'
-import Sidebar from './Sidebar'
+import { AppSidebar } from './AppSidebar'
 import Footer from './Footer'
 import { PageErrorBoundary } from '../shared/ErrorBoundary'
 import LoadingSpinner from '../shared/LoadingSpinner'
 import LanguageSwitcher from '../shared/LanguageSwitcher'
 import ThemeToggle from '../shared/ThemeToggle'
+import { SidebarProvider, SidebarInset } from '../ui/sidebar'
 import { cn } from '../../lib/utils'
 
 const Layout = ({
@@ -117,46 +118,29 @@ const Layout = ({
     )
   }
 
-  return (
-    <div className={cn(
-      'min-h-screen bg-background flex flex-col',
-      isRTL && 'rtl',
-      className
-    )}>
-      {/* Header */}
-      {showHeader && (
-        <Header
-          onMenuClick={handleSidebarToggle}
-          isSidebarOpen={sidebarOpen}
-          user={user}
-          notifications={notifications}
-          onNotificationClick={onNotificationClick}
-          onProfileClick={onProfileClick}
-          onLogout={handleLogout}
-        />
-      )}
-
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        {showSidebar && sidebarVariant !== 'hidden' && (
-          <Sidebar
-            isOpen={sidebarOpen}
-            onClose={handleSidebarClose}
-            currentPath={currentPath}
-            userRole={user?.role}
-            onNavigate={handleNavigate}
-            className={cn(
-              sidebarVariant === 'compact' && 'w-16',
-              sidebarCollapsed && 'w-16'
-            )}
+  if (!showSidebar || sidebarVariant === 'hidden') {
+    // Layout without sidebar
+    return (
+      <div className={cn(
+        'min-h-screen bg-background flex flex-col',
+        isRTL && 'rtl',
+        className
+      )}>
+        {/* Header */}
+        {showHeader && (
+          <Header
+            onMenuClick={handleSidebarToggle}
+            isSidebarOpen={sidebarOpen}
+            user={user}
+            notifications={notifications}
+            onNotificationClick={onNotificationClick}
+            onProfileClick={onProfileClick}
+            onLogout={handleLogout}
           />
         )}
 
         {/* Main Content */}
-        <main className={cn(
-          'flex-1 flex flex-col overflow-hidden',
-          contentClassName
-        )}>
+        <main className={cn('flex-1 flex flex-col overflow-hidden', contentClassName)}>
           {/* Content Area */}
           <div className="flex-1 overflow-auto">
             <PageErrorBoundary>
@@ -175,6 +159,56 @@ const Layout = ({
           )}
         </main>
       </div>
+    )
+  }
+
+  // Layout with new shadcn sidebar
+  return (
+    <div className={cn(isRTL && 'rtl', className)}>
+      <SidebarProvider defaultOpen={true}>
+        <AppSidebar 
+          onNavigate={handleNavigate}
+          currentPath={currentPath}
+          className={cn(
+            sidebarVariant === 'compact' && 'collapsed',
+            sidebarCollapsed && 'collapsed'
+          )}
+        />
+        <SidebarInset>
+          {/* Header */}
+          {showHeader && (
+            <Header
+              onMenuClick={handleSidebarToggle}
+              isSidebarOpen={sidebarOpen}
+              user={user}
+              notifications={notifications}
+              onNotificationClick={onNotificationClick}
+              onProfileClick={onProfileClick}
+              onLogout={handleLogout}
+            />
+          )}
+
+          {/* Main Content */}
+          <main className={cn('flex-1 flex flex-col', contentClassName)}>
+            {/* Content Area */}
+            <div className="flex-1 overflow-auto p-4">
+              <PageErrorBoundary>
+                <div className="container mx-auto">
+                  {children}
+                </div>
+              </PageErrorBoundary>
+            </div>
+
+            {/* Footer */}
+            {showFooter && (
+              <Footer 
+                variant={footerVariant}
+                schoolInfo={user?.school_info}
+              />
+            )}
+          </main>
+        </SidebarInset>
+      </SidebarProvider>
     </div>
   )
 }

@@ -20,7 +20,7 @@ const AdminDashboard = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">
-              {t('common.welcome')}, {user?.first_name}! ⚙️
+              {t('common.welcome')}, {user?.first_name}!             
             </h1>
             <p className="text-muted-foreground">
               {t('admin.dashboardDescription')}
@@ -29,28 +29,22 @@ const AdminDashboard = () => {
           <QuickActions />
         </div>
 
-        {/* Main Dashboard Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Column - Primary Content */}
-          <div className="lg:col-span-8 space-y-6">
-            {/* System Overview */}
-            <SystemOverview />
-            
-            {/* School Statistics */}
-            <SchoolStatistics />
-            
-            {/* User Management Preview */}
-            <UserManagement />
-          </div>
-
-          {/* Right Column - Secondary Content */}
-          <div className="lg:col-span-4 space-y-6">
-            {/* System Health */}
-            <SystemHealth />
-            
-            {/* Recent Activity */}
-            <RecentActivity />
-          </div>
+        {/* Main Dashboard - Vertical Layout */}
+        <div className="flex flex-col space-y-6">
+          {/* System Overview */}
+          <SystemOverview />
+          
+          {/* School Statistics */}
+          <SchoolStatistics />
+          
+          {/* System Health */}
+          <SystemHealth />
+          
+          {/* User Management Preview */}
+          <UserManagement />
+          
+          {/* Recent Activity */}
+          <RecentActivity />
         </div>
       </div>
     </DashboardLayout>

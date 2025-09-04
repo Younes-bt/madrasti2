@@ -14,7 +14,7 @@ const LoginPage = () => {
   }
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4 ${isRTL ? 'rtl' : 'ltr'}`} dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className={`min-h-screen bg-background flex items-center justify-center p-4 ${isRTL ? 'rtl' : 'ltr'}`} dir={isRTL ? 'rtl' : 'ltr'}>
       <div className="w-full max-w-lg">
         {/* Header */}
         <div className="text-center mb-8">
@@ -23,7 +23,7 @@ const LoginPage = () => {
               M
             </div>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
             Madrasti 2.0
           </h1>
           <p className="text-muted-foreground mt-2">
@@ -38,9 +38,6 @@ const LoginPage = () => {
         <div className="mt-8 text-center">
           <p className="text-xs text-muted-foreground">
             © 2025 Madrasti 2.0 - Education Management System
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Phase 2: Authentication System Implementation ✅
           </p>
         </div>
       </div>

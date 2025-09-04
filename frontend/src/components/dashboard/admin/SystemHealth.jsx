@@ -139,7 +139,7 @@ const SystemHealth = () => {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="card-content">
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
@@ -156,7 +156,7 @@ const SystemHealth = () => {
         </div>
       </CardHeader>
       
-      <CardContent className="space-y-4">
+      <CardContent className="card-content space-y-4">
         {/* System Status Overview */}
         <div className="p-3 bg-accent/30 rounded-lg">
           <div className="flex items-center justify-between mb-2">

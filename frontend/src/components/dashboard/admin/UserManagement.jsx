@@ -171,7 +171,7 @@ const UserManagement = () => {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="card-content">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <CardTitle className="flex items-center gap-2">

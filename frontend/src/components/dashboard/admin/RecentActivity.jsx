@@ -209,7 +209,7 @@ const RecentActivity = () => {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="card-content">
         <CardTitle className="flex items-center gap-2">
           <Activity className="h-5 w-5 text-orange-500" />
           {t('admin.recentActivity')}

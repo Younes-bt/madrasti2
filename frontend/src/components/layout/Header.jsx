@@ -1,6 +1,8 @@
 import React, { useContext, useState } from 'react'
 import { Menu, Bell, Search, User, Settings, LogOut, ChevronDown } from 'lucide-react'
 import { Button } from '../ui/button'
+import { SidebarTrigger } from '../ui/sidebar'
+import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator } from '../ui/breadcrumb'
 import { Input } from '../ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { Badge } from '../ui/badge'
@@ -81,36 +83,34 @@ const Header = ({
       className
     )}>
       <div className="flex h-16 items-center px-4">
-        {/* Menu button and logo */}
+        {/* Sidebar trigger and breadcrumb */}
         <div className="flex items-center">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onMenuClick}
-            className={cn(
-              'mr-2 h-9 w-9 p-0',
-              isRTL && 'mr-0 ml-2'
-            )}
-          >
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">Toggle menu</span>
-          </Button>
-
-          <div className="flex items-center space-x-2 rtl:space-x-reverse">
-            <div className="h-8 w-8 rounded bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">
-                {APP_CONFIG.NAME.charAt(0)}
-              </span>
-            </div>
-            <div className="hidden md:block">
-              <h1 className="text-lg font-semibold">{APP_CONFIG.NAME}</h1>
-              <p className="text-xs text-muted-foreground">
-                {language === 'ar' ? 'نظام إدارة المدارس' : 
-                 language === 'fr' ? 'Système de Gestion Scolaire' : 
-                 'School Management System'}
-              </p>
-            </div>
-          </div>
+          <SidebarTrigger className={cn(
+            'mr-2',
+            isRTL && 'mr-0 ml-2'
+          )} />
+          
+          <Separator orientation="vertical" className="mr-2 h-4" />
+          
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem className="hidden md:block">
+                <BreadcrumbLink href="#">
+                  {APP_CONFIG.NAME}
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator className="hidden md:block" />
+              <BreadcrumbItem>
+                <BreadcrumbLink href="#">
+                  {user ? getRoleDisplayName(user.role) : (
+                    language === 'ar' ? 'لوحة التحكم' :
+                    language === 'fr' ? 'Tableau de bord' :
+                    'Dashboard'
+                  )}
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
         </div>
 
         {/* Search bar */}

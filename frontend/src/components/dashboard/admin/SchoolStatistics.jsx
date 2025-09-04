@@ -136,7 +136,7 @@ const SchoolStatistics = () => {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="card-content">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <CardTitle className="flex items-center gap-2">
@@ -169,7 +169,7 @@ const SchoolStatistics = () => {
         </div>
       </CardHeader>
       
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 card-content">
         {/* Key Performance Indicators */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">

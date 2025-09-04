@@ -71,7 +71,7 @@ const SystemOverview = () => {
     <Card>
       <CardHeader>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
+          <div className="card-content">
             <CardTitle className="flex items-center gap-2">
               <Server className="h-5 w-5 text-blue-500" />
               {t('admin.systemOverview')}
@@ -86,7 +86,7 @@ const SystemOverview = () => {
         </div>
       </CardHeader>
       
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 card-content">
         {/* Core Statistics */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">

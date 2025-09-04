@@ -120,7 +120,7 @@ const LoginForm = ({ onSuccess = () => {} }) => {
           <div className="space-y-2">
             <label 
               htmlFor="email" 
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-foreground"
             >
               {t('auth.email')}
             </label>
@@ -144,7 +144,7 @@ const LoginForm = ({ onSuccess = () => {} }) => {
           <div className="space-y-2">
             <label 
               htmlFor="password" 
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-foreground"
             >
               {t('auth.password')}
             </label>
@@ -163,7 +163,7 @@ const LoginForm = ({ onSuccess = () => {} }) => {
               <button
                 type="button"
                 onClick={togglePasswordVisibility}
-                className={`absolute top-1/2 transform -translate-y-1/2 ${isRTL ? 'left-3' : 'right-3'} text-gray-400 hover:text-gray-600 focus:outline-none`}
+                className={`absolute top-1/2 transform -translate-y-1/2 ${isRTL ? 'left-3' : 'right-3'} text-muted-foreground hover:text-foreground focus:outline-none`}
                 tabIndex={-1}
               >
                 {showPassword ? (
@@ -180,15 +180,15 @@ const LoginForm = ({ onSuccess = () => {} }) => {
 
           {/* Auth Error Display */}
           {authError && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-3">
-              <p className="text-sm text-red-600 text-center">{authError}</p>
+            <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3">
+              <p className="text-sm text-destructive text-center">{authError}</p>
             </div>
           )}
 
           {/* Submit Button */}
           <Button
             type="submit"
-            className="w-full"
+            className="w-full bg-blue-600 text-white cursor-pointer hover:bg-blue-700 font-semibold"
             disabled={authLoading}
           >
             {authLoading ? (
@@ -203,9 +203,10 @@ const LoginForm = ({ onSuccess = () => {} }) => {
 
           {/* Demo Credentials (Development only) */}
           {process.env.NODE_ENV === 'development' && (
-            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-              <p className="text-xs text-blue-700 font-medium mb-2">Demo Credentials:</p>
-              <div className="space-y-1 text-xs text-blue-600">
+            <div className="mt-4 p-3 bg-secondary border border-border rounded-md">
+              <p className="text-xs text-secondary-foreground font-medium mb-2">Demo Credentials:</p>
+              <div className="space-y-1 text-xs text-muted-foreground">
+                <p>Email: admin@madrasti.ma</p>
                 <p>Email: teacher@madrasti.ma</p>
                 <p>Email: student@madrasti.ma</p>
                 <p>Email: parent@madrasti.ma</p>
