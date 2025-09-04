@@ -249,8 +249,13 @@ export const AuthProvider = ({ children }) => {
       return { success: true, user }
     } catch (error) {
       console.error('Login error:', error)
-      const errorMessage = error.userMessage || error.message || 'Login failed. Please try again.'
-      
+      let errorMessage = 'Login failed. Please try again.'
+      if (error.response && error.response.status === 401) {
+        errorMessage = 'auth.invalidCredentials';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
       dispatch({
         type: AUTH_ACTIONS.LOGIN_ERROR,
         payload: errorMessage,

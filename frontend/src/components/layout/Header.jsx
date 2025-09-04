@@ -82,7 +82,7 @@ const Header = ({
       'sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60',
       className
     )}>
-      <div className="flex h-16 items-center px-4">
+      <div className="flex h-16 items-center px-2 sm:px-4">
         {/* Sidebar trigger and breadcrumb */}
         <div className="flex items-center">
           <SidebarTrigger className={cn(
@@ -94,12 +94,12 @@ const Header = ({
           
           <Breadcrumb>
             <BreadcrumbList>
-              <BreadcrumbItem className="hidden md:block">
+              <BreadcrumbItem className="hidden sm:block">
                 <BreadcrumbLink href="#">
                   {APP_CONFIG.NAME}
                 </BreadcrumbLink>
               </BreadcrumbItem>
-              <BreadcrumbSeparator className="hidden md:block" />
+              <BreadcrumbSeparator className="hidden sm:block" />
               <BreadcrumbItem>
                 <BreadcrumbLink href="#">
                   {user ? getRoleDisplayName(user.role) : (
@@ -115,8 +115,8 @@ const Header = ({
 
         {/* Search bar */}
         {showSearch && (
-          <div className="flex-1 max-w-md mx-4">
-            <form onSubmit={handleSearch} className="relative">
+          <div className="hidden sm:flex flex-1 max-w-md mx-4">
+            <form onSubmit={handleSearch} className="relative w-full">
               <Search className={cn(
                 'absolute top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground',
                 isRTL ? 'right-3' : 'left-3'
@@ -142,23 +142,70 @@ const Header = ({
         <div className="flex-1" />
 
         {/* Right side controls */}
-        <div className="flex items-center space-x-2 rtl:space-x-reverse">
-          {/* Language switcher */}
-          <LanguageSwitcher />
+        <div className="flex items-center space-x-0.5 xs:space-x-1 sm:space-x-2 rtl:space-x-reverse">
+          {showSearch && (
+            <Button variant="ghost" size="sm" className="sm:hidden h-8 w-8 p-0">
+              <Search className="h-4 w-4" />
+            </Button>
+          )}
+          
+          {/* Settings dropdown for mobile */}
+          <Dialog className="xs:hidden">
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <Settings className="h-4 w-4" />
+                <span className="sr-only">Settings</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-xs">
+              <DialogHeader>
+                <DialogTitle>
+                  {language === 'ar' ? 'الإعدادات' : 
+                   language === 'fr' ? 'Paramètres' : 
+                   'Settings'}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">
+                    {language === 'ar' ? 'اللغة' : 
+                     language === 'fr' ? 'Langue' : 
+                     'Language'}
+                  </span>
+                  <LanguageSwitcher />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">
+                    {language === 'ar' ? 'المظهر' : 
+                     language === 'fr' ? 'Thème' : 
+                     'Theme'}
+                  </span>
+                  <ThemeToggle />
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
 
-          {/* Theme toggle */}
-          <ThemeToggle />
+          {/* Language switcher - hidden on xs screens */}
+          <div className="hidden xs:block">
+            <LanguageSwitcher />
+          </div>
+
+          {/* Theme toggle - hidden on xs screens */}
+          <div className="hidden xs:block">
+            <ThemeToggle />
+          </div>
 
           {/* Notifications */}
           {showNotifications && (
             <Dialog open={isNotificationsOpen} onOpenChange={setIsNotificationsOpen}>
               <DialogTrigger asChild>
-                <Button variant="ghost" size="sm" className="relative h-9 w-9 p-0">
-                  <Bell className="h-5 w-5" />
+                <Button variant="ghost" size="sm" className="relative h-8 w-8 p-0">
+                  <Bell className="h-4 w-4" />
                   {unreadNotifications > 0 && (
                     <Badge 
                       variant="destructive" 
-                      className="absolute -top-1 -right-1 h-5 w-5 text-xs p-0 flex items-center justify-center"
+                      className="absolute -top-1 -right-1 h-4 w-4 text-xs p-0 flex items-center justify-center min-w-4"
                     >
                       {unreadNotifications > 9 ? '9+' : unreadNotifications}
                     </Badge>
@@ -240,11 +287,11 @@ const Header = ({
           {user && (
             <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
               <DialogTrigger asChild>
-                <Button variant="ghost" className="relative h-9 px-2">
-                  <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                    <Avatar className="h-7 w-7">
+                <Button variant="ghost" className="relative h-8 px-1 sm:px-2">
+                  <div className="flex items-center space-x-1 sm:space-x-2 rtl:space-x-reverse">
+                    <Avatar className="h-6 w-6 sm:h-7 sm:w-7">
                       <AvatarImage src={user.profile_picture_url} alt={user.full_name} />
-                      <AvatarFallback>
+                      <AvatarFallback className="text-xs">
                         {user.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
@@ -256,7 +303,7 @@ const Header = ({
                         {getRoleDisplayName(user.role)}
                       </p>
                     </div>
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground hidden sm:block" />
                   </div>
                 </Button>
               </DialogTrigger>

@@ -193,7 +193,7 @@ const SystemOverview = () => {
             <div className="text-center p-3 border rounded-lg">
               <Database className="h-5 w-5 text-gray-600 mx-auto mb-1" />
               <div className="text-sm font-bold text-blue-600">
-                {systemStats.database_size}GB
+                {systemStats.database_size}{t('units.gb')}
               </div>
               <div className="text-xs text-muted-foreground">{t('admin.databaseSize')}</div>
             </div>

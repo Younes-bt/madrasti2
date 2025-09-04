@@ -31,13 +31,13 @@ const SchoolStatistics = () => {
         average_score: 76.5,
         trending_up: true,
         top_subjects: [
-          { name: 'Mathematics', avg_score: 82.1, completion: 87 },
-          { name: 'Physics', avg_score: 78.9, completion: 84 },
-          { name: 'Chemistry', avg_score: 75.3, completion: 81 }
+          { name: 'subjects.mathematics', avg_score: 82.1, completion: 87 },
+          { name: 'subjects.physics', avg_score: 78.9, completion: 84 },
+          { name: 'subjects.chemistry', avg_score: 75.3, completion: 81 }
         ],
         struggling_subjects: [
-          { name: 'Literature', avg_score: 68.5, completion: 72 },
-          { name: 'History', avg_score: 71.2, completion: 76 }
+          { name: 'subjects.literature', avg_score: 68.5, completion: 72 },
+          { name: 'subjects.history', avg_score: 71.2, completion: 76 }
         ]
       }
     },
@@ -50,11 +50,11 @@ const SchoolStatistics = () => {
         perfect_attendance: 312,
         trending_up: false,
         daily_pattern: [
-          { day: 'Monday', rate: 92 },
-          { day: 'Tuesday', rate: 94 },
-          { day: 'Wednesday', rate: 88 },
-          { day: 'Thursday', rate: 91 },
-          { day: 'Friday', rate: 85 }
+          { day: 'common.monday', rate: 92 },
+          { day: 'common.tuesday', rate: 94 },
+          { day: 'common.wednesday', rate: 88 },
+          { day: 'common.thursday', rate: 91 },
+          { day: 'common.friday', rate: 85 }
         ]
       }
     },
@@ -66,10 +66,10 @@ const SchoolStatistics = () => {
         net_growth: 15,
         retention_rate: 97.8,
         class_distribution: [
-          { level: '1ère Année', students: 324, classes: 12 },
-          { level: '2ème Année', students: 298, classes: 11 },
-          { level: '3ème Année', students: 276, classes: 10 },
-          { level: 'Terminale', students: 252, classes: 9 }
+          { level: 'levels.firstYear', students: 324, classes: 12 },
+          { level: 'levels.secondYear', students: 298, classes: 11 },
+          { level: 'levels.thirdYear', students: 276, classes: 10 },
+          { level: 'levels.terminal', students: 252, classes: 9 }
         ]
       }
     },
@@ -126,10 +126,10 @@ const SchoolStatistics = () => {
 
   const formatPeriod = (period) => {
     switch(period) {
-      case 'week': return t('common.thisWeek')
-      case 'month': return t('common.thisMonth')
-      case 'term': return t('common.thisTerm')
-      case 'year': return t('common.thisYear')
+      case 'week': return t('misc.thisWeek')
+      case 'month': return t('misc.thisMonth')
+      case 'term': return t('misc.thisTerm')
+      case 'year': return t('misc.thisYear')
       default: return period
     }
   }
@@ -153,10 +153,10 @@ const SchoolStatistics = () => {
               value={selectedPeriod}
               onChange={(e) => setSelectedPeriod(e.target.value)}
             >
-              <option value="week">{t('common.week')}</option>
-              <option value="month">{t('common.month')}</option>
-              <option value="term">{t('common.term')}</option>
-              <option value="year">{t('common.year')}</option>
+              <option value="week">{t('misc.week')}</option>
+              <option value="month">{t('misc.month')}</option>
+              <option value="term">{t('misc.term')}</option>
+              <option value="year">{t('misc.year')}</option>
             </select>
             <Button
               variant="outline"
@@ -169,9 +169,9 @@ const SchoolStatistics = () => {
         </div>
       </CardHeader>
       
-      <CardContent className="space-y-6 card-content">
+      <CardContent className="space-y-4 card-content">
         {/* Key Performance Indicators */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
             <BookOpen className="h-6 w-6 text-blue-600 mx-auto mb-2" />
             <div className="text-xl font-bold text-blue-900 dark:text-blue-100">
@@ -219,186 +219,66 @@ const SchoolStatistics = () => {
           </div>
         </div>
 
-        {/* Academic Performance */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="font-medium flex items-center gap-2">
-              <BookOpen className="h-4 w-4" />
-              {t('admin.academicPerformance')} ({formatPeriod(selectedPeriod)})
-            </h4>
+        {/* Summary Sections */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between p-3 bg-accent/30 rounded-lg">
+            <div className="flex items-center gap-3">
+              <BookOpen className="h-5 w-5 text-blue-600" />
+              <div>
+                <h4 className="font-medium">{t('admin.academicPerformance')}</h4>
+                <p className="text-xs text-muted-foreground">
+                  {t('admin.topSubjects')}: {t(currentAcademic.top_subjects[0].name)}
+                </p>
+              </div>
+            </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => handleViewDetailedReport('academic')}
             >
-              {t('common.viewDetails')}
+              {t('misc.viewDetails')}
               <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           </div>
-          
-          <div className="grid lg:grid-cols-2 gap-4">
-            {/* Top Performing Subjects */}
-            <div>
-              <h5 className="text-sm font-medium mb-2 flex items-center gap-2">
-                <Award className="h-3 w-3 text-green-600" />
-                {t('admin.topSubjects')}
-              </h5>
-              <div className="space-y-2">
-                {currentAcademic.top_subjects.map((subject, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-900/20 rounded">
-                    <span className="text-sm font-medium">{subject.name}</span>
-                    <div className="flex items-center gap-2">
-                      <Badge className={getPerformanceColor(subject.avg_score)}>
-                        {subject.avg_score}%
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {subject.completion}% {t('homework.completion')}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
 
-            {/* Struggling Subjects */}
-            <div>
-              <h5 className="text-sm font-medium mb-2 flex items-center gap-2">
-                <AlertTriangle className="h-3 w-3 text-orange-600" />
-                {t('admin.strugglingSubjects')}
-              </h5>
-              <div className="space-y-2">
-                {currentAcademic.struggling_subjects.map((subject, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 bg-orange-50 dark:bg-orange-900/20 rounded">
-                    <span className="text-sm font-medium">{subject.name}</span>
-                    <div className="flex items-center gap-2">
-                      <Badge className={getPerformanceColor(subject.avg_score)}>
-                        {subject.avg_score}%
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {subject.completion}% {t('homework.completion')}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+          <div className="flex items-center justify-between p-3 bg-accent/30 rounded-lg">
+            <div className="flex items-center gap-3">
+              <UserCheck className="h-5 w-5 text-green-600" />
+              <div>
+                <h4 className="font-medium">{t('admin.attendancePatterns')}</h4>
+                <p className="text-xs text-muted-foreground">
+                  {currentAttendance.chronic_absences} {t('attendance.chronic')}
+                </p>
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Attendance Patterns */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="font-medium flex items-center gap-2">
-              <UserCheck className="h-4 w-4" />
-              {t('admin.attendancePatterns')}
-            </h4>
-            <div className="flex items-center gap-4 text-sm">
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 bg-green-600 rounded-full"></div>
-                <span>{currentAttendance.perfect_attendance} {t('attendance.perfect')}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 bg-red-600 rounded-full"></div>
-                <span>{currentAttendance.chronic_absences} {t('attendance.chronic')}</span>
-              </div>
-            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleViewDetailedReport('attendance')}
+            >
+              {t('misc.viewDetails')}
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
           </div>
 
-          <div className="space-y-2">
-            {currentAttendance.daily_pattern.map((day, index) => (
-              <div key={index} className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground capitalize w-20">
-                  {t(`common.${day.day.toLowerCase()}`)}
-                </span>
-                <div className="flex items-center gap-3 flex-1">
-                  <div className="flex-1 bg-secondary rounded-full h-2 mx-4">
-                    <div 
-                      className="h-2 rounded-full transition-all duration-300"
-                      style={{ 
-                        width: `${day.rate}%`,
-                        backgroundColor: day.rate >= 95 ? '#22C55E' : day.rate >= 85 ? '#EAB308' : '#EF4444'
-                      }}
-                    ></div>
-                  </div>
-                  <Badge className={getAttendanceColor(day.rate)} variant="secondary">
-                    {day.rate}%
-                  </Badge>
-                </div>
+          <div className="flex items-center justify-between p-3 bg-accent/30 rounded-lg">
+            <div className="flex items-center gap-3">
+              <GraduationCap className="h-5 w-5 text-purple-600" />
+              <div>
+                <h4 className="font-medium">{t('admin.enrollmentOverview')}</h4>
+                <p className="text-xs text-muted-foreground">
+                  {currentEnrollment.retention_rate}% {t('admin.retentionRate')}
+                </p>
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Enrollment and Demographics */}
-        <div>
-          <h4 className="font-medium mb-3 flex items-center gap-2">
-            <GraduationCap className="h-4 w-4" />
-            {t('admin.enrollmentOverview')}
-          </h4>
-          
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {currentEnrollment.class_distribution.map((level, index) => (
-              <div key={index} className="text-center p-3 border rounded-lg">
-                <div className="text-lg font-bold">{level.students}</div>
-                <div className="text-xs text-muted-foreground">{level.level}</div>
-                <div className="text-xs text-blue-600">{level.classes} {t('admin.classes')}</div>
-              </div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-3">
-            <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <div className="text-lg font-bold text-blue-600">+{currentEnrollment.new_enrollments}</div>
-              <div className="text-xs text-blue-600">{t('admin.newEnrollments')}</div>
             </div>
-            <div className="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-              <div className="text-lg font-bold text-red-600">-{currentEnrollment.withdrawals}</div>
-              <div className="text-xs text-red-600">{t('admin.withdrawals')}</div>
-            </div>
-            <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-              <div className="text-lg font-bold text-green-600">{currentEnrollment.retention_rate}%</div>
-              <div className="text-xs text-green-600">{t('admin.retentionRate')}</div>
-            </div>
-            <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-              <div className="text-lg font-bold text-purple-600">+{currentPerformance.improvement_rate}%</div>
-              <div className="text-xs text-purple-600">{t('admin.improvementRate')}</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Performance Distribution */}
-        <div>
-          <h4 className="font-medium mb-3 flex items-center gap-2">
-            <Target className="h-4 w-4" />
-            {t('admin.performanceDistribution')}
-          </h4>
-          
-          <div className="grid grid-cols-5 gap-2">
-            <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded">
-              <div className="text-lg font-bold text-green-600">{currentPerformance.grade_distribution.excellent}%</div>
-              <div className="text-xs text-green-600">{t('admin.excellent')}</div>
-              <div className="text-xs text-muted-foreground">90-100%</div>
-            </div>
-            <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded">
-              <div className="text-lg font-bold text-blue-600">{currentPerformance.grade_distribution.very_good}%</div>
-              <div className="text-xs text-blue-600">{t('admin.veryGood')}</div>
-              <div className="text-xs text-muted-foreground">80-89%</div>
-            </div>
-            <div className="text-center p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded">
-              <div className="text-lg font-bold text-yellow-600">{currentPerformance.grade_distribution.good}%</div>
-              <div className="text-xs text-yellow-600">{t('admin.good')}</div>
-              <div className="text-xs text-muted-foreground">70-79%</div>
-            </div>
-            <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded">
-              <div className="text-lg font-bold text-orange-600">{currentPerformance.grade_distribution.satisfactory}%</div>
-              <div className="text-xs text-orange-600">{t('admin.satisfactory')}</div>
-              <div className="text-xs text-muted-foreground">60-69%</div>
-            </div>
-            <div className="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded">
-              <div className="text-lg font-bold text-red-600">{currentPerformance.grade_distribution.needs_improvement}%</div>
-              <div className="text-xs text-red-600">{t('admin.needsImprovement')}</div>
-              <div className="text-xs text-muted-foreground">&lt; 60%</div>
-            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleViewDetailedReport('enrollment')}
+            >
+              {t('misc.viewDetails')}
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
           </div>
         </div>
       </CardContent>

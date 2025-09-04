@@ -26,25 +26,20 @@ const AdminDashboard = () => {
               {t('admin.dashboardDescription')}
             </p>
           </div>
-          <QuickActions />
         </div>
 
-        {/* Main Dashboard - Vertical Layout */}
-        <div className="flex flex-col space-y-6">
-          {/* System Overview */}
+        {/* Main Dashboard - Single Column Layout */}
+        <div className="flex flex-col gap-6">
           <SystemOverview />
-          
-          {/* School Statistics */}
-          <SchoolStatistics />
-          
-          {/* System Health */}
-          <SystemHealth />
-          
-          {/* User Management Preview */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <SchoolStatistics />
+            <SystemHealth />
+          </div>
           <UserManagement />
-          
-          {/* Recent Activity */}
-          <RecentActivity />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <QuickActions />
+            <RecentActivity />
+          </div>
         </div>
       </div>
     </DashboardLayout>

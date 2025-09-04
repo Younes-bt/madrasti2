@@ -131,7 +131,7 @@ const SystemHealth = () => {
     {
       name: t('admin.networkLatency'),
       value: systemHealth.server_metrics.network_latency,
-      unit: 'ms',
+      unit: t('units.ms'),
       icon: Wifi,
       thresholds: { good: 50, warning: 100 }
     }

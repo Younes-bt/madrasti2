@@ -12,7 +12,8 @@
     "settings": "Settings",
     "notifications": "Notifications",
     "dashboard": "Dashboard",
-    "welcome": "Welcome"
+    "welcome": "Welcome",
+    "ago": "ago"
   },
   "auth": {
     "login": "Login",
@@ -170,7 +171,9 @@
     "mathematics": "Mathematics",
     "french": "French",
     "chemistry": "Chemistry",
-    "history": "History"
+    "history": "History",
+    "physics": "Physics",
+    "literature": "Literature"
   },
   "difficulty": {
     "easy": "Easy",
@@ -302,7 +305,13 @@
     "last24Hours": "Last 24 Hours",
     "viewAllLogs": "View All Logs",
     "systemSettings": "System Settings",
-    "securityCenter": "Security Center"
+    "securityCenter": "Security Center",
+    "attempts": "attempts",
+    "ipBlocked": "IP Blocked",
+    "present": "present",
+    "absent": "absent",
+    "late": "late",
+    "quickActions": "Quick Actions"
   },
   "parent": {
     "parents": "Parents",
@@ -389,5 +398,15 @@
     "wednesday": "Wednesday",
     "thursday": "Thursday",
     "friday": "Friday"
+  },
+  "levels": {
+    "firstYear": "1st Year",
+    "secondYear": "2nd Year",
+    "thirdYear": "3rd Year",
+    "terminal": "Terminal"
+  },
+  "units": {
+    "ms": "ms",
+    "gb": "GB"
   }
 }

@@ -219,7 +219,7 @@ const RecentActivity = () => {
         </CardDescription>
         
         {/* Filter Tabs */}
-        <div className="flex gap-1 p-1 bg-muted rounded-lg text-xs">
+        <div className="flex flex-wrap gap-1 p-1 bg-muted rounded-lg text-xs">
           {[
             { key: 'all', label: t('common.all'), count: activityCounts.all },
             { key: 'users', label: t('admin.users'), count: activityCounts.users },
@@ -230,14 +230,14 @@ const RecentActivity = () => {
             <button
               key={filter.key}
               onClick={() => setSelectedFilter(filter.key)}
-              className={`px-2 py-1 font-medium rounded-md transition-colors flex items-center gap-1 ${
+              className={`px-1.5 sm:px-2 py-1 font-medium rounded-md transition-colors flex items-center gap-1 text-xs whitespace-nowrap ${
                 selectedFilter === filter.key
                   ? 'bg-background text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              {filter.label}
-              <Badge variant="secondary" className="text-xs px-1 py-0 min-w-4 h-4">
+              <span className="truncate">{filter.label}</span>
+              <Badge variant="secondary" className="text-xs px-1 py-0 min-w-3 h-3 text-xs">
                 {filter.count}
               </Badge>
             </button>
@@ -245,38 +245,40 @@ const RecentActivity = () => {
         </div>
       </CardHeader>
       
-      <CardContent>
+      <CardContent className="card-content">
         <div className="space-y-3 max-h-80 overflow-y-auto">
           {filteredActivities.length > 0 ? (
             filteredActivities.map((activity) => (
               <div
                 key={activity.id}
-                className="flex items-start gap-3 p-3 border rounded-lg bg-card hover:bg-accent/50 transition-colors"
+                className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 border rounded-lg bg-card hover:bg-accent/50 transition-colors"
               >
                 <div className="flex-shrink-0 mt-0.5">
                   {getActivityIcon(activity.type)}
                 </div>
                 
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-medium text-sm">{activity.target_name}</span>
-                    <Badge className={getSeverityColor(activity.severity)}>
-                      {t(`admin.${activity.severity}`)}
-                    </Badge>
-                    <Badge variant="outline" className={`${getCategoryColor(activity.category)} text-xs`}>
-                      {t(`admin.${activity.category}`)}
-                    </Badge>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
+                    <span className="font-medium text-sm truncate">{activity.target_name}</span>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <Badge className={`${getSeverityColor(activity.severity)} text-xs`}>
+                        {t(`admin.${activity.severity}`)}
+                      </Badge>
+                      <Badge variant="outline" className={`${getCategoryColor(activity.category)} text-xs`}>
+                        {t(`admin.${activity.category}`)}
+                      </Badge>
+                    </div>
                   </div>
                   
                   <p className="text-xs text-muted-foreground mb-2">
                     {activity.description}
                   </p>
                   
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span>{activity.user_name}</span>
-                      <span>•</span>
-                      <span>{formatTimeAgo(activity.timestamp)}</span>
+                  <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-2">
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground min-w-0">
+                      <span className="truncate">{activity.user_name}</span>
+                      <span className="flex-shrink-0">•</span>
+                      <span className="flex-shrink-0">{formatTimeAgo(activity.timestamp)}</span>
                     </div>
                     
                     {activity.details && (
@@ -284,7 +286,7 @@ const RecentActivity = () => {
                         size="sm"
                         variant="ghost"
                         onClick={() => handleViewDetails(activity)}
-                        className="h-6 px-2 text-xs"
+                        className="h-6 px-2 text-xs flex-shrink-0 self-start xs:self-center"
                       >
                         {t('common.details')}
                       </Button>
@@ -302,9 +304,9 @@ const RecentActivity = () => {
                       )}
                       {activity.type === 'failed_login_attempts' && (
                         <div className="space-y-1">
-                          <div>🔢 {activity.details.attempts} attempts</div>
+                          <div>🔢 {activity.details.attempts} {t('admin.attempts')}</div>
                           <div>🌐 {activity.details.ip_address}</div>
-                          {activity.details.blocked && <div>🚫 IP Blocked</div>}
+                          {activity.details.blocked && <div>🚫 {t('admin.ipBlocked')}</div>}
                         </div>
                       )}
                       {activity.type === 'system_backup' && (
@@ -315,9 +317,9 @@ const RecentActivity = () => {
                       )}
                       {activity.type === 'attendance_session' && (
                         <div className="space-y-1">
-                          <div>✅ {activity.details.present} present</div>
-                          <div>❌ {activity.details.absent} absent</div>
-                          <div>⏰ {activity.details.late} late</div>
+                          <div>✅ {activity.details.present} {t('admin.present')}</div>
+                          <div>❌ {activity.details.absent} {t('admin.absent')}</div>
+                          <div>⏰ {activity.details.late} {t('admin.late')}</div>
                         </div>
                       )}
                     </div>
@@ -336,7 +338,7 @@ const RecentActivity = () => {
         </div>
         
         {filteredActivities.length > 0 && (
-          <div className="flex justify-between items-center pt-3 mt-3 border-t">
+          <div className="flex flex-col xs:flex-row justify-between items-start xs:items-center gap-2 pt-3 mt-3 border-t">
             <div className="text-xs text-muted-foreground">
               {filteredActivities.length} {t('admin.activities')} • {t('admin.last24Hours')}
             </div>
@@ -344,6 +346,7 @@ const RecentActivity = () => {
               variant="outline"
               size="sm"
               onClick={handleViewAllLogs}
+              className="flex-shrink-0"
             >
               {t('admin.viewAllLogs')}
               <ChevronRight className="h-4 w-4 ml-1" />

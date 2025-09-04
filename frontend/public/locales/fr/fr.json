@@ -12,7 +12,8 @@
     "settings": "Paramètres",
     "notifications": "Notifications",
     "dashboard": "Tableau de bord",
-    "welcome": "Bienvenue"
+    "welcome": "Bienvenue",
+    "ago": "il y a"
   },
   "auth": {
     "login": "Connexion",
@@ -170,7 +171,9 @@
     "mathematics": "Mathématiques",
     "french": "Français",
     "chemistry": "Chimie",
-    "history": "Histoire"
+    "history": "Histoire",
+    "physics": "Physique",
+    "literature": "Littérature"
   },
   "difficulty": {
     "easy": "Facile",
@@ -302,7 +305,13 @@
     "last24Hours": "Dernières 24 heures",
     "viewAllLogs": "Voir tous les journaux",
     "systemSettings": "Paramètres système",
-    "securityCenter": "Centre de sécurité"
+    "securityCenter": "Centre de sécurité",
+    "attempts": "tentatives",
+    "ipBlocked": "IP bloquée",
+    "present": "présent",
+    "absent": "absent",
+    "late": "en retard",
+    "quickActions": "Actions rapides"
   },
   "parent": {
     "parents": "Parents",
@@ -389,5 +398,15 @@
     "wednesday": "Mercredi",
     "thursday": "Jeudi",
     "friday": "Vendredi"
+  },
+  "levels": {
+    "firstYear": "1ère Année",
+    "secondYear": "2ème Année",
+    "thirdYear": "3ème Année",
+    "terminal": "Terminale"
+  },
+  "units": {
+    "ms": "ms",
+    "gb": "Go"
   }
 }

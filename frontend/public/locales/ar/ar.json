@@ -12,7 +12,8 @@
     "settings": "الإعدادات",
     "notifications": "الإشعارات",
     "dashboard": "لوحة التحكم",
-    "welcome": "مرحباً"
+    "welcome": "مرحباً",
+    "ago": "منذ"
   },
   "auth": {
     "login": "تسجيل الدخول",
@@ -108,7 +109,6 @@
     "saturday": "السبت",
     "sunday": "الأحد",
     "remaining": "متبقي",
-    "ago": "مضت",
     "justNow": "الآن"
   },
   "status": {
@@ -170,7 +170,9 @@
     "mathematics": "الرياضيات",
     "french": "الفرنسية",
     "chemistry": "الكيمياء",
-    "history": "التاريخ"
+    "history": "التاريخ",
+    "physics": "الفيزياء",
+    "literature": "الأدب"
   },
   "difficulty": {
     "easy": "سهل",
@@ -302,7 +304,13 @@
     "last24Hours": "آخر 24 ساعة",
     "viewAllLogs": "عرض جميع السجلات",
     "systemSettings": "إعدادات النظام",
-    "securityCenter": "مركز الأمان"
+    "securityCenter": "مركز الأمان",
+    "attempts": "محاولات",
+    "ipBlocked": "IP محظور",
+    "present": "حاضر",
+    "absent": "غائب",
+    "late": "متأخر",
+    "quickActions": "إجراءات سريعة"
   },
   "parent": {
     "parents": "أولياء الأمور",
@@ -389,5 +397,15 @@
     "wednesday": "الأربعاء",
     "thursday": "الخميس",
     "friday": "الجمعة"
+  },
+  "levels": {
+    "firstYear": "السنة الأولى",
+    "secondYear": "السنة الثانية",
+    "thirdYear": "السنة الثالثة",
+    "terminal": "النهائي"
+  },
+  "units": {
+    "ms": "مللي ثانية",
+    "gb": "جيجابايت"
   }
 }

@@ -14,6 +14,9 @@ export default {
       },
     },
     extend: {
+      screens: {
+        'xs': '475px',
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -96,7 +99,7 @@ export default {
       },
       fontFamily: {
         'sans': ['Inter', 'system-ui', 'sans-serif'],
-        'arabic': ['Noto Sans Arabic', 'system-ui', 'sans-serif'],
+        'arabic': ['Cairo', 'system-ui', 'sans-serif'],
       },
       animation: {
         'spin': 'spin 1s linear infinite',

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700&family=Rubik:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700&family=Cairo:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @layer base {
@@ -73,18 +73,14 @@
 
   html {
     scroll-behavior: smooth;
-  }
-
-  /* RTL Support - Content only, keeping layout LTR */
-  .rtl-content {
-    font-family: 'Rubik', system-ui, sans-serif;
-  }
-
-  :not(.rtl-content) {
     font-family: 'Nunito', system-ui, sans-serif;
   }
 
-  /* RTL styles for card content only */
+  html.rtl-content {
+    font-family: 'Cairo', system-ui, sans-serif;
+  }
+
+  /* RTL Support - Content only, keeping layout LTR */
   .rtl-content .card-content {
     direction: rtl;
     text-align: right;

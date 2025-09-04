@@ -1,4 +1,5 @@
 import React from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card'
 import { Button } from '../../ui/button'
 import { useLanguage } from '../../../hooks/useLanguage'
 import { 
@@ -6,8 +7,7 @@ import {
   Settings,
   BarChart3,
   Shield,
-  Database,
-  FileText
+  ChevronRight
 } from 'lucide-react'
 
 const QuickActions = () => {
@@ -18,58 +18,54 @@ const QuickActions = () => {
       id: 'manage-users',
       label: t('admin.manageUsers'),
       icon: Users,
-      variant: 'default',
-      onClick: () => {
-        console.log('Navigate to user management')
-      }
+      onClick: () => console.log('Navigate to user management')
     },
     {
       id: 'system-settings',
       label: t('admin.systemSettings'),
       icon: Settings,
-      variant: 'outline',
-      onClick: () => {
-        console.log('Navigate to system settings')
-      }
+      onClick: () => console.log('Navigate to system settings')
     },
     {
       id: 'view-reports',
       label: t('admin.viewReports'),
       icon: BarChart3,
-      variant: 'outline',
-      onClick: () => {
-        console.log('Navigate to system reports')
-      }
+      onClick: () => console.log('Navigate to system reports')
     },
     {
       id: 'security-center',
       label: t('admin.securityCenter'),
       icon: Shield,
-      variant: 'outline',
-      onClick: () => {
-        console.log('Navigate to security center')
-      }
+      onClick: () => console.log('Navigate to security center')
     }
   ]
 
   return (
-    <div className="flex flex-col sm:flex-row gap-2">
-      {actions.map((action) => {
-        const Icon = action.icon
-        return (
-          <Button
-            key={action.id}
-            variant={action.variant}
-            size="sm"
-            onClick={action.onClick}
-            className="flex items-center gap-2"
-          >
-            <Icon className="h-4 w-4" />
-            {action.label}
-          </Button>
-        )
-      })}
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>{t('admin.quickActions')}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {actions.map((action) => {
+          const Icon = action.icon
+          return (
+            <Button
+              key={action.id}
+              variant="outline"
+              size="sm"
+              onClick={action.onClick}
+              className="w-full flex justify-between items-center"
+            >
+              <div className="flex items-center gap-2">
+                <Icon className="h-4 w-4" />
+                <span>{action.label}</span>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </Button>
+          )
+        })}
+      </CardContent>
+    </Card>
   )
 }
 
