@@ -105,104 +105,92 @@ const LoginForm = ({ onSuccess = () => {} }) => {
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto shadow-lg">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold text-center">
-          {t('auth.login')}
-        </CardTitle>
-        <CardDescription className="text-center text-muted-foreground">
-          {t('auth.loginDescription', 'Enter your credentials to access your account')}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Email Field */}
-          <div className="space-y-2">
-            <label 
-              htmlFor="email" 
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-foreground"
-            >
-              {t('auth.email')}
-            </label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              disabled={authLoading}
-              placeholder={getPlaceholder('email', 'Enter your email')}
-              className={`${formErrors.email ? 'border-red-500 focus-visible:ring-red-500' : ''} ${isRTL ? 'text-right' : 'text-left'}`}
-              dir={isRTL ? 'rtl' : 'ltr'}
-            />
-            {formErrors.email && (
-              <p className="text-sm text-red-500 mt-1">{formErrors.email}</p>
-            )}
-          </div>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Email Field */}
+      <div className="space-y-2">
+        <label 
+          htmlFor="email" 
+          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-foreground"
+        >
+          {t('auth.email')}
+        </label>
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          value={formData.email}
+          onChange={handleInputChange}
+          disabled={authLoading}
+          placeholder={getPlaceholder('email', 'Enter your email')}
+          className={`${formErrors.email ? 'border-red-500 focus-visible:ring-red-500' : ''} ${isRTL ? 'text-right' : 'text-left'}`}
+          dir={isRTL ? 'rtl' : 'ltr'}
+        />
+        {formErrors.email && (
+          <p className="text-sm text-red-500 mt-1">{formErrors.email}</p>
+        )}
+      </div>
 
-          {/* Password Field */}
-          <div className="space-y-2">
-            <label 
-              htmlFor="password" 
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-foreground"
-            >
-              {t('auth.password')}
-            </label>
-            <div className="relative">
-              <Input
-                id="password"
-                name="password"
-                type={showPassword ? 'text' : 'password'}
-                value={formData.password}
-                onChange={handleInputChange}
-                disabled={authLoading}
-                placeholder={getPlaceholder('password', 'Enter your password')}
-                className={`${formErrors.password ? 'border-red-500 focus-visible:ring-red-500' : ''} ${isRTL ? 'text-right pr-10' : 'text-left pr-10'}`}
-                dir={isRTL ? 'rtl' : 'ltr'}
-              />
-              <button
-                type="button"
-                onClick={togglePasswordVisibility}
-                className={`absolute top-1/2 transform -translate-y-1/2 ${isRTL ? 'left-3' : 'right-3'} text-muted-foreground hover:text-foreground focus:outline-none`}
-                tabIndex={-1}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </button>
-            </div>
-            {formErrors.password && (
-              <p className="text-sm text-red-500 mt-1">{formErrors.password}</p>
-            )}
-          </div>
-
-          {/* Auth Error Display */}
-          {authError && (
-            <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3">
-              <p className="text-sm text-destructive text-center">{t(authError)}</p>
-            </div>
-          )}
-
-          {/* Submit Button */}
-          <Button
-            type="submit"
-            className="w-full bg-blue-600 text-white cursor-pointer hover:bg-blue-700 font-semibold"
+      {/* Password Field */}
+      <div className="space-y-2">
+        <label 
+          htmlFor="password" 
+          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-foreground"
+        >
+          {t('auth.password')}
+        </label>
+        <div className="relative">
+          <Input
+            id="password"
+            name="password"
+            type={showPassword ? 'text' : 'password'}
+            value={formData.password}
+            onChange={handleInputChange}
             disabled={authLoading}
+            placeholder={getPlaceholder('password', 'Enter your password')}
+            className={`${formErrors.password ? 'border-red-500 focus-visible:ring-red-500' : ''} ${isRTL ? 'text-right pr-10' : 'text-left pr-10'}`}
+            dir={isRTL ? 'rtl' : 'ltr'}
+          />
+          <button
+            type="button"
+            onClick={togglePasswordVisibility}
+            className={`absolute top-1/2 transform -translate-y-1/2 ${isRTL ? 'left-3' : 'right-3'} text-muted-foreground hover:text-foreground focus:outline-none`}
+            tabIndex={-1}
           >
-            {authLoading ? (
-              <div className="flex items-center justify-center space-x-2">
-                <LoadingSpinner size="sm" />
-                <span>{t('common.loading')}</span>
-              </div>
+            {showPassword ? (
+              <EyeOff className="h-4 w-4" />
             ) : (
-              t('auth.login')
+              <Eye className="h-4 w-4" />
             )}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+          </button>
+        </div>
+        {formErrors.password && (
+          <p className="text-sm text-red-500 mt-1">{formErrors.password}</p>
+        )}
+      </div>
+
+      {/* Auth Error Display */}
+      {authError && (
+        <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3">
+          <p className="text-sm text-destructive text-center">{t(authError)}</p>
+        </div>
+      )}
+
+      {/* Submit Button */}
+      <Button
+        type="submit"
+        className="w-full bg-blue-600 text-white cursor-pointer hover:bg-blue-700 font-semibold"
+        disabled={authLoading}
+      >
+        {authLoading ? (
+          <div className="flex items-center justify-center space-x-2">
+            <LoadingSpinner size="sm" />
+            <span>{t('common.loading')}</span>
+          </div>
+        ) : (
+          t('auth.login')
+        )}
+      </Button>
+    </form>
   )
 }
 

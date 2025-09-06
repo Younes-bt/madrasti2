@@ -17,7 +17,25 @@ import {
   Shield,
   Car,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Building2,
+  UserCog,
+  School,
+  Calendar1,
+  BookText,
+  PenTool,
+  ClipboardCheck,
+  MessageSquare,
+  Mail,
+  AlertTriangle,
+  Cog,
+  Key,
+  HardDrive,
+  Network,
+  Layers,
+  Users2,
+  CarFront,
+  Monitor
 } from 'lucide-react'
 import { Badge } from '../ui/badge'
 import { useLanguage } from '../../hooks/useLanguage'
@@ -73,40 +91,91 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
 
     const roleSpecificItems = {
       [USER_ROLES.ADMIN]: [
+        // 🏫 My School Management
         {
-          key: 'users',
-          icon: Users,
-          label: t('admin.userManagement'),
-          tooltip: t('admin.userManagement'),
+          key: 'school-management',
+          icon: Building2,
+          label: t('adminSidebar.schoolManagement.title'),
+          tooltip: t('adminSidebar.schoolManagement.tooltip'),
           items: [
-            { key: 'users-list', label: t('admin.usersFound'), path: ROUTES.ADMIN.USERS },
-            { key: 'users-create', label: t('admin.createUser'), path: '/admin/users/create' },
+            { key: 'school-details', label: t('adminSidebar.schoolManagement.schoolDetails'), path: '/admin/school-management/school-details' },
+            { key: 'team-staff', label: t('adminSidebar.schoolManagement.teamStaff'), path: '/admin/school-management/staff' },
+            { key: 'teachers', label: t('adminSidebar.schoolManagement.teachers'), path: '/admin/school-management/teachers' },
+            { key: 'students', label: t('adminSidebar.schoolManagement.students'), path: '/admin/school-management/students' },
+            { key: 'parents', label: t('adminSidebar.schoolManagement.parents'), path: '/admin/school-management/parents' },
+            { key: 'rooms', label: t('adminSidebar.schoolManagement.rooms'), path: '/admin/school-management/rooms' },
+            { key: 'vehicles', label: t('adminSidebar.schoolManagement.vehicles'), path: '/admin/school-management/vehicles' },
+            { key: 'equipment', label: t('adminSidebar.schoolManagement.equipment'), path: '/admin/school-management/equipment' },
           ]
         },
+        // 🎓 Academic Management
         {
-          key: 'school',
+          key: 'academic-management',
           icon: GraduationCap,
-          label: t('admin.schoolStatistics'),
-          tooltip: t('admin.schoolStatistics'),
+          label: t('adminSidebar.academicManagement.title'),
+          tooltip: t('adminSidebar.academicManagement.tooltip'),
           items: [
-            { key: 'school-config', label: t('admin.settings'), path: ROUTES.ADMIN.SCHOOLS },
-            { key: 'classes', label: t('admin.classes'), path: '/admin/classes' },
-            { key: 'subjects', label: t('homework.subject'), path: '/admin/subjects' },
+            { key: 'academic-years', label: t('adminSidebar.academicManagement.academicYears'), path: '/admin/academic-management/academic-years' },
+            { key: 'educational-levels', label: t('adminSidebar.academicManagement.educationalLevels'), path: '/admin/academic-management/educational-levels' },
+            { key: 'grades', label: t('adminSidebar.academicManagement.grades'), path: '/admin/academic-management/grades' },
+            { key: 'classes', label: t('adminSidebar.academicManagement.classes'), path: '/admin/academic-management/classes' },
+            { key: 'subjects', label: t('adminSidebar.academicManagement.subjects'), path: '/admin/academic-management/subjects' },
+            { key: 'timetables', label: t('adminSidebar.academicManagement.timetables'), path: '/admin/academic-management/timetables' },
           ]
         },
+        // 📚 Education Management
         {
-          key: 'reports',
-          icon: BarChart3,
-          label: t('admin.viewReports'),
-          tooltip: t('admin.viewReports'),
-          path: ROUTES.ADMIN.REPORTS,
+          key: 'education-management',
+          icon: BookOpen,
+          label: t('adminSidebar.educationManagement.title'),
+          tooltip: t('adminSidebar.educationManagement.tooltip'),
+          items: [
+            { key: 'lessons-courses', label: t('adminSidebar.educationManagement.lessonsCourses'), path: '/admin/education-management/lessons' },
+            { key: 'assignments', label: t('adminSidebar.educationManagement.assignments'), path: '/admin/education-management/assignments' },
+            { key: 'homework', label: t('adminSidebar.educationManagement.homework'), path: '/admin/education-management/homework' },
+            { key: 'exams', label: t('adminSidebar.educationManagement.exams'), path: '/admin/education-management/exams' },
+            { key: 'grading-system', label: t('adminSidebar.educationManagement.gradingSystem'), path: '/admin/education-management/grading-system' },
+          ]
         },
+        // 📊 Reports & Analytics
         {
-          key: 'settings',
+          key: 'reports-analytics',
+          icon: BarChart3,
+          label: t('adminSidebar.reportsAnalytics.title'),
+          tooltip: t('adminSidebar.reportsAnalytics.tooltip'),
+          items: [
+            { key: 'attendance-reports', label: t('adminSidebar.reportsAnalytics.attendanceReports'), path: '/admin/reports/attendance' },
+            { key: 'academic-performance', label: t('adminSidebar.reportsAnalytics.academicPerformance'), path: '/admin/reports/academic-performance' },
+            { key: 'financial-reports', label: t('adminSidebar.reportsAnalytics.financialReports'), path: '/admin/reports/financial' },
+            { key: 'custom-report-builder', label: t('adminSidebar.reportsAnalytics.customReportBuilder'), path: '/admin/reports/custom-builder' },
+            { key: 'comparative-analysis', label: t('adminSidebar.reportsAnalytics.comparativeAnalysis'), path: '/admin/reports/comparative-analysis' },
+          ]
+        },
+        // 📢 Communications & Notifications
+        {
+          key: 'communications',
+          icon: MessageSquare,
+          label: t('adminSidebar.communications.title'),
+          tooltip: t('adminSidebar.communications.tooltip'),
+          items: [
+            { key: 'announcements', label: t('adminSidebar.communications.announcements'), path: '/admin/communications/announcements' },
+            { key: 'email-templates', label: t('adminSidebar.communications.emailTemplates'), path: '/admin/communications/email-templates' },
+            { key: 'parent-notifications', label: t('adminSidebar.communications.parentNotifications'), path: '/admin/communications/parent-notifications' },
+            { key: 'emergency-alerts', label: t('adminSidebar.communications.emergencyAlerts'), path: '/admin/communications/emergency-alerts' },
+          ]
+        },
+        // ⚙️ System Settings
+        {
+          key: 'system-settings',
           icon: Settings,
-          label: t('admin.systemSettings'),
-          tooltip: t('admin.systemSettings'),
-          path: ROUTES.ADMIN.SETTINGS,
+          label: t('adminSidebar.systemSettings.title'),
+          tooltip: t('adminSidebar.systemSettings.tooltip'),
+          items: [
+            { key: 'general-settings', label: t('adminSidebar.systemSettings.generalSettings'), path: '/admin/settings/general' },
+            { key: 'user-permissions', label: t('adminSidebar.systemSettings.userPermissions'), path: '/admin/settings/permissions' },
+            { key: 'integration-settings', label: t('adminSidebar.systemSettings.integrationSettings'), path: '/admin/settings/integrations' },
+            { key: 'backup-restore', label: t('adminSidebar.systemSettings.backupRestore'), path: '/admin/settings/backup-restore' },
+          ]
         }
       ],
 

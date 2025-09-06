@@ -12,9 +12,9 @@ from django.contrib.auth import get_user_model
 
 from .models import (
     SchoolTimetable, TimetableSession, AttendanceSession, AttendanceRecord,
-    StudentAbsenceFlag, StudentParentRelation, StudentEnrollment,
-    AttendanceNotification
+    StudentAbsenceFlag, StudentParentRelation, AttendanceNotification
 )
+from users.models import StudentEnrollment
 from .serializers import (
     # Timetable Serializers
     SchoolTimetableSerializer, SchoolTimetableCreateSerializer,
@@ -33,7 +33,6 @@ from .serializers import (
     # Flag and Relationship Serializers
     StudentAbsenceFlagSerializer, ClearAbsenceFlagSerializer,
     StudentParentRelationSerializer, StudentParentRelationCreateSerializer,
-    StudentEnrollmentSerializer, StudentEnrollmentCreateSerializer,
     
     # Notification and Statistics Serializers
     AttendanceNotificationSerializer, AttendanceStatisticsSerializer,
@@ -520,45 +519,7 @@ class StudentParentRelationViewSet(viewsets.ModelViewSet):
         
         return queryset.filter(is_active=True)
 
-# =====================================
-# STUDENT ENROLLMENT VIEWSET
-# =====================================
-
-class StudentEnrollmentViewSet(viewsets.ModelViewSet):
-    """ViewSet for student enrollments"""
-    queryset = StudentEnrollment.objects.all()
-    permission_classes = [IsTeacherOrAdmin]
-    
-    def get_serializer_class(self):
-        if self.action == 'create':
-            return StudentEnrollmentCreateSerializer
-        return StudentEnrollmentSerializer
-    
-    def get_queryset(self):
-        queryset = StudentEnrollment.objects.select_related(
-            'student', 'school_class', 'academic_year'
-        )
-        
-        # Filter by class
-        class_id = self.request.query_params.get('class_id')
-        if class_id:
-            queryset = queryset.filter(school_class_id=class_id)
-        
-        # Filter by student
-        student_id = self.request.query_params.get('student_id')
-        if student_id:
-            queryset = queryset.filter(student_id=student_id)
-        
-        # Filter by academic year
-        year_id = self.request.query_params.get('academic_year')
-        if year_id:
-            queryset = queryset.filter(academic_year_id=year_id)
-        
-        # Active enrollments by default
-        if self.request.query_params.get('include_inactive') != 'true':
-            queryset = queryset.filter(is_active=True)
-        
-        return queryset.order_by('student__last_name', 'student__first_name')
+# StudentEnrollmentViewSet moved to users.views
 
 # =====================================
 # NOTIFICATION VIEWSET

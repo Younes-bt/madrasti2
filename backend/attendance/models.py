@@ -163,12 +163,13 @@ class AttendanceSession(models.Model):
             # Create attendance records for all students in the class
             from django.contrib.auth import get_user_model
             User = get_user_model()
-            students = User.objects.filter(
-                role='STUDENT',
-                student_enrollments__school_class=self.timetable_session.timetable.school_class,
-                student_enrollments__academic_year=self.timetable_session.timetable.academic_year,
-                student_enrollments__is_active=True
-            )
+            from users.models import StudentEnrollment
+            enrollments = StudentEnrollment.objects.filter(
+                school_class=self.timetable_session.timetable.school_class,
+                academic_year=self.timetable_session.timetable.academic_year,
+                is_active=True
+            ).select_related('student')
+            students = [enrollment.student for enrollment in enrollments]
             
             for student in students:
                 AttendanceRecord.objects.get_or_create(
@@ -373,39 +374,7 @@ class StudentParentRelation(models.Model):
     def __str__(self):
         return f"{self.parent.full_name} - {self.student.full_name} ({self.get_relationship_type_display()})"
 
-# =====================================
-# STUDENT ENROLLMENT MODEL (if not exists)
-# =====================================
-
-class StudentEnrollment(models.Model):
-    """Student enrollment in a specific class for an academic year"""
-    student = models.ForeignKey(
-        settings.AUTH_USER_MODEL, 
-        on_delete=models.CASCADE, 
-        related_name='student_enrollments',
-        limit_choices_to={'role': 'STUDENT'}
-    )
-    school_class = models.ForeignKey('schools.SchoolClass', on_delete=models.CASCADE, related_name='student_enrollments')
-    academic_year = models.ForeignKey('schools.AcademicYear', on_delete=models.CASCADE, related_name='student_enrollments')
-    
-    # Enrollment details
-    enrollment_date = models.DateField(default=date.today)
-    is_active = models.BooleanField(default=True)
-    
-    # Student number/ID for the class
-    student_number = models.CharField(max_length=20, blank=True, help_text="Student number in this class")
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    class Meta:
-        unique_together = ['student', 'school_class', 'academic_year']
-        ordering = ['student__last_name', 'student__first_name']
-        verbose_name = "Student Enrollment"
-        verbose_name_plural = "Student Enrollments"
-    
-    def __str__(self):
-        return f"{self.student.full_name} - {self.school_class.name} ({self.academic_year.year})"
+# StudentEnrollment has been moved to the users app
 
 # =====================================
 # NOTIFICATION MODEL FOR ATTENDANCE

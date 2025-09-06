@@ -6,9 +6,9 @@ from django.db import transaction
 from django.utils import timezone
 from .models import (
     SchoolTimetable, TimetableSession, AttendanceSession, AttendanceRecord,
-    StudentAbsenceFlag, StudentParentRelation, StudentEnrollment,
-    AttendanceNotification
+    StudentAbsenceFlag, StudentParentRelation, AttendanceNotification
 )
+from users.models import StudentEnrollment
 
 User = get_user_model()
 
@@ -278,29 +278,7 @@ class StudentParentRelationCreateSerializer(serializers.ModelSerializer):
 # STUDENT ENROLLMENT SERIALIZERS
 # =====================================
 
-class StudentEnrollmentSerializer(serializers.ModelSerializer):
-    """Student enrollment"""
-    student = UserBasicSerializer(read_only=True)
-    school_class_name = serializers.CharField(source='school_class.name', read_only=True)
-    academic_year_name = serializers.CharField(source='academic_year.year', read_only=True)
-    
-    class Meta:
-        model = StudentEnrollment
-        fields = [
-            'id', 'student', 'school_class', 'school_class_name',
-            'academic_year', 'academic_year_name', 'enrollment_date',
-            'is_active', 'student_number', 'created_at'
-        ]
-
-class StudentEnrollmentCreateSerializer(serializers.ModelSerializer):
-    """Create student enrollment"""
-    
-    class Meta:
-        model = StudentEnrollment
-        fields = [
-            'student', 'school_class', 'academic_year', 'enrollment_date',
-            'student_number'
-        ]
+# StudentEnrollment serializers moved to users.serializers
 
 # =====================================
 # NOTIFICATION SERIALIZERS

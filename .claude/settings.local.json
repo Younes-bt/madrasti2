@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(/D:\\OpiComTech\\Projects\\madrasti2\\frontend\\docs/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -21,7 +21,9 @@ const API_CONFIG = {
 // Get current environment base URL
 const getBaseURL = () => {
   const env = import.meta.env.MODE || 'development';
-  return API_CONFIG.baseURL[env] || API_CONFIG.baseURL.development;
+  const baseURL = API_CONFIG.baseURL[env] || API_CONFIG.baseURL.development;
+  console.log('API Config - Environment:', env, 'Base URL:', baseURL);
+  return baseURL;
 };
 
 // Create Axios instance
@@ -130,7 +132,9 @@ api.interceptors.response.use(
 // Token refresh function
 const refreshAccessToken = async (refreshToken) => {
   try {
-    const response = await axios.post(`${getBaseURL()}token/refresh/`, {
+    // Use the configured api instance instead of raw axios
+    // This ensures proper proxy routing in development
+    const response = await api.post('token/refresh/', {
       refresh: refreshToken
     });
 

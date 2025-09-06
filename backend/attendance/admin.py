@@ -3,8 +3,7 @@
 from django.contrib import admin
 from .models import (
     SchoolTimetable, TimetableSession, AttendanceSession, AttendanceRecord,
-    StudentAbsenceFlag, StudentParentRelation, StudentEnrollment,
-    AttendanceNotification
+    StudentAbsenceFlag, StudentParentRelation, AttendanceNotification
 )
 
 @admin.register(SchoolTimetable)
@@ -56,12 +55,7 @@ class StudentParentRelationAdmin(admin.ModelAdmin):
     list_filter = ['relationship_type', 'is_primary_contact', 'is_active']
     search_fields = ['student__first_name', 'student__last_name', 'parent__first_name', 'parent__last_name']
 
-@admin.register(StudentEnrollment)
-class StudentEnrollmentAdmin(admin.ModelAdmin):
-    list_display = ['student', 'school_class', 'academic_year', 'enrollment_date', 'is_active']
-    list_filter = ['is_active', 'academic_year', 'school_class']
-    search_fields = ['student__first_name', 'student__last_name', 'school_class__name']
-    date_hierarchy = 'enrollment_date'
+# StudentEnrollment admin moved to users.admin
 
 @admin.register(AttendanceNotification)
 class AttendanceNotificationAdmin(admin.ModelAdmin):

@@ -1,10 +1,17 @@
 # backend/users/urls.py
 
-from django.urls import path
-from .views import RegisterView, ProfileView, LoginView
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import RegisterView, ProfileView, LoginView, UserViewSet, StudentEnrollmentViewSet
+
+# Create router for viewsets
+router = DefaultRouter()
+router.register(r'users', UserViewSet, basename='users')
+router.register(r'enrollments', StudentEnrollmentViewSet, basename='student-enrollments')
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='user_register'),
     path('profile/', ProfileView.as_view(), name='user_profile'),
-    path('login/', LoginView.as_view(), name='user_login'),  # Add this line
+    path('login/', LoginView.as_view(), name='user_login'),
+    path('', include(router.urls)),  # Include enrollment endpoints
 ]

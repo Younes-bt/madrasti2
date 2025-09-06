@@ -15,8 +15,7 @@ router.register(r'timetable-sessions', views.TimetableSessionViewSet, basename='
 router.register(r'sessions', views.AttendanceSessionViewSet, basename='attendance-sessions')
 router.register(r'records', views.AttendanceRecordViewSet, basename='attendance-records')
 
-# Student Management Routes
-router.register(r'enrollments', views.StudentEnrollmentViewSet, basename='student-enrollments')
+# Student Management Routes (enrollments moved to users app)
 router.register(r'parent-relations', views.StudentParentRelationViewSet, basename='parent-relations')
 
 # Absence Flag Routes  
