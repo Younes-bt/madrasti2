@@ -18,6 +18,18 @@ import StaffManagementPage from './pages/admin/StaffManagementPage'
 import AddStaffPage from './pages/admin/AddStaffPage'
 import EditStaffPage from './pages/admin/EditStaffPage'
 import ViewStaffPage from './pages/admin/ViewStaffPage'
+import TeachersManagementPage from './pages/admin/TeachersManagementPage'
+import AddTeacherPage from './pages/admin/AddTeacherPage'
+import EditTeacherPage from './pages/admin/EditTeacherPage'
+import ViewTeacherPage from './pages/admin/ViewTeacherPage'
+import StudentsManagementPage from './pages/admin/StudentsManagementPage'
+import AddStudentPage from './pages/admin/AddStudentPage'
+import EditStudentPage from './pages/admin/EditStudentPage'
+import ViewStudentPage from './pages/admin/ViewStudentPage'
+import ParentsManagementPage from './pages/admin/ParentsManagementPage'
+import AddParentPage from './pages/admin/AddParentPage'
+import EditParentPage from './pages/admin/EditParentPage'
+import ViewParentPage from './pages/admin/ViewParentPage'
 
 // Import feature pages
 import LessonsPage from './pages/lessons/LessonsPage'
@@ -141,7 +153,31 @@ const AppRoutes = () => {
         path="/admin/school-management/teachers" 
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
-            <div>Teachers Management Page - Coming Soon</div>
+            <TeachersManagementPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/school-management/teachers/add" 
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <AddTeacherPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/school-management/teachers/edit/:teacherId" 
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <EditTeacherPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/school-management/teachers/view/:teacherId" 
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <ViewTeacherPage />
           </ProtectedRoute>
         } 
       />
@@ -149,7 +185,31 @@ const AppRoutes = () => {
         path="/admin/school-management/students" 
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
-            <div>Students Management Page - Coming Soon</div>
+            <StudentsManagementPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/school-management/students/add" 
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <AddStudentPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/school-management/students/edit/:studentId" 
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <EditStudentPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/school-management/students/view/:studentId" 
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <ViewStudentPage />
           </ProtectedRoute>
         } 
       />
@@ -157,7 +217,31 @@ const AppRoutes = () => {
         path="/admin/school-management/parents" 
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
-            <div>Parents Management Page - Coming Soon</div>
+            <ParentsManagementPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/school-management/parents/add" 
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <AddParentPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/school-management/parents/edit/:parentId" 
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <EditParentPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/school-management/parents/view/:parentId" 
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <ViewParentPage />
           </ProtectedRoute>
         } 
       />
