@@ -372,6 +372,7 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
               <SidebarMenuButton
                 tooltip={item.tooltip}
                 isActive={isActive}
+                className="cursor-pointer"
               >
                 {item.icon && <item.icon />}
                 <span>{item.label}</span>
@@ -390,6 +391,7 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
                     <SidebarMenuSubButton
                       isActive={subItem.path === currentPath}
                       onClick={() => handleNavigation(subItem.path)}
+                      className="cursor-pointer hover:bg-blue-100 hover:text-black"
                     >
                       <span>{subItem.label}</span>
                       {subItem.badge && (

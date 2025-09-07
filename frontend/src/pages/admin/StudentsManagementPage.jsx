@@ -14,7 +14,10 @@ import {
   Trash2,
   UserCheck,
   UserX,
-  GraduationCap
+  GraduationCap,
+  CheckCircle,
+  XCircle,
+  UserPlus
 } from 'lucide-react';
 import AdminPageLayout from '../../components/admin/layout/AdminPageLayout';
 import { Button } from '../../components/ui/button';
@@ -22,24 +25,30 @@ import { Input } from '../../components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '../../components/ui/dropdown-menu';
 import { apiMethods } from '../../services/api';
 import { toast } from 'sonner';
 
+const StatCard = ({ icon, label, value, colorClass, description }) => (
+  <Card className="bg-card border-border shadow-sm hover:shadow-lg transition-shadow duration-300 rounded-xl">
+    <CardHeader className="flex flex-row items-center justify-between pb-2">
+      <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
+      {icon}
+    </CardHeader>
+    <CardContent>
+      <div className={`text-3xl font-bold ${colorClass}`}>{value}</div>
+      <p className="text-xs text-muted-foreground mt-1">{description}</p>
+    </CardContent>
+  </Card>
+);
+
 const StudentsManagementPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [students, setStudents] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [pagination, setPagination] = useState({
-    count: 0,
-    currentPage: 1,
-    totalPages: 1,
-    pageSize: 20
-  });
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
@@ -86,14 +95,6 @@ const StudentsManagementPage = () => {
         inactive: studentsData.length - activeCount
       });
 
-      // Update pagination for display purposes
-      setPagination({
-        count: studentsData.length,
-        currentPage: 1,
-        totalPages: 1,
-        pageSize: studentsData.length
-      });
-
     } catch (error) {
       console.error('Failed to fetch students:', error);
       console.error('Error response:', error.response);
@@ -108,9 +109,8 @@ const StudentsManagementPage = () => {
     fetchStudents();
   }, []);
 
-  // Client-side filtering - no API calls needed
+  // Client-side filtering
   const filteredStudents = students.filter(student => {
-    // Apply search filter
     let matchesSearch = true;
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
@@ -121,10 +121,11 @@ const StudentsManagementPage = () => {
         student.email?.toLowerCase().includes(query) ||
         student.phone?.toLowerCase().includes(query) ||
         student.student_id?.toLowerCase().includes(query) ||
-        student.class_name?.toLowerCase().includes(query);
+        student.class_name?.toLowerCase().includes(query) ||
+        student.ar_first_name?.toLowerCase().includes(query) ||
+        student.ar_last_name?.toLowerCase().includes(query);
     }
 
-    // Apply status filter
     let matchesStatus = true;
     if (statusFilter !== 'all') {
       matchesStatus = statusFilter === 'active' ? student.is_active : !student.is_active;
@@ -133,8 +134,13 @@ const StudentsManagementPage = () => {
     return matchesSearch && matchesStatus;
   });
 
-  const handleSearch = () => {
-    // No longer needed since filtering is automatic
+  // Helper function to get display name based on language
+  const getDisplayName = (student) => {
+    const isArabic = i18n.language === 'ar';
+    if (isArabic && (student.ar_first_name || student.ar_last_name)) {
+      return `${student.ar_first_name || ''} ${student.ar_last_name || ''}`.trim();
+    }
+    return student.full_name || `${student.first_name || ''} ${student.last_name || ''}`.trim();
   };
 
   const handleViewStudent = (studentId) => {
@@ -165,9 +171,57 @@ const StudentsManagementPage = () => {
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString();
+    if (!dateString) return '—';
+    return new Date(dateString).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
   };
+
+  // StudentCard component for card-based layout
+  const StudentCard = ({ student }) => (
+    <Card className="bg-card border-border shadow-md rounded-lg p-3 transition-transform transform hover:-translate-y-1 hover:shadow-xl flex flex-col justify-between">
+      <div className="flex items-start">
+        <div className="flex-shrink-0 mr-3">
+          <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+            {student.profile_picture_url ? (
+              <img src={student.profile_picture_url} alt={student.full_name} className="h-full w-full object-cover" />
+            ) : (
+              <span className="text-xl font-bold text-primary">
+                {(student.first_name?.[0] || '') + (student.last_name?.[0] || '')}
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="flex-1">
+          <h3 className="text-base font-bold text-card-foreground leading-tight">{getDisplayName(student)}</h3>
+          <p className="text-xs text-muted-foreground">{student.student_id || 'Student'}</p>
+          <p className="text-xs text-muted-foreground">{student.class_name || student.grade || '—'}</p>
+          <Badge
+            className={`mt-1.5 text-xs ${student.is_active 
+              ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300 border border-green-200 dark:border-green-700/60' 
+              : 'bg-gray-100 text-gray-800 dark:bg-gray-700/40 dark:text-gray-300 border border-gray-200 dark:border-gray-600/60'
+            }`}
+          >
+            {student.is_active ? t('status.active') : t('status.inactive')}
+          </Badge>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild><Button variant="ghost" className="h-7 w-7 p-0"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => handleViewStudent(student.id)}><Eye className="mr-2 h-4 w-4" /><span>{t('action.view')}</span></DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleEditStudent(student.id)}><Edit className="mr-2 h-4 w-4" /><span>{t('action.edit')}</span></DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => handleDeleteStudent(student.id)} className="text-red-600 focus:text-red-500 focus:bg-red-500/10"><Trash2 className="mr-2 h-4 w-4" /><span>{t('action.delete')}</span></DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+      <div className="mt-3 pt-3 border-t border-border space-y-1.5 text-xs">
+        <div className="flex items-center text-muted-foreground"><Mail className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" /><span className="truncate">{student.email}</span></div>
+        <div className="flex items-center text-muted-foreground"><Phone className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" /><span>{student.phone || '—'}</span></div>
+        <div className="flex items-center text-muted-foreground justify-between mt-1 pt-1 border-t border-border/50">
+          <span className="font-semibold text-foreground/80">Enrolled:</span><span>{formatDate(student.enrollment_date || student.created_at)}</span>
+        </div>
+      </div>
+    </Card>
+  );
 
   const actions = [
     <Button key="add" onClick={handleAddStudent} className="gap-2">
@@ -177,83 +231,34 @@ const StudentsManagementPage = () => {
   ];
 
   return (
-    <AdminPageLayout
-      title={t('admin.studentsManagement.title')}
-      subtitle={t('admin.studentsManagement.subtitle')}
-      actions={actions}
-      loading={loading}
-    >
+    <div className="bg-background text-foreground min-h-screen">
+      <AdminPageLayout
+        title={t('admin.studentsManagement.title')}
+        subtitle={t('admin.studentsManagement.subtitle')}
+        actions={[
+          <Button key="add-student" onClick={handleAddStudent} className="bg-primary text-primary-foreground gap-2 shadow-md hover:bg-primary/90">
+            <Plus className="h-4 w-4" />{t('action.addStudent')}
+          </Button>
+        ]}
+        loading={loading}
+      >
       <div className="space-y-6">
         
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {t('admin.studentsManagement.stats.totalStudents')}
-              </CardTitle>
-              <GraduationCap className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total}</div>
-              <p className="text-xs text-muted-foreground">
-                {t('admin.studentsManagement.stats.totalStudentsDescription')}
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {t('admin.studentsManagement.stats.activeStudents')}
-              </CardTitle>
-              <UserCheck className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">{stats.active}</div>
-              <p className="text-xs text-muted-foreground">
-                {t('admin.studentsManagement.stats.activeStudentsDescription')}
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {t('admin.studentsManagement.stats.inactiveStudents')}
-              </CardTitle>
-              <UserX className="h-4 w-4 text-red-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">{stats.inactive}</div>
-              <p className="text-xs text-muted-foreground">
-                {t('admin.studentsManagement.stats.inactiveStudentsDescription')}
-              </p>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <StatCard icon={<GraduationCap className="h-5 w-5 text-muted-foreground" />} label={t('admin.studentsManagement.stats.totalStudents')} value={stats.total} colorClass="text-primary" description={t('admin.studentsManagement.stats.totalStudentsDescription')} />
+          <StatCard icon={<CheckCircle className="h-5 w-5 text-green-500" />} label={t('admin.studentsManagement.stats.activeStudents')} value={stats.active} colorClass="text-green-500" description={t('admin.studentsManagement.stats.activeStudentsDescription')} />
+          <StatCard icon={<XCircle className="h-5 w-5 text-red-500" />} label={t('admin.studentsManagement.stats.inactiveStudents')} value={stats.inactive} colorClass="text-red-500" description={t('admin.studentsManagement.stats.inactiveStudentsDescription')} />
         </div>
 
-        {/* Search and Filters */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder={t('admin.studentsManagement.searchPlaceholder')}
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
-              </div>
-              
+        <Card className="mb-8 p-4 bg-card border-border shadow-sm rounded-xl">
+          <div className="flex flex-col md:flex-row items-center gap-4">
+            <div className="relative flex-grow w-full md:w-auto">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input placeholder={t('admin.studentsManagement.searchPlaceholder')} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 h-12 rounded-lg bg-background md:bg-input" />
+            </div>
+            <div className="flex items-center gap-4 w-full md:w-auto">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder={t('common.status')} />
-                </SelectTrigger>
+                <SelectTrigger className="w-full md:w-[180px] h-12 rounded-lg bg-background md:bg-input"><Filter className="h-4 w-4 mr-2 text-muted-foreground" /><SelectValue placeholder={t('common.status')} /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{t('common.allStatus')}</SelectItem>
                   <SelectItem value="active">{t('status.active')}</SelectItem>
@@ -261,157 +266,29 @@ const StudentsManagementPage = () => {
                 </SelectContent>
               </Select>
             </div>
-          </CardContent>
+          </div>
         </Card>
 
-        {/* Students List */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">{t('admin.studentsManagement.studentsList')}</h3>
-              <div className="text-sm text-muted-foreground">
-                {t('common.showingResults', {
-                  start: 1,
-                  end: filteredStudents.length,
-                  total: filteredStudents.length
-                })}
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {filteredStudents.length === 0 ? (
-              <div className="text-center py-8">
-                <GraduationCap className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-muted-foreground mb-2">
-                  {t('admin.studentsManagement.noStudentsFound')}
-                </h3>
-                <p className="text-muted-foreground">
-                  {searchQuery || statusFilter !== 'all'
-                    ? t('admin.studentsManagement.noStudentsMatchingFilters')
-                    : t('admin.studentsManagement.noStudentsYet')
-                  }
-                </p>
-                {(!searchQuery && statusFilter === 'all' && students.length === 0) && (
-                  <Button onClick={handleAddStudent} className="mt-4">
-                    <Plus className="h-4 w-4 mr-2" />
-                    {t('action.addFirstStudent')}
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{t('common.name')}</TableHead>
-                      <TableHead>{t('student.studentId')}</TableHead>
-                      <TableHead>{t('common.email')}</TableHead>
-                      <TableHead>{t('common.phone')}</TableHead>
-                      <TableHead>{t('student.class')}</TableHead>
-                      <TableHead>{t('common.status')}</TableHead>
-                      <TableHead>{t('common.enrollmentDate')}</TableHead>
-                      <TableHead>{t('common.lastLogin')}</TableHead>
-                      <TableHead className="text-right">{t('common.actions')}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredStudents.map((student) => (
-                      <TableRow key={student.id}>
-                        <TableCell>
-                          <div className="flex items-center space-x-3">
-                            <div className="flex-shrink-0 h-8 w-8">
-                              {student.profile_picture_url ? (
-                                <img 
-                                  className="h-8 w-8 rounded-full object-cover" 
-                                  src={student.profile_picture_url} 
-                                  alt={`${student.first_name} ${student.last_name}`} 
-                                />
-                              ) : (
-                                <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-                                  <GraduationCap className="h-4 w-4 text-gray-400" />
-                                </div>
-                              )}
-                            </div>
-                            <div>
-                              <div className="text-sm font-medium text-gray-900">
-                                {student.first_name} {student.last_name}
-                              </div>
-                              {(student.ar_first_name || student.ar_last_name) && (
-                                <div className="text-sm text-gray-500" dir="rtl">
-                                  {student.ar_first_name} {student.ar_last_name}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm font-medium">
-                            {student.student_id || '-'}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center">
-                            <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
-                            {student.email}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center">
-                            <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
-                            {student.phone || '-'}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {student.class_name || student.grade || '-'}
-                        </TableCell>
-                        <TableCell>
-                          {getStatusBadge(student.is_active)}
-                        </TableCell>
-                        <TableCell>
-                          {formatDate(student.enrollment_date || student.created_at)}
-                        </TableCell>
-                        <TableCell>
-                          {formatDate(student.last_login)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleViewStudent(student.id)}>
-                                <Eye className="h-4 w-4 mr-2" />
-                                {t('action.view')}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleEditStudent(student.id)}>
-                                <Edit className="h-4 w-4 mr-2" />
-                                {t('action.edit')}
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem 
-                                onClick={() => handleDeleteStudent(student.id)}
-                                className="text-red-600"
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                {t('action.delete')}
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+        {filteredStudents.length > 0 ? (
+          // Adjusted grid to fit more cards
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5">
+            {filteredStudents.map((student) => <StudentCard key={student.id} student={student} />)}
+          </div>
+        ) : (
+          <div className="text-center py-20 flex flex-col items-center bg-card rounded-xl border border-dashed border-border">
+            <GraduationCap className="h-20 w-20 text-muted-foreground/50 mb-4" />
+            <h3 className="text-xl font-semibold text-foreground mb-2">{t('admin.studentsManagement.noStudentsFound')}</h3>
+            <p className="text-muted-foreground max-w-sm">
+              {searchQuery || statusFilter !== 'all' ? t('admin.studentsManagement.noStudentsMatchingFilters') : t('admin.studentsManagement.noStudentsYet')}
+            </p>
+            {(!searchQuery && statusFilter === 'all' && students.length === 0) && (
+              <Button onClick={handleAddStudent} className="mt-6 gap-2 bg-primary text-primary-foreground"><UserPlus className="h-4 w-4" />{t('action.addFirstStudent')}</Button>
             )}
-
-            {/* Pagination removed - showing all results with client-side filtering */}
-          </CardContent>
-        </Card>
+          </div>
+        )}
       </div>
-    </AdminPageLayout>
+      </AdminPageLayout>
+    </div>
   );
 };
 
