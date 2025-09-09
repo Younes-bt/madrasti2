@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Save, X, User, Mail, Phone, MapPin, Calendar, FileText, GraduationCap, Users } from 'lucide-react';
@@ -22,8 +22,12 @@ const AddStudentPage = () => {
     ar_first_name: '',
     ar_last_name: '',
     student_id: '',
-    grade: '',
-    class_name: '',
+    educational_level_id: '',
+    grade_id: '',
+    school_class_id: '',
+    academic_year_id: '',
+    enrollment_date: new Date().toISOString().split('T')[0],
+    student_number: '',
     phone: '',
     date_of_birth: '',
     address: '',
@@ -31,13 +35,113 @@ const AddStudentPage = () => {
     emergency_contact_name: '',
     emergency_contact_phone: '',
     parent_name: '',
-    parent_email: '',
+    parent_first_name: '',
+    parent_last_name: '',
     parent_phone: ''
   });
 
   const [schoolName, setSchoolName] = useState('madrasti'); // Will be fetched from school config
+  
+  // Enrollment data
+  const [educationalLevels, setEducationalLevels] = useState([]);
+  const [grades, setGrades] = useState([]);
+  const [schoolClasses, setSchoolClasses] = useState([]);
+  const [academicYears, setAcademicYears] = useState([]);
+  const [currentAcademicYear, setCurrentAcademicYear] = useState(null);
 
   const [errors, setErrors] = useState({});
+
+  // Fetch enrollment data on component mount
+  useEffect(() => {
+    const fetchEnrollmentData = async () => {
+      try {
+        const [levelsResponse, academicYearsResponse] = await Promise.all([
+          apiMethods.get('schools/levels/'),
+          apiMethods.get('schools/academic-years/')
+        ]);
+        
+        console.log('Levels response:', levelsResponse);
+        console.log('Academic years response:', academicYearsResponse);
+        console.log('Levels response type:', typeof levelsResponse, 'Is Array:', Array.isArray(levelsResponse));
+        console.log('Academic years response type:', typeof academicYearsResponse, 'Is Array:', Array.isArray(academicYearsResponse));
+        console.log('Levels response keys:', Object.keys(levelsResponse || {}));
+        console.log('Academic years response keys:', Object.keys(academicYearsResponse || {}));
+        
+        // Extract data from paginated DRF response (results property)
+        const levelsData = levelsResponse?.results || [];
+        const academicYearsData = academicYearsResponse?.results || [];
+        
+        console.log('Processed levelsData:', levelsData);
+        console.log('Processed academicYearsData:', academicYearsData);
+        console.log('levelsData isArray:', Array.isArray(levelsData));
+        console.log('academicYearsData isArray:', Array.isArray(academicYearsData));
+        
+        setEducationalLevels(levelsData);
+        setAcademicYears(academicYearsData);
+        
+        // Set current academic year - ensure we have an array first
+        if (academicYearsData.length > 0) {
+          const currentYear = academicYearsData.find(year => year.is_current);
+          if (currentYear) {
+            setCurrentAcademicYear(currentYear);
+            setFormData(prev => ({ ...prev, academic_year_id: currentYear.id }));
+          } else {
+            // If no current year is marked, use the first one as fallback
+            console.warn('No current academic year found, using first available');
+            const fallbackYear = academicYearsData[0];
+            setCurrentAcademicYear(fallbackYear);
+            setFormData(prev => ({ ...prev, academic_year_id: fallbackYear.id }));
+          }
+        } else {
+          console.warn('No academic years found at all');
+          toast.warning('No academic years configured. Please contact administrator.');
+        }
+      } catch (error) {
+        console.error('Failed to fetch enrollment data:', error);
+        console.error('Error details:', error.response?.data);
+        toast.error(t('error.failedToLoadData'));
+      }
+    };
+    
+    fetchEnrollmentData();
+  }, [t]);
+
+  // Fetch grades when educational level changes
+  useEffect(() => {
+    if (formData.educational_level_id && Array.isArray(educationalLevels)) {
+      const selectedLevel = educationalLevels.find(level => level.id === parseInt(formData.educational_level_id));
+      if (selectedLevel && selectedLevel.grades) {
+        setGrades(Array.isArray(selectedLevel.grades) ? selectedLevel.grades : []);
+        // Reset dependent fields
+        setFormData(prev => ({ ...prev, grade_id: '', school_class_id: '' }));
+        setSchoolClasses([]);
+      }
+    } else {
+      setGrades([]);
+      setSchoolClasses([]);
+    }
+  }, [formData.educational_level_id, educationalLevels]);
+
+  // Fetch classes when grade changes
+  useEffect(() => {
+    const fetchClasses = async () => {
+      if (formData.grade_id && formData.academic_year_id) {
+        try {
+          const response = await apiMethods.get(`schools/classes/?grade=${formData.grade_id}&academic_year=${formData.academic_year_id}`);
+          setSchoolClasses(response.results || response.data || []);
+          // Reset class selection
+          setFormData(prev => ({ ...prev, school_class_id: '' }));
+        } catch (error) {
+          console.error('Failed to fetch classes:', error);
+          setSchoolClasses([]);
+        }
+      } else {
+        setSchoolClasses([]);
+      }
+    };
+    
+    fetchClasses();
+  }, [formData.grade_id, formData.academic_year_id]);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -79,8 +183,16 @@ const AddStudentPage = () => {
       newErrors.ar_last_name = t('validation.arabicLastNameRequired');
     }
 
-    if (!formData.grade) {
-      newErrors.grade = t('validation.gradeRequired');
+    if (!formData.educational_level_id) {
+      newErrors.educational_level_id = t('validation.educationalLevelRequired');
+    }
+
+    if (!formData.grade_id) {
+      newErrors.grade_id = t('validation.gradeRequired');
+    }
+
+    if (!formData.school_class_id) {
+      newErrors.school_class_id = t('validation.schoolClassRequired');
     }
 
     // Phone validation (if provided)
@@ -103,10 +215,15 @@ const AddStudentPage = () => {
       newErrors.date_of_birth = t('validation.dateOfBirthInvalid');
     }
 
-    // Parent email validation (if provided)
-    if (formData.parent_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.parent_email)) {
-      newErrors.parent_email = t('validation.emailInvalid');
+    // Parent first and last names required for automatic parent account creation
+    if (!formData.parent_first_name) {
+      newErrors.parent_first_name = t('validation.parentFirstNameRequired');
     }
+    if (!formData.parent_last_name) {
+      newErrors.parent_last_name = t('validation.parentLastNameRequired');
+    }
+
+    // Parent email will be auto-generated, no validation needed
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -126,7 +243,8 @@ const AddStudentPage = () => {
       // Generate student ID if not provided
       const studentId = formData.student_id || generateStudentId();
       
-      // Clean the last name: remove spaces, special characters, and normalize
+      // Generate email using initials + lastname approach
+      const initial = formData.first_name ? formData.first_name[0].toLowerCase() : '';
       const cleanLastName = formData.last_name
         .toLowerCase()
         .replace(/\s+/g, '') // Remove all spaces
@@ -139,7 +257,9 @@ const AddStudentPage = () => {
         .replace(/[^a-z0-9]/g, '') // Remove any non-alphanumeric characters
         .trim();
       
-      const generatedEmail = `${cleanLastName}@${cleanSchoolName}-students.com`;
+      const generatedEmail = initial && cleanLastName ? 
+        `${initial}.${cleanLastName}@${cleanSchoolName}-students.com` :
+        `${cleanLastName}@${cleanSchoolName}-students.com`;
       
       // Prepare data for API
       const apiData = {
@@ -151,8 +271,11 @@ const AddStudentPage = () => {
         ar_first_name: formData.ar_first_name,
         ar_last_name: formData.ar_last_name,
         student_id: studentId,
-        grade: formData.grade,
-        class_name: formData.class_name,
+        // Enrollment data
+        school_class_id: formData.school_class_id,
+        academic_year_id: formData.academic_year_id,
+        enrollment_date: formData.enrollment_date,
+        student_number: formData.student_number || '',
         ...(formData.phone && { phone: formData.phone }),
         ...(formData.date_of_birth && { date_of_birth: formData.date_of_birth }),
         ...(formData.address && { address: formData.address }),
@@ -160,17 +283,21 @@ const AddStudentPage = () => {
         ...(formData.emergency_contact_name && { emergency_contact_name: formData.emergency_contact_name }),
         ...(formData.emergency_contact_phone && { emergency_contact_phone: formData.emergency_contact_phone }),
         ...(formData.parent_name && { parent_name: formData.parent_name }),
-        ...(formData.parent_email && { parent_email: formData.parent_email }),
+        ...(formData.parent_first_name && { parent_first_name: formData.parent_first_name }),
+        ...(formData.parent_last_name && { parent_last_name: formData.parent_last_name }),
         ...(formData.parent_phone && { parent_phone: formData.parent_phone })
       };
 
       const response = await apiMethods.post('users/register/', apiData);
 
+      const selectedClass = schoolClasses.find(c => c.id === parseInt(formData.school_class_id));
+      
       toast.success(
         t('student.createSuccess', { 
           name: `${formData.first_name} ${formData.last_name}`,
           email: generatedEmail,
-          studentId: studentId
+          studentId: studentId,
+          className: selectedClass ? selectedClass.name : ''
         })
       );
       
@@ -363,9 +490,21 @@ const AddStudentPage = () => {
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     type="email"
-                    value={formData.last_name ? 
-                      `${formData.last_name.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '')}@${schoolName.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '')}-students.com` 
-                      : ''}
+                    value={(() => {
+                      const initial = formData.first_name ? formData.first_name[0].toLowerCase() : '';
+                      const cleanLastName = formData.last_name
+                        .toLowerCase()
+                        .replace(/\s+/g, '')
+                        .replace(/[^a-z0-9]/g, '');
+                      const cleanSchoolName = schoolName
+                        .toLowerCase()
+                        .replace(/\s+/g, '')
+                        .replace(/[^a-z0-9]/g, '');
+                      
+                      return initial && cleanLastName ? 
+                        `${initial}.${cleanLastName}@${cleanSchoolName}-students.com` :
+                        cleanLastName ? `${cleanLastName}@${cleanSchoolName}-students.com` : '';
+                    })()}
                     className="pl-9 bg-gray-50"
                     disabled
                     placeholder={t('student.emailWillBeGenerated')}
@@ -417,55 +556,149 @@ const AddStudentPage = () => {
             </CardContent>
           </Card>
 
-          {/* Academic Information */}
+          {/* Enrollment Information */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <GraduationCap className="h-5 w-5" />
-                {t('student.academicInformation')}
+                {t('student.enrollmentInformation')}
               </CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="grade" className="required">
-                  {t('student.grade')}
+                <Label htmlFor="educational_level" className="required">
+                  {t('student.educationalLevel')}
                 </Label>
-                <Select value={formData.grade} onValueChange={(value) => handleInputChange('grade', value)}>
-                  <SelectTrigger className={errors.grade ? 'border-red-500' : ''}>
-                    <SelectValue placeholder={t('student.placeholders.grade')} />
+                <Select value={formData.educational_level_id} onValueChange={(value) => handleInputChange('educational_level_id', value)}>
+                  <SelectTrigger className={errors.educational_level_id ? 'border-red-500' : ''}>
+                    <SelectValue placeholder={t('student.placeholders.educationalLevel')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">{t('grades.grade1')}</SelectItem>
-                    <SelectItem value="2">{t('grades.grade2')}</SelectItem>
-                    <SelectItem value="3">{t('grades.grade3')}</SelectItem>
-                    <SelectItem value="4">{t('grades.grade4')}</SelectItem>
-                    <SelectItem value="5">{t('grades.grade5')}</SelectItem>
-                    <SelectItem value="6">{t('grades.grade6')}</SelectItem>
-                    <SelectItem value="7">{t('grades.grade7')}</SelectItem>
-                    <SelectItem value="8">{t('grades.grade8')}</SelectItem>
-                    <SelectItem value="9">{t('grades.grade9')}</SelectItem>
-                    <SelectItem value="10">{t('grades.grade10')}</SelectItem>
-                    <SelectItem value="11">{t('grades.grade11')}</SelectItem>
-                    <SelectItem value="12">{t('grades.grade12')}</SelectItem>
+                    {educationalLevels.length > 0 ? (
+                      educationalLevels.map((level) => (
+                        <SelectItem key={level.id} value={level.id.toString()}>
+                          {level.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-data" disabled>
+                        No educational levels available
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
-                {errors.grade && (
-                  <p className="text-sm text-red-600">{errors.grade}</p>
+                {errors.educational_level_id && (
+                  <p className="text-sm text-red-600">{errors.educational_level_id}</p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="class_name">
-                  {t('student.className')}
+                <Label htmlFor="grade" className="required">
+                  {t('student.grade')}
+                </Label>
+                <Select 
+                  value={formData.grade_id} 
+                  onValueChange={(value) => handleInputChange('grade_id', value)}
+                  disabled={!formData.educational_level_id}
+                >
+                  <SelectTrigger className={errors.grade_id ? 'border-red-500' : ''}>
+                    <SelectValue placeholder={t('student.placeholders.grade')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {grades.length > 0 ? (
+                      grades.map((grade) => (
+                        <SelectItem key={grade.id} value={grade.id.toString()}>
+                          {grade.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-data" disabled>
+                        {formData.educational_level_id ? 'No grades available' : 'Select educational level first'}
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+                {errors.grade_id && (
+                  <p className="text-sm text-red-600">{errors.grade_id}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="school_class" className="required">
+                  {t('student.schoolClass')}
+                </Label>
+                <Select 
+                  value={formData.school_class_id} 
+                  onValueChange={(value) => handleInputChange('school_class_id', value)}
+                  disabled={!formData.grade_id}
+                >
+                  <SelectTrigger className={errors.school_class_id ? 'border-red-500' : ''}>
+                    <SelectValue placeholder={t('student.placeholders.schoolClass')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {schoolClasses.length > 0 ? (
+                      schoolClasses.map((schoolClass) => (
+                        <SelectItem key={schoolClass.id} value={schoolClass.id.toString()}>
+                          {schoolClass.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-data" disabled>
+                        {formData.grade_id ? 'No classes available' : 'Select grade first'}
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+                {errors.school_class_id && (
+                  <p className="text-sm text-red-600">{errors.school_class_id}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="academic_year">
+                  {t('student.academicYear')}
                 </Label>
                 <Input
-                  id="class_name"
+                  id="academic_year"
                   type="text"
-                  value={formData.class_name}
-                  onChange={(e) => handleInputChange('class_name', e.target.value)}
-                  placeholder={t('student.placeholders.className')}
+                  value={currentAcademicYear ? currentAcademicYear.year : ''}
+                  className="bg-gray-50"
+                  disabled
+                  placeholder={t('student.placeholders.academicYear')}
+                />
+                <p className="text-xs text-gray-500">
+                  {t('student.placeholders.academicYear')}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="enrollment_date">
+                  {t('student.enrollmentDate')}
+                </Label>
+                <Input
+                  id="enrollment_date"
+                  type="date"
+                  value={formData.enrollment_date}
+                  onChange={(e) => handleInputChange('enrollment_date', e.target.value)}
                   disabled={loading}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="student_number">
+                  {t('student.studentNumber')}
+                </Label>
+                <Input
+                  id="student_number"
+                  type="text"
+                  value={formData.student_number}
+                  onChange={(e) => handleInputChange('student_number', e.target.value)}
+                  placeholder={t('student.placeholders.studentNumber')}
+                  disabled={loading}
+                />
+                <p className="text-xs text-gray-500">
+                  {t('student.placeholders.studentNumber')}
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -505,41 +738,76 @@ const AddStudentPage = () => {
                 <Users className="h-5 w-5" />
                 {t('student.parentInformation')}
               </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                {t('student.parentAccountCreationInfo')}
+              </p>
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="parent_name">
-                  {t('student.parentName')}
+                <Label htmlFor="parent_first_name" className="required">
+                  {t('student.parentFirstName')}
                 </Label>
                 <Input
-                  id="parent_name"
+                  id="parent_first_name"
                   type="text"
-                  value={formData.parent_name}
-                  onChange={(e) => handleInputChange('parent_name', e.target.value)}
-                  placeholder={t('student.placeholders.parentName')}
+                  value={formData.parent_first_name}
+                  onChange={(e) => handleInputChange('parent_first_name', e.target.value)}
+                  placeholder={t('student.placeholders.parentFirstName')}
+                  className={errors.parent_first_name ? 'border-red-500' : ''}
                   disabled={loading}
                 />
+                {errors.parent_first_name && (
+                  <p className="text-sm text-red-600">{errors.parent_first_name}</p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="parent_email">
+                <Label htmlFor="parent_last_name" className="required">
+                  {t('student.parentLastName')}
+                </Label>
+                <Input
+                  id="parent_last_name"
+                  type="text"
+                  value={formData.parent_last_name}
+                  onChange={(e) => handleInputChange('parent_last_name', e.target.value)}
+                  placeholder={t('student.placeholders.parentLastName')}
+                  className={errors.parent_last_name ? 'border-red-500' : ''}
+                  disabled={loading}
+                />
+                {errors.parent_last_name && (
+                  <p className="text-sm text-red-600">{errors.parent_last_name}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label>
                   {t('student.parentEmail')}
                 </Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    id="parent_email"
                     type="email"
-                    value={formData.parent_email}
-                    onChange={(e) => handleInputChange('parent_email', e.target.value)}
-                    placeholder={t('student.placeholders.parentEmail')}
-                    className={`pl-9 ${errors.parent_email ? 'border-red-500' : ''}`}
-                    disabled={loading}
+                    value={(() => {
+                      const parentInitial = formData.parent_first_name ? formData.parent_first_name[0].toLowerCase() : '';
+                      const cleanParentLastName = formData.parent_last_name
+                        .toLowerCase()
+                        .replace(/\s+/g, '')
+                        .replace(/[^a-z0-9]/g, '');
+                      const cleanSchoolName = schoolName
+                        .toLowerCase()
+                        .replace(/\s+/g, '')
+                        .replace(/[^a-z0-9]/g, '');
+                      
+                      return parentInitial && cleanParentLastName ? 
+                        `${parentInitial}.${cleanParentLastName}@${cleanSchoolName}-parents.com` :
+                        cleanParentLastName ? `${cleanParentLastName}@${cleanSchoolName}-parents.com` : '';
+                    })()}
+                    className="pl-9 bg-gray-50"
+                    disabled
+                    placeholder={t('student.parentEmailWillBeGenerated')}
                   />
                 </div>
-                {errors.parent_email && (
-                  <p className="text-sm text-red-600">{errors.parent_email}</p>
-                )}
+                <p className="text-xs text-gray-500">{t('student.parentEmailGeneratedInfo')}</p>
               </div>
 
               <div className="space-y-2">

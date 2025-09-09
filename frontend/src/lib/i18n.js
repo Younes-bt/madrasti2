@@ -35,9 +35,6 @@ i18n
       useSuspense: false,
     },
 
-    // Default namespace
-    defaultNS: 'translation',
-
     // Languages to preload
     preload: ['en', 'ar', 'fr'],
   })

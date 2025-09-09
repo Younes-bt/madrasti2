@@ -44,6 +44,18 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     department = serializers.CharField(required=False, allow_blank=True)
     position = serializers.CharField(required=False, allow_blank=True)
     hire_date = serializers.DateField(required=False, allow_null=True)
+    
+    # Student enrollment fields (only used if role is STUDENT)
+    school_class_id = serializers.IntegerField(required=False, allow_null=True)
+    academic_year_id = serializers.IntegerField(required=False, allow_null=True)
+    enrollment_date = serializers.DateField(required=False, allow_null=True)
+    student_number = serializers.CharField(required=False, allow_blank=True)
+    
+    # Parent information fields (used to create parent account when creating student)
+    parent_name = serializers.CharField(required=False, allow_blank=True)
+    parent_first_name = serializers.CharField(required=False, allow_blank=True)
+    parent_last_name = serializers.CharField(required=False, allow_blank=True)
+    parent_phone = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         model = User
@@ -52,10 +64,75 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             # Profile fields
             'ar_first_name', 'ar_last_name', 'phone', 'date_of_birth', 'address', 'bio', 
             'emergency_contact_name', 'emergency_contact_phone',
-            'department', 'position', 'hire_date'
+            'department', 'position', 'hire_date',
+            # Student enrollment fields
+            'school_class_id', 'academic_year_id', 'enrollment_date', 'student_number',
+            # Parent information fields
+            'parent_name', 'parent_first_name', 'parent_last_name', 'parent_phone'
         ]
 
+    def _generate_unique_email(self, first_name, last_name, role):
+        """Generate a unique email using initials + lastname approach"""
+        import re
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        # Clean the last name
+        clean_last_name = re.sub(r'[^a-z0-9]', '', last_name.lower().replace(' ', '')).strip()
+        school_name = 'madrasti'  # This could be fetched from school config
+        clean_school_name = re.sub(r'[^a-z0-9]', '', school_name.lower().replace(' ', '')).strip()
+        
+        # Get first letter of first name
+        initial = first_name[0].lower() if first_name else 'u'  # 'u' for user if no first name
+        
+        # Determine email domain suffix based on role
+        role_suffix_map = {
+            'STUDENT': 'students',
+            'PARENT': 'parents', 
+            'TEACHER': 'teachers',
+            'ADMIN': 'team',
+            'STAFF': 'team'
+        }
+        domain_suffix = role_suffix_map.get(role, 'users')
+        
+        logger.error(f"EMAIL GENERATION: first_name={first_name}, last_name={last_name}, role={role}, initial={initial}, clean_last_name={clean_last_name}")
+        
+        # Try different email formats until we find a unique one
+        unique_email = None
+        counter = 0
+        
+        # Add timestamp for uniqueness to avoid race conditions
+        import time
+        timestamp = str(int(time.time()))[-4:]  # Last 4 digits of timestamp
+        
+        while not unique_email:
+            if counter == 0:
+                # First try: initial.lastname.timestamp@school-suffix.com
+                candidate_email = f"{initial}.{clean_last_name}.{timestamp}@{clean_school_name}-{domain_suffix}.com"
+            else:
+                # Subsequent tries: initial{counter}.lastname.timestamp@school-suffix.com
+                candidate_email = f"{initial}{counter}.{clean_last_name}.{timestamp}@{clean_school_name}-{domain_suffix}.com"
+            
+            logger.error(f"EMAIL GENERATION: Trying candidate_email={candidate_email}")
+            
+            # Check if this email already exists
+            if not User.objects.filter(email=candidate_email).exists():
+                unique_email = candidate_email
+                logger.error(f"EMAIL GENERATION: Found unique email={unique_email}")
+            else:
+                logger.error(f"EMAIL GENERATION: Email {candidate_email} already exists, incrementing counter")
+                counter += 1
+                # Safety break to avoid infinite loop (very unlikely to reach)
+                if counter > 100:
+                    unique_email = f"{initial}{counter}.{clean_last_name}.{timestamp}@{clean_school_name}-{domain_suffix}.com"
+                    logger.error(f"EMAIL GENERATION: Hit counter limit, using={unique_email}")
+                    break
+        
+        return unique_email
+
     def create(self, validated_data):
+        from datetime import date
+        
         # Separate profile data from user data
         profile_data = {}
         profile_fields = [
@@ -68,19 +145,105 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             if field in validated_data:
                 profile_data[field] = validated_data.pop(field)
         
+        # Separate enrollment data
+        enrollment_data = {}
+        enrollment_fields = ['school_class_id', 'academic_year_id', 'enrollment_date', 'student_number']
+        
+        for field in enrollment_fields:
+            if field in validated_data:
+                enrollment_data[field] = validated_data.pop(field)
+        
+        # Separate parent data
+        parent_data = {}
+        parent_fields = ['parent_name', 'parent_first_name', 'parent_last_name', 'parent_phone']
+        
+        for field in parent_fields:
+            if field in validated_data:
+                parent_data[field] = validated_data.pop(field)
+        
+        # Generate unique email if not provided or ensure provided email is unique
+        user_email = validated_data.get('email')
+        user_role = validated_data.get('role', User.Role.STUDENT)
+        first_name = validated_data.get('first_name', '')
+        last_name = validated_data.get('last_name', '')
+        
+        # Debug: Log original email
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"SERIALIZER DEBUG: Original email={user_email}, First={first_name}, Last={last_name}, Role={user_role}")
+        
+        # If email looks like it was auto-generated from frontend or is temporary, regenerate it to ensure uniqueness
+        if user_email and ('students.com' in user_email or 'parents.com' in user_email or 'teachers.com' in user_email or user_email == 'temp@temp.com'):
+            user_email = self._generate_unique_email(first_name, last_name, user_role)
+            logger.error(f"SERIALIZER DEBUG: Generated new email={user_email}")
+        elif not user_email or user_email.strip() == '':
+            # Generate email if none provided
+            user_email = self._generate_unique_email(first_name, last_name, user_role)
+            logger.error(f"SERIALIZER DEBUG: Generated email for empty={user_email}")
+        
         # Create user
         user = User.objects.create_user(
-            email=validated_data['email'],
+            email=user_email,
             password=validated_data['password'],
-            first_name=validated_data.get('first_name', ''),
-            last_name=validated_data.get('last_name', ''),
-            role=validated_data.get('role', User.Role.STUDENT)
+            first_name=first_name,
+            last_name=last_name,
+            role=user_role
         )
         
         # Update the profile created by the signal with the profile data
         if profile_data:
             user.profile.__dict__.update(profile_data)
             user.profile.save()
+        
+        # Create student enrollment if this is a student and enrollment data is provided
+        if (user.role == User.Role.STUDENT and 
+            enrollment_data.get('school_class_id') and 
+            enrollment_data.get('academic_year_id')):
+            
+            StudentEnrollment.objects.create(
+                student=user,
+                school_class_id=enrollment_data['school_class_id'],
+                academic_year_id=enrollment_data['academic_year_id'],
+                enrollment_date=enrollment_data.get('enrollment_date', date.today()),
+                student_number=enrollment_data.get('student_number', ''),
+                is_active=True
+            )
+        
+        # Create parent account if this is a student and parent data is provided
+        if (user.role == User.Role.STUDENT and 
+            (parent_data.get('parent_name') or (parent_data.get('parent_first_name') and parent_data.get('parent_last_name')))):
+            
+            # Determine parent first and last name
+            if parent_data.get('parent_first_name') and parent_data.get('parent_last_name'):
+                # Use separate first and last name fields if provided
+                parent_first_name = parent_data['parent_first_name']
+                parent_last_name = parent_data['parent_last_name']
+            elif parent_data.get('parent_name'):
+                # Parse combined parent name into first and last name
+                parent_name_parts = parent_data['parent_name'].strip().split()
+                parent_first_name = parent_name_parts[0] if parent_name_parts else 'Parent'
+                parent_last_name = ' '.join(parent_name_parts[1:]) if len(parent_name_parts) > 1 else f'of {user.first_name}'
+            else:
+                # Fallback names
+                parent_first_name = 'Parent'
+                parent_last_name = f'of {user.first_name}'
+            
+            # Generate unique parent email using the helper function
+            parent_email = self._generate_unique_email(parent_first_name, parent_last_name, 'PARENT')
+            
+            # Create parent user account
+            parent_user = User.objects.create_user(
+                email=parent_email,
+                password='defaultStrongPassword25',  # Same default password as student
+                first_name=parent_first_name,
+                last_name=parent_last_name,
+                role=User.Role.PARENT
+            )
+            
+            # Update parent profile with phone if provided
+            if parent_data.get('parent_phone'):
+                parent_user.profile.phone = parent_data['parent_phone']
+                parent_user.profile.save()
         
         return user
 

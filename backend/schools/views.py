@@ -3,6 +3,7 @@
 from rest_framework import viewsets, permissions
 from .models import (
     School,
+    AcademicYear,
     EducationalLevel,
     Grade,
     SchoolClass,
@@ -11,6 +12,7 @@ from .models import (
 )
 from .serializers import (
     SchoolSerializer,
+    AcademicYearSerializer,
     EducationalLevelSerializer,
     GradeSerializer,
     SchoolClassSerializer,
@@ -34,6 +36,17 @@ class SchoolConfigViewSet(viewsets.ModelViewSet):
     def get_object(self):
         # This view should always return the single School object
         return School.objects.first()
+
+class AcademicYearViewSet(viewsets.ReadOnlyModelViewSet):
+    """API endpoint to view academic years."""
+    queryset = AcademicYear.objects.all()
+    serializer_class = AcademicYearSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def list(self, request, *args, **kwargs):
+        print(f"DEBUG: AcademicYear queryset count: {self.get_queryset().count()}")
+        print(f"DEBUG: AcademicYear objects: {list(self.get_queryset().values())}")
+        return super().list(request, *args, **kwargs)
 
 class EducationalLevelViewSet(viewsets.ReadOnlyModelViewSet):
     """API endpoint to view educational levels and their nested grades."""

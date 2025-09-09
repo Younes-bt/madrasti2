@@ -26,6 +26,7 @@ import StudentsManagementPage from './pages/admin/StudentsManagementPage'
 import AddStudentPage from './pages/admin/AddStudentPage'
 import EditStudentPage from './pages/admin/EditStudentPage'
 import ViewStudentPage from './pages/admin/ViewStudentPage'
+import BulkImportStudentsPage from './pages/admin/BulkImportStudentsPage'
 import ParentsManagementPage from './pages/admin/ParentsManagementPage'
 import AddParentPage from './pages/admin/AddParentPage'
 import EditParentPage from './pages/admin/EditParentPage'
@@ -194,6 +195,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <AddStudentPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/school-management/students/bulk-import" 
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <BulkImportStudentsPage />
           </ProtectedRoute>
         } 
       />

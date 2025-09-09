@@ -18,7 +18,7 @@ class SchoolSerializer(serializers.ModelSerializer):
 class AcademicYearSerializer(serializers.ModelSerializer):
     class Meta:
         model = AcademicYear
-        fields = ('id', 'year', 'is_current')
+        fields = ('id', 'year', 'start_date', 'end_date', 'is_current')
 
 class SubjectSerializer(serializers.ModelSerializer):
     class Meta:

@@ -246,6 +246,23 @@ export const apiMethods = {
     } catch (error) {
       throw error;
     }
+  },
+
+  // POST with FormData (for file uploads)
+  postFormData: async (url, formData, config = {}) => {
+    try {
+      const response = await api.post(url, formData, {
+        ...config,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          ...config.headers
+        },
+        timeout: 60000 // 1 minute for file uploads
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   }
 };
 
