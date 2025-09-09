@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { motion, useInView, useMotionValue, useSpring, animate } from 'framer-motion';
@@ -13,18 +13,16 @@ import {
   Eye, 
   Edit, 
   Trash2,
-  UserCheck,
-  UserX,
   CheckCircle,
   XCircle,
   UserPlus,
-  TrendingUp,
-  Sparkles
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import AdminPageLayout from '../../components/admin/layout/AdminPageLayout';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Card, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '../../components/ui/dropdown-menu';
@@ -102,85 +100,71 @@ const ParentsManagementPage = () => {
   const [loading, setLoading] = useState(false);
   const [parents, setParents] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  
+  const [pagination, setPagination] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
     inactive: 0
   });
 
-  const fetchParents = async () => {
+  const fetchParents = useCallback(async () => {
     setLoading(true);
     try {
-      const params = {
-        role: 'PARENT'
-      };
+      const params = new URLSearchParams();
+      params.append('role', 'PARENT');
+      if (statusFilter !== 'all') params.append('is_active', statusFilter === 'active');
+      if (debouncedSearchQuery) params.append('search', debouncedSearchQuery);
+      if (currentPage) params.append('page', currentPage);
 
-      const response = await apiMethods.get('users/users/', { params });
-
-      let parentsData = [];
+      const response = await apiMethods.get(`users/users/?${params.toString()}`);
       
-      // Handle different response structures
       if (response.results && Array.isArray(response.results)) {
-        parentsData = response.results;
-      } else if (Array.isArray(response)) {
-        parentsData = response;
-      } else if (response.data) {
-        if (response.data.results && Array.isArray(response.data.results)) {
-          parentsData = response.data.results;
-        } else if (Array.isArray(response.data)) {
-          parentsData = response.data;
-        }
+        setParents(response.results);
+        setPagination({
+          count: response.count,
+          next: response.next,
+          previous: response.previous
+        });
+        setStats({
+            total: response.count,
+            active: response.results.filter(p => p.is_active).length, // This is an approximation for the page
+            inactive: response.results.filter(p => !p.is_active).length // This is an approximation for the page
+        });
+      } else {
+        setParents([]);
+        setPagination(null);
       }
-
-      setParents(parentsData);
-
-      // Update statistics based on all parents data
-      const activeCount = parentsData.filter(parent => parent.is_active).length;
-      setStats({
-        total: parentsData.length,
-        active: activeCount,
-        inactive: parentsData.length - activeCount
-      });
 
     } catch (error) {
       console.error('Failed to fetch parents:', error);
-      console.error('Error response:', error.response);
       toast.error(t('error.failedToLoadData'));
       setParents([]);
+      setPagination(null);
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter, debouncedSearchQuery, currentPage, t]);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+      setCurrentPage(1); // Reset to first page on new search
+    }, 500); // 500ms debounce delay
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchQuery]);
 
   useEffect(() => {
     fetchParents();
-  }, []);
+  }, [fetchParents]);
 
-  // Client-side filtering
-  const filteredParents = parents.filter(parent => {
-    let matchesSearch = true;
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase().trim();
-      matchesSearch = 
-        parent.first_name?.toLowerCase().includes(query) ||
-        parent.last_name?.toLowerCase().includes(query) ||
-        parent.full_name?.toLowerCase().includes(query) ||
-        parent.email?.toLowerCase().includes(query) ||
-        parent.phone?.toLowerCase().includes(query) ||
-        parent.ar_first_name?.toLowerCase().includes(query) ||
-        parent.ar_last_name?.toLowerCase().includes(query);
-    }
-
-    let matchesStatus = true;
-    if (statusFilter !== 'all') {
-      matchesStatus = statusFilter === 'active' ? parent.is_active : !parent.is_active;
-    }
-
-    return matchesSearch && matchesStatus;
-  });
-
-  // Helper function to get display name based on language
   const getDisplayName = (parent) => {
     const isArabic = i18n.language === 'ar';
     if (isArabic && (parent.ar_first_name || parent.ar_last_name)) {
@@ -189,28 +173,16 @@ const ParentsManagementPage = () => {
     return parent.full_name || `${parent.first_name || ''} ${parent.last_name || ''}`.trim();
   };
 
-  const handleViewParent = (parentId) => {
-    navigate(`/admin/school-management/parents/view/${parentId}`);
-  };
-
-  const handleEditParent = (parentId) => {
-    navigate(`/admin/school-management/parents/edit/${parentId}`);
-  };
-
-  const handleDeleteParent = (parentId) => {
-    toast.info(`${t('action.delete')} parent: ${parentId}`);
-  };
-
-  const handleAddParent = () => {
-    navigate('/admin/school-management/parents/add');
-  };
+  const handleViewParent = (parentId) => navigate(`/admin/school-management/parents/view/${parentId}`);
+  const handleEditParent = (parentId) => navigate(`/admin/school-management/parents/edit/${parentId}`);
+  const handleDeleteParent = (parentId) => toast.info(`${t('action.delete')} parent: ${parentId}`);
+  const handleAddParent = () => navigate('/admin/school-management/parents/add');
 
   const formatDate = (dateString) => {
     if (!dateString) return '—';
     return new Date(dateString).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
-  // ParentCard component for card-based layout
   const ParentCard = ({ parent, index }) => (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -320,6 +292,30 @@ const ParentsManagementPage = () => {
     </motion.div>
   );
 
+  const PaginationControls = () => (
+    <div className="flex items-center justify-center space-x-4 mt-8">
+      <Button
+        variant="outline"
+        onClick={() => setCurrentPage(prev => prev - 1)}
+        disabled={!pagination?.previous}
+      >
+        <ChevronLeft className="h-4 w-4 mr-2" />
+        {t('common.previous')}
+      </Button>
+      <span className="text-sm text-muted-foreground">
+        {t('common.page')} {currentPage} {t('common.of')} {pagination ? Math.ceil(pagination.count / 20) : 1}
+      </span>
+      <Button
+        variant="outline"
+        onClick={() => setCurrentPage(prev => prev + 1)}
+        disabled={!pagination?.next}
+      >
+        {t('common.next')}
+        <ChevronRight className="h-4 w-4 ml-2" />
+      </Button>
+    </div>
+  );
+
   return (
     <div className="bg-background text-foreground min-h-screen">
       <AdminPageLayout
@@ -392,7 +388,7 @@ const ParentsManagementPage = () => {
                 </div>
                 <div className="flex items-center gap-4 w-full md:w-auto">
                   <motion.div whileHover={{ scale: 1.02 }}>
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <Select value={statusFilter} onValueChange={v => { setStatusFilter(v); setCurrentPage(1); }}>
                       <SelectTrigger className="w-full md:w-[180px] h-12 rounded-lg border-0 bg-gray-50 shadow-inner">
                         <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
                         <SelectValue placeholder={t('common.status')} />
@@ -415,12 +411,15 @@ const ParentsManagementPage = () => {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6 }}
           >
-            {filteredParents.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
-                {filteredParents.map((parent, index) => 
-                  <ParentCard key={parent.id} parent={parent} index={index} />
-                )}
-              </div>
+            {parents.length > 0 ? (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+                  {parents.map((parent, index) => 
+                    <ParentCard key={parent.id} parent={parent} index={index} />
+                  )}
+                </div>
+                <PaginationControls />
+              </>
             ) : (
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -451,7 +450,7 @@ const ParentsManagementPage = () => {
                       : t('admin.parentsManagement.noParentsYet')
                     }
                   </p>
-                  {(!searchQuery && statusFilter === 'all' && parents.length === 0) && (
+                  {(!searchQuery && statusFilter === 'all' && parents.length === 0 && !loading) && (
                     <motion.div
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}

@@ -855,9 +855,25 @@ const BulkImportStudentsPage = () => {
             <Alert>
               <CheckCircle className="h-4 w-4" />
               <AlertDescription>
-                {t('bulkImport.importSuccess', { 
-                  count: importResults.successful_imports 
+                {t('bulkImport.importSuccess', {
+                  count: importResults.successful_imports
                 })}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {importResults?.errors && importResults.errors.length > 0 && (
+            <Alert variant="destructive" className="mt-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                <strong>{t('bulkImport.errorsFound')}:</strong>
+                <ul className="mt-2 space-y-1 max-h-40 overflow-y-auto">
+                  {importResults.errors.map((error, index) => (
+                    <li key={index} className="text-xs">
+                      {t('bulkImport.rowError', { row: error.row, error: error.error })}
+                    </li>
+                  ))}
+                </ul>
               </AlertDescription>
             </Alert>
           )}
