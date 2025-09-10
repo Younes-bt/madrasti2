@@ -44,9 +44,10 @@ class EducationalLevelSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'level', 'order', 'grades')
 
 class SchoolClassSerializer(serializers.ModelSerializer):
-    grade = serializers.StringRelatedField()
+    grade_id = serializers.IntegerField(source='grade.id', read_only=True)
+    grade_name = serializers.StringRelatedField(source='grade')
     academic_year = serializers.StringRelatedField()
 
     class Meta:
         model = SchoolClass
-        fields = ('id', 'name', 'grade', 'academic_year', 'section')
+        fields = ('id', 'name', 'grade', 'grade_id', 'grade_name', 'academic_year', 'section')

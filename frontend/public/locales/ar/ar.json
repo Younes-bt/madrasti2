@@ -46,7 +46,17 @@
     "reset": "إعادة تعيين",
     "back": "رجوع",
     "current": "الحالية",
-    "continue": "متابعة"
+    "continue": "متابعة",
+    "student": "الطالب",
+    "enrolledOn": "تاريخ التسجيل",
+    "total_rows": "إجمالي {{count}} طالب",
+    "page_of": "صفحة {{currentPage}} من {{totalPages}}",
+    "level": "المستوى",
+    "allLevels": "كل المستويات",
+    "grade": "الصف",
+    "allGrades": "كل الصفوف",
+    "class": "الفصل",
+    "allClasses": "كل الفصول"
   },
   "action": {
     "view": "عرض",
@@ -336,7 +346,8 @@
     "failedToLoadParentData": "فشل في تحميل بيانات ولي الأمر. يرجى المحاولة مرة أخرى.",
     "parentNotFound": "لم يتم العثور على ولي الأمر.",
     "gradeRequired": "الصف مطلوب",
-    "emailInvalid": "يرجى إدخال عنوان بريد إلكتروني صحيح"
+    "emailInvalid": "يرجى إدخال عنوان بريد إلكتروني صحيح",
+    "failedToLoadEducationalData": "فشل في تحميل البيانات التعليمية"
   },
   "auth": {
     "login": "تسجيل الدخول",

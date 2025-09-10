@@ -57,7 +57,8 @@
     "addNewStudent": "Ajouter nouvel étudiant",
     "addParent": "Ajouter Parent",
     "addFirstParent": "Ajouter Premier Parent",
-    "addNewParent": "Ajouter nouveau parent"
+    "addNewParent": "Ajouter nouveau parent",
+    "openMenu": "Ouvrir le menu"
   },
   "status": {
     "active": "Actif",
@@ -819,6 +820,18 @@
     "systemSettings": {
       "title": "Paramètres Système",
       "tooltip": "Configurer les paramètres et préférences système",
+      "generalSettings": "Paramètres Généraux",
+      "userPermissions": "Permissions Utilisateurs",
+      "integrationSettings": "Paramètres d'Intégration",
+      "backupRestore": "Sauvegarde et Restauration"
+    }
+  }
+}
+estore": "Sauvegarde et Restauration"
+    }
+  }
+}
+er les paramètres et préférences système",
       "generalSettings": "Paramètres Généraux",
       "userPermissions": "Permissions Utilisateurs",
       "integrationSettings": "Paramètres d'Intégration",

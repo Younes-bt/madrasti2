@@ -46,7 +46,17 @@
     "reset": "Reset",
     "back": "Back",
     "current": "Current",
-    "continue": "Continue"
+    "continue": "Continue",
+    "student": "Student",
+    "enrolledOn": "Enrolled On",
+    "total_rows": "{{count}} student(s) in total",
+    "page_of": "Page {{currentPage}} of {{totalPages}}",
+    "level": "Level",
+    "allLevels": "All Levels",
+    "grade": "Grade",
+    "allGrades": "All Grades",
+    "class": "Class",
+    "allClasses": "All Classes"
   },
   "action": {
     "view": "View",
@@ -335,7 +345,8 @@
     "updateParentFailed": "Failed to update parent. Please try again.",
     "failedToLoadParentData": "Failed to load parent data. Please try again.",
     "parentNotFound": "Parent not found.",
-    "emailInvalid": "Please enter a valid email address"
+    "emailInvalid": "Please enter a valid email address",
+    "failedToLoadEducationalData": "Failed to load educational data"
   },
   "auth": {
     "login": "Login",
