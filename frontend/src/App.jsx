@@ -35,6 +35,26 @@ import RoomsManagementPage from './pages/admin/RoomsManagementPage'
 import AddRoomPage from './pages/admin/AddRoomPage'
 import EditRoomPage from './pages/admin/EditRoomPage'
 import ViewRoomPage from './pages/admin/ViewRoomPage'
+import AcademicYearsPage from './pages/admin/AcademicYearsPage'
+import AddAcademicYearPage from './pages/admin/AddAcademicYearPage'
+import EditAcademicYearPage from './pages/admin/EditAcademicYearPage'
+import ViewAcademicYearPage from './pages/admin/ViewAcademicYearPage'
+import EducationalLevelsPage from './pages/admin/EducationalLevelsPage'
+import AddEducationalLevelPage from './pages/admin/AddEducationalLevelPage'
+import EditEducationalLevelPage from './pages/admin/EditEducationalLevelPage'
+import ViewEducationalLevelPage from './pages/admin/ViewEducationalLevelPage'
+import GradesPage from './pages/admin/GradesPage'
+import AddGradePage from './pages/admin/AddGradePage'
+import EditGradePage from './pages/admin/EditGradePage'
+import ViewGradePage from './pages/admin/ViewGradePage'
+import ClassesPage from './pages/admin/ClassesPage'
+import AddClassPage from './pages/admin/AddClassPage'
+import EditClassPage from './pages/admin/EditClassPage'
+import ViewClassPage from './pages/admin/ViewClassPage'
+import SubjectsPage from './pages/admin/SubjectsPage'
+import AddSubjectPage from './pages/admin/AddSubjectPage'
+import EditSubjectPage from './pages/admin/EditSubjectPage'
+import ViewSubjectPage from './pages/admin/ViewSubjectPage'
 
 // Import feature pages
 import LessonsPage from './pages/lessons/LessonsPage'
@@ -312,7 +332,31 @@ const AppRoutes = () => {
         path="/admin/academic-management/academic-years" 
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
-            <div>Academic Years Page - Coming Soon</div>
+            <AcademicYearsPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/academic-management/academic-years/add" 
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <AddAcademicYearPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/academic-management/academic-years/edit/:yearId" 
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <EditAcademicYearPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/academic-management/academic-years/view/:yearId" 
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <ViewAcademicYearPage />
           </ProtectedRoute>
         } 
       />
@@ -320,7 +364,31 @@ const AppRoutes = () => {
         path="/admin/academic-management/educational-levels" 
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
-            <div>Educational Levels Page - Coming Soon</div>
+            <EducationalLevelsPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/academic-management/educational-levels/add" 
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <AddEducationalLevelPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/academic-management/educational-levels/edit/:levelId" 
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <EditEducationalLevelPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/academic-management/educational-levels/view/:levelId" 
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <ViewEducationalLevelPage />
           </ProtectedRoute>
         } 
       />
@@ -328,7 +396,31 @@ const AppRoutes = () => {
         path="/admin/academic-management/grades" 
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
-            <div>Grades Page - Coming Soon</div>
+            <GradesPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/academic-management/grades/add" 
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <AddGradePage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/academic-management/grades/:id" 
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <ViewGradePage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/academic-management/grades/:id/edit" 
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <EditGradePage />
           </ProtectedRoute>
         } 
       />
@@ -336,7 +428,31 @@ const AppRoutes = () => {
         path="/admin/academic-management/classes" 
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
-            <div>Classes Page - Coming Soon</div>
+            <ClassesPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/academic-management/classes/add" 
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <AddClassPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/academic-management/classes/:id" 
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <ViewClassPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/academic-management/classes/:id/edit" 
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <EditClassPage />
           </ProtectedRoute>
         } 
       />
@@ -344,7 +460,31 @@ const AppRoutes = () => {
         path="/admin/academic-management/subjects" 
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
-            <div>Subjects Page - Coming Soon</div>
+            <SubjectsPage />
+          </ProtectedRoute>
+        } 
+      />
+       <Route 
+        path="/admin/academic-management/subjects/add" 
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <AddSubjectPage />
+          </ProtectedRoute>
+        } 
+      />
+       <Route 
+        path="/admin/academic-management/subjects/:id" 
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <ViewSubjectPage />
+          </ProtectedRoute>
+        } 
+      />
+       <Route 
+        path="/admin/academic-management/subjects/:id/edit" 
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <EditSubjectPage />
           </ProtectedRoute>
         } 
       />

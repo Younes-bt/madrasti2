@@ -37,28 +37,49 @@ class SchoolConfigViewSet(viewsets.ModelViewSet):
         # This view should always return the single School object
         return School.objects.first()
 
-class AcademicYearViewSet(viewsets.ReadOnlyModelViewSet):
-    """API endpoint to view academic years."""
+class AcademicYearViewSet(viewsets.ModelViewSet):
+    """API endpoint for managing academic years."""
     queryset = AcademicYear.objects.all()
     serializer_class = AcademicYearSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_permissions(self):
+        """Allow any authenticated user to list/view, but only admins to create/edit."""
+        if self.action in ['list', 'retrieve']:
+            self.permission_classes = [permissions.IsAuthenticated]
+        else:
+            self.permission_classes = [permissions.IsAdminUser]
+        return super().get_permissions()
     
     def list(self, request, *args, **kwargs):
         print(f"DEBUG: AcademicYear queryset count: {self.get_queryset().count()}")
         print(f"DEBUG: AcademicYear objects: {list(self.get_queryset().values())}")
         return super().list(request, *args, **kwargs)
 
-class EducationalLevelViewSet(viewsets.ReadOnlyModelViewSet):
-    """API endpoint to view educational levels and their nested grades."""
+class EducationalLevelViewSet(viewsets.ModelViewSet):
+    """API endpoint for managing educational levels."""
     queryset = EducationalLevel.objects.prefetch_related('grades').all()
     serializer_class = EducationalLevelSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_permissions(self):
+        """Allow any authenticated user to list/view, but only admins to create/edit."""
+        if self.action in ['list', 'retrieve']:
+            self.permission_classes = [permissions.IsAuthenticated]
+        else:
+            self.permission_classes = [permissions.IsAdminUser]
+        return super().get_permissions()
 
-class GradeViewSet(viewsets.ReadOnlyModelViewSet):
-    """API endpoint to view all grades."""
+class GradeViewSet(viewsets.ModelViewSet):
+    """API endpoint for managing grades."""
     queryset = Grade.objects.select_related('educational_level').all()
     serializer_class = GradeSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_permissions(self):
+        """Allow any authenticated user to list/view, but only admins to create/edit."""
+        if self.action in ['list', 'retrieve']:
+            self.permission_classes = [permissions.IsAuthenticated]
+        else:
+            self.permission_classes = [permissions.IsAdminUser]
+        return super().get_permissions()
 
 class SchoolClassViewSet(viewsets.ModelViewSet):
     """API endpoint for managing classes."""
