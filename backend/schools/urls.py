@@ -2,6 +2,7 @@
 
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+from rest_framework_nested import routers
 from .views import (
     SchoolConfigViewSet,
     AcademicYearViewSet,
@@ -11,6 +12,7 @@ from .views import (
     RoomViewSet,
     SubjectViewSet
 )
+from media.views import RoomMediaViewSet
 
 router = DefaultRouter()
 # The 'basename' is only needed if the queryset in the view is not standard.
@@ -23,6 +25,11 @@ router.register(r'classes', SchoolClassViewSet)
 router.register(r'rooms', RoomViewSet)
 router.register(r'subjects', SubjectViewSet)
 
+# Create nested router for room media
+rooms_router = routers.NestedDefaultRouter(router, r'rooms', lookup='room')
+rooms_router.register(r'media', RoomMediaViewSet, basename='room-media')
+
 urlpatterns = [
     path('', include(router.urls)),
+    path('', include(rooms_router.urls)),
 ]

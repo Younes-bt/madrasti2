@@ -35,6 +35,13 @@ const BulkImportStudentsPage = () => {
   const [previewData, setPreviewData] = useState(null);
   const [importResults, setImportResults] = useState(null);
   const [currentStep, setCurrentStep] = useState('structure'); // 'structure', 'template', 'upload', 'results'
+  
+  // Progress tracking states
+  const [importProgress, setImportProgress] = useState(0);
+  const [importStatus, setImportStatus] = useState('');
+  const [isImporting, setIsImporting] = useState(false);
+  const [importJobId, setImportJobId] = useState(null);
+  const [pollInterval, setPollInterval] = useState(null);
   const [educationalStructure, setEducationalStructure] = useState({
     levelId: '',
     gradeId: '',
@@ -67,6 +74,15 @@ const BulkImportStudentsPage = () => {
 
     fetchAvailableData();
   }, []);
+
+  // Cleanup polling interval on unmount
+  useEffect(() => {
+    return () => {
+      if (pollInterval) {
+        clearInterval(pollInterval);
+      }
+    };
+  }, [pollInterval]);
 
   // Update grades when level changes
   useEffect(() => {
@@ -185,6 +201,90 @@ const BulkImportStudentsPage = () => {
     }
   };
 
+  // Poll for import progress updates
+  const pollImportProgress = (jobId) => {
+    const interval = setInterval(async () => {
+      try {
+        const response = await apiMethods.get(`users/bulk-import/progress/${jobId}/`);
+        const { progress, current_status, completed, error, results } = response;
+        
+        setImportProgress(progress || 0);
+        setImportStatus(current_status || t('bulkImport.processing'));
+        
+        if (completed || error) {
+          clearInterval(interval);
+          setPollInterval(null);
+          
+          if (error) {
+            setIsImporting(false);
+            setImportProgress(0);
+            setImportStatus('');
+            setImportJobId(null);
+            toast.error(error);
+          } else if (results) {
+            // Import completed successfully
+            setImportProgress(100);
+            setImportStatus(t('bulkImport.importComplete'));
+            setImportResults(results);
+            setCurrentStep('results');
+            
+            // Show success message
+            if (results.successful_imports > 0) {
+              toast.success(t('bulkImport.importCompleted', { 
+                successful: results.successful_imports,
+                total: results.processed_rows || results.total_rows
+              }));
+            } else if (results.successful_imports === 0) {
+              toast.warning(t('bulkImport.noStudentsImported'));
+            }
+            
+            // Clean up importing state after a delay to show completion
+            setTimeout(() => {
+              setIsImporting(false);
+              setImportJobId(null);
+            }, 2000);
+          }
+        }
+      } catch (error) {
+        console.error('Error polling progress:', error);
+        // Don't clear interval on temporary errors, keep polling
+      }
+    }, 1000); // Poll every 1 second
+    
+    setPollInterval(interval);
+    return interval;
+  };
+
+  // Simulate progress updates during import (fallback for older backend)
+  const simulateProgress = (totalRows) => {
+    setImportProgress(0);
+    setImportStatus(t('bulkImport.preparingImport'));
+    
+    let progress = 0;
+    const steps = [
+      { progress: 10, status: t('bulkImport.validatingData') },
+      { progress: 25, status: t('bulkImport.creatingStudentAccounts') },
+      { progress: 50, status: t('bulkImport.creatingParentAccounts') },
+      { progress: 75, status: t('bulkImport.settingUpEnrollments') },
+      { progress: 90, status: t('bulkImport.finalizingImport') },
+      { progress: 100, status: t('bulkImport.importComplete') }
+    ];
+    
+    let stepIndex = 0;
+    const interval = setInterval(() => {
+      if (stepIndex < steps.length) {
+        const step = steps[stepIndex];
+        setImportProgress(step.progress);
+        setImportStatus(step.status);
+        stepIndex++;
+      } else {
+        clearInterval(interval);
+      }
+    }, 800); // Update every 800ms
+    
+    return interval;
+  };
+
   // Execute actual import
   const handleFinalImport = async () => {
     if (!uploadedFile) {
@@ -193,6 +293,9 @@ const BulkImportStudentsPage = () => {
     }
 
     setLoading(true);
+    setIsImporting(true);
+    let progressInterval = null;
+    
     try {
       const formData = new FormData();
       formData.append('file', uploadedFile);
@@ -204,22 +307,71 @@ const BulkImportStudentsPage = () => {
 
       const response = await apiMethods.postFormData('users/bulk-import/students/', formData);
       
-      setImportResults(response);
-      setCurrentStep('results');
-      
-      if (response.successful_imports > 0) {
-        toast.success(t('bulkImport.importCompleted', { 
-          successful: response.successful_imports,
-          total: response.processed_rows
-        }));
+      // Check if backend supports real-time progress tracking
+      if (response.job_id) {
+        // Use real progress tracking
+        setImportJobId(response.job_id);
+        setImportProgress(0);
+        setImportStatus(t('bulkImport.preparingImport'));
+        
+        pollImportProgress(response.job_id);
+        
+        // The polling will handle completion automatically
       } else {
-        toast.error(t('bulkImport.importFailed'));
+        // Fallback to simulation if backend doesn't support progress tracking
+        const totalRows = previewData?.processed_rows || 0;
+        progressInterval = simulateProgress(totalRows);
+        
+        // Wait for simulation to complete (about 5 seconds)
+        await new Promise(resolve => setTimeout(resolve, 5500));
+        
+        // Set final results
+        setImportProgress(100);
+        setImportStatus(t('bulkImport.importComplete'));
+        setImportResults(response);
+        setCurrentStep('results');
+        
+        // Show appropriate success/error messages
+        if (response && response.successful_imports > 0) {
+          toast.success(t('bulkImport.importCompleted', { 
+            successful: response.successful_imports,
+            total: response.processed_rows || response.total_rows
+          }));
+        } else if (response && response.successful_imports === 0) {
+          toast.warning(t('bulkImport.noStudentsImported'));
+        }
       }
       
     } catch (error) {
       console.error('Import failed:', error);
-      toast.error(error.response?.data?.error || t('bulkImport.importFailed'));
+      
+      // Clean up progress interval
+      if (progressInterval) {
+        clearInterval(progressInterval);
+        progressInterval = null;
+      }
+      if (pollInterval) {
+        clearInterval(pollInterval);
+        setPollInterval(null);
+      }
+      
+      // Reset progress states
+      setImportProgress(0);
+      setImportStatus('');
+      setImportJobId(null);
+      setIsImporting(false);
+      
+      // Show error message
+      const errorMessage = error.response?.data?.error || error.message || t('bulkImport.importFailed');
+      toast.error(errorMessage);
+      
     } finally {
+      // Clean up progress interval only if not using real progress tracking
+      if (progressInterval) {
+        clearInterval(progressInterval);
+      }
+      
+      // Only clean up loading state, keep importing state for real progress tracking
       setLoading(false);
     }
   };
@@ -236,6 +388,14 @@ const BulkImportStudentsPage = () => {
       classId: '',
       academicYearId: ''
     });
+    
+    // Reset progress states
+    setImportProgress(0);
+    setImportStatus('');
+    setIsImporting(false);
+    setImportJobId(null);
+    setLoading(false);
+    
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -919,9 +1079,100 @@ const BulkImportStudentsPage = () => {
       title={t('bulkImport.bulkImportStudents')}
       subtitle={t('bulkImport.bulkImportDescription')}
       actions={actions}
-      loading={loading}
+      loading={loading && !isImporting}
     >
       <div className="max-w-6xl mx-auto">
+        {/* Import Progress Overlay */}
+        {isImporting && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 shadow-xl">
+              <div className="text-center">
+                {/* Progress Circle */}
+                <div className="relative mx-auto mb-6 w-24 h-24">
+                  <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
+                    {/* Background circle */}
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="40"
+                      stroke="#f3f4f6"
+                      strokeWidth="8"
+                      fill="none"
+                    />
+                    {/* Progress circle */}
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="40"
+                      stroke="#3b82f6"
+                      strokeWidth="8"
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeDasharray={`${2 * Math.PI * 40}`}
+                      strokeDashoffset={`${2 * Math.PI * 40 * (1 - importProgress / 100)}`}
+                      className="transition-all duration-500 ease-out"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-2xl font-bold text-blue-600">
+                      {Math.round(importProgress)}%
+                    </span>
+                  </div>
+                </div>
+
+                {/* Progress Info */}
+                <div className="space-y-4">
+                  <h3 className="text-xl font-semibold text-gray-900">
+                    {t('bulkImport.importingStudents')}
+                  </h3>
+                  
+                  {/* Current Status */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <p className="text-sm text-gray-600 mb-2">{t('bulkImport.currentStep')}:</p>
+                    <p className="font-medium text-gray-900">{importStatus}</p>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-500 ease-out"
+                      style={{ width: `${importProgress}%` }}
+                    ></div>
+                  </div>
+
+                  {/* Import Details */}
+                  {previewData && (
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div className="bg-blue-50 rounded-lg p-3">
+                        <div className="text-blue-600 font-medium">{previewData.processed_rows}</div>
+                        <div className="text-blue-500">{t('bulkImport.studentsToProcess')}</div>
+                      </div>
+                      <div className="bg-green-50 rounded-lg p-3">
+                        <div className="text-green-600 font-medium">
+                          {Math.round((importProgress / 100) * previewData.processed_rows)}
+                        </div>
+                        <div className="text-green-500">{t('bulkImport.studentsProcessed')}</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Job ID Display (for debugging/tracking) */}
+                  {importJobId && (
+                    <div className="text-xs text-gray-500 text-center">
+                      Job ID: {importJobId}
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-center text-sm text-gray-500">
+                    <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                    {t('bulkImport.pleaseWait')}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Progress Steps */}
         <div className="flex items-center justify-center mb-8">
           <div className="flex items-center space-x-2">

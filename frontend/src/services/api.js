@@ -45,6 +45,11 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
+    // If data is FormData, let the browser set the Content-Type
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
+
     // Add request timestamp for debugging
     config.metadata = { startTime: new Date() };
 

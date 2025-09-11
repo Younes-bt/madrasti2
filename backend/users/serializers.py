@@ -72,10 +72,9 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         ]
 
     def _generate_unique_email(self, first_name, last_name, role):
-        """Generate a unique email using initials + lastname approach"""
+        """Generate a unique email using initials + lastname approach with simple incremental numbers"""
         import re
         import logging
-        import time
         logger = logging.getLogger(__name__)
         
         # Clean the last name
@@ -102,16 +101,13 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         unique_email = None
         counter = 0
         
-        # Add timestamp for uniqueness to avoid race conditions
-        timestamp = str(int(time.time() * 1000000)) # More unique timestamp
-        
         while not unique_email:
             if counter == 0:
-                # First try: initial.lastname.timestamp@school-suffix.com
-                candidate_email = f"{initial}.{clean_last_name}.{timestamp}@{clean_school_name}-{domain_suffix}.com"
+                # First try: initial.lastname@school-suffix.com
+                candidate_email = f"{initial}.{clean_last_name}@{clean_school_name}-{domain_suffix}.com"
             else:
-                # Subsequent tries: initial{counter}.lastname.timestamp@school-suffix.com
-                candidate_email = f"{initial}{counter}.{clean_last_name}.{timestamp}@{clean_school_name}-{domain_suffix}.com"
+                # Subsequent tries: initial.lastname{counter}@school-suffix.com
+                candidate_email = f"{initial}.{clean_last_name}{counter}@{clean_school_name}-{domain_suffix}.com"
             
             logger.error(f"EMAIL GENERATION: Trying candidate_email={candidate_email}")
             
@@ -123,8 +119,8 @@ class UserRegisterSerializer(serializers.ModelSerializer):
                 logger.error(f"EMAIL GENERATION: Email {candidate_email} already exists, incrementing counter")
                 counter += 1
                 # Safety break to avoid infinite loop (very unlikely to reach)
-                if counter > 100:
-                    unique_email = f"{initial}{counter}.{clean_last_name}.{timestamp}@{clean_school_name}-{domain_suffix}.com"
+                if counter > 1000:
+                    unique_email = f"{initial}.{clean_last_name}{counter}@{clean_school_name}-{domain_suffix}.com"
                     logger.error(f"EMAIL GENERATION: Hit counter limit, using={unique_email}")
                     break
         
@@ -212,22 +208,41 @@ class UserRegisterSerializer(serializers.ModelSerializer):
                 parent_first_name = 'Parent'
                 parent_last_name = f'of {user.first_name}'
             
-            # Generate unique parent email using the helper function
-            parent_email = self._generate_unique_email(parent_first_name, parent_last_name, 'PARENT')
-            
-            # Create parent user account
-            parent_user = User.objects.create_user(
-                email=parent_email,
-                password='defaultStrongPassword25',  # Same default password as student
-                first_name=parent_first_name,
-                last_name=parent_last_name,
-                role=User.Role.PARENT
-            )
-            
-            # Update parent profile with phone if provided
+            # Check if parent already exists with same name and phone (to avoid duplicates)
+            existing_parent = None
             if parent_data.get('parent_phone'):
-                parent_user.profile.phone = parent_data['parent_phone']
-                parent_user.profile.save()
+                existing_parent = User.objects.filter(
+                    role=User.Role.PARENT,
+                    first_name=parent_first_name,
+                    last_name=parent_last_name,
+                    profile__phone=parent_data['parent_phone']
+                ).first()
+            
+            if existing_parent:
+                # Link student to existing parent
+                user.parent = existing_parent
+                user.save()
+            else:
+                # Generate unique parent email using the helper function
+                parent_email = self._generate_unique_email(parent_first_name, parent_last_name, 'PARENT')
+                
+                # Create parent user account
+                parent_user = User.objects.create_user(
+                    email=parent_email,
+                    password='defaultStrongPassword25',  # Same default password as student
+                    first_name=parent_first_name,
+                    last_name=parent_last_name,
+                    role=User.Role.PARENT
+                )
+                
+                # Update parent profile with phone if provided
+                if parent_data.get('parent_phone'):
+                    parent_user.profile.phone = parent_data['parent_phone']
+                    parent_user.profile.save()
+                
+                # Link student to new parent
+                user.parent = parent_user
+                user.save()
         
         return user
 
@@ -347,6 +362,62 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             })
         except Profile.DoesNotExist:
             pass
+        
+        # Include parent information for students
+        if instance.role == User.Role.STUDENT and instance.parent:
+            parent = instance.parent
+            try:
+                parent_profile = parent.profile
+                data.update({
+                    'parent_name': f"{parent.first_name} {parent.last_name}".strip(),
+                    'parent_email': parent.email,
+                    'parent_phone': parent_profile.phone,
+                })
+            except Profile.DoesNotExist:
+                data.update({
+                    'parent_name': f"{parent.first_name} {parent.last_name}".strip(),
+                    'parent_email': parent.email,
+                    'parent_phone': None,
+                })
+        else:
+            # Set empty parent fields for non-students or students without parents
+            data.update({
+                'parent_name': None,
+                'parent_email': None,
+                'parent_phone': None,
+            })
+        
+        # Include academic information for students
+        if instance.role == User.Role.STUDENT:
+            # Get the current/active enrollment for this student
+            current_enrollment = instance.student_enrollments.filter(is_active=True).first()
+            if current_enrollment:
+                data.update({
+                    'grade': current_enrollment.school_class.grade.name,
+                    'class_name': current_enrollment.school_class.name,
+                    'enrollment_date': current_enrollment.enrollment_date,
+                    'student_id': current_enrollment.student_number,
+                    'academic_year': current_enrollment.academic_year.year,
+                })
+            else:
+                # Set empty academic fields if no enrollment found
+                data.update({
+                    'grade': None,
+                    'class_name': None,
+                    'enrollment_date': None,
+                    'student_id': None,
+                    'academic_year': None,
+                })
+        else:
+            # Set empty academic fields for non-students
+            data.update({
+                'grade': None,
+                'class_name': None,
+                'enrollment_date': None,
+                'student_id': None,
+                'academic_year': None,
+            })
+        
         return data
 
 

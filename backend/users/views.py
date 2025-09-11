@@ -12,8 +12,11 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 import pandas as pd
 import io
 from datetime import datetime
+import threading
+import time
+from django.utils import timezone
 
-from .models import User, StudentEnrollment
+from .models import User, StudentEnrollment, BulkImportJob
 from .serializers import UserRegisterSerializer, UserProfileSerializer, MyTokenObtainPairSerializer, StudentEnrollmentSerializer, StudentEnrollmentCreateSerializer, UserBasicSerializer, UserUpdateSerializer
 
 # The RegisterView and ProfileView remain the same
@@ -92,7 +95,6 @@ class IsAdminOrReadOnly(permissions.BasePermission):
 
 class UserViewSet(viewsets.ModelViewSet):
     """ViewSet for listing, retrieving, and updating users"""
-    queryset = User.objects.select_related('profile').all()
     permission_classes = [IsAdminOrReadOnly]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['role', 'is_active']
@@ -108,7 +110,15 @@ class UserViewSet(viewsets.ModelViewSet):
         return UserBasicSerializer
     
     def get_queryset(self):
-        queryset = super().get_queryset()
+        # Base queryset with optimized relations
+        queryset = User.objects.select_related(
+            'profile',  # User profile data
+            'parent',   # Parent information for students
+            'parent__profile'  # Parent profile data
+        ).prefetch_related(
+            'student_enrollments__school_class__grade__educational_level',  # Academic information
+            'student_enrollments__academic_year'  # Academic year information
+        ).all()
         
         # Additional filtering by role
         role = self.request.query_params.get('role')
@@ -326,23 +336,64 @@ class StudentBulkImportView(APIView):
                 'class_id': int(class_id),
                 'academic_year_id': int(academic_year_id)
             }
-            results = self._process_student_data(df, preview_mode, educational_structure)
             
-            # Debug: Log the results
-            logger.error(f"BULK IMPORT RESULTS: Preview={preview_mode}, Total={results.get('total_rows')}, Processed={results.get('processed_rows')}, Successful={results.get('successful_imports')}, Errors={len(results.get('errors', []))}")
-            
-            # Debug: Log first few errors if any
-            if results.get('errors') and len(results.get('errors', [])) > 0:
-                for i, error in enumerate(results.get('errors', [])[:3]):  # Show first 3 errors
-                    logger.error(f"ERROR {i+1}: Row {error.get('row')}: {error.get('error')}")
-            
-            return Response(results, status=status.HTTP_200_OK)
+            if preview_mode:
+                # For preview, process synchronously
+                results = self._process_student_data(df, preview_mode, educational_structure)
+                return Response(results, status=status.HTTP_200_OK)
+            else:
+                # For actual import, process asynchronously
+                job = BulkImportJob.objects.create(
+                    created_by=request.user,
+                    total_records=len(df),
+                    current_status='Initializing import...'
+                )
+                
+                # Start background processing
+                thread = threading.Thread(
+                    target=self._process_import_async,
+                    args=(job.job_id, df, educational_structure)
+                )
+                thread.daemon = True
+                thread.start()
+                
+                return Response({
+                    'job_id': str(job.job_id),
+                    'status': 'started',
+                    'message': 'Import job started successfully'
+                }, status=status.HTTP_200_OK)
             
         except Exception as e:
             return Response(
                 {'error': f'Import failed: {str(e)}'}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+    def _process_import_async(self, job_id, df, educational_structure):
+        """Process import in background thread"""
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        try:
+            job = BulkImportJob.objects.get(job_id=job_id)
+            job.status = BulkImportJob.Status.PROCESSING
+            job.started_at = timezone.now()
+            job.save()
+            
+            # Process the import with progress tracking
+            results = self._process_student_data_with_progress(df, job, educational_structure)
+            
+            # Mark job as completed
+            job.mark_completed(results)
+            logger.info(f"Import job {job_id} completed successfully")
+            
+        except Exception as e:
+            logger.error(f"Import job {job_id} failed: {str(e)}")
+            try:
+                job = BulkImportJob.objects.get(job_id=job_id)
+                job.mark_failed(str(e))
+            except:
+                pass
 
     def _generate_unique_email_for_import(self, first_name, last_name, role, used_emails):
         """
@@ -365,14 +416,17 @@ class StudentBulkImportView(APIView):
         # Base email part (e.g., j.doe)
         base_email_part = f"{initial}.{clean_last_name}"
         
-        # First attempt
+        # First attempt - clean email without numbers
         candidate_email = base_email_part + email_domain
         
-        # Check for uniqueness and add number if needed
-        counter = 1
+        # Check for uniqueness and add simple incremental number if needed
+        counter = 2  # Start with 2 for the second attempt (first attempt has no number)
         while User.objects.filter(email=candidate_email).exists() or candidate_email in used_emails:
             candidate_email = f"{base_email_part}{counter}{email_domain}"
             counter += 1
+            # Safety break to avoid infinite loop
+            if counter > 1000:
+                break
             
         return candidate_email
 
@@ -456,13 +510,24 @@ class StudentBulkImportView(APIView):
 
                 if preview_mode:
                     generated_emails_in_batch.add(student_email) # Add to set even in preview
+                    
+                    # Generate predicted parent email if parent data exists
+                    predicted_parent_email = None
+                    if student_data.get('parent_first_name') and student_data.get('parent_last_name'):
+                        predicted_parent_email = self._generate_unique_email_for_import(
+                            student_data['parent_first_name'], 
+                            student_data['parent_last_name'], 
+                            'PARENT', 
+                            generated_emails_in_batch
+                        )
+                    
                     preview_item = {
                         'row_number': row_number,
                         'student_name': f"{student_first_name} {student_last_name}",
                         'arabic_name': f"{row['Arabic First Name']} {row['Arabic Last Name']}",
                         'parent_name': f"{row.get('Parent First Name', '')} {row.get('Parent Last Name', '')}".strip(),
                         'predicted_student_email': student_email,
-                        'predicted_parent_email': 'Parent email will be generated on final import.'
+                        'predicted_parent_email': predicted_parent_email or 'No parent data provided'
                     }
                     if results['preview_data'] is None: results['preview_data'] = []
                     results['preview_data'].append(preview_item)
@@ -476,12 +541,20 @@ class StudentBulkImportView(APIView):
                             results['successful_imports'] += 1
                             results['created_students'].append({'id': student.id, 'email': student.email, 'full_name': student.full_name, 'row_number': row_number})
                             
-                            # Check if a parent was created by the serializer
-                            if student_data.get('parent_first_name'):
-                                # This is not a robust way to find the parent.
-                                # The serializer should return the parent instance.
-                                # For now, we assume it was created and just log it.
-                                 pass
+                            # Track parent creation for results
+                            if student_data.get('parent_first_name') and student.parent:
+                                # Check if this parent was already tracked in this batch
+                                parent_already_tracked = any(
+                                    p['id'] == student.parent.id 
+                                    for p in results['created_parents']
+                                )
+                                if not parent_already_tracked:
+                                    results['created_parents'].append({
+                                        'id': student.parent.id, 
+                                        'email': student.parent.email, 
+                                        'full_name': student.parent.full_name,
+                                        'children_count': student.parent.children.count()
+                                    })
 
                         except Exception as save_error:
                             results['errors'].append({'row': row_number, 'error': f"Save Error: {save_error}"})
@@ -490,6 +563,138 @@ class StudentBulkImportView(APIView):
                                 
             except Exception as e:
                 results['errors'].append({'row': index + 2, 'error': str(e)})
+        
+        return results
+
+    def _process_student_data_with_progress(self, df, job, educational_structure):
+        """Process student data with progress tracking"""
+        results = {
+            'total_rows': len(df),
+            'processed_rows': 0,
+            'successful_imports': 0,
+            'errors': [],
+            'warnings': [],
+            'created_students': [],
+            'created_parents': []
+        }
+        
+        generated_emails_in_batch = set()
+        total_rows = len(df)
+        
+        job.update_progress(5, "Validating data...")
+        
+        for index, row in df.iterrows():
+            try:
+                # Skip empty rows
+                if pd.isna(row['Student First Name']) or pd.isna(row['Student Last Name']):
+                    continue
+                
+                results['processed_rows'] += 1
+                row_number = index + 2  # Excel row number (accounting for header)
+                
+                # Update progress after each record for smoother progress bar
+                progress = 10 + (results['processed_rows'] / total_rows * 85)  # 10% to 95%
+                status = f"Processing student {results['processed_rows']} of {total_rows}..."
+                job.update_progress(int(progress), status)
+
+                # --- Basic Row Validation ---
+                row_errors = []
+                required_fields = {'Student First Name': 'Student first name', 'Student Last Name': 'Student last name', 'Arabic First Name': 'Arabic first name', 'Arabic Last Name': 'Arabic last name'}
+                for field, display_name in required_fields.items():
+                    if pd.isna(row.get(field)) or str(row.get(field)).strip() == '':
+                        row_errors.append(f'{display_name} is required.')
+                
+                if not pd.isna(row.get('Date of Birth')):
+                    try: pd.to_datetime(row['Date of Birth'])
+                    except: row_errors.append('Invalid date format for Date of Birth. Use YYYY-MM-DD.')
+                
+                if row_errors:
+                    results['errors'].append({'row': row_number, 'error': ' '.join(row_errors)})
+                    continue
+                # --- End Basic Validation ---
+
+                # --- Prepare Student Data ---
+                from datetime import date
+                student_first_name = str(row['Student First Name']).strip()
+                student_last_name = str(row['Student Last Name']).strip()
+                
+                # Generate final, unique email before validation
+                student_email = self._generate_unique_email_for_import(
+                    student_first_name, student_last_name, 'STUDENT', generated_emails_in_batch
+                )
+
+                student_data = {
+                    'email': student_email,
+                    'password': 'defaultStrongPassword25',
+                    'first_name': student_first_name,
+                    'last_name': student_last_name,
+                    'role': 'STUDENT',
+                    'ar_first_name': str(row['Arabic First Name']).strip(),
+                    'ar_last_name': str(row['Arabic Last Name']).strip(),
+                    'enrollment_date': date.today(),
+                }
+                
+                if educational_structure:
+                    student_data['school_class_id'] = educational_structure['class_id']
+                    student_data['academic_year_id'] = educational_structure['academic_year_id']
+                
+                optional_fields = {
+                    'phone': 'Student Phone', 'address': 'Address', 'bio': 'Notes',
+                    'emergency_contact_name': 'Emergency Contact Name', 'emergency_contact_phone': 'Emergency Contact Phone',
+                    'parent_first_name': 'Parent First Name', 'parent_last_name': 'Parent Last Name', 'parent_phone': 'Parent Phone'
+                }
+                for field, column in optional_fields.items():
+                    if column in row and not pd.isna(row[column]):
+                        student_data[field] = str(row[column]).strip()
+                
+                if 'Date of Birth' in row and not pd.isna(row['Date of Birth']):
+                    student_data['date_of_birth'] = pd.to_datetime(row['Date of Birth']).date()
+                # --- End Data Preparation ---
+
+                # Final Import: Validate and Save
+                serializer = UserRegisterSerializer(data=student_data)
+                if serializer.is_valid():
+                    try:
+                        student = serializer.save()
+                        generated_emails_in_batch.add(student.email) # Add final email to set
+                        results['successful_imports'] += 1
+                        results['created_students'].append({
+                            'id': student.id, 
+                            'email': student.email, 
+                            'full_name': student.full_name, 
+                            'row_number': row_number
+                        })
+                        
+                        # Track parent creation for results
+                        if student_data.get('parent_first_name') and student.parent:
+                            # Check if this parent was already tracked in this batch
+                            parent_already_tracked = any(
+                                p['id'] == student.parent.id 
+                                for p in results['created_parents']
+                            )
+                            if not parent_already_tracked:
+                                results['created_parents'].append({
+                                    'id': student.parent.id, 
+                                    'email': student.parent.email, 
+                                    'full_name': student.parent.full_name,
+                                    'children_count': student.parent.children.count()
+                                })
+
+                    except Exception as save_error:
+                        results['errors'].append({'row': row_number, 'error': f"Save Error: {save_error}"})
+                else:
+                    results['errors'].append({'row': row_number, 'error': f"Validation failed: {serializer.errors}"})
+                                
+            except Exception as e:
+                results['errors'].append({'row': index + 2, 'error': str(e)})
+        
+        # Update job statistics
+        job.successful_records = results['successful_imports']
+        job.failed_records = len(results['errors'])
+        job.processed_records = results['processed_rows']
+        job.save()
+        
+        job.update_progress(100, f"Import completed: {results['successful_imports']} students created")
         
         return results
 
@@ -549,5 +754,54 @@ class BulkImportStatusView(APIView):
         except Exception as e:
             return Response(
                 {'error': f'Failed to get import info: {str(e)}'}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class BulkImportProgressView(APIView):
+    """
+    View to check the progress of a bulk import job
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, job_id):
+        """Get progress status of a bulk import job"""
+        try:
+            # Find the job
+            job = BulkImportJob.objects.get(job_id=job_id, created_by=request.user)
+            
+            response_data = {
+                'job_id': str(job.job_id),
+                'status': job.status,
+                'progress': job.progress,
+                'current_status': job.current_status or 'Processing...',
+                'total_records': job.total_records,
+                'processed_records': job.processed_records,
+                'successful_records': job.successful_records,
+                'failed_records': job.failed_records,
+                'completed': job.is_completed,
+                'created_at': job.created_at,
+                'started_at': job.started_at,
+                'completed_at': job.completed_at,
+            }
+            
+            # Include error message if job failed
+            if job.status == BulkImportJob.Status.FAILED:
+                response_data['error'] = job.error_message
+            
+            # Include results if job completed successfully
+            if job.status == BulkImportJob.Status.COMPLETED and job.results:
+                response_data['results'] = job.results
+            
+            return Response(response_data, status=status.HTTP_200_OK)
+            
+        except BulkImportJob.DoesNotExist:
+            return Response(
+                {'error': 'Import job not found'}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {'error': f'Failed to get job status: {str(e)}'}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )

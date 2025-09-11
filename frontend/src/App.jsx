@@ -31,6 +31,10 @@ import ParentsManagementPage from './pages/admin/ParentsManagementPage'
 import AddParentPage from './pages/admin/AddParentPage'
 import EditParentPage from './pages/admin/EditParentPage'
 import ViewParentPage from './pages/admin/ViewParentPage'
+import RoomsManagementPage from './pages/admin/RoomsManagementPage'
+import AddRoomPage from './pages/admin/AddRoomPage'
+import EditRoomPage from './pages/admin/EditRoomPage'
+import ViewRoomPage from './pages/admin/ViewRoomPage'
 
 // Import feature pages
 import LessonsPage from './pages/lessons/LessonsPage'
@@ -258,7 +262,31 @@ const AppRoutes = () => {
         path="/admin/school-management/rooms" 
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
-            <div>Rooms Management Page - Coming Soon</div>
+            <RoomsManagementPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/school-management/rooms/add" 
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <AddRoomPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/school-management/rooms/edit/:roomId" 
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <EditRoomPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/school-management/rooms/view/:roomId" 
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <ViewRoomPage />
           </ProtectedRoute>
         } 
       />

@@ -148,6 +148,36 @@ class Room(models.Model):
     
     def __str__(self):
         return self.name
+    
+    def get_images(self):
+        """Get all images associated with this room"""
+        from django.contrib.contenttypes.models import ContentType
+        from media.models import MediaRelation
+        ct = ContentType.objects.get_for_model(self)
+        return MediaRelation.objects.filter(
+            content_type=ct,
+            object_id=self.id,
+            relation_type__in=['ROOM_GALLERY', 'ROOM_FEATURED']
+        ).order_by('order', 'created_at')
+    
+    def get_featured_image(self):
+        """Get the featured image for this room"""
+        featured_relations = self.get_images().filter(is_featured=True)
+        if featured_relations.exists():
+            return featured_relations.first().media_file
+        return None
+    
+    def get_gallery_images(self):
+        """Get gallery images (non-featured) for this room"""
+        return self.get_images().filter(relation_type='ROOM_GALLERY', is_featured=False)
+
+    def get_image_count(self):
+        return self.get_images().count()
+    
+    @property
+    def image_count(self):
+        """Get count of images associated with this room"""
+        return self.get_images().count()
 
 class Subject(models.Model):
     """An academic subject taught at the school, e.g., Mathematics."""

@@ -7,6 +7,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from cloudinary.models import CloudinaryField
 from datetime import date
+import uuid
 
 from .managers import CustomUserManager
 
@@ -27,6 +28,17 @@ class User(AbstractUser):
         DRIVER = 'DRIVER', 'Driver'
 
     role = models.CharField(max_length=50, choices=Role.choices, default=Role.STUDENT)
+    
+    # Parent-Student relationship (one parent can have multiple students)
+    parent = models.ForeignKey(
+        'self', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='children',
+        limit_choices_to={'role': 'PARENT'},
+        help_text='Parent user account (only applicable for students)'
+    )
     
     # Account status and timestamps
     is_active = models.BooleanField(default=True)
@@ -191,6 +203,78 @@ class StudentEnrollment(models.Model):
     
     def __str__(self):
         return f"{self.student.full_name} - {self.school_class.name} ({self.academic_year.year})"
+
+
+class BulkImportJob(models.Model):
+    """Track progress of bulk import operations"""
+    
+    class Status(models.TextChoices):
+        PENDING = 'PENDING', 'Pending'
+        PROCESSING = 'PROCESSING', 'Processing'
+        COMPLETED = 'COMPLETED', 'Completed'
+        FAILED = 'FAILED', 'Failed'
+    
+    # Job identification
+    job_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bulk_import_jobs')
+    
+    # Progress tracking
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    progress = models.IntegerField(default=0, help_text="Progress percentage (0-100)")
+    current_status = models.CharField(max_length=255, blank=True, help_text="Current operation status")
+    
+    # Import details
+    total_records = models.IntegerField(default=0)
+    processed_records = models.IntegerField(default=0)
+    successful_records = models.IntegerField(default=0)
+    failed_records = models.IntegerField(default=0)
+    
+    # Results and errors
+    error_message = models.TextField(blank=True, null=True)
+    results = models.JSONField(blank=True, null=True, help_text="Import results data")
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    started_at = models.DateTimeField(blank=True, null=True)
+    completed_at = models.DateTimeField(blank=True, null=True)
+    
+    class Meta:
+        db_table = 'users_bulkimportjob'
+        ordering = ['-created_at']
+        verbose_name = "Bulk Import Job"
+        verbose_name_plural = "Bulk Import Jobs"
+    
+    def __str__(self):
+        return f"Bulk Import Job {self.job_id} - {self.status}"
+    
+    @property
+    def is_completed(self):
+        return self.status in [self.Status.COMPLETED, self.Status.FAILED]
+    
+    def update_progress(self, progress, status=None):
+        """Update job progress and status"""
+        self.progress = min(100, max(0, progress))
+        if status:
+            self.current_status = status
+        self.save(update_fields=['progress', 'current_status'])
+    
+    def mark_completed(self, results=None):
+        """Mark job as completed with results"""
+        from django.utils import timezone
+        self.status = self.Status.COMPLETED
+        self.progress = 100
+        self.completed_at = timezone.now()
+        if results:
+            self.results = results
+        self.save()
+    
+    def mark_failed(self, error_message):
+        """Mark job as failed with error message"""
+        from django.utils import timezone
+        self.status = self.Status.FAILED
+        self.error_message = error_message
+        self.completed_at = timezone.now()
+        self.save()
 
 
 # Django Signals
