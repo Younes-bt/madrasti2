@@ -1,5 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700&family=Cairo:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700&family=Cairo:wght@300;400;500;600;700&display=swap');
 
 @layer base {
   :root {
@@ -23,7 +23,7 @@
     --radius: 0.5rem;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --sidebar-background: 200 100% 50%;
+    --sidebar-background: 210 40% 96%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
     --sidebar-primary-foreground: 0 0% 98%;
@@ -53,7 +53,7 @@
     --ring: 224.3 76.3% 94.1%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --sidebar-background: 120 100% 75%;
+    --sidebar-background: 222.2 84% 4.9%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 94.1%;
     --sidebar-primary-foreground: 240 5.9% 10%;

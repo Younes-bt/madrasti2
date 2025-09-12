@@ -39,7 +39,7 @@ class ProfileInline(admin.StackedInline):
             'classes': ('collapse',)
         }),
         ('Professional Information', {
-            'fields': ('department', 'position', 'hire_date', 'salary'),
+            'fields': ('department', 'position', 'school_subject', 'hire_date', 'salary'),
             'classes': ('collapse',)
         }),
     )
@@ -48,8 +48,7 @@ class CustomUserAdmin(UserAdmin):
     """
     Configuration for our custom User model in the Django admin.
     """
-    inlines = (ProfileInline,)
-    list_display = ('email', 'first_name', 'last_name', 'role', 'is_staff', 'is_active', 'date_joined')
+    list_display = ('email', 'first_name', 'last_name', 'role', 'get_school_subject', 'is_staff', 'is_active', 'date_joined')
     ordering = ('email',)
     
     # These are necessary because we inherit from UserAdmin
@@ -74,17 +73,28 @@ class CustomUserAdmin(UserAdmin):
         }),
     )
     
-    search_fields = ('email', 'first_name', 'last_name', 'profile__phone')
+    search_fields = ('email', 'first_name', 'last_name', 'profile__phone', 'profile__school_subject__name')
     filter_horizontal = ()
-    list_filter = ('role', 'is_staff', 'is_superuser', 'is_active', 'groups')
+    list_filter = ('role', 'is_staff', 'is_superuser', 'is_active', 'profile__school_subject', 'groups')
+    
+    def get_school_subject(self, obj):
+        """Display school subject for teachers."""
+        try:
+            if obj.profile and obj.profile.school_subject:
+                return obj.profile.school_subject.name
+            return '-'
+        except:
+            return '-'
+    get_school_subject.short_description = 'School Subject'
+    get_school_subject.admin_order_field = 'profile__school_subject__name'
 
 class ProfileAdmin(admin.ModelAdmin):
     """
     Standalone Profile admin for advanced profile management.
     """
-    list_display = ('user', 'ar_full_name', 'phone', 'department', 'position', 'hire_date', 'created_at')
-    list_filter = ('department', 'position', 'hire_date')
-    search_fields = ('user__email', 'user__first_name', 'user__last_name', 'ar_first_name', 'ar_last_name', 'phone', 'department')
+    list_display = ('user', 'ar_full_name', 'phone', 'department', 'position', 'school_subject', 'hire_date', 'created_at')
+    list_filter = ('department', 'position', 'school_subject', 'hire_date')
+    search_fields = ('user__email', 'user__first_name', 'user__last_name', 'ar_first_name', 'ar_last_name', 'phone', 'department', 'school_subject__name')
     readonly_fields = ('created_at', 'updated_at', 'full_name', 'ar_full_name', 'age', 'profile_picture_url')
     
     fieldsets = (
@@ -111,7 +121,7 @@ class ProfileAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
         ('Professional Information', {
-            'fields': ('department', 'position', 'hire_date', 'salary')
+            'fields': ('department', 'position', 'school_subject', 'hire_date', 'salary')
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),
@@ -127,7 +137,7 @@ class StudentEnrollmentInline(admin.TabularInline):
     readonly_fields = ('created_at', 'updated_at')
 
 # Add enrollment inline to User admin
-CustomUserAdmin.inlines = [StudentEnrollmentInline]
+CustomUserAdmin.inlines = [ProfileInline, StudentEnrollmentInline]
 
 # Student Enrollment Admin
 class StudentEnrollmentAdmin(admin.ModelAdmin):

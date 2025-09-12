@@ -137,20 +137,36 @@ api.interceptors.response.use(
 // Token refresh function
 const refreshAccessToken = async (refreshToken) => {
   try {
-    // Use the configured api instance instead of raw axios
-    // This ensures proper proxy routing in development
-    const response = await api.post('token/refresh/', {
+    // Create a new axios instance for refresh to avoid interceptor loops
+    const refreshApi = axios.create({
+      baseURL: getBaseURL(),
+      timeout: API_CONFIG.timeout,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    });
+
+    const response = await refreshApi.post('token/refresh/', {
       refresh: refreshToken
     });
 
     // Store new access token
     if (response.data.access) {
       authStorage.set('token', response.data.access);
+      // Update refresh token if provided (token rotation)
+      if (response.data.refresh) {
+        authStorage.set('refreshToken', response.data.refresh);
+      }
     }
 
     return response.data;
   } catch (error) {
     console.error('Token refresh failed:', error);
+    // Clear tokens on refresh failure
+    authStorage.remove('token');
+    authStorage.remove('refreshToken');
+    authStorage.remove('user');
     throw error;
   }
 };

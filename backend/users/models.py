@@ -123,6 +123,18 @@ class Profile(models.Model):
     # Professional information (for staff/teachers)
     department = models.CharField(max_length=100, blank=True, null=True, verbose_name=_('Department'))
     position = models.CharField(max_length=100, blank=True, null=True, verbose_name=_('Position'))
+    
+    # Subject specialization for teachers
+    school_subject = models.ForeignKey(
+        'schools.Subject',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='teachers',
+        verbose_name=_('School Subject'),
+        help_text=_('The subject this teacher specializes in')
+    )
+    
     hire_date = models.DateField(blank=True, null=True, verbose_name=_('Hire Date'))
     salary = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name=_('Salary'))
     

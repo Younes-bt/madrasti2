@@ -69,23 +69,22 @@ const SubjectsPage = () => {
     }
   };
 
-  const ActionButtons = () => (
-    <div className="flex flex-wrap gap-2">
-      <Button
-        onClick={() => navigate('/admin/academic-management/subjects/add')}
-        className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white"
-      >
-        <Plus className="h-4 w-4 mr-2" />
-        {t('subjects.addSubject')}
-      </Button>
-    </div>
-  );
+  const actions = [
+    <Button
+      key="add-subject"
+      onClick={() => navigate('/admin/academic-management/subjects/add')}
+      className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white"
+    >
+      <Plus className="h-4 w-4 mr-2" />
+      {t('subjects.addSubject')}
+    </Button>
+  ];
 
   return (
     <AdminPageLayout
       title={t('subjects.title')}
       subtitle={t('subjects.subtitle')}
-      ActionComponent={ActionButtons}
+      actions={actions}
     >
       <div className="space-y-6">
         <motion.div 

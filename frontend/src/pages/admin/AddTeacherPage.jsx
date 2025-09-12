@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { Save, X, User, Mail, Phone, MapPin, Calendar, FileText } from 'lucide-react';
+import { Save, X, User, Mail, Phone, MapPin, Calendar, FileText, BookOpen } from 'lucide-react';
 import AdminPageLayout from '../../components/admin/layout/AdminPageLayout';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { apiMethods } from '../../services/api';
 import { toast } from 'sonner';
@@ -20,7 +21,7 @@ const AddTeacherPage = () => {
     last_name: '',
     ar_first_name: '',
     ar_last_name: '',
-    position: '',
+    school_subject: 'none',
     phone: '',
     date_of_birth: '',
     address: '',
@@ -30,8 +31,33 @@ const AddTeacherPage = () => {
   });
 
   const [schoolName, setSchoolName] = useState('madrasti'); // Will be fetched from school config
+  const [subjects, setSubjects] = useState([]);
+  const [loadingSubjects, setLoadingSubjects] = useState(false);
 
   const [errors, setErrors] = useState({});
+
+  // Fetch subjects on component mount
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      setLoadingSubjects(true);
+      try {
+        const response = await apiMethods.get('schools/subjects/');
+        const responseData = response.data || response;
+        // Handle paginated response - extract results array if it exists
+        const subjectsData = responseData.results || responseData;
+        // Ensure we have an array
+        setSubjects(Array.isArray(subjectsData) ? subjectsData : []);
+      } catch (error) {
+        console.error('Failed to fetch subjects:', error);
+        setSubjects([]); // Set empty array on error
+        toast.error(t('error.failedToLoadSubjects'));
+      } finally {
+        setLoadingSubjects(false);
+      }
+    };
+
+    fetchSubjects();
+  }, [t]);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -68,9 +94,6 @@ const AddTeacherPage = () => {
       newErrors.ar_last_name = t('validation.arabicLastNameRequired');
     }
 
-    if (!formData.position) {
-      newErrors.position = t('validation.positionRequired');
-    }
 
     // Phone validation (if provided)
     if (formData.phone && !/^[\+]?[0-9\-\(\)\s]+$/.test(formData.phone)) {
@@ -123,7 +146,7 @@ const AddTeacherPage = () => {
         role: 'TEACHER',
         ar_first_name: formData.ar_first_name,
         ar_last_name: formData.ar_last_name,
-        position: formData.position,
+        ...(formData.school_subject && formData.school_subject !== 'none' && { school_subject: formData.school_subject }),
         ...(formData.phone && { phone: formData.phone }),
         ...(formData.date_of_birth && { date_of_birth: formData.date_of_birth }),
         ...(formData.address && { address: formData.address }),
@@ -308,21 +331,43 @@ const AddTeacherPage = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="position" className="required">
-                  {t('teacher.position')}
+                <Label htmlFor="school_subject">
+                  {t('teacher.schoolSubject')}
                 </Label>
-                <Input
-                  id="position"
-                  type="text"
-                  value={formData.position}
-                  onChange={(e) => handleInputChange('position', e.target.value)}
-                  placeholder={t('teacher.placeholders.position')}
-                  className={errors.position ? 'border-red-500' : ''}
-                  disabled={loading}
-                />
-                {errors.position && (
-                  <p className="text-sm text-red-600">{errors.position}</p>
+                <div className="relative">
+                  <BookOpen className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
+                  <Select
+                    value={formData.school_subject}
+                    onValueChange={(value) => handleInputChange('school_subject', value)}
+                    disabled={loading || loadingSubjects}
+                  >
+                    <SelectTrigger className={`pl-9 ${errors.school_subject ? 'border-red-500' : ''}`}>
+                      <SelectValue placeholder={loadingSubjects ? t('common.loading') : t('teacher.placeholders.selectSubject')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subjects && subjects.length > 0 ? (
+                        <>
+                          <SelectItem value="none">
+                            {t('teacher.selectSubject')}
+                          </SelectItem>
+                          {subjects.map((subject) => (
+                            <SelectItem key={subject.id} value={subject.id.toString()}>
+                              {subject.name}
+                            </SelectItem>
+                          ))}
+                        </>
+                      ) : (
+                        <SelectItem value="no-subjects" disabled>
+                          {t('teacher.noSubjectsAvailable')}
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {errors.school_subject && (
+                  <p className="text-sm text-red-600">{errors.school_subject}</p>
                 )}
+                <p className="text-xs text-gray-500">{t('teacher.subjectSelectionInfo')}</p>
               </div>
 
               <div className="space-y-2">

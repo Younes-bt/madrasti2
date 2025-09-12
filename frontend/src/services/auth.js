@@ -78,6 +78,10 @@ class AuthService {
 
       if (response.access) {
         authStorage.set('token', response.access);
+        // Handle refresh token rotation
+        if (response.refresh) {
+          authStorage.set('refreshToken', response.refresh);
+        }
       }
 
       return response;

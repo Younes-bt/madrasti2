@@ -694,16 +694,14 @@ const AppRoutes = () => {
 
 function App() {
   return (
-    <ThemeProvider>
-      <LanguageProvider>
-        <Router>
-          <AuthProvider>
-            <AppRoutes />
-            <Toaster position="top-right" richColors />
-          </AuthProvider>
-        </Router>
-      </LanguageProvider>
-    </ThemeProvider>
+    <LanguageProvider>
+      <Router>
+        <AuthProvider>
+          <AppRoutes />
+          <Toaster position="top-right" richColors />
+        </AuthProvider>
+      </Router>
+    </LanguageProvider>
   )
 }
 

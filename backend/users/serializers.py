@@ -20,7 +20,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             'ar_first_name', 'ar_last_name', 'phone', 'date_of_birth', 'address', 
             'profile_picture', 'profile_picture_url', 'bio', 'emergency_contact_name', 
             'emergency_contact_phone', 'linkedin_url', 'twitter_url', 'department', 
-            'position', 'hire_date', 'salary', 'full_name', 'ar_full_name', 'age', 
+            'position', 'school_subject', 'hire_date', 'salary', 'full_name', 'ar_full_name', 'age', 
             'created_at', 'updated_at'
         ]
         read_only_fields = ('created_at', 'updated_at')
@@ -43,6 +43,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     emergency_contact_phone = serializers.CharField(required=False, allow_blank=True)
     department = serializers.CharField(required=False, allow_blank=True)
     position = serializers.CharField(required=False, allow_blank=True)
+    school_subject = serializers.IntegerField(required=False, allow_null=True)
     hire_date = serializers.DateField(required=False, allow_null=True)
     
     # Student enrollment fields (only used if role is STUDENT)
@@ -64,7 +65,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             # Profile fields
             'ar_first_name', 'ar_last_name', 'phone', 'date_of_birth', 'address', 'bio', 
             'emergency_contact_name', 'emergency_contact_phone',
-            'department', 'position', 'hire_date',
+            'department', 'position', 'school_subject', 'hire_date',
             # Student enrollment fields
             'school_class_id', 'academic_year_id', 'enrollment_date', 'student_number',
             # Parent information fields
@@ -134,7 +135,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         profile_fields = [
             'ar_first_name', 'ar_last_name', 'phone', 'date_of_birth', 'address', 'bio',
             'emergency_contact_name', 'emergency_contact_phone',
-            'department', 'position', 'hire_date'
+            'department', 'position', 'school_subject', 'hire_date'
         ]
         
         for field in profile_fields:
@@ -172,8 +173,21 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         
         # Update the profile created by the signal with the profile data
         if profile_data:
-            user.profile.__dict__.update(profile_data)
-            user.profile.save()
+            profile = user.profile
+            for attr, value in profile_data.items():
+                # Handle school_subject foreign key
+                if attr == 'school_subject' and value:
+                    from schools.models import Subject
+                    try:
+                        subject_id = int(value) if value else None
+                        if subject_id:
+                            value = Subject.objects.get(id=subject_id)
+                        else:
+                            value = None
+                    except (ValueError, Subject.DoesNotExist):
+                        value = None
+                setattr(profile, attr, value)
+            profile.save()
         
         # Create student enrollment if this is a student and enrollment data is provided
         if (user.role == User.Role.STUDENT and 
@@ -282,6 +296,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     twitter_url = serializers.URLField(required=False, allow_blank=True)
     department = serializers.CharField(required=False, allow_blank=True)
     position = serializers.CharField(required=False, allow_blank=True)
+    school_subject = serializers.IntegerField(required=False, allow_null=True)
     hire_date = serializers.DateField(required=False, allow_null=True)
     salary = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, allow_null=True)
     profile_picture_url = serializers.SerializerMethodField()
@@ -295,7 +310,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             'ar_first_name', 'ar_last_name', 'phone', 'date_of_birth', 'address', 
             'profile_picture', 'profile_picture_url', 'bio', 
             'emergency_contact_name', 'emergency_contact_phone',
-            'linkedin_url', 'twitter_url', 'department', 'position', 
+            'linkedin_url', 'twitter_url', 'department', 'position', 'school_subject',
             'hire_date', 'salary'
         ]
         read_only_fields = ('id', 'email', 'role', 'is_active', 'created_at', 'updated_at', 'profile_picture_url')
@@ -314,7 +329,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         profile_fields = [
             'ar_first_name', 'ar_last_name', 'phone', 'date_of_birth', 'address',
             'profile_picture', 'bio', 'emergency_contact_name', 'emergency_contact_phone',
-            'linkedin_url', 'twitter_url', 'department', 'position', 'hire_date', 'salary'
+            'linkedin_url', 'twitter_url', 'department', 'position', 'school_subject', 'hire_date', 'salary'
         ]
         
         for field in profile_fields:
@@ -331,6 +346,17 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             try:
                 profile = instance.profile
                 for attr, value in profile_data.items():
+                    # Handle school_subject foreign key
+                    if attr == 'school_subject' and value:
+                        from schools.models import Subject
+                        try:
+                            subject_id = int(value) if value else None
+                            if subject_id:
+                                value = Subject.objects.get(id=subject_id)
+                            else:
+                                value = None
+                        except (ValueError, Subject.DoesNotExist):
+                            value = None
                     setattr(profile, attr, value)
                 profile.save()
             except Profile.DoesNotExist:
@@ -343,6 +369,15 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         try:
             profile = instance.profile
+            # Handle school_subject relationship
+            school_subject_data = None
+            if profile.school_subject:
+                school_subject_data = {
+                    'id': profile.school_subject.id,
+                    'name': profile.school_subject.name,
+                    'code': profile.school_subject.code
+                }
+            
             data.update({
                 'ar_first_name': profile.ar_first_name,
                 'ar_last_name': profile.ar_last_name,
@@ -357,6 +392,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                 'twitter_url': profile.twitter_url,
                 'department': profile.department,
                 'position': profile.position,
+                'school_subject': school_subject_data,
                 'hire_date': profile.hire_date,
                 'salary': profile.salary,
             })

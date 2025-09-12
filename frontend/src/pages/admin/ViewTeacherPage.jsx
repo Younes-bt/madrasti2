@@ -15,7 +15,8 @@ import {
   Globe,
   Building,
   Clock,
-  Shield
+  Shield,
+  BookOpen
 } from 'lucide-react';
 import AdminPageLayout from '../../components/admin/layout/AdminPageLayout';
 import { Button } from '../../components/ui/button';
@@ -188,10 +189,17 @@ const ViewTeacherPage = () => {
                     </p>
                   )}
                   
-                  <div className="mt-2 flex items-center justify-center space-x-2">
-                    {teacherData.position && (
-                      <Badge variant="outline" className="text-sm">
-                        {teacherData.position}
+                  <div className="mt-2 flex items-center justify-center space-x-2 flex-wrap gap-1">
+                    {(teacherData.school_subject || teacherData.profile?.school_subject) && (
+                      <Badge variant="secondary" className="text-sm bg-blue-100 text-blue-800 hover:bg-blue-100">
+                        <BookOpen className="h-3 w-3 mr-1" />
+                        {(() => {
+                          const subject = teacherData.school_subject || teacherData.profile?.school_subject;
+                          if (typeof subject === 'object' && subject.name) {
+                            return subject.name;
+                          }
+                          return subject;
+                        })()}
                       </Badge>
                     )}
                     {getStatusBadge(teacherData.is_active)}
@@ -292,11 +300,19 @@ const ViewTeacherPage = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="divide-y divide-gray-100">
-                <InfoItem
-                  icon={<Briefcase className="h-4 w-4 text-gray-400" />}
-                  label={t('teacher.position')}
-                  value={teacherData.position}
-                />
+                {(teacherData.school_subject || teacherData.profile?.school_subject) && (
+                  <InfoItem
+                    icon={<BookOpen className="h-4 w-4 text-gray-400" />}
+                    label={t('teacher.schoolSubject')}
+                    value={(() => {
+                      const subject = teacherData.school_subject || teacherData.profile?.school_subject;
+                      if (typeof subject === 'object' && subject.name) {
+                        return `${subject.name}${subject.code ? ` (${subject.code})` : ''}`;
+                      }
+                      return subject;
+                    })()}
+                  />
+                )}
                 
                 <InfoItem
                   icon={<Building className="h-4 w-4 text-gray-400" />}
