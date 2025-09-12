@@ -21,7 +21,7 @@ import {
   Download,
   Upload,
   Save,
-  RotateCcw
+  RefreshCw
 } from 'lucide-react'
 
 const TimetableManagement = () => {
@@ -390,7 +390,7 @@ const TimetableManagement = () => {
             {t('attendance.copyTemplate')}
           </Button>
           <Button variant="outline" onClick={() => console.log('Reset timetable')}>
-            <RotateCcw className="h-4 w-4 mr-1" />
+            <RefreshCw className="h-4 w-4 mr-1" />
             {t('common.reset')}
           </Button>
         </div>

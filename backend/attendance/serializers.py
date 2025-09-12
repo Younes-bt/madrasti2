@@ -81,7 +81,7 @@ class SchoolTimetableCreateSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = SchoolTimetable
-        fields = ['school_class', 'academic_year', 'is_active']
+        fields = ['id', 'school_class', 'academic_year', 'is_active']
     
     def create(self, validated_data):
         validated_data['created_by'] = self.context['request'].user

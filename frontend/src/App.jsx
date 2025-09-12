@@ -55,6 +55,10 @@ import SubjectsPage from './pages/admin/SubjectsPage'
 import AddSubjectPage from './pages/admin/AddSubjectPage'
 import EditSubjectPage from './pages/admin/EditSubjectPage'
 import ViewSubjectPage from './pages/admin/ViewSubjectPage'
+import TimetablesPage from './pages/admin/TimetablesPage'
+import AddTimetablePage from './pages/admin/AddTimetablePage'
+import EditTimetablePage from './pages/admin/EditTimetablePage'
+import ViewTimetablePage from './pages/admin/ViewTimetablePage'
 
 // Import feature pages
 import LessonsPage from './pages/lessons/LessonsPage'
@@ -489,10 +493,42 @@ const AppRoutes = () => {
         } 
       />
       <Route 
+        path="/admin/timetables" 
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <TimetablesPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/timetables/add" 
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <AddTimetablePage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/timetables/view/:id" 
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <ViewTimetablePage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/timetables/edit/:id" 
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <EditTimetablePage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
         path="/admin/academic-management/timetables" 
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
-            <div>Timetables Page - Coming Soon</div>
+            <TimetablesPage />
           </ProtectedRoute>
         } 
       />
