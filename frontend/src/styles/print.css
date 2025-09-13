@@ -1,0 +1,155 @@
+/* Hide print elements on screen */
+.hide-on-screen {
+  display: none;
+}
+
+/* SIMPLE AND WORKING PRINT APPROACH */
+@media print {
+  /* Page setup for A4 Landscape */
+  @page {
+    size: A4 landscape;
+    margin: 0.5in 1.5in 0.5in 1.5in; /* Top Right Bottom Left - larger side margins for centering */
+  }
+
+  /* Reset everything */
+  * {
+    visibility: hidden;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    font-family: Arial, sans-serif;
+    background: white;
+  }
+
+  /* Show only printable content */
+  .printable-content,
+  .printable-content * {
+    visibility: visible;
+  }
+
+  /* Hide web elements */
+  .hide-on-print,
+  .card-print,
+  .web-timetable-grid {
+    display: none !important;
+  }
+
+  /* Show print-only elements */
+  .print-only-header,
+  .print-only-table {
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  /* Container - keep it simple */
+  .printable-content {
+    position: relative;
+    width: 100%;
+    height: auto;
+    padding: 0;
+    display: block;
+  }
+
+  /* Header */
+  .print-only-header {
+    text-align: center;
+    margin-bottom: 20px;
+    width: 100%;
+  }
+
+  .print-school-name {
+    font-size: 18pt;
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+
+  .print-class-info {
+    font-size: 14pt;
+    margin-bottom: 3px;
+  }
+
+  /* Table container */
+  .print-only-table {
+    width: 100%;
+    text-align: center;
+  }
+
+  /* Table - centered and properly sized */
+  .simple-print-table {
+    width: 100%;
+    margin: 0 auto;
+    border-collapse: collapse;
+    table-layout: fixed;
+    border: 2px solid #000;
+    page-break-inside: avoid;
+  }
+
+  /* All cells */
+  .simple-print-table th,
+  .simple-print-table td {
+    border: 1px solid #000;
+    padding: 4px 2px;
+    text-align: center;
+    vertical-align: top;
+    font-size: 8pt;
+    word-wrap: break-word;
+  }
+
+  /* Headers */
+  .simple-print-table th {
+    background-color: #e0e0e0;
+    font-weight: bold;
+    font-size: 7pt;
+  }
+
+  /* Day column */
+  .day-header,
+  .day-cell {
+    width: 12%;
+    background-color: #f5f5f5;
+    font-weight: bold;
+    font-size: 8pt;
+  }
+
+  /* Time headers */
+  .time-header {
+    width: 11%;
+    font-size: 6pt;
+    line-height: 1.1;
+  }
+
+  /* Session cells */
+  .session-cell {
+    width: 11%;
+    font-size: 6pt;
+    text-align: left;
+    padding: 2px 1px;
+    line-height: 1.1;
+    height: 50px;
+  }
+
+  /* Session content */
+  .subject {
+    font-weight: bold;
+    font-size: 7pt;
+    margin-bottom: 1px;
+    line-height: 1;
+  }
+
+  .teacher {
+    font-size: 6pt;
+    margin-bottom: 1px;
+    line-height: 1;
+  }
+
+  .room {
+    font-size: 5pt;
+    font-style: italic;
+    line-height: 1;
+  }
+}

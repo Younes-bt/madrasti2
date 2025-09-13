@@ -97,7 +97,7 @@ class UserViewSet(viewsets.ModelViewSet):
     """ViewSet for listing, retrieving, and updating users"""
     permission_classes = [IsAdminOrReadOnly]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['role', 'is_active']
+    filterset_fields = ['role', 'is_active', 'profile__school_subject']
     search_fields = ['first_name', 'last_name', 'email', 'profile__phone']
     ordering_fields = ['first_name', 'last_name', 'email', 'created_at']
     ordering = ['last_name', 'first_name']
@@ -114,7 +114,8 @@ class UserViewSet(viewsets.ModelViewSet):
         queryset = User.objects.select_related(
             'profile',  # User profile data
             'parent',   # Parent information for students
-            'parent__profile'  # Parent profile data
+            'parent__profile',  # Parent profile data
+            'profile__school_subject'  # Subject specialization for teachers
         ).prefetch_related(
             'student_enrollments__school_class__grade__educational_level',  # Academic information
             'student_enrollments__academic_year'  # Academic year information
@@ -124,6 +125,11 @@ class UserViewSet(viewsets.ModelViewSet):
         role = self.request.query_params.get('role')
         if role:
             queryset = queryset.filter(role=role.upper())
+        
+        # Filter teachers by subject specialization
+        subject_id = self.request.query_params.get('subject_id')
+        if subject_id and role and role.upper() == 'TEACHER':
+            queryset = queryset.filter(profile__school_subject_id=subject_id)
         
         return queryset
 

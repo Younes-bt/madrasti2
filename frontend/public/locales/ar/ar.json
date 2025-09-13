@@ -58,7 +58,10 @@
     "grade": "الصف",
     "allGrades": "كل الصفوف",
     "class": "الفصل",
-    "allClasses": "كل الفصول"
+    "allClasses": "كل الفصول",
+    "show": "عرض",
+    "hide": "إخفاء",
+    "creating": "جاري الإنشاء..."
   },
   "action": {
     "view": "عرض",
@@ -520,6 +523,56 @@
     "absentToday": "غائب اليوم",
     "perfect": "حضور مثالي",
     "chronic": "غيابات مزمنة"
+  },
+  "timetables": {
+    "timetables": "الجداول الدراسية",
+    "addTimetable": "إضافة جدول دراسي",
+    "createTimetable": "إنشاء جدول دراسي",
+    "createNewTimetable": "إنشاء جدول دراسي جديد",
+    "basicInformation": "المعلومات الأساسية",
+    "weeklySchedule": "الجدول الأسبوعي",
+    "sessionDetails": "تفاصيل الحصص",
+    "quickActions": "الإجراءات السريعة",
+    "sessions": "حصص",
+    "period": "الحصة",
+    "setAsActive": "تعيين كجدول نشط",
+    "generateTemplate": "إنشاء قالب",
+    "copyFromExisting": "نسخ من جدول موجود",
+    "importFromFile": "استيراد من ملف",
+    "addSession": "إضافة حصة",
+    "sessionNotes": "ملاحظات الحصة...",
+    "templateGenerated": "تم إنشاء القالب بنجاح",
+    "createSuccess": "تم إنشاء الجدول الدراسي بنجاح",
+    "createError": "فشل في إنشاء الجدول الدراسي",
+    "validation": {
+      "classRequired": "الفصل مطلوب",
+      "academicYearRequired": "السنة الدراسية مطلوبة",
+      "subjectRequired": "المادة مطلوبة",
+      "teacherRequired": "المدرس مطلوب",
+      "sessionConflict": "هذا الوقت محجوز بالفعل",
+      "teacherConflict": "هذا المدرس لديه حصة في هذا الوقت"
+    },
+    "periodConfiguration": "إعداد الحصص",
+    "selectTemplate": "اختيار قالب الجدول",
+    "customizePeriods": "تخصيص الحصص",
+    "periods": "حصص",
+    "addPeriod": "إضافة حصة",
+    "templateApplied": "تم تطبيق القالب بنجاح",
+    "templates": {
+      "continuous": "جدول مستمر",
+      "continuousDesc": "حصص مستمرة مع فترات راحة",
+      "morningEvening": "صباحي ومسائي",
+      "morningEveningDesc": "جلسات منفصلة صباحية ومسائية",
+      "shortPeriods": "حصص قصيرة",
+      "shortPeriodsDesc": "حصص مدتها 45 دقيقة مع فترات راحة",
+      "custom": "مخصص",
+      "customDesc": "إنشاء جدول حصص خاص بك"
+    },
+    "editSession": "تعديل الحصة",
+    "sessionSaved": "تم حفظ الحصة بنجاح",
+    "sessionRemoved": "تم حذف الحصة بنجاح",
+    "subjectAndTeacherRequired": "المادة والمدرس مطلوبان",
+    "noTeachersForSubject": "لا يوجد مدرسون متاحون لهذه المادة"
   },
   "homework": {
     "title": "إدارة الواجبات",

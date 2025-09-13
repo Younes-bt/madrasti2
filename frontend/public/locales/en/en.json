@@ -77,7 +77,10 @@
     "createdBy": "Created by",
     "lastUpdated": "Last updated",
     "updated": "Updated",
-    "featureComingSoon": "This feature is coming soon"
+    "featureComingSoon": "This feature is coming soon",
+    "show": "Show",
+    "hide": "Hide",
+    "creating": "Creating..."
   },
   "calendar": {
     "monday": "Monday",
@@ -623,7 +626,28 @@
       "teacherRequired": "Teacher is required",
       "sessionConflict": "This time slot is already occupied",
       "teacherConflict": "This teacher is already scheduled at this time"
-    }
+    },
+    "periodConfiguration": "Period Configuration",
+    "selectTemplate": "Select Schedule Template",
+    "customizePeriods": "Customize Periods",
+    "periods": "periods",
+    "addPeriod": "Add Period",
+    "templateApplied": "Template applied successfully",
+    "templates": {
+      "continuous": "Continuous Schedule",
+      "continuousDesc": "Standard continuous periods with breaks",
+      "morningEvening": "Morning & Evening",
+      "morningEveningDesc": "Separate morning and evening sessions",
+      "shortPeriods": "Short Periods",
+      "shortPeriodsDesc": "45-minute periods with breaks",
+      "custom": "Custom",
+      "customDesc": "Create your own period schedule"
+    },
+    "editSession": "Edit Session",
+    "sessionSaved": "Session saved successfully",
+    "sessionRemoved": "Session removed successfully",
+    "subjectAndTeacherRequired": "Subject and teacher are required",
+    "noTeachersForSubject": "No teachers available for this subject"
   },
   "homework": {
     "title": "Homework Management",

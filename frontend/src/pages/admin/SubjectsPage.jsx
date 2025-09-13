@@ -18,8 +18,22 @@ import { apiMethods } from '../../services/api';
 import { toast } from 'sonner';
 
 const SubjectsPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+
+  // Function to get localized subject name based on current language
+  const getLocalizedSubjectName = (subject) => {
+    const currentLanguage = i18n.language;
+    
+    switch (currentLanguage) {
+      case 'ar':
+        return subject.name_arabic || subject.name;
+      case 'fr':
+        return subject.name_french || subject.name;
+      default:
+        return subject.name;
+    }
+  };
   const [loading, setLoading] = useState(false);
   const [subjects, setSubjects] = useState([]);
   const [filteredSubjects, setFilteredSubjects] = useState([]);
@@ -44,17 +58,41 @@ const SubjectsPage = () => {
     fetchSubjects();
   }, [t]);
 
+  // Re-filter subjects when language changes
+  useEffect(() => {
+    if (subjects.length > 0) {
+      // Directly apply the current search filter with the new language
+      let filtered = subjects;
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        filtered = filtered.filter(subject => {
+          const localizedName = getLocalizedSubjectName(subject).toLowerCase();
+          return localizedName.includes(query) ||
+                 subject.name.toLowerCase().includes(query) ||
+                 (subject.name_arabic && subject.name_arabic.includes(query)) ||
+                 (subject.name_french && subject.name_french.toLowerCase().includes(query)) ||
+                 subject.code.toLowerCase().includes(query);
+        });
+      }
+      setFilteredSubjects(filtered);
+    }
+  }, [i18n.language, subjects]);
+
   useEffect(() => {
     let filtered = subjects;
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(subject =>
-        subject.name.toLowerCase().includes(query) ||
-        subject.code.toLowerCase().includes(query)
-      );
+      filtered = filtered.filter(subject => {
+        const localizedName = getLocalizedSubjectName(subject).toLowerCase();
+        return localizedName.includes(query) ||
+               subject.name.toLowerCase().includes(query) ||
+               (subject.name_arabic && subject.name_arabic.includes(query)) ||
+               (subject.name_french && subject.name_french.toLowerCase().includes(query)) ||
+               subject.code.toLowerCase().includes(query);
+      });
     }
     setFilteredSubjects(filtered);
-  }, [searchQuery, subjects]);
+  }, [searchQuery, subjects, i18n.language]);
 
   const handleDeleteSubject = async (subjectId) => {
     if (window.confirm(t('subjects.confirmDelete'))) {
@@ -142,7 +180,7 @@ const SubjectsPage = () => {
                     <div className="flex items-start justify-between">
                       <div className="space-y-1 flex-1">
                         <CardTitle className="text-lg font-semibold text-foreground">
-                          {subject.name}
+                          {getLocalizedSubjectName(subject)}
                         </CardTitle>
                         <p className="text-sm text-muted-foreground">{subject.code}</p>
                       </div>

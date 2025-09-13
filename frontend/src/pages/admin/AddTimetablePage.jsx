@@ -9,14 +9,8 @@ import {
   Plus,
   Trash2,
   Clock,
-  Users,
-  BookOpen,
-  MapPin,
-  User,
-  AlertTriangle,
   Copy,
   Upload,
-  FileText,
   Zap
 } from 'lucide-react';
 import AdminPageLayout from '../../components/admin/layout/AdminPageLayout';
@@ -32,8 +26,16 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '../../components/ui/select';
-import { Textarea } from '../../components/ui/textarea';
 import { Checkbox } from '../../components/ui/checkbox';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+  DialogClose,
+} from '../../components/ui/dialog';
 import attendanceService from '../../services/attendance';
 import { apiMethods } from '../../services/api';
 import { toast } from 'sonner';
@@ -44,25 +46,25 @@ const AddTimetablePage = () => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   
-  // Form data
   const [formData, setFormData] = useState({
     school_class: '',
     academic_year: '',
     is_active: true
   });
 
-  // Reference data
   const [classes, setClasses] = useState([]);
   const [academicYears, setAcademicYears] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [teachers, setTeachers] = useState([]);
+  const [filteredTeachers, setFilteredTeachers] = useState([]);
   const [rooms, setRooms] = useState([]);
 
-  // Sessions
   const [sessions, setSessions] = useState([]);
-  const [currentStep, setCurrentStep] = useState(1); // 1: Basic Info, 2: Sessions
+  const [currentStep, setCurrentStep] = useState(1);
 
-  // attendanceService is already imported as a singleton
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedSession, setSelectedSession] = useState(null);
+  const [modalSessionData, setModalSessionData] = useState(null);
 
   const weekDays = [
     { key: 'monday', name: t('calendar.monday'), value: 1 },
@@ -73,7 +75,7 @@ const AddTimetablePage = () => {
     { key: 'saturday', name: t('calendar.saturday'), value: 6 }
   ];
 
-  const timeSlots = [
+  const [timeSlots, setTimeSlots] = useState([
     { period: 1, start: '08:00', end: '09:00' },
     { period: 2, start: '09:00', end: '10:00' },
     { period: 3, start: '10:00', end: '11:00' },
@@ -82,11 +84,115 @@ const AddTimetablePage = () => {
     { period: 6, start: '14:30', end: '15:30' },
     { period: 7, start: '15:30', end: '16:30' },
     { period: 8, start: '16:30', end: '17:30' }
-  ];
+  ]);
+
+  const periodTemplates = {
+    continuous: {
+      name: t('timetables.templates.continuous') || 'Continuous Schedule',
+      description: t('timetables.templates.continuousDesc') || 'Standard continuous periods with breaks',
+      periods: [
+        { period: 1, start: '08:00', end: '09:00' },
+        { period: 2, start: '09:00', end: '10:00' },
+        { period: 3, start: '10:00', end: '11:00' },
+        { period: 4, start: '11:20', end: '12:20' },
+        { period: 5, start: '12:20', end: '13:20' },
+        { period: 6, start: '14:30', end: '15:30' },
+        { period: 7, start: '15:30', end: '16:30' },
+        { period: 8, start: '16:30', end: '17:30' }
+      ]
+    },
+    morningEvening: {
+      name: t('timetables.templates.morningEvening') || 'Morning & Evening',
+      description: t('timetables.templates.morningEveningDesc') || 'Separate morning and evening sessions',
+      periods: [
+        { period: 1, start: '08:00', end: '09:00' },
+        { period: 2, start: '09:00', end: '10:00' },
+        { period: 3, start: '10:00', end: '11:00' },
+        { period: 4, start: '11:00', end: '12:00' },
+        { period: 5, start: '14:00', end: '15:00' },
+        { period: 6, start: '15:00', end: '16:00' },
+        { period: 7, start: '16:00', end: '17:00' },
+        { period: 8, start: '17:00', end: '18:00' }
+      ]
+    },
+    shortPeriods: {
+      name: t('timetables.templates.shortPeriods') || 'Short Periods',
+      description: t('timetables.templates.shortPeriodsDesc') || '45-minute periods with breaks',
+      periods: [
+        { period: 1, start: '08:00', end: '08:45' },
+        { period: 2, start: '08:45', end: '09:30' },
+        { period: 3, start: '09:45', end: '10:30' },
+        { period: 4, start: '10:30', end: '11:15' },
+        { period: 5, start: '11:15', end: '12:00' },
+        { period: 6, start: '12:45', end: '13:30' },
+        { period: 7, start: '13:30', end: '14:15' },
+        { period: 8, start: '14:15', end: '15:00' }
+      ]
+    },
+    custom: {
+      name: t('timetables.templates.custom') || 'Custom',
+      description: t('timetables.templates.customDesc') || 'Create your own period schedule',
+      periods: []
+    }
+  };
+
+  const [selectedTemplate, setSelectedTemplate] = useState('continuous');
+  const [showPeriodConfig, setShowPeriodConfig] = useState(false);
 
   useEffect(() => {
     fetchReferenceData();
   }, []);
+
+  useEffect(() => {
+    setModalSessionData(selectedSession);
+  }, [selectedSession]);
+
+  const applyTemplate = (templateKey) => {
+    if (periodTemplates[templateKey]) {
+      setTimeSlots(periodTemplates[templateKey].periods);
+      setSelectedTemplate(templateKey);
+      setSessions([]);
+      toast.success(t('timetables.templateApplied') || 'Template applied successfully');
+    }
+  };
+
+  const addPeriod = () => {
+    const maxPeriod = Math.max(...timeSlots.map(slot => slot.period), 0);
+    const lastSlot = timeSlots[timeSlots.length - 1];
+    const newPeriod = {
+      period: maxPeriod + 1,
+      start: lastSlot ? lastSlot.end : '08:00',
+      end: lastSlot ? addHour(lastSlot.end) : '09:00'
+    };
+    setTimeSlots([...timeSlots, newPeriod]);
+  };
+
+  const removePeriod = (periodNumber) => {
+    if (timeSlots.length > 1) {
+      setTimeSlots(timeSlots.filter(slot => slot.period !== periodNumber));
+      setSessions(sessions.filter(session => session.session_order !== periodNumber));
+    }
+  };
+
+  const updatePeriod = (periodNumber, field, value) => {
+    setTimeSlots(timeSlots.map(slot => 
+      slot.period === periodNumber 
+        ? { ...slot, [field]: value }
+        : slot
+    ));
+    
+    setSessions(sessions.map(session => 
+      session.session_order === periodNumber
+        ? { ...session, [`${field}_time`]: value }
+        : session
+    ));
+  };
+
+  const addHour = (timeString) => {
+    const [hours, minutes] = timeString.split(':').map(Number);
+    const newHours = (hours + 1) % 24;
+    return `${newHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+  };
 
   const fetchReferenceData = async () => {
     try {
@@ -108,9 +214,9 @@ const AddTimetablePage = () => {
       setAcademicYears(academicYearsData);
       setSubjects(subjectsData);
       setTeachers(teachersData);
+      setFilteredTeachers(teachersData); // Initialize filtered teachers with all teachers
       setRooms(roomsData);
 
-      // Set default academic year to current one
       const currentYear = academicYearsData.find(y => y.is_current);
       if (currentYear) {
         setFormData(prev => ({ ...prev, academic_year: currentYear.id.toString() }));
@@ -145,88 +251,24 @@ const AddTimetablePage = () => {
     }
   };
 
-  const addSession = () => {
-    const newSession = {
-      id: Date.now(), // Temporary ID
-      day_of_week: 1,
-      session_order: 1,
-      start_time: '08:00',
-      end_time: '09:00',
-      subject: '',
-      teacher: '',
-      room: 'none',
-      notes: ''
-    };
-    setSessions(prev => [...prev, newSession]);
-  };
-
-  const updateSession = (sessionId, field, value) => {
-    setSessions(prev => prev.map(session => 
-      session.id === sessionId 
-        ? { ...session, [field]: value }
-        : session
-    ));
-  };
-
   const removeSession = (sessionId) => {
     setSessions(prev => prev.filter(session => session.id !== sessionId));
   };
 
-  const validateSessions = () => {
-    const newErrors = {};
-    
-    sessions.forEach((session, index) => {
-      if (!session.subject) {
-        newErrors[`session_${session.id}_subject`] = t('timetables.validation.subjectRequired');
-      }
-      if (!session.teacher) {
-        newErrors[`session_${session.id}_teacher`] = t('timetables.validation.teacherRequired');
-      }
-      
-      // Check for conflicts
-      const conflictingSessions = sessions.filter((s, i) => 
-        i !== index && 
-        s.day_of_week === session.day_of_week && 
-        s.session_order === session.session_order
-      );
-      
-      if (conflictingSessions.length > 0) {
-        newErrors[`session_${session.id}_conflict`] = t('timetables.validation.sessionConflict');
-      }
-    });
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
   const handleSubmit = async () => {
-    if (!validateSessions()) {
-      toast.error(t('validation.pleaseFixErrors'));
-      return;
-    }
-
     setLoading(true);
     try {
-      // Create timetable first
       const timetableData = {
         school_class: parseInt(formData.school_class),
         academic_year: parseInt(formData.academic_year),
         is_active: formData.is_active
       };
-
       const newTimetable = await attendanceService.createTimetable(timetableData);
-
-      // Create sessions
       if (sessions.length > 0) {
-        console.log('Creating sessions:', sessions);
-        
-        const sessionPromises = sessions.map(async (session, index) => {
-          // Validate session data before creating
+        const sessionPromises = sessions.map(async (session) => {
           if (!session.subject || !session.teacher || !session.start_time || !session.end_time) {
-            console.error('Invalid session data:', session);
             throw new Error(`Invalid session data: missing required fields`);
           }
-
           const sessionData = {
             timetable: newTimetable.id,
             day_of_week: session.day_of_week,
@@ -239,40 +281,24 @@ const AddTimetablePage = () => {
             notes: session.notes || '',
             is_active: true
           };
-          
-          console.log(`Creating session ${index + 1} with data:`, sessionData);
-          
           try {
-            const result = await attendanceService.createTimetableSession(sessionData);
-            console.log(`Session ${index + 1} created successfully:`, result);
-            return result;
+            return await attendanceService.createTimetableSession(sessionData);
           } catch (error) {
-            console.error(`Failed to create session ${index + 1}:`, error);
-            console.error('Session data that failed:', sessionData);
             if (error.response?.data) {
               console.error('API error details:', error.response.data);
             }
             throw error;
           }
         });
-
         await Promise.all(sessionPromises);
-      } else {
-        console.log('No sessions to create');
       }
-
       toast.success(t('timetables.createSuccess'));
       navigate('/admin/timetables');
     } catch (error) {
       console.error('Failed to create timetable:', error);
-      
       let errorMessage = t('timetables.createError');
-      
       if (error.response?.data) {
         const apiErrors = error.response.data;
-        console.error('API validation errors:', apiErrors);
-        
-        // Handle different error formats
         if (typeof apiErrors === 'string') {
           errorMessage = apiErrors;
         } else if (apiErrors.detail) {
@@ -280,13 +306,10 @@ const AddTimetablePage = () => {
         } else if (apiErrors.non_field_errors) {
           errorMessage = Array.isArray(apiErrors.non_field_errors) ? apiErrors.non_field_errors[0] : apiErrors.non_field_errors;
         } else {
-          // Handle field-specific errors
           const newErrors = {};
           Object.keys(apiErrors).forEach(key => {
             const errorValue = Array.isArray(apiErrors[key]) ? apiErrors[key][0] : apiErrors[key];
             newErrors[key] = errorValue;
-            
-            // If it's a constraint error, show user-friendly message
             if (errorValue.includes('unique') || errorValue.includes('duplicate')) {
               if (key.includes('teacher')) {
                 errorMessage = t('timetables.validation.teacherConflict');
@@ -297,7 +320,6 @@ const AddTimetablePage = () => {
           });
           setErrors(newErrors);
         }
-        
         toast.error(errorMessage);
       } else if (error.message) {
         toast.error(error.message);
@@ -310,25 +332,42 @@ const AddTimetablePage = () => {
   };
 
   const generateTemplate = () => {
-    // Generate a basic template with common sessions
     const commonSessions = [];
-    const basicSubjects = subjects.slice(0, 6); // Take first 6 subjects
-    const basicTeachers = teachers.slice(0, 6); // Take first 6 teachers
+    const basicSubjects = subjects.slice(0, 6);
+    const basicTeachers = teachers.slice(0, 6);
+    const teacherSchedule = {}; // Track teacher availability to avoid conflicts
     
     weekDays.slice(0, 5).forEach((day, dayIndex) => {
       timeSlots.slice(0, 6).forEach((slot, slotIndex) => {
         if (basicSubjects[slotIndex % basicSubjects.length] && basicTeachers[slotIndex % basicTeachers.length]) {
-          commonSessions.push({
-            id: Date.now() + dayIndex * 100 + slotIndex,
-            day_of_week: day.value,
-            session_order: slot.period,
-            start_time: slot.start,
-            end_time: slot.end,
-            subject: basicSubjects[slotIndex % basicSubjects.length].id.toString(),
-            teacher: basicTeachers[slotIndex % basicTeachers.length].id.toString(),
-            room: rooms[slotIndex % Math.max(rooms.length, 1)]?.id?.toString() || '',
-            notes: ''
-          });
+          // Find an available teacher for this time slot
+          let availableTeacher = null;
+          for (let i = 0; i < basicTeachers.length; i++) {
+            const teacherIndex = (slotIndex + i) % basicTeachers.length;
+            const teacher = basicTeachers[teacherIndex];
+            const teacherKey = `${teacher.id}_${day.value}_${slot.start}_${slot.end}`;
+            
+            if (!teacherSchedule[teacherKey]) {
+              availableTeacher = teacher;
+              teacherSchedule[teacherKey] = true;
+              break;
+            }
+          }
+          
+          // Only create session if we found an available teacher
+          if (availableTeacher) {
+            commonSessions.push({
+              id: Date.now() + dayIndex * 1000 + slotIndex,
+              day_of_week: day.value,
+              session_order: slot.period,
+              start_time: slot.start,
+              end_time: slot.end,
+              subject: basicSubjects[slotIndex % basicSubjects.length].id.toString(),
+              teacher: availableTeacher.id.toString(),
+              room: rooms[slotIndex % Math.max(rooms.length, 1)]?.id?.toString() || '',
+              notes: ''
+            });
+          }
         }
       });
     });
@@ -351,6 +390,96 @@ const AddTimetablePage = () => {
     );
   };
 
+  const handleOpenModal = (day, slot) => {
+    const existingSession = getSessionForSlot(day.value, slot.period);
+    if (existingSession) {
+        setSelectedSession(existingSession);
+        // Fetch teachers for the existing session's subject
+        fetchTeachersBySubject(existingSession.subject);
+    } else {
+        setSelectedSession({
+            id: Date.now(),
+            day_of_week: day.value,
+            session_order: slot.period,
+            start_time: slot.start,
+            end_time: slot.end,
+            subject: '',
+            teacher: '',
+            room: 'none',
+            notes: '',
+            isNew: true
+        });
+        // Initialize with all teachers when no subject is selected
+        setFilteredTeachers(teachers);
+    }
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+      setIsModalOpen(false);
+      setSelectedSession(null);
+      setModalSessionData(null);
+  };
+
+  // Function to fetch teachers filtered by subject
+  const fetchTeachersBySubject = async (subjectId) => {
+    try {
+      if (!subjectId) {
+        setFilteredTeachers(teachers); // Show all teachers if no subject selected
+        return;
+      }
+
+      const response = await apiMethods.get('users/users/', { 
+        params: { 
+          role: 'TEACHER',
+          subject_id: subjectId
+        } 
+      });
+      
+      let teachersData = response.results || (Array.isArray(response) ? response : response.data?.results || response.data || []);
+      setFilteredTeachers(teachersData);
+    } catch (error) {
+      console.error('Failed to fetch teachers by subject:', error);
+      // Fallback to all teachers if filtering fails
+      setFilteredTeachers(teachers);
+      toast.error('Failed to filter teachers by subject');
+    }
+  };
+
+  const handleModalInputChange = (field, value) => {
+      setModalSessionData(prev => ({ ...prev, [field]: value }));
+      
+      // If subject changes, reset teacher and fetch filtered teachers
+      if (field === 'subject') {
+          setModalSessionData(prev => ({ ...prev, subject: value, teacher: '' }));
+          fetchTeachersBySubject(value);
+      }
+  };
+
+  const handleSaveSession = () => {
+      if (!modalSessionData.subject || !modalSessionData.teacher) {
+          toast.error(t('timetables.validation.subjectAndTeacherRequired'));
+          return;
+      }
+
+      if (modalSessionData.isNew) {
+          const { isNew, ...newSession } = modalSessionData;
+          setSessions(prev => [...prev, newSession]);
+      } else {
+          setSessions(prev => prev.map(s => s.id === modalSessionData.id ? modalSessionData : s));
+      }
+      handleCloseModal();
+      toast.success(t('timetables.sessionSaved'));
+  };
+
+  const handleRemoveSession = () => {
+      if (modalSessionData && !modalSessionData.isNew) {
+          removeSession(modalSessionData.id);
+      }
+      handleCloseModal();
+      toast.info(t('timetables.sessionRemoved'));
+  };
+
   const ActionButtons = () => (
     <div className="flex gap-2">
       <Button
@@ -364,14 +493,20 @@ const AddTimetablePage = () => {
     </div>
   );
 
+  const gridStyle = { 
+    display: 'grid', 
+    gridTemplateColumns: `repeat(${timeSlots.length + 1}, minmax(0, 1fr))`,
+    gap: '0.5rem',
+    marginBottom: '0.5rem'
+  };
+
   return (
     <AdminPageLayout
       title={t('timetables.addTimetable')}
       subtitle={t('timetables.createNewTimetable')}
       actions={[<ActionButtons key="actions" />]}
     >
-      <div className="max-w-6xl mx-auto">
-        {/* Progress Steps */}
+      <div className="max-w-full mx-auto">
         <div className="flex items-center justify-center mb-8">
           <div className="flex items-center space-x-4">
             <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${
@@ -389,12 +524,13 @@ const AddTimetablePage = () => {
         </div>
 
         <div className="space-y-6">
-          {/* Step 1: Basic Information */}
           {currentStep === 1 && (
+            <div className="space-y-6">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.3 }}
+              className="space-y-6"
             >
               <Card>
                 <CardHeader>
@@ -405,7 +541,6 @@ const AddTimetablePage = () => {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Class Selection */}
                     <div className="space-y-2">
                       <Label htmlFor="school_class" className="text-sm font-medium">
                         {t('classes.class')} <span className="text-red-500">*</span>
@@ -430,7 +565,6 @@ const AddTimetablePage = () => {
                       )}
                     </div>
 
-                    {/* Academic Year Selection */}
                     <div className="space-y-2">
                       <Label htmlFor="academic_year" className="text-sm font-medium">
                         {t('classes.academicYear')} <span className="text-red-500">*</span>
@@ -456,7 +590,6 @@ const AddTimetablePage = () => {
                     </div>
                   </div>
 
-                  {/* Active Status */}
                   <div className="flex items-center space-x-2">
                     <Checkbox
                       id="is_active"
@@ -467,18 +600,130 @@ const AddTimetablePage = () => {
                       {t('timetables.setAsActive')}
                     </Label>
                   </div>
+                </CardContent>
+              </Card>
 
-                  <div className="flex justify-end">
-                    <Button onClick={handleNextStep}>
-                      {t('common.next')} <ArrowLeft className="h-4 w-4 ml-2 rotate-180" />
-                    </Button>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-green-600" />
+                    {t('timetables.periodConfiguration') || 'Period Configuration'}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <Label className="text-sm font-medium">
+                      {t('timetables.selectTemplate') || 'Select Schedule Template'}
+                    </Label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {Object.entries(periodTemplates).map(([key, template]) => (
+                        <Card 
+                          key={key}
+                          className={`cursor-pointer transition-all border-2 ${
+                            selectedTemplate === key 
+                              ? 'border-blue-500 bg-blue-50' 
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                          onClick={() => applyTemplate(key)}
+                        >
+                          <CardContent className="p-4">
+                            <div className="text-sm font-medium mb-2">{template.name}</div>
+                            <div className="text-xs text-muted-foreground">{template.description}</div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium">
+                        {t('timetables.customizePeriods') || 'Customize Periods'} ({timeSlots.length} {t('timetables.periods') || 'periods'})
+                      </Label>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowPeriodConfig(!showPeriodConfig)}
+                        >
+                          {showPeriodConfig ? t('common.hide') : t('common.show')}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={addPeriod}
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          {t('timetables.addPeriod') || 'Add Period'}
+                        </Button>
+                      </div>
+                    </div>
+
+                    {showPeriodConfig && (
+                      <div className="space-y-3 max-h-60 overflow-y-auto border rounded-lg p-4">
+                        {timeSlots.map((slot) => (
+                          <div key={slot.period} className="flex items-center gap-4 p-3 bg-muted/50 rounded">
+                            <Badge variant="outline">P{slot.period}</Badge>
+                            
+                            <div className="flex items-center gap-2">
+                              <Label className="text-xs">Start:</Label>
+                              <Input
+                                type="time"
+                                value={slot.start}
+                                onChange={(e) => updatePeriod(slot.period, 'start', e.target.value)}
+                                className="w-24"
+                              />
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                              <Label className="text-xs">End:</Label>
+                              <Input
+                                type="time"
+                                value={slot.end}
+                                onChange={(e) => updatePeriod(slot.period, 'end', e.target.value)}
+                                className="w-24"
+                              />
+                            </div>
+
+                            {timeSlots.length > 1 && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => removePeriod(slot.period)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                      {timeSlots.slice(0, 8).map((slot) => (
+                        <Badge key={slot.period} variant="secondary" className="text-xs">
+                          P{slot.period}: {slot.start}-{slot.end}
+                        </Badge>
+                      ))}
+                      {timeSlots.length > 8 && (
+                        <Badge variant="secondary" className="text-xs">
+                          +{timeSlots.length - 8} more
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
+              <div className="flex justify-end">
+                <Button onClick={handleNextStep}>
+                  {t('common.next')} <ArrowLeft className="h-4 w-4 ml-2 rotate-180" />
+                </Button>
+              </div>
             </motion.div>
+            </div>
           )}
 
-          {/* Step 2: Sessions */}
           {currentStep === 2 && (
             <motion.div
               initial={{ opacity: 0, x: 20 }}
@@ -486,7 +731,6 @@ const AddTimetablePage = () => {
               transition={{ duration: 0.3 }}
               className="space-y-6"
             >
-              {/* Quick Actions */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -518,18 +762,10 @@ const AddTimetablePage = () => {
                       <Upload className="h-4 w-4 mr-2" />
                       {t('timetables.importFromFile')}
                     </Button>
-                    <Button
-                      variant="outline"
-                      onClick={addSession}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      {t('timetables.addSession')}
-                    </Button>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Timetable Grid */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -539,71 +775,48 @@ const AddTimetablePage = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="overflow-x-auto">
-                    <div className="min-w-[800px]">
-                      {/* Header */}
-                      <div className="grid grid-cols-7 gap-2 mb-4">
-                        <div className="p-3 bg-muted/50 rounded text-center font-medium text-sm">
-                          {t('timetables.period')}
+                    <div style={{minWidth: `${timeSlots.length * 120 + 150}px`}}>
+                      <div style={gridStyle} className="mb-4">
+                        <div className="p-3 bg-muted/50 rounded text-center font-medium text-sm flex items-center justify-center">
+                          {t('calendar.day')}
                         </div>
-                        {weekDays.slice(0, 6).map((day) => (
-                          <div key={day.key} className="p-3 bg-muted/50 rounded text-center">
-                            <div className="font-medium text-sm">{day.name}</div>
+                        {timeSlots.map((slot) => (
+                          <div key={slot.period} className="p-3 bg-muted/50 rounded text-center">
+                            <div className="font-medium text-sm">{t('timetables.period')} {slot.period}</div>
+                            <div className="text-xs text-muted-foreground">{slot.start} - {slot.end}</div>
                           </div>
                         ))}
                       </div>
 
-                      {/* Time Slots */}
-                      {timeSlots.map((slot) => (
-                        <div key={slot.period} className="grid grid-cols-7 gap-2 mb-2">
-                          {/* Period Column */}
-                          <div className="p-3 bg-muted/30 rounded text-center">
+                      {weekDays.slice(0, 6).map((day) => (
+                        <div key={day.key} style={gridStyle}>
+                          <div className="p-3 bg-muted/30 rounded text-center flex items-center justify-center">
                             <div className="text-sm font-medium">
-                              {t('timetables.period')} {slot.period}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {slot.start} - {slot.end}
+                              {day.name}
                             </div>
                           </div>
 
-                          {/* Days */}
-                          {weekDays.slice(0, 6).map((day) => {
+                          {timeSlots.map((slot) => {
                             const session = getSessionForSlot(day.value, slot.period);
                             
                             return (
-                              <div key={day.key} className="min-h-[80px] p-1">
+                              <div key={slot.period} className="min-h-[80px] p-1">
                                 {session ? (
-                                  <div className="p-2 border border-blue-200 bg-blue-50 rounded h-full relative">
-                                    <button
-                                      onClick={() => removeSession(session.id)}
-                                      className="absolute top-1 right-1 p-1 text-red-600 hover:bg-red-100 rounded"
-                                    >
-                                      <Trash2 className="h-3 w-3" />
-                                    </button>
-                                    <div className="text-xs space-y-1">
-                                      <div className="font-medium">
-                                        {subjects.find(s => s.id.toString() === session.subject)?.name || 'Subject'}
-                                      </div>
-                                      <div className="text-muted-foreground">
-                                        {teachers.find(t => t.id.toString() === session.teacher)?.full_name || 'Teacher'}
+                                  <button onClick={() => handleOpenModal(day, slot)} className="w-full h-full text-left">
+                                    <div className="p-2 border border-blue-200 bg-blue-50 rounded h-full relative hover:bg-blue-100 transition-colors">
+                                      <div className="text-xs space-y-1">
+                                        <div className="font-medium">
+                                          {subjects.find(s => s.id.toString() === session.subject)?.name || 'Subject'}
+                                        </div>
+                                        <div className="text-muted-foreground">
+                                          {teachers.find(t => t.id.toString() === session.teacher)?.full_name || 'Teacher'}
+                                        </div>
                                       </div>
                                     </div>
-                                  </div>
+                                  </button>
                                 ) : (
                                   <button
-                                    onClick={() => {
-                                      const newSession = {
-                                        id: Date.now(),
-                                        day_of_week: day.value,
-                                        session_order: slot.period,
-                                        start_time: slot.start,
-                                        end_time: slot.end,
-                                        subject: '',
-                                        teacher: '',
-                                        room: 'none',
-                                        notes: ''
-                                      };
-                                      setSessions(prev => [...prev, newSession]);
-                                    }}
+                                    onClick={() => handleOpenModal(day, slot)}
                                     className="w-full h-full border-2 border-dashed border-gray-200 rounded flex items-center justify-center hover:border-blue-300 hover:bg-blue-50/30 transition-all"
                                   >
                                     <Plus className="h-4 w-4 text-gray-400" />
@@ -619,143 +832,6 @@ const AddTimetablePage = () => {
                 </CardContent>
               </Card>
 
-              {/* Sessions List */}
-              {sessions.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <BookOpen className="h-5 w-5 text-blue-600" />
-                      {t('timetables.sessionDetails')}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {sessions.map((session, index) => (
-                        <div key={session.id} className="p-4 border border-border rounded-lg">
-                          <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline">
-                                {weekDays.find(d => d.value === session.day_of_week)?.name}
-                              </Badge>
-                              <Badge variant="outline">
-                                {t('timetables.period')} {session.session_order}
-                              </Badge>
-                              <Badge variant="outline">
-                                {session.start_time} - {session.end_time}
-                              </Badge>
-                            </div>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => removeSession(session.id)}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                            {/* Subject */}
-                            <div className="space-y-2">
-                              <Label className="text-sm font-medium">
-                                {t('subjects.subject')} <span className="text-red-500">*</span>
-                              </Label>
-                              <Select 
-                                value={session.subject || ""} 
-                                onValueChange={(value) => updateSession(session.id, 'subject', value)}
-                              >
-                                <SelectTrigger className={errors[`session_${session.id}_subject`] ? 'border-red-500' : ''}>
-                                  <SelectValue placeholder={t('subjects.selectSubject')} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {subjects.map((subject) => (
-                                    <SelectItem key={subject.id} value={subject.id.toString()}>
-                                      {subject.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              {errors[`session_${session.id}_subject`] && (
-                                <p className="text-xs text-red-600">{errors[`session_${session.id}_subject`]}</p>
-                              )}
-                            </div>
-
-                            {/* Teacher */}
-                            <div className="space-y-2">
-                              <Label className="text-sm font-medium">
-                                {t('teachers.teacher')} <span className="text-red-500">*</span>
-                              </Label>
-                              <Select 
-                                value={session.teacher || ""} 
-                                onValueChange={(value) => updateSession(session.id, 'teacher', value)}
-                              >
-                                <SelectTrigger className={errors[`session_${session.id}_teacher`] ? 'border-red-500' : ''}>
-                                  <SelectValue placeholder={t('teachers.selectTeacher')} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {teachers.map((teacher) => (
-                                    <SelectItem key={teacher.id} value={teacher.id.toString()}>
-                                      {teacher.full_name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              {errors[`session_${session.id}_teacher`] && (
-                                <p className="text-xs text-red-600">{errors[`session_${session.id}_teacher`]}</p>
-                              )}
-                            </div>
-
-                            {/* Room */}
-                            <div className="space-y-2">
-                              <Label className="text-sm font-medium">
-                                {t('rooms.room')}
-                              </Label>
-                              <Select 
-                                value={session.room || ""} 
-                                onValueChange={(value) => updateSession(session.id, 'room', value)}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder={t('rooms.selectRoom')} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="none">{t('common.none')}</SelectItem>
-                                  {rooms.map((room) => (
-                                    <SelectItem key={room.id} value={room.id.toString()}>
-                                      {room.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            {/* Notes */}
-                            <div className="space-y-2">
-                              <Label className="text-sm font-medium">
-                                {t('common.notes')}
-                              </Label>
-                              <Input
-                                value={session.notes}
-                                onChange={(e) => updateSession(session.id, 'notes', e.target.value)}
-                                placeholder={t('timetables.sessionNotes')}
-                              />
-                            </div>
-                          </div>
-
-                          {/* Conflict Warning */}
-                          {errors[`session_${session.id}_conflict`] && (
-                            <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded flex items-center gap-2">
-                              <AlertTriangle className="h-4 w-4 text-red-600" />
-                              <p className="text-sm text-red-600">{errors[`session_${session.id}_conflict`]}</p>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Navigation */}
               <div className="flex justify-between">
                 <Button
                   variant="outline"
@@ -787,6 +863,118 @@ const AddTimetablePage = () => {
           )}
         </div>
       </div>
+
+      {selectedSession && modalSessionData && (
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogContent className="sm:max-w-[625px]">
+            <DialogHeader>
+              <DialogTitle>
+                {modalSessionData.isNew ? t('timetables.addSession') : t('timetables.editSession')}
+              </DialogTitle>
+              <DialogDescription>
+                {weekDays.find(d => d.value === modalSessionData.day_of_week)?.name} - {t('timetables.period')} {modalSessionData.session_order} ({modalSessionData.start_time} - {modalSessionData.end_time})
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="subject" className="text-right">{t('subjects.subject')}</Label>
+                <div className="col-span-3">
+                  <Select 
+                    value={modalSessionData.subject || ""} 
+                    onValueChange={(value) => handleModalInputChange('subject', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('subjects.selectSubject')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subjects.map((subject) => (
+                        <SelectItem key={subject.id} value={subject.id.toString()}>
+                          {subject.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="teacher" className="text-right">{t('teachers.teacher')}</Label>
+                <div className="col-span-3">
+                  <Select 
+                    value={modalSessionData.teacher || ""} 
+                    onValueChange={(value) => handleModalInputChange('teacher', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('teachers.selectTeacher')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {filteredTeachers.map((teacher) => (
+                        <SelectItem key={teacher.id} value={teacher.id.toString()}>
+                          {teacher.full_name}
+                        </SelectItem>
+                      ))}
+                      {filteredTeachers.length === 0 && modalSessionData?.subject && (
+                        <SelectItem disabled value="no-teachers">
+                          {t('timetables.noTeachersForSubject') || 'No teachers available for this subject'}
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="room" className="text-right">{t('rooms.room')}</Label>
+                <div className="col-span-3">
+                  <Select 
+                    value={modalSessionData.room || "none"} 
+                    onValueChange={(value) => handleModalInputChange('room', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('rooms.selectRoom')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">{t('common.none')}</SelectItem>
+                      {rooms.map((room) => (
+                        <SelectItem key={room.id} value={room.id.toString()}>
+                          {room.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="notes" className="text-right">{t('common.notes')}</Label>
+                <Input
+                  id="notes"
+                  value={modalSessionData.notes || ''}
+                  onChange={(e) => handleModalInputChange('notes', e.target.value)}
+                  className="col-span-3"
+                  placeholder={t('timetables.sessionNotes')}
+                />
+              </div>
+            </div>
+            <DialogFooter className="sm:justify-between">
+              <div>
+                {!modalSessionData.isNew && (
+                  <Button variant="destructive" onClick={handleRemoveSession}>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    {t('common.delete')}
+                  </Button>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <DialogClose asChild>
+                  <Button variant="outline" onClick={handleCloseModal}>{t('common.cancel')}</Button>
+                </DialogClose>
+                <Button onClick={handleSaveSession}>
+                  <Save className="h-4 w-4 mr-2" />
+                  {t('common.save')}
+                </Button>
+              </div>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </AdminPageLayout>
   );
 };

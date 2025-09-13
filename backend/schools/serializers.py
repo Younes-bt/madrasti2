@@ -24,7 +24,7 @@ class AcademicYearSerializer(serializers.ModelSerializer):
 class SubjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subject
-        fields = ('id', 'name', 'code')
+        fields = ('id', 'name', 'name_arabic', 'name_french', 'code')
 
 class RoomSerializer(serializers.ModelSerializer):
     # Add image-related fields

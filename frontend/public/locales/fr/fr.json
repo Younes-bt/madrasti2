@@ -41,7 +41,10 @@
     "dateOfBirth": "Date de naissance",
     "address": "Adresse",
     "bio": "Biographie",
-    "role": "Rôle"
+    "role": "Rôle",
+    "show": "Afficher",
+    "hide": "Masquer",
+    "creating": "Création..."
   },
   "action": {
     "view": "Voir",
@@ -393,6 +396,56 @@
     "absentToday": "Absents aujourd'hui",
     "perfect": "Présence parfaite",
     "chronic": "Absences chroniques"
+  },
+  "timetables": {
+    "timetables": "Emplois du Temps",
+    "addTimetable": "Ajouter un Emploi du Temps",
+    "createTimetable": "Créer un Emploi du Temps",
+    "createNewTimetable": "Créer un nouvel emploi du temps",
+    "basicInformation": "Informations de Base",
+    "weeklySchedule": "Planification Hebdomadaire",
+    "sessionDetails": "Détails des Séances",
+    "quickActions": "Actions Rapides",
+    "sessions": "séances",
+    "period": "Période",
+    "setAsActive": "Définir comme actif",
+    "generateTemplate": "Générer un Modèle",
+    "copyFromExisting": "Copier depuis Existant",
+    "importFromFile": "Importer depuis un Fichier",
+    "addSession": "Ajouter une Séance",
+    "sessionNotes": "Notes de séance...",
+    "templateGenerated": "Modèle généré avec succès",
+    "createSuccess": "Emploi du temps créé avec succès",
+    "createError": "Échec de la création de l'emploi du temps",
+    "validation": {
+      "classRequired": "La classe est requise",
+      "academicYearRequired": "L'année académique est requise",
+      "subjectRequired": "La matière est requise",
+      "teacherRequired": "Le professeur est requis",
+      "sessionConflict": "Ce créneau horaire est déjà occupé",
+      "teacherConflict": "Ce professeur a déjà une séance à cette heure"
+    },
+    "periodConfiguration": "Configuration des Périodes",
+    "selectTemplate": "Sélectionner un Modèle d'Horaire",
+    "customizePeriods": "Personnaliser les Périodes",
+    "periods": "périodes",
+    "addPeriod": "Ajouter une Période",
+    "templateApplied": "Modèle appliqué avec succès",
+    "templates": {
+      "continuous": "Horaire Continu",
+      "continuousDesc": "Périodes continues standard avec pauses",
+      "morningEvening": "Matin et Soir",
+      "morningEveningDesc": "Sessions séparées matin et soir",
+      "shortPeriods": "Périodes Courtes",
+      "shortPeriodsDesc": "Périodes de 45 minutes avec pauses",
+      "custom": "Personnalisé",
+      "customDesc": "Créer votre propre horaire de périodes"
+    },
+    "editSession": "Modifier la Séance",
+    "sessionSaved": "Séance sauvegardée avec succès",
+    "sessionRemoved": "Séance supprimée avec succès",
+    "subjectAndTeacherRequired": "La matière et le professeur sont requis",
+    "noTeachersForSubject": "Aucun professeur disponible pour cette matière"
   },
   "homework": {
     "title": "Gestion des devoirs",
