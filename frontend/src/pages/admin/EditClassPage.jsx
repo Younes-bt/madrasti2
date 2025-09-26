@@ -18,18 +18,37 @@ import {
 import { apiMethods } from '../../services/api';
 import { toast } from 'sonner';
 
+// Utility function to get multilingual name based on current language
+const getMultilingualName = (item, language) => {
+  if (!item) return '';
+
+  switch (language) {
+    case 'ar':
+      return item.name_arabic || item.name || '';
+    case 'fr':
+      return item.name_french || item.name || '';
+    case 'en':
+    default:
+      return item.name || '';
+  }
+};
+
 const EditClassPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams();
+  const currentLanguage = i18n.language;
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [errors, setErrors] = useState({});
   const [grades, setGrades] = useState([]);
   const [academicYears, setAcademicYears] = useState([]);
+  const [tracks, setTracks] = useState([]);
+  const [filteredTracks, setFilteredTracks] = useState([]);
 
   const [formData, setFormData] = useState({
     grade: '',
+    track: 'none', // Optional track field - 'none' means no track
     academic_year: '',
     section: ''
   });
@@ -38,18 +57,36 @@ const EditClassPage = () => {
     fetchClassAndFormData();
   }, [id]);
 
+  // Filter tracks when grade changes
+  useEffect(() => {
+    if (formData.grade && tracks.length > 0) {
+      const filtered = tracks.filter(track => track.grade?.toString() === formData.grade.toString());
+      setFilteredTracks(filtered);
+
+      // Reset track if current selection is no longer valid
+      if (formData.track && formData.track !== 'none' && !filtered.some(track => track.id.toString() === formData.track.toString())) {
+        setFormData(prev => ({ ...prev, track: 'none' }));
+      }
+    } else {
+      setFilteredTracks([]);
+      setFormData(prev => ({ ...prev, track: 'none' }));
+    }
+  }, [formData.grade, tracks]);
+
   const fetchClassAndFormData = async () => {
     setInitialLoading(true);
     try {
-      const [classResponse, gradesResponse, academicYearsResponse] = await Promise.all([
+      const [classResponse, gradesResponse, academicYearsResponse, tracksResponse] = await Promise.all([
         apiMethods.get(`schools/classes/${id}/`),
         apiMethods.get('schools/grades/'),
-        apiMethods.get('schools/academic-years/')
+        apiMethods.get('schools/academic-years/'),
+        apiMethods.get('schools/tracks/')
       ]);
 
       const classData = classResponse.data || classResponse;
       setFormData({
         grade: classData.grade?.toString() || '',
+        track: classData.track?.toString() || 'none',
         academic_year: classData.academic_year?.toString() || '',
         section: classData.section || ''
       });
@@ -59,6 +96,15 @@ const EditClassPage = () => {
 
       let academicYearsData = academicYearsResponse.results || (Array.isArray(academicYearsResponse) ? academicYearsResponse : academicYearsResponse.data?.results || academicYearsResponse.data || []);
       setAcademicYears(academicYearsData);
+
+      let tracksData = tracksResponse.results || (Array.isArray(tracksResponse) ? tracksResponse : tracksResponse.data?.results || tracksResponse.data || []);
+      setTracks(tracksData);
+
+      // Set filtered tracks based on current class grade
+      if (classData.grade && tracksData.length > 0) {
+        const filtered = tracksData.filter(track => track.grade?.toString() === classData.grade?.toString());
+        setFilteredTracks(filtered);
+      }
 
     } catch (error) {
       console.error('Failed to fetch data:', error);
@@ -106,6 +152,7 @@ const EditClassPage = () => {
         ...formData,
         grade: parseInt(formData.grade),
         academic_year: parseInt(formData.academic_year),
+        track: formData.track && formData.track !== 'none' ? parseInt(formData.track) : null
       };
 
       await apiMethods.patch(`schools/classes/${id}/`, submitData);
@@ -116,6 +163,16 @@ const EditClassPage = () => {
       if (error.response?.data) {
         const apiErrors = error.response.data;
         const newErrors = {};
+
+        // Check for duplicate class error (IntegrityError)
+        if (error.response.status === 500 &&
+            (apiErrors.detail?.includes('IntegrityError') ||
+             apiErrors.message?.includes('UNIQUE constraint') ||
+             JSON.stringify(apiErrors).includes('unique_together'))) {
+          toast.error(t('classes.duplicateError') || 'A class with this grade, track, section, and academic year already exists.');
+          return;
+        }
+
         Object.keys(apiErrors).forEach(key => {
           newErrors[key] = Array.isArray(apiErrors[key]) ? apiErrors[key][0] : apiErrors[key];
         });
@@ -190,13 +247,46 @@ const EditClassPage = () => {
                     <SelectContent>
                       {grades.map((grade) => (
                         <SelectItem key={grade.id} value={grade.id.toString()}>
-                          {grade.name}
+                          {getMultilingualName(grade, currentLanguage)}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                   {errors.grade && <p className="text-sm text-red-600">{errors.grade}</p>}
                 </div>
+
+                {/* Track Selection */}
+                {filteredTracks.length > 0 && (
+                  <div className="space-y-2">
+                    <Label htmlFor="track" className="text-sm font-medium">
+                      {t('classes.track') || 'Track / Specialization'}
+                    </Label>
+                    <Select
+                      value={formData.track || ""}
+                      onValueChange={(value) => handleSelectChange('track', value)}
+                    >
+                      <SelectTrigger className={errors.track ? 'border-red-500' : ''}>
+                        <SelectValue placeholder={t('classes.selectTrack') || 'Select track (optional)'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">
+                          {t('classes.noTrack') || 'No specific track'}
+                        </SelectItem>
+                        {filteredTracks.map((track) => (
+                          <SelectItem key={track.id} value={track.id.toString()}>
+                            {getMultilingualName(track, currentLanguage)} {track.code && `(${track.code})`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.track && (
+                      <p className="text-sm text-red-600">{errors.track}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      {t('classes.trackHint') || 'Select a track for specialized programs (optional)'}
+                    </p>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="academic_year">{t('classes.academicYear')} *</Label>

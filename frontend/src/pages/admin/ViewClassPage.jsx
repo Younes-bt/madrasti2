@@ -158,7 +158,7 @@ const ViewClassPage = () => {
                   <Separator />
                   <div>
                     <h4 className="text-sm font-medium text-muted-foreground mb-2">{t('classes.academicYear')}</h4>
-                    <span className="font-medium">{classData.academic_year}</span>
+                    <span className="font-medium">{classData.academic_year_name}</span>
                   </div>
                 </div>
               </div>

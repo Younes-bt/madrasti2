@@ -173,6 +173,7 @@ const GradesPage = () => {
         grade.name?.toLowerCase().includes(query) ||
         grade.name_arabic?.toLowerCase().includes(query) ||
         grade.name_french?.toLowerCase().includes(query) ||
+        grade.code?.toLowerCase().includes(query) ||
         grade.educational_level_name?.toLowerCase().includes(query) ||
         grade.grade_number?.toString().includes(query)
       );
@@ -271,8 +272,8 @@ const GradesPage = () => {
         </motion.div>
 
         {/* Search and Filter Section */}
-        <motion.div 
-          className="flex flex-col sm:flex-row gap-4 bg-card/50 p-4 rounded-lg border backdrop-blur-sm"
+        <motion.div
+          className="flex flex-col sm:flex-row gap-4 bg-card p-4 rounded-lg border shadow-sm"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
@@ -283,11 +284,11 @@ const GradesPage = () => {
               placeholder={t('grades.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-background/50"
+              className="pl-10"
             />
           </div>
           <Select value={levelFilter} onValueChange={setLevelFilter}>
-            <SelectTrigger className="w-full sm:w-[200px] bg-background/50">
+            <SelectTrigger className="w-full sm:w-[200px]">
               <Filter className="h-4 w-4 mr-2" />
               <SelectValue placeholder={t('grades.filterByLevel')} />
             </SelectTrigger>
@@ -310,7 +311,7 @@ const GradesPage = () => {
             // Loading skeletons
             Array(6).fill(0).map((_, i) => (
               <div key={i} className="animate-pulse">
-                <div className="bg-card/50 rounded-lg p-6 space-y-3">
+                <div className="bg-card rounded-lg p-6 space-y-3 border shadow-sm">
                   <div className="h-4 bg-muted rounded w-3/4"></div>
                   <div className="h-3 bg-muted rounded w-1/2"></div>
                   <div className="h-8 bg-muted rounded w-full"></div>
@@ -347,6 +348,9 @@ const GradesPage = () => {
                           {getGradeDisplayName(grade)}
                         </CardTitle>
                         <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs bg-gray-100">
+                            #{grade.code || 'N/A'}
+                          </Badge>
                           <Badge variant="outline" className="text-xs">
                             <Hash className="h-3 w-3 mr-1" />
                             {grade.grade_number}

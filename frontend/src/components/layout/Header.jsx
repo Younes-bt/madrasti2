@@ -79,7 +79,7 @@ const Header = ({
 
   return (
     <header className={cn(
-      'sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60',
+      'sticky top-0 z-40 w-full border-b bg-background shadow-sm',
       className
     )}>
       <div className="flex h-16 items-center px-2 sm:px-4">

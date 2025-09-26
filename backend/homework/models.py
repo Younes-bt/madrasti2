@@ -115,8 +115,10 @@ class StudentWallet(models.Model):
 class RewardTransaction(models.Model):
     """Track all reward transactions"""
     student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reward_transactions')
-    assignment = models.ForeignKey('Assignment', on_delete=models.CASCADE, null=True, blank=True)
+    homework = models.ForeignKey('Homework', on_delete=models.CASCADE, null=True, blank=True)
+    exercise = models.ForeignKey('Exercise', on_delete=models.CASCADE, null=True, blank=True)
     submission = models.ForeignKey('Submission', on_delete=models.CASCADE, null=True, blank=True)
+    exercise_submission = models.ForeignKey('ExerciseSubmission', on_delete=models.CASCADE, null=True, blank=True)
     
     TRANSACTION_TYPES = [
         ('earned', 'مكتسب - Gagné'),
@@ -204,13 +206,15 @@ class StudentBadge(models.Model):
     """Badges earned by students"""
     student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='earned_badges')
     badge = models.ForeignKey(Badge, on_delete=models.CASCADE)
-    
+
     earned_at = models.DateTimeField(auto_now_add=True)
     earned_for = models.CharField(max_length=200, blank=True, help_text="What triggered this badge")
-    
+
     # Context
-    assignment = models.ForeignKey('Assignment', on_delete=models.SET_NULL, null=True, blank=True)
+    homework = models.ForeignKey('Homework', on_delete=models.SET_NULL, null=True, blank=True)
+    exercise = models.ForeignKey('Exercise', on_delete=models.SET_NULL, null=True, blank=True)
     submission = models.ForeignKey('Submission', on_delete=models.SET_NULL, null=True, blank=True)
+    exercise_submission = models.ForeignKey('ExerciseSubmission', on_delete=models.SET_NULL, null=True, blank=True)
     
     class Meta:
         unique_together = ['student', 'badge']
@@ -337,41 +341,41 @@ class TextbookLibrary(models.Model):
 # ASSIGNMENT MODELS
 # =====================================
 
-class Assignment(models.Model):
-    """Main assignment model with different question types"""
+class Homework(models.Model):
+    """Homework assignments created by teachers - mandatory submissions"""
     # Relationships
-    subject = models.ForeignKey('schools.Subject', on_delete=models.CASCADE, related_name='assignments')
-    grade = models.ForeignKey('schools.Grade', on_delete=models.CASCADE, related_name='assignments') 
-    school_class = models.ForeignKey('schools.SchoolClass', on_delete=models.CASCADE, related_name='assignments')
+    subject = models.ForeignKey('schools.Subject', on_delete=models.CASCADE, related_name='homework')
+    grade = models.ForeignKey('schools.Grade', on_delete=models.CASCADE, related_name='homework')
+    school_class = models.ForeignKey('schools.SchoolClass', on_delete=models.CASCADE, related_name='homework')
     lesson = models.ForeignKey('lessons.Lesson', on_delete=models.SET_NULL, null=True, blank=True)
-    teacher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='created_assignments')
+    teacher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='created_homework')
     
-    # Assignment Details
+    # Homework Details
     title = models.CharField(max_length=200)
     title_arabic = models.CharField(max_length=200, blank=True)
     description = models.TextField()
     instructions = models.TextField()
-    
-    # Assignment Format Types
-    ASSIGNMENT_FORMATS = [
-        ('mixed', 'مختلط - Format mixte'),           
+
+    # Homework Format Types
+    HOMEWORK_FORMATS = [
+        ('mixed', 'مختلط - Format mixte'),
         ('qcm_only', 'أسئلة اختيار متعدد - QCM uniquement'),
         ('open_only', 'أسئلة مفتوحة - Questions ouvertes'),
         ('book_exercises', 'تمارين من الكتاب - Exercices du livre'),
         ('project', 'مشروع - Projet'),
         ('practical', 'تطبيقي - Travaux pratiques')
     ]
-    assignment_format = models.CharField(max_length=20, choices=ASSIGNMENT_FORMATS, default='mixed')
-    
-    # Assignment Types
-    ASSIGNMENT_TYPES = [
+    homework_format = models.CharField(max_length=20, choices=HOMEWORK_FORMATS, default='mixed')
+
+    # Homework Types
+    HOMEWORK_TYPES = [
         ('homework', 'واجب منزلي - Devoir à domicile'),
         ('classwork', 'عمل في القسم - Travail en classe'),
         ('quiz', 'اختبار قصير - Quiz'),
         ('exam', 'امتحان - Examen'),
         ('project', 'مشروع - Projet')
     ]
-    assignment_type = models.CharField(max_length=20, choices=ASSIGNMENT_TYPES)
+    homework_type = models.CharField(max_length=20, choices=HOMEWORK_TYPES)
     
     # Timing & Settings
     assigned_date = models.DateTimeField(auto_now_add=True)
@@ -407,18 +411,18 @@ class Assignment(models.Model):
         
     def __str__(self):
         return f"{self.title} - {self.school_class.name}"
-    
+
     @property
     def is_overdue(self):
         return timezone.now() > self.due_date
-    
+
     @property
     def submissions_count(self):
         return self.submissions.count()
 
-class AssignmentReward(models.Model):
-    """Reward configuration for specific assignments"""
-    assignment = models.OneToOneField(Assignment, on_delete=models.CASCADE, related_name='reward_config')
+class HomeworkReward(models.Model):
+    """Reward configuration for specific homework"""
+    homework = models.OneToOneField(Homework, on_delete=models.CASCADE, related_name='reward_config')
     
     # Base rewards
     completion_points = models.PositiveIntegerField(default=10)
@@ -437,16 +441,136 @@ class AssignmentReward(models.Model):
     weekend_multiplier = models.DecimalField(max_digits=3, decimal_places=2, default=1.50)
     
     def __str__(self):
-        return f"Rewards for {self.assignment.title}"
+        return f"Homework Rewards for {self.homework.title}"
+
+# =====================================
+# EXERCISE MODELS (LESSON-BASED)
+# =====================================
+
+class Exercise(models.Model):
+    """Optional exercises linked to lessons for practice - students get rewards but no penalties"""
+    # Relationships
+    lesson = models.ForeignKey('lessons.Lesson', on_delete=models.CASCADE, related_name='exercises')
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='created_exercises')
+
+    # Exercise Details
+    title = models.CharField(max_length=200)
+    title_arabic = models.CharField(max_length=200, blank=True)
+    description = models.TextField(blank=True)
+    instructions = models.TextField(blank=True)
+
+    # Exercise Format Types
+    EXERCISE_FORMATS = [
+        ('mixed', 'مختلط - Format mixte'),
+        ('qcm_only', 'أسئلة اختيار متعدد - QCM uniquement'),
+        ('open_only', 'أسئلة مفتوحة - Questions ouvertes'),
+        ('practical', 'تطبيقي - Travaux pratiques'),
+        ('interactive', 'تفاعلي - Interactif')
+    ]
+    exercise_format = models.CharField(max_length=20, choices=EXERCISE_FORMATS, default='mixed')
+
+    # Difficulty and organization
+    DIFFICULTY_CHOICES = [
+        ('beginner', 'مبتدئ - Débutant'),
+        ('intermediate', 'متوسط - Intermédiaire'),
+        ('advanced', 'متقدم - Avancé'),
+        ('expert', 'خبير - Expert')
+    ]
+    difficulty_level = models.CharField(max_length=20, choices=DIFFICULTY_CHOICES, default='beginner')
+    order = models.PositiveIntegerField(default=0, help_text="Order within lesson")
+
+    # Timing (optional)
+    estimated_duration = models.PositiveIntegerField(null=True, blank=True, help_text="Estimated minutes to complete")
+    time_limit = models.PositiveIntegerField(null=True, blank=True, help_text="Optional time limit in minutes")
+    is_timed = models.BooleanField(default=False)
+
+    # Scoring
+    total_points = models.DecimalField(max_digits=5, decimal_places=2, default=10.00)
+    auto_grade = models.BooleanField(default=True, help_text="Auto-grade when possible")
+
+    # Exercise Settings
+    randomize_questions = models.BooleanField(default=False)
+    show_results_immediately = models.BooleanField(default=True)
+    allow_multiple_attempts = models.BooleanField(default=True)
+    max_attempts = models.PositiveIntegerField(default=0, help_text="0 = unlimited attempts")
+
+    # Availability
+    is_active = models.BooleanField(default=True)
+    is_published = models.BooleanField(default=True)
+    available_from = models.DateTimeField(null=True, blank=True)
+    available_until = models.DateTimeField(null=True, blank=True)
+
+    # Prerequisites
+    prerequisite_exercises = models.ManyToManyField('self', blank=True, symmetrical=False, related_name='unlocks_exercises')
+
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['lesson', 'order', 'created_at']
+        verbose_name = "Exercise"
+        verbose_name_plural = "Exercises"
+
+    def __str__(self):
+        return f"{self.lesson.title} - {self.title}"
+
+    @property
+    def completion_count(self):
+        """Number of students who completed this exercise"""
+        return self.exercise_submissions.filter(status='completed').count()
+
+    @property
+    def average_score(self):
+        """Average score across all completions"""
+        from django.db.models import Avg
+        avg = self.exercise_submissions.filter(status='completed').aggregate(avg_score=Avg('total_score'))
+        return avg['avg_score'] or 0
+
+class ExerciseReward(models.Model):
+    """Reward configuration for specific exercises"""
+    exercise = models.OneToOneField(Exercise, on_delete=models.CASCADE, related_name='reward_config')
+
+    # Base rewards for attempting/completing
+    attempt_points = models.PositiveIntegerField(default=2, help_text="Points for starting exercise")
+    completion_points = models.PositiveIntegerField(default=5, help_text="Points for completing exercise")
+    completion_coins = models.PositiveIntegerField(default=1)
+
+    # Performance-based rewards
+    perfect_score_bonus = models.PositiveIntegerField(default=10, help_text="100% score bonus")
+    high_score_bonus = models.PositiveIntegerField(default=5, help_text=">=80% score bonus")
+    improvement_bonus = models.PositiveIntegerField(default=3, help_text="Score improvement bonus")
+
+    # Streak rewards
+    daily_streak_bonus = models.PositiveIntegerField(default=2, help_text="Bonus for daily exercise completion")
+    lesson_completion_bonus = models.PositiveIntegerField(default=15, help_text="Bonus for completing all lesson exercises")
+
+    # Special multipliers
+    difficulty_multiplier = models.DecimalField(max_digits=3, decimal_places=2, default=1.00)
+    first_attempt_multiplier = models.DecimalField(max_digits=3, decimal_places=2, default=1.50)
+
+    # XP rewards
+    base_xp = models.PositiveIntegerField(default=5)
+    bonus_xp = models.PositiveIntegerField(default=10, help_text="XP for excellent performance")
+
+    def __str__(self):
+        return f"Rewards for {self.exercise.title}"
 
 # =====================================
 # QUESTION MODELS
 # =====================================
 
 class Question(models.Model):
-    """Questions for assignments"""
-    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='questions')
-    
+    """Questions for homework, exercises, or standalone question bank"""
+    # Question can belong to either homework OR exercise OR be standalone
+    homework = models.ForeignKey(Homework, on_delete=models.CASCADE, related_name='questions', null=True, blank=True)
+    exercise = models.ForeignKey('Exercise', on_delete=models.CASCADE, related_name='questions', null=True, blank=True)
+
+    # For standalone questions (when both homework and exercise are null)
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='authored_questions', null=True, blank=True)
+    subject = models.ForeignKey('schools.Subject', on_delete=models.SET_NULL, null=True, blank=True)
+    grade = models.ForeignKey('schools.Grade', on_delete=models.SET_NULL, null=True, blank=True)
+
     # Question Types
     QUESTION_TYPES = [
         ('qcm_single', 'اختيار من متعدد (إجابة واحدة) - QCM choix unique'),
@@ -484,7 +608,24 @@ class Question(models.Model):
         ordering = ['order', 'created_at']
         
     def __str__(self):
-        return f"{self.assignment.title} - Q{self.order}: {self.question_text[:50]}..."
+        if self.homework:
+            return f"{self.homework.title} - Q{self.order}: {self.question_text[:50]}..."
+        elif self.exercise:
+            return f"{self.exercise.title} - Q{self.order}: {self.question_text[:50]}..."
+        else:
+            return f"Standalone - Q{self.order}: {self.question_text[:50]}..."
+
+    def clean(self):
+        """Ensure question belongs to exactly one context"""
+        from django.core.exceptions import ValidationError
+        contexts = [self.homework, self.exercise]
+        non_null_contexts = [c for c in contexts if c is not None]
+
+        if len(non_null_contexts) > 1:
+            raise ValidationError("Question can only belong to homework OR exercise, not both.")
+
+        if len(non_null_contexts) == 0 and not self.author:
+            raise ValidationError("Question must belong to homework, exercise, or have an author for standalone.")
 
 class QuestionChoice(models.Model):
     """Choices for QCM questions"""
@@ -505,7 +646,7 @@ class QuestionChoice(models.Model):
 
 class BookExercise(models.Model):
     """Reference to exercises from textbooks"""
-    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='book_exercises')
+    homework = models.ForeignKey(Homework, on_delete=models.CASCADE, related_name='book_exercises')
     
     # Book Information
     book_title = models.CharField(max_length=200)
@@ -538,8 +679,8 @@ class BookExercise(models.Model):
 # =====================================
 
 class Submission(models.Model):
-    """Student submissions for assignments"""
-    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='submissions')
+    """Student submissions for homework"""
+    homework = models.ForeignKey(Homework, on_delete=models.CASCADE, related_name='submissions')
     student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='submissions')
     
     # Submission Status
@@ -583,15 +724,15 @@ class Submission(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        unique_together = ['assignment', 'student', 'attempt_number']
+        unique_together = ['homework', 'student', 'attempt_number']
         ordering = ['-created_at']
         
     def __str__(self):
-        return f"{self.student.get_full_name()} - {self.assignment.title} - Attempt {self.attempt_number}"
+        return f"{self.student.get_full_name()} - {self.homework.title} - Attempt {self.attempt_number}"
     
     def save(self, *args, **kwargs):
-        if self.submitted_at and self.assignment.due_date:
-            self.is_late = self.submitted_at > self.assignment.due_date
+        if self.submitted_at and self.homework.due_date:
+            self.is_late = self.submitted_at > self.homework.due_date
         super().save(*args, **kwargs)
 
 class QuestionAnswer(models.Model):
@@ -657,6 +798,147 @@ class BookExerciseFile(models.Model):
     file_type = models.CharField(max_length=50)
     uploaded_at = models.DateTimeField(auto_now_add=True)
     uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    
+
     def __str__(self):
         return f"{self.filename} - {self.book_exercise_answer}"
+
+# =====================================
+# EXERCISE SUBMISSION MODELS
+# =====================================
+
+class ExerciseSubmission(models.Model):
+    """Student submissions for exercises - track completion and rewards"""
+    exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE, related_name='exercise_submissions')
+    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='exercise_submissions')
+
+    # Submission Status
+    STATUS_CHOICES = [
+        ('started', 'بدء - Commencé'),
+        ('in_progress', 'قيد التقدم - En cours'),
+        ('completed', 'مكتمل - Complété'),
+        ('auto_graded', 'مُصحح تلقائياً - Auto-corrigé'),
+        ('reviewed', 'مراجع - Révisé')
+    ]
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='started')
+
+    # Timing
+    started_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    time_taken = models.PositiveIntegerField(null=True, blank=True, help_text="Minutes taken")
+
+    # Attempt tracking
+    attempt_number = models.PositiveIntegerField(default=1)
+    is_best_score = models.BooleanField(default=True, help_text="Is this the student's best attempt?")
+
+    # Scoring
+    total_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    percentage_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    auto_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    previous_best_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+
+    # Rewards
+    points_earned = models.PositiveIntegerField(default=0)
+    coins_earned = models.PositiveIntegerField(default=0)
+    xp_earned = models.PositiveIntegerField(default=0)
+    bonus_points = models.PositiveIntegerField(default=0)
+    rewards_calculated = models.BooleanField(default=False)
+
+    # Progress tracking
+    questions_answered = models.PositiveIntegerField(default=0)
+    questions_correct = models.PositiveIntegerField(default=0)
+    improvement_from_last = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+
+    # Feedback
+    auto_feedback = models.TextField(blank=True, help_text="Generated feedback based on performance")
+
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ['exercise', 'student', 'attempt_number']
+        ordering = ['-created_at']
+        verbose_name = "Exercise Submission"
+        verbose_name_plural = "Exercise Submissions"
+
+    def __str__(self):
+        return f"{self.student.get_full_name()} - {self.exercise.title} - Attempt {self.attempt_number}"
+
+    def save(self, *args, **kwargs):
+        # Calculate percentage score
+        if self.total_score is not None and self.exercise.total_points:
+            self.percentage_score = (self.total_score / self.exercise.total_points) * 100
+
+        # Update best score flag
+        if self.status == 'completed' and self.total_score is not None:
+            # Check if this is the best score for this student on this exercise
+            better_submissions = ExerciseSubmission.objects.filter(
+                exercise=self.exercise,
+                student=self.student,
+                status='completed',
+                total_score__gt=self.total_score
+            ).exclude(id=self.id)
+
+            if not better_submissions.exists():
+                # This is the best score, mark others as not best
+                ExerciseSubmission.objects.filter(
+                    exercise=self.exercise,
+                    student=self.student
+                ).exclude(id=self.id).update(is_best_score=False)
+                self.is_best_score = True
+            else:
+                self.is_best_score = False
+
+        super().save(*args, **kwargs)
+
+    @property
+    def accuracy_percentage(self):
+        """Calculate accuracy percentage"""
+        if self.questions_answered > 0:
+            return (self.questions_correct / self.questions_answered) * 100
+        return 0
+
+class ExerciseAnswer(models.Model):
+    """Student's answer to a specific exercise question"""
+    exercise_submission = models.ForeignKey(ExerciseSubmission, on_delete=models.CASCADE, related_name='exercise_answers')
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+
+    # Different answer types
+    text_answer = models.TextField(blank=True)  # For open questions
+    selected_choices = models.ManyToManyField(QuestionChoice, blank=True)  # For QCM
+
+    # Scoring
+    is_correct = models.BooleanField(null=True, blank=True)  # For auto-gradable questions
+    points_earned = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
+    is_partial_credit = models.BooleanField(default=False)
+
+    # Timing
+    time_spent = models.PositiveIntegerField(null=True, blank=True, help_text="Seconds spent on this question")
+    answered_at = models.DateTimeField(auto_now=True)
+
+    # Attempts (for questions allowing multiple tries)
+    attempt_count = models.PositiveIntegerField(default=1)
+    is_final_answer = models.BooleanField(default=True)
+
+    # Learning analytics
+    hint_used = models.BooleanField(default=False)
+    help_requested = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ['exercise_submission', 'question', 'attempt_count']
+        ordering = ['question__order', 'attempt_count']
+
+    def __str__(self):
+        return f"{self.exercise_submission.student.get_full_name()} - {self.question} - Attempt {self.attempt_count}"
+
+class ExerciseAnswerFile(models.Model):
+    """Files uploaded as part of an exercise answer"""
+    exercise_answer = models.ForeignKey(ExerciseAnswer, on_delete=models.CASCADE, related_name='files')
+    file = CloudinaryField('file', folder='exercise_answer_files/')
+    filename = models.CharField(max_length=255)
+    file_type = models.CharField(max_length=50)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.filename} - {self.exercise_answer}"

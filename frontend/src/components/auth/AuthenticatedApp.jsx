@@ -41,7 +41,7 @@ const AuthenticatedApp = () => {
   return (
     <div className={`min-h-screen bg-background ${isRTL ? 'rtl' : 'ltr'}`} dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Header */}
-      <header className="border-b bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/50">
+      <header className="border-b bg-card shadow-sm">
         <div className="container flex h-16 items-center justify-between px-4">
           {/* Logo and Title */}
           <div className="flex items-center space-x-4">
@@ -102,7 +102,7 @@ const AuthenticatedApp = () => {
       </header>
 
       {/* Navigation */}
-      <nav className="border-b bg-card/30">
+      <nav className="border-b bg-card">
         <div className="container px-4">
           <div className="flex h-12 items-center space-x-1">
             {demoViews.map((view) => (
@@ -216,7 +216,7 @@ const AuthenticatedApp = () => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t bg-card/30 mt-12">
+      <footer className="border-t bg-card mt-12">
         <div className="container px-4 py-4">
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <p>© 2025 Madrasti 2.0 - Education Management System</p>

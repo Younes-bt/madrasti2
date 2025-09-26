@@ -16,21 +16,26 @@ import {
   Building,
   Clock,
   Shield,
-  BookOpen
+  BookOpen,
+  GraduationCap,
+  Users
 } from 'lucide-react';
 import AdminPageLayout from '../../components/admin/layout/AdminPageLayout';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { apiMethods } from '../../services/api';
+import attendanceService from '../../services/attendance';
 import { toast } from 'sonner';
 
 const ViewTeacherPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { teacherId } = useParams();
   const [loading, setLoading] = useState(true);
   const [teacherData, setTeacherData] = useState(null);
+  const [teacherClasses, setTeacherClasses] = useState([]);
+  const [loadingClasses, setLoadingClasses] = useState(false);
 
   // Fetch teacher data
   const fetchTeacherData = async () => {
@@ -50,9 +55,126 @@ const ViewTeacherPage = () => {
     }
   };
 
+  // Fetch teacher classes
+  const fetchTeacherClasses = async () => {
+    if (!teacherId) return;
+
+    try {
+      setLoadingClasses(true);
+
+      // Get all timetable sessions and filter by teacher on frontend
+      // This ensures we get the same data as the teacher's own view
+      const response = await attendanceService.getTimetableSessions();
+
+      // Process sessions to extract unique classes with their details, filtering by teacher
+      const allSessions = response.results || response.data || response || [];
+
+      // Filter sessions by the specific teacher ID
+      const teacherSessions = allSessions.filter(session => {
+        return session.teacher && (
+          session.teacher.id === parseInt(teacherId) ||
+          session.teacher === parseInt(teacherId)
+        );
+      });
+
+      console.log('All sessions:', allSessions.length);
+      console.log('Filtered teacher sessions:', teacherSessions.length);
+      console.log('Teacher ID to filter:', teacherId);
+      console.log('Sample sessions:', allSessions.slice(0, 3));
+
+      const classesMap = new Map();
+
+      teacherSessions.forEach(session => {
+        if (session.class_name && session.timetable_id) {
+          const classId = session.timetable_id;
+          if (!classesMap.has(classId)) {
+            // Create a simplified class object
+            const classData = {
+              id: classId,
+              school_class_id: session.school_class_id,
+              name: session.class_name || 'Unknown Class',
+              section: session.class_section || '',
+              room: session.room_name ? {
+                id: session.room || 0,
+                name: session.room_name,
+                type: 'classroom'
+              } : null,
+              student_count: 0, // We'll fetch this separately if needed
+              subjects_taught: [],
+              weekly_sessions: 0,
+              academic_year: session.academic_year ? {
+                id: 0,
+                year: session.academic_year
+              } : null
+            };
+            classesMap.set(classId, classData);
+          }
+
+          // Add subject if not already included
+          const classData = classesMap.get(classId);
+          const subjectExists = classData.subjects_taught.some(s => s.id === session.subject);
+          if (session.subject && session.subject_name && !subjectExists) {
+            classData.subjects_taught.push({
+              id: session.subject,
+              name: session.subject_name,
+              name_arabic: session.subject_name_arabic || '',
+              code: ''
+            });
+          }
+
+          // Count weekly sessions
+          classData.weekly_sessions++;
+        }
+      });
+
+      const classesData = Array.from(classesMap.values());
+      console.log('Processed classes data:', classesData);
+      setTeacherClasses(classesData);
+
+      // Fetch student counts for all classes
+      await fetchStudentCounts(classesData);
+    } catch (error) {
+      console.error('Error fetching teacher classes:', error);
+      // Don't show error toast for classes as it's secondary information
+    } finally {
+      setLoadingClasses(false);
+    }
+  };
+
+  // Function to fetch student counts for all classes
+  const fetchStudentCounts = async (classesData) => {
+    try {
+      const updatedClasses = await Promise.all(
+        classesData.map(async (classData) => {
+          try {
+            const params = new URLSearchParams();
+            params.append('school_class', classData.school_class_id);
+            params.append('is_active', 'true');
+
+            const enrollmentsResponse = await apiMethods.get(`users/enrollments/?${params.toString()}`);
+            const studentCount = enrollmentsResponse.count || 0;
+
+            return {
+              ...classData,
+              student_count: studentCount
+            };
+          } catch (error) {
+            console.error(`Error fetching student count for class ${classData.name}:`, error);
+            return classData; // Return original data if error
+          }
+        })
+      );
+
+      setTeacherClasses(updatedClasses);
+    } catch (error) {
+      console.error('Error fetching student counts:', error);
+    }
+  };
+
   useEffect(() => {
     if (teacherId) {
       fetchTeacherData();
+      fetchTeacherClasses();
     }
   }, [teacherId]);
 
@@ -74,6 +196,20 @@ const ViewTeacherPage = () => {
   const formatDate = (dateString) => {
     if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString();
+  };
+
+  // Helper function to get localized grade name
+  const getLocalizedGradeName = (grade) => {
+    const currentLanguage = i18n.language;
+
+    switch (currentLanguage) {
+      case 'ar':
+        return grade.name_arabic || grade.name;
+      case 'fr':
+        return grade.name_french || grade.name;
+      default:
+        return grade.name;
+    }
   };
 
   const InfoItem = ({ icon, label, value, isLink = false, linkUrl = null }) => (
@@ -205,12 +341,6 @@ const ViewTeacherPage = () => {
                     {getStatusBadge(teacherData.is_active)}
                   </div>
                   
-                  {teacherData.department && (
-                    <p className="text-sm text-gray-600 mt-2 flex items-center justify-center">
-                      <Building className="h-4 w-4 mr-1" />
-                      {teacherData.department}
-                    </p>
-                  )}
                 </div>
               </CardContent>
             </Card>
@@ -313,12 +443,30 @@ const ViewTeacherPage = () => {
                     })()}
                   />
                 )}
-                
-                <InfoItem
-                  icon={<Building className="h-4 w-4 text-gray-400" />}
-                  label={t('teacher.department')}
-                  value={teacherData.department}
-                />
+
+                {/* Teachable Grades */}
+                {(teacherData.teachable_grades && teacherData.teachable_grades.length > 0) && (
+                  <div className="flex items-start space-x-3 p-3">
+                    <div className="flex-shrink-0 mt-1">
+                      <GraduationCap className="h-4 w-4 text-gray-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900">{t('teacher.teachableGrades')}</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {teacherData.teachable_grades.map((grade) => (
+                          <Badge
+                            key={grade.id}
+                            variant="outline"
+                            className="text-xs bg-green-50 text-green-700 border-green-200 hover:bg-green-50"
+                          >
+                            {getLocalizedGradeName(grade)}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 
                 <InfoItem
                   icon={<Calendar className="h-4 w-4 text-gray-400" />}
@@ -332,6 +480,111 @@ const ViewTeacherPage = () => {
                     label={t('teacher.salary')}
                     value={`${parseFloat(teacherData.salary).toLocaleString()} MAD`}
                   />
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Classes Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  {t('teacher.myClasses')}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loadingClasses ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                    <span className="ml-2 text-sm text-muted-foreground">{t('common.loading')}</span>
+                  </div>
+                ) : teacherClasses.length > 0 ? (
+                  <div className="space-y-4">
+                    {teacherClasses.map((classData) => (
+                      <div key={classData.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                              <GraduationCap className="w-5 h-5 text-blue-600" />
+                            </div>
+                            <div>
+                              <h4 className="font-medium text-gray-900">
+                                {classData.name} {classData.section}
+                              </h4>
+                              {classData.room && (
+                                <p className="text-sm text-gray-500 flex items-center gap-1">
+                                  <MapPin className="h-3 w-3" />
+                                  {classData.room.name}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          {classData.academic_year && (
+                            <Badge variant="outline" className="text-xs">
+                              {classData.academic_year.year}
+                            </Badge>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-4 mb-3">
+                          <div className="text-center">
+                            <div className="text-lg font-semibold text-blue-600">{classData.student_count}</div>
+                            <div className="text-xs text-gray-500">{t('teacher.students')}</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-lg font-semibold text-green-600">{classData.subjects_taught.length}</div>
+                            <div className="text-xs text-gray-500">{t('teacher.subjects')}</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-lg font-semibold text-purple-600">{classData.weekly_sessions}</div>
+                            <div className="text-xs text-gray-500">{t('teacher.weeklyHours')}</div>
+                          </div>
+                        </div>
+
+                        {classData.subjects_taught.length > 0 && (
+                          <div>
+                            <p className="text-sm font-medium text-gray-700 mb-2">{t('teacher.subjectsTaught')}:</p>
+                            <div className="flex flex-wrap gap-2">
+                              {classData.subjects_taught.map((subject) => (
+                                <Badge key={subject.id} variant="secondary" className="text-xs">
+                                  {subject.name}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+
+                    {/* Summary */}
+                    <div className="border-t pt-4 mt-4">
+                      <div className="grid grid-cols-3 gap-4 text-center">
+                        <div>
+                          <div className="text-xl font-bold text-blue-600">{teacherClasses.length}</div>
+                          <div className="text-sm text-gray-500">{t('teacher.totalClasses')}</div>
+                        </div>
+                        <div>
+                          <div className="text-xl font-bold text-green-600">
+                            {teacherClasses.reduce((acc, cls) => acc + cls.student_count, 0)}
+                          </div>
+                          <div className="text-sm text-gray-500">{t('teacher.totalStudents')}</div>
+                        </div>
+                        <div>
+                          <div className="text-xl font-bold text-purple-600">
+                            {teacherClasses.reduce((acc, cls) => acc + cls.weekly_sessions, 0)}
+                          </div>
+                          <div className="text-sm text-gray-500">{t('teacher.totalWeeklyHours')}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                      <GraduationCap className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <p className="text-gray-500">{t('teacher.noClassesAssigned')}</p>
+                  </div>
                 )}
               </CardContent>
             </Card>

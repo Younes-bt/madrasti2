@@ -8,6 +8,7 @@ from .views import (
     AcademicYearViewSet,
     EducationalLevelViewSet,
     GradeViewSet,
+    TrackViewSet,
     SchoolClassViewSet,
     RoomViewSet,
     SubjectViewSet
@@ -21,6 +22,7 @@ router.register(r'config', SchoolConfigViewSet, basename='school-config')
 router.register(r'academic-years', AcademicYearViewSet)
 router.register(r'levels', EducationalLevelViewSet)
 router.register(r'grades', GradeViewSet)
+router.register(r'tracks', TrackViewSet)
 router.register(r'classes', SchoolClassViewSet)
 router.register(r'rooms', RoomViewSet)
 router.register(r'subjects', SubjectViewSet)

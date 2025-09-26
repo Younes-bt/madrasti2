@@ -5,7 +5,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Q
+from django.db.models import Q, Count
 from schools.models import Subject, Grade
 from .models import Lesson, LessonResource, LessonTag
 from .serializers import (
@@ -13,18 +13,48 @@ from .serializers import (
     LessonMinimalSerializer, 
     LessonCreateUpdateSerializer,
     LessonResourceSerializer,
-    LessonTagSerializer
+    LessonTagSerializer,
+    SubjectSerializer,
+    GradeSerializer
 )
+from rest_framework.views import APIView
+from users.models import Profile
+from rest_framework import serializers
 
 class LessonViewSet(viewsets.ModelViewSet):
     """API endpoint for managing lessons with filtering and search"""
-    queryset = Lesson.objects.select_related('subject', 'grade', 'created_by').prefetch_related('resources')
+    queryset = Lesson.objects.select_related('subject', 'grade', 'created_by').prefetch_related('resources', 'tracks').annotate(exercise_count=Count('exercises'))
     serializer_class = LessonSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['subject', 'grade', 'cycle', 'difficulty_level', 'is_active']
-    search_fields = ['title', 'title_arabic', 'title_french', 'description', 'content']
+    filterset_fields = ['subject', 'grade', 'tracks', 'cycle', 'difficulty_level', 'is_active']
+    search_fields = ['title', 'title_arabic', 'title_french', 'description']
     ordering_fields = ['created_at', 'updated_at', 'order', 'title']
     ordering = ['subject', 'grade', 'cycle', 'order']
+
+    def get_queryset(self):
+        """
+        Filter lessons for teachers based on their assigned subject and grades.
+        Admins and other roles can see all lessons.
+        """
+        user = self.request.user
+        queryset = super().get_queryset()
+
+        if user.is_authenticated and user.role == 'TEACHER':
+            profile = getattr(user, 'profile', None)
+            if profile:
+                teacher_subject = profile.school_subject
+                teachable_grades = profile.teachable_grades.all()
+
+                if teacher_subject and teachable_grades.exists():
+                    queryset = queryset.filter(
+                        subject=teacher_subject,
+                        grade__in=teachable_grades
+                    )
+                else:
+                    # If a teacher has no assigned subject or grades, they see no lessons.
+                    return queryset.none()
+        
+        return queryset
     
     def get_permissions(self):
         """Allow authenticated users to view, but only teachers/admins to modify"""
@@ -78,8 +108,7 @@ class LessonViewSet(viewsets.ModelViewSet):
                 Q(title__icontains=query) |
                 Q(title_arabic__icontains=query) |
                 Q(title_french__icontains=query) |
-                Q(description__icontains=query) |
-                Q(content__icontains=query)
+                Q(description__icontains=query)
             )
         
         if cycle:
@@ -267,3 +296,29 @@ class GradeSubjectsView(APIView):
                 {"error": "Grade not found"}, 
                 status=status.HTTP_404_NOT_FOUND
             )
+
+class TeacherProfileSerializer(serializers.ModelSerializer):
+    school_subject = SubjectSerializer()
+    teachable_grades = GradeSerializer(many=True)
+
+    class Meta:
+        model = Profile
+        fields = ['school_subject', 'teachable_grades']
+
+class TeacherInfoView(APIView):
+    """
+    Provides the current teacher's subject and teachable grades.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        if user.role != 'TEACHER':
+            return Response({"error": "User is not a teacher"}, status=status.HTTP_403_FORBIDDEN)
+        
+        try:
+            profile = user.profile
+            serializer = TeacherProfileSerializer(profile)
+            return Response(serializer.data)
+        except Profile.DoesNotExist:
+            return Response({"error": "Profile not found for this teacher"}, status=status.HTTP_404_NOT_FOUND)

@@ -26,6 +26,7 @@ class AcademicYear(models.Model):
 
 # The Singleton School Configuration Model
 class School(models.Model):
+    
     """A singleton model to hold the school's central configuration."""
     name = models.CharField(max_length=200)
     name_arabic = models.CharField(max_length=200, blank=True)
@@ -99,11 +100,12 @@ class Grade(models.Model):
     """A specific grade level within an EducationalLevel, e.g., '1st Grade' in 'Primary'."""
     educational_level = models.ForeignKey(EducationalLevel, on_delete=models.CASCADE, related_name='grades')
     grade_number = models.PositiveIntegerField(help_text="Numeric value of the grade within the level (e.g., 1, 2, 3)")
+    code = models.CharField(max_length=20, unique=True, null=True, blank=True, help_text="e.g., 'G1', 'G7', '1BAC'")
     name = models.CharField(max_length=100, help_text="e.g., '1ère Année Primaire'")
     name_arabic = models.CharField(max_length=100, blank=True)
     name_french = models.CharField(max_length=100, blank=True)
     passing_grade = models.DecimalField(max_digits=4, decimal_places=2, default=10.00)
-    
+
     def __str__(self):
         return f"{self.educational_level.name} - {self.name}"
 
@@ -111,25 +113,60 @@ class Grade(models.Model):
         unique_together = ['educational_level', 'grade_number']
         ordering = ['educational_level__order', 'grade_number']
 
+class Track(models.Model):
+    """Academic tracks/paths (مسالك) within a Grade, e.g., 'Sciences Mathématiques A', 'Sciences Physiques B'."""
+    grade = models.ForeignKey(Grade, on_delete=models.CASCADE, related_name='tracks')
+    name = models.CharField(max_length=150, help_text="e.g., 'Sciences Mathématiques A'")
+    name_arabic = models.CharField(max_length=150, blank=True, help_text="e.g., 'علوم رياضية أ'")
+    name_french = models.CharField(max_length=150, blank=True, help_text="e.g., 'Sciences Mathématiques A'")
+    code = models.CharField(max_length=20, help_text="e.g., 'SMA', 'SPB'")
+    description = models.TextField(blank=True, help_text="Description of the track")
+    description_arabic = models.TextField(blank=True)
+    description_french = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+    order = models.PositiveIntegerField(default=1, help_text="Display order within the grade")
+
+    def __str__(self):
+        return f"{self.grade.name} - {self.name}"
+
+    class Meta:
+        unique_together = ['grade', 'code']
+        ordering = ['grade__educational_level__order', 'grade__grade_number', 'order', 'name']
+
 # Refinement 2: Renamed from 'Class' to 'SchoolClass'
 class SchoolClass(models.Model):
-    """A specific group of students within a Grade for an academic year, e.g., '1st Grade A'."""
+    """A specific group of students within a Grade/Track for an academic year, e.g., '2ème Bac Sciences Mathématiques A - Groupe 1'."""
     grade = models.ForeignKey(Grade, on_delete=models.CASCADE, related_name='classes')
+    track = models.ForeignKey(Track, on_delete=models.CASCADE, related_name='classes', null=True, blank=True, help_text="Optional track/path for specialized programs")
     academic_year = models.ForeignKey(AcademicYear, on_delete=models.PROTECT, related_name='classes')
-    section = models.CharField(max_length=10, help_text="e.g., 'A', 'B', 'Science-1'")
-    name = models.CharField(max_length=100, editable=False) # Will be auto-generated
+    section = models.CharField(max_length=10, help_text="e.g., 'A', 'B', 'Groupe 1'")
+    name = models.CharField(max_length=200, editable=False) # Will be auto-generated
+
+    # Teacher-Class relationship
+    teachers = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        limit_choices_to={'role': 'TEACHER'},
+        related_name='teaching_classes',
+        blank=True,
+        help_text="Teachers assigned to this class"
+    )
 
     def save(self, *args, **kwargs):
-        # Auto-generate the name based on grade and section
-        self.name = f"{self.grade.name} - {self.section}"
+        if not self.name:
+            if self.track and self.track.code:
+                self.name = f"{self.track.code} - {self.section}"
+            elif self.grade and self.grade.code:
+                self.name = f"{self.grade.code} - {self.section}"
+            elif self.grade:
+                self.name = f"{self.grade.name} - {self.section}"
         super().save(*args, **kwargs)
-    
+
     def __str__(self):
         return f"{self.name} ({self.academic_year.year})"
-    
+
     class Meta:
-        unique_together = ['grade', 'section', 'academic_year']
-        ordering = ['grade__educational_level__order', 'grade__grade_number', 'section']
+        unique_together = ['grade', 'track', 'section', 'academic_year']
+        ordering = ['grade__educational_level__order', 'grade__grade_number', 'track__order', 'section']
         verbose_name = "Class"
         verbose_name_plural = "Classes"
 

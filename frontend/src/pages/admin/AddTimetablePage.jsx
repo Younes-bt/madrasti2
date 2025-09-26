@@ -11,7 +11,9 @@ import {
   Clock,
   Copy,
   Upload,
-  Zap
+  Zap,
+  User,
+  Users
 } from 'lucide-react';
 import AdminPageLayout from '../../components/admin/layout/AdminPageLayout';
 import { Button } from '../../components/ui/button';
@@ -51,6 +53,10 @@ const AddTimetablePage = () => {
     academic_year: '',
     is_active: true
   });
+
+  // Class teacher assignment state
+  const [classTeachers, setClassTeachers] = useState([]);
+  const [availableTeachers, setAvailableTeachers] = useState([]);
 
   const [classes, setClasses] = useState([]);
   const [academicYears, setAcademicYears] = useState([]);
@@ -232,6 +238,81 @@ const AddTimetablePage = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+
+    // When class changes, fetch its current teachers
+    if (name === 'school_class' && value) {
+      fetchClassTeachers(value);
+    }
+  };
+
+  const fetchClassTeachers = async (classId) => {
+    try {
+      const classResponse = await apiMethods.get(`schools/classes/${classId}/`);
+      const classData = classResponse.data || classResponse;
+
+      setClassTeachers(classData.teachers || []);
+
+      // Get available teachers for assignment (not already assigned to this class)
+      const assignedTeacherIds = (classData.teachers || []).map(t => t.id);
+      const availableTeachersForAssignment = teachers.filter(t => !assignedTeacherIds.includes(t.id));
+      setAvailableTeachers(availableTeachersForAssignment);
+
+    } catch (error) {
+      console.error('Failed to fetch class teachers:', error);
+      setClassTeachers([]);
+      setAvailableTeachers(teachers);
+    }
+  };
+
+  const assignTeacherToClass = async (teacherId) => {
+    if (!formData.school_class) {
+      toast.error('Please select a class first');
+      return;
+    }
+
+    try {
+      const classResponse = await apiMethods.get(`schools/classes/${formData.school_class}/`);
+      const classData = classResponse.data || classResponse;
+
+      const currentTeacherIds = (classData.teachers || []).map(t => t.id);
+      const updatedTeacherIds = [...currentTeacherIds, parseInt(teacherId)];
+
+      await apiMethods.patch(`schools/classes/${formData.school_class}/`, {
+        teachers: updatedTeacherIds
+      });
+
+      // Refresh the class teachers
+      await fetchClassTeachers(formData.school_class);
+      toast.success('Teacher assigned to class successfully');
+
+    } catch (error) {
+      console.error('Failed to assign teacher to class:', error);
+      toast.error('Failed to assign teacher to class');
+    }
+  };
+
+  const removeTeacherFromClass = async (teacherId) => {
+    if (!formData.school_class) return;
+
+    try {
+      const classResponse = await apiMethods.get(`schools/classes/${formData.school_class}/`);
+      const classData = classResponse.data || classResponse;
+
+      const currentTeacherIds = (classData.teachers || []).map(t => t.id);
+      const updatedTeacherIds = currentTeacherIds.filter(id => id !== teacherId);
+
+      await apiMethods.patch(`schools/classes/${formData.school_class}/`, {
+        teachers: updatedTeacherIds
+      });
+
+      // Refresh the class teachers
+      await fetchClassTeachers(formData.school_class);
+      toast.success('Teacher removed from class successfully');
+
+    } catch (error) {
+      console.error('Failed to remove teacher from class:', error);
+      toast.error('Failed to remove teacher from class');
     }
   };
 
@@ -602,6 +683,92 @@ const AddTimetablePage = () => {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Teacher Assignment Section */}
+              {formData.school_class && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="h-5 w-5 text-green-600" />
+                      {t('timetables.classTeachers') || 'Class Teachers'}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Current Teachers */}
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">
+                        {t('timetables.assignedTeachers') || 'Assigned Teachers'} ({classTeachers.length})
+                      </Label>
+                      {classTeachers.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {classTeachers.map((teacher) => (
+                            <Badge
+                              key={teacher.id}
+                              variant="secondary"
+                              className="flex items-center gap-2 px-3 py-1"
+                            >
+                              <User className="h-3 w-3" />
+                              {teacher.name}
+                              {teacher.subject && (
+                                <span className="text-xs text-muted-foreground">
+                                  ({teacher.subject})
+                                </span>
+                              )}
+                              <button
+                                onClick={() => removeTeacherFromClass(teacher.id)}
+                                className="ml-1 text-red-500 hover:text-red-700"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          {t('timetables.noTeachersAssigned') || 'No teachers assigned to this class yet.'}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Add Teacher */}
+                    {availableTeachers.length > 0 && (
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">
+                          {t('timetables.assignTeacher') || 'Assign Teacher'}
+                        </Label>
+                        <div className="flex gap-2">
+                          <Select onValueChange={(value) => value && assignTeacherToClass(value)}>
+                            <SelectTrigger className="flex-1">
+                              <SelectValue placeholder={t('teachers.selectTeacher') || 'Select a teacher to assign'} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableTeachers.map((teacher) => (
+                                <SelectItem key={teacher.id} value={teacher.id.toString()}>
+                                  <div className="flex items-center gap-2">
+                                    <User className="h-4 w-4" />
+                                    <span>{teacher.full_name}</span>
+                                    {teacher.profile?.school_subject && (
+                                      <Badge variant="outline" className="ml-2 text-xs">
+                                        {teacher.profile.school_subject.name}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    )}
+
+                    {availableTeachers.length === 0 && teachers.length > 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        {t('timetables.allTeachersAssigned') || 'All teachers are already assigned to this class.'}
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
 
               <Card>
                 <CardHeader>

@@ -6,16 +6,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { useAuth } from '../../hooks/useAuth'
 import { useLanguage } from '../../hooks/useLanguage'
 import LoadingSpinner from '../shared/LoadingSpinner'
+import ChangePasswordModal from './ChangePasswordModal'
+import { useNavigate } from 'react-router-dom'
 
 const LoginForm = ({ onSuccess = () => {} }) => {
   const { t, isRTL } = useLanguage()
-  const { login, loading: authLoading, error: authError, clearError } = useAuth()
+  const { login, changePassword, loading: authLoading, error: authError, clearError } = useAuth()
+  const navigate = useNavigate()
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   })
   const [showPassword, setShowPassword] = useState(false)
   const [formErrors, setFormErrors] = useState({})
+  const [showPasswordChangeModal, setShowPasswordChangeModal] = useState(false)
+  const [passwordChangeLoading, setPasswordChangeLoading] = useState(false)
+  const [passwordChangeError, setPasswordChangeError] = useState('')
 
   // Clear auth error when component mounts
   useEffect(() => {
@@ -84,7 +90,12 @@ const LoginForm = ({ onSuccess = () => {} }) => {
     try {
       const result = await login(formData)
       if (result.success) {
-        onSuccess()
+        if (result.force_password_change) {
+          // Show password change modal instead of navigating
+          setShowPasswordChangeModal(true)
+        } else {
+          onSuccess()
+        }
       }
       // Error handling is done by the AuthContext
     } catch (error) {
@@ -104,7 +115,45 @@ const LoginForm = ({ onSuccess = () => {} }) => {
     }
   }
 
+  const handlePasswordChange = async (passwordData) => {
+    setPasswordChangeLoading(true)
+    setPasswordChangeError('')
+    
+    try {
+      const result = await changePassword(passwordData)
+      if (result.success) {
+        setShowPasswordChangeModal(false)
+        // Navigate to appropriate dashboard after successful password change
+        const user = JSON.parse(localStorage.getItem('user') || '{}')
+        const roleRoutes = {
+          'ADMIN': '/admin',
+          'TEACHER': '/teacher',
+          'STUDENT': '/student',
+          'PARENT': '/parent',
+          'STAFF': '/admin',
+          'DRIVER': '/admin'
+        }
+        const targetRoute = roleRoutes[user.role] || '/student'
+        navigate(targetRoute, { replace: true })
+        onSuccess()
+      } else {
+        setPasswordChangeError(result.error)
+      }
+    } catch (error) {
+      console.error('Password change error:', error)
+      setPasswordChangeError(error.message || 'Password change failed')
+    } finally {
+      setPasswordChangeLoading(false)
+    }
+  }
+
+  const handlePasswordChangeClose = () => {
+    setShowPasswordChangeModal(false)
+    setPasswordChangeError('')
+  }
+
   return (
+    <>
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Email Field */}
       <div className="space-y-2">
@@ -191,6 +240,22 @@ const LoginForm = ({ onSuccess = () => {} }) => {
         )}
       </Button>
     </form>
+
+    {/* Password Change Modal */}
+    <ChangePasswordModal
+      isOpen={showPasswordChangeModal}
+      onClose={handlePasswordChangeClose}
+      onPasswordChange={handlePasswordChange}
+      loading={passwordChangeLoading}
+    />
+    
+    {/* Password Change Error Display */}
+    {passwordChangeError && showPasswordChangeModal && (
+      <div className="mt-4 bg-destructive/10 border border-destructive/20 rounded-md p-3">
+        <p className="text-sm text-destructive text-center">{passwordChangeError}</p>
+      </div>
+    )}
+  </>
   )
 }
 

@@ -10,13 +10,13 @@ class Lesson(models.Model):
     # Link to existing schools models
     subject = models.ForeignKey('schools.Subject', on_delete=models.CASCADE, related_name='lessons')
     grade = models.ForeignKey('schools.Grade', on_delete=models.CASCADE, related_name='lessons')
+    tracks = models.ManyToManyField('schools.Track', related_name='lessons', blank=True)
     
     # Lesson details
     title = models.CharField(max_length=200)
     title_arabic = models.CharField(max_length=200, blank=True)
     title_french = models.CharField(max_length=200, blank=True)
     description = models.TextField(blank=True)
-    content = models.TextField(blank=True)  # Lesson content/objectives
     
     # Moroccan Academic Cycles (الدورة الأولى و الدورة الثانية)
     CYCLE_CHOICES = [

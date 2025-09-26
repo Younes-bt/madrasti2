@@ -25,23 +25,31 @@ class LessonTagSerializer(serializers.ModelSerializer):
         model = LessonTag
         fields = ['id', 'name', 'name_arabic', 'color']
 
+from schools.serializers import SubjectSerializer, GradeSerializer, TrackSerializer
+
 class LessonSerializer(serializers.ModelSerializer):
     subject_name = serializers.CharField(source='subject.name', read_only=True)
     grade_name = serializers.CharField(source='grade.name', read_only=True)
+    tracks = TrackSerializer(many=True, read_only=True)
+    # Add nested serializers for full multilingual support
+    subject_details = SubjectSerializer(source='subject', read_only=True)
+    grade_details = GradeSerializer(source='grade', read_only=True)
     created_by_name = serializers.SerializerMethodField()
     resources = LessonResourceSerializer(many=True, read_only=True)
     tags = serializers.SerializerMethodField()
     cycle_display = serializers.CharField(source='get_cycle_display', read_only=True)
     difficulty_display = serializers.CharField(source='get_difficulty_level_display', read_only=True)
+    exercise_count = serializers.IntegerField(read_only=True)
     
     class Meta:
         model = Lesson
         fields = [
-            'id', 'subject', 'subject_name', 'grade', 'grade_name', 'title', 
-            'title_arabic', 'title_french', 'description', 'content', 'cycle', 
-            'cycle_display', 'order', 'objectives', 'prerequisites', 
-            'difficulty_level', 'difficulty_display', 'is_active', 'created_at', 
-            'updated_at', 'created_by', 'created_by_name', 'resources', 'tags'
+            'id', 'subject', 'subject_name', 'subject_details', 'grade', 'grade_name', 'grade_details', 'tracks', 'title',
+            'title_arabic', 'title_french', 'description', 'cycle',
+            'cycle_display', 'order', 'objectives', 'prerequisites',
+            'difficulty_level', 'difficulty_display', 'is_active', 'created_at',
+            'updated_at', 'created_by', 'created_by_name', 'resources', 'tags',
+            'exercise_count'
         ]
         read_only_fields = ['created_at', 'updated_at', 'created_by']
     
@@ -56,24 +64,38 @@ class LessonSerializer(serializers.ModelSerializer):
 class LessonMinimalSerializer(serializers.ModelSerializer):
     """Minimal lesson info for dropdowns and references"""
     subject_name = serializers.CharField(source='subject.name', read_only=True)
+    subject_name_arabic = serializers.CharField(source='subject.name_arabic', read_only=True)
+    subject_name_french = serializers.CharField(source='subject.name_french', read_only=True)
     grade_name = serializers.CharField(source='grade.name', read_only=True)
+    grade_name_arabic = serializers.CharField(source='grade.name_arabic', read_only=True)
+    grade_name_french = serializers.CharField(source='grade.name_french', read_only=True)
+    tracks = TrackSerializer(many=True, read_only=True)
     cycle_display = serializers.CharField(source='get_cycle_display', read_only=True)
-    
+
     class Meta:
         model = Lesson
         fields = [
-            'id', 'title', 'subject', 'subject_name', 'grade', 'grade_name', 
-            'cycle', 'cycle_display', 'order', 'difficulty_level', 'is_active'
+            'id', 'title', 'title_arabic', 'title_french', 'subject', 'subject_name',
+            'subject_name_arabic', 'subject_name_french', 'grade', 'grade_name',
+            'grade_name_arabic', 'grade_name_french', 'tracks', 'cycle', 'cycle_display',
+            'order', 'difficulty_level', 'is_active'
         ]
+
+from schools.models import Track
 
 class LessonCreateUpdateSerializer(serializers.ModelSerializer):
     """Serializer for creating/updating lessons without nested data"""
-    
+    tracks = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Track.objects.all(),
+        required=False
+    )
+
     class Meta:
         model = Lesson
         fields = [
-            'subject', 'grade', 'title', 'title_arabic', 'title_french', 
-            'description', 'content', 'cycle', 'order', 'objectives', 
+            'subject', 'grade', 'tracks', 'title', 'title_arabic', 'title_french',
+            'description', 'cycle', 'order', 'objectives',
             'prerequisites', 'difficulty_level', 'is_active'
         ]
     

@@ -1,22 +1,33 @@
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
-import Backend from 'i18next-http-backend'
+
+// Import translation files directly
+import enTranslations from '../locales/en/en.json'
+import arTranslations from '../locales/ar/ar.json'
+import frTranslations from '../locales/fr/fr.json'
 
 // RTL languages
 const rtlLanguages = ['ar']
 
 i18n
-  .use(Backend)
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
     fallbackLng: 'en',
-    debug: false,
+    debug: true,
 
-    backend: {
-      // Load translation files from public/locales directory
-      loadPath: '/locales/{{lng}}/{{lng}}.json',
+    // Include translations directly
+    resources: {
+      en: {
+        translation: enTranslations
+      },
+      ar: {
+        translation: arTranslations
+      },
+      fr: {
+        translation: frTranslations
+      }
     },
 
     interpolation: {
@@ -34,6 +45,12 @@ i18n
       // Don't use Suspense for loading translations
       useSuspense: false,
     },
+
+    // Ensure missing keys show the key name instead of undefined
+    returnNull: false,
+    returnEmptyString: false,
+    keySeparator: '.',
+    nsSeparator: ':',
 
     // Languages to preload
     preload: ['en', 'ar', 'fr'],

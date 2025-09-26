@@ -22,8 +22,11 @@ router.register(r'leaderboards', views.LeaderboardViewSet, basename='leaderboard
 # Textbook Routes
 router.register(r'textbooks', views.TextbookLibraryViewSet, basename='textbooks')
 
-# Assignment Routes
-router.register(r'assignments', views.AssignmentViewSet, basename='assignments')
+# Exercise Routes
+router.register(r'exercises', views.ExerciseViewSet, basename='exercises')
+
+# Homework Routes (renamed from Assignment)
+router.register(r'homework', views.HomeworkViewSet, basename='homework')
 router.register(r'questions', views.QuestionViewSet, basename='questions')
 router.register(r'book-exercises', views.BookExerciseViewSet, basename='book-exercises')
 
@@ -34,7 +37,7 @@ router.register(r'book-exercise-answers', views.BookExerciseAnswerViewSet, basen
 
 # URL patterns
 urlpatterns = [
-    path('api/', include(router.urls)),
+    path('', include(router.urls)),
 ]
 
 # Optional: Add custom URL patterns here if needed

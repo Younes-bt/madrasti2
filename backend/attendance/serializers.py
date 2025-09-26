@@ -36,13 +36,30 @@ class TimetableSessionListSerializer(serializers.ModelSerializer):
     subject_name_arabic = serializers.CharField(source='subject.name_arabic', read_only=True)
     room_name = serializers.CharField(source='room.name', read_only=True)
     day_name = serializers.CharField(source='get_day_of_week_display', read_only=True)
-    
+
+    # Add timetable and class information
+    timetable_id = serializers.IntegerField(source='timetable.id', read_only=True)
+    school_class_id = serializers.IntegerField(source='timetable.school_class.id', read_only=True)
+    class_name = serializers.CharField(source='timetable.school_class.name', read_only=True)
+    class_section = serializers.CharField(source='timetable.school_class.section', read_only=True)
+    academic_year = serializers.CharField(source='timetable.academic_year.year', read_only=True)
+
+    # Add grade information for homework creation
+    grade_id = serializers.IntegerField(source='timetable.school_class.grade.id', read_only=True)
+    grade_name = serializers.CharField(source='timetable.school_class.grade.name', read_only=True)
+    grade_number = serializers.IntegerField(source='timetable.school_class.grade.grade_number', read_only=True)
+    educational_level_id = serializers.IntegerField(source='timetable.school_class.grade.educational_level.id', read_only=True)
+    educational_level_name = serializers.CharField(source='timetable.school_class.grade.educational_level.name', read_only=True)
+    educational_level_code = serializers.CharField(source='timetable.school_class.grade.educational_level.level', read_only=True)
+
     class Meta:
         model = TimetableSession
         fields = [
-            'id', 'day_of_week', 'day_name', 'start_time', 'end_time', 
+            'id', 'timetable', 'timetable_id', 'school_class_id', 'day_of_week', 'day_name', 'start_time', 'end_time',
             'session_order', 'subject', 'subject_name', 'subject_name_arabic',
-            'teacher', 'teacher_name', 'room', 'room_name', 'is_active', 'notes'
+            'teacher', 'teacher_name', 'room', 'room_name', 'is_active', 'notes',
+            'class_name', 'class_section', 'academic_year',
+            'grade_id', 'grade_name', 'grade_number', 'educational_level_id', 'educational_level_name', 'educational_level_code'
         ]
 
 class TimetableSessionDetailSerializer(serializers.ModelSerializer):

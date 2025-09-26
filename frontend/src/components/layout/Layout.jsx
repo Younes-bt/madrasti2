@@ -334,7 +334,7 @@ export const PublicLayout = ({ children, className }) => {
       className
     )}>
       {/* Simple header for public pages */}
-      <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur">
+      <header className="sticky top-0 z-40 w-full border-b bg-background shadow-sm">
         <div className="container flex h-16 items-center justify-between px-4">
           <div className="flex items-center space-x-2 rtl:space-x-reverse">
             <div className="h-8 w-8 rounded bg-primary flex items-center justify-center">

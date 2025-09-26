@@ -27,6 +27,21 @@ class LessonsService {
   }
 
   /**
+   * Get Minimal Lessons for Dropdowns
+   * @param {Object} params - Query parameters
+   * @returns {Promise<Array>} Minimal lessons list
+   */
+  async getMinimalLessons(params = {}) {
+    try {
+      const response = await apiMethods.get('lessons/lessons/minimal/', { params });
+      return response;
+    } catch (error) {
+      console.error('Get minimal lessons failed:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get Lesson by ID
    * @param {number} lessonId - Lesson ID
    * @returns {Promise<Object>} Lesson data

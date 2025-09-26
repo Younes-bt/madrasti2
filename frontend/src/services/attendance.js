@@ -195,6 +195,21 @@ class AttendanceService {
     }
   }
 
+  /**
+   * Get Teacher Classes
+   * @param {Object} params - Query parameters
+   * @returns {Promise<Object>} Teacher's assigned classes
+   */
+  async getTeacherClasses(params = {}) {
+    try {
+      const response = await apiMethods.get('attendance/timetable-sessions/teacher_classes/', { params });
+      return response;
+    } catch (error) {
+      console.error('Get teacher classes failed:', error);
+      throw error;
+    }
+  }
+
   // ==================== ATTENDANCE SESSIONS ====================
 
   /**

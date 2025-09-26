@@ -8,7 +8,8 @@ from .views import (
     LessonResourceViewSet,
     LessonTagViewSet,
     SubjectGradesView,
-    GradeSubjectsView
+    GradeSubjectsView,
+    TeacherInfoView
 )
 
 # Main router
@@ -27,4 +28,5 @@ urlpatterns = [
     # Helper endpoints for curriculum navigation
     path('subjects/<int:subject_id>/grades/', SubjectGradesView.as_view(), name='subject-grades'),
     path('grades/<int:grade_id>/subjects/', GradeSubjectsView.as_view(), name='grade-subjects'),
+    path('teacher-info/', TeacherInfoView.as_view(), name='teacher-info'),
 ]

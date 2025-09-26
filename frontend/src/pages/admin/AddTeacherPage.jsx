@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { Save, X, User, Mail, Phone, MapPin, Calendar, FileText, BookOpen } from 'lucide-react';
+import { Save, X, User, Mail, Phone, MapPin, Calendar, FileText, BookOpen, GraduationCap } from 'lucide-react';
 import AdminPageLayout from '../../components/admin/layout/AdminPageLayout';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -9,11 +9,12 @@ import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Checkbox } from '../../components/ui/checkbox';
 import { apiMethods } from '../../services/api';
 import { toast } from 'sonner';
 
 const AddTeacherPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -22,6 +23,7 @@ const AddTeacherPage = () => {
     ar_first_name: '',
     ar_last_name: '',
     school_subject: 'none',
+    teachable_grades: [],
     phone: '',
     date_of_birth: '',
     address: '',
@@ -33,10 +35,12 @@ const AddTeacherPage = () => {
   const [schoolName, setSchoolName] = useState('madrasti'); // Will be fetched from school config
   const [subjects, setSubjects] = useState([]);
   const [loadingSubjects, setLoadingSubjects] = useState(false);
+  const [grades, setGrades] = useState([]);
+  const [loadingGrades, setLoadingGrades] = useState(false);
 
   const [errors, setErrors] = useState({});
 
-  // Fetch subjects on component mount
+  // Fetch subjects and grades on component mount
   useEffect(() => {
     const fetchSubjects = async () => {
       setLoadingSubjects(true);
@@ -56,7 +60,26 @@ const AddTeacherPage = () => {
       }
     };
 
+    const fetchGrades = async () => {
+      setLoadingGrades(true);
+      try {
+        const response = await apiMethods.get('schools/grades/');
+        const responseData = response.data || response;
+        // Handle paginated response - extract results array if it exists
+        const gradesData = responseData.results || responseData;
+        // Ensure we have an array
+        setGrades(Array.isArray(gradesData) ? gradesData : []);
+      } catch (error) {
+        console.error('Failed to fetch grades:', error);
+        setGrades([]); // Set empty array on error
+        toast.error(t('error.failedToLoadGrades'));
+      } finally {
+        setLoadingGrades(false);
+      }
+    };
+
     fetchSubjects();
+    fetchGrades();
   }, [t]);
 
   const handleInputChange = (field, value) => {
@@ -70,6 +93,29 @@ const AddTeacherPage = () => {
         ...prev,
         [field]: null
       }));
+    }
+  };
+
+  const handleGradeToggle = (gradeId) => {
+    setFormData(prev => ({
+      ...prev,
+      teachable_grades: prev.teachable_grades.includes(gradeId)
+        ? prev.teachable_grades.filter(id => id !== gradeId)
+        : [...prev.teachable_grades, gradeId]
+    }));
+  };
+
+  // Helper function to get localized grade name
+  const getLocalizedGradeName = (grade) => {
+    const currentLanguage = i18n.language;
+
+    switch (currentLanguage) {
+      case 'ar':
+        return grade.name_arabic || grade.name;
+      case 'fr':
+        return grade.name_french || grade.name;
+      default:
+        return grade.name;
     }
   };
 
@@ -147,6 +193,7 @@ const AddTeacherPage = () => {
         ar_first_name: formData.ar_first_name,
         ar_last_name: formData.ar_last_name,
         ...(formData.school_subject && formData.school_subject !== 'none' && { school_subject: formData.school_subject }),
+        ...(formData.teachable_grades && formData.teachable_grades.length > 0 && { teachable_grades: formData.teachable_grades }),
         ...(formData.phone && { phone: formData.phone }),
         ...(formData.date_of_birth && { date_of_birth: formData.date_of_birth }),
         ...(formData.address && { address: formData.address }),
@@ -368,6 +415,47 @@ const AddTeacherPage = () => {
                   <p className="text-sm text-red-600">{errors.school_subject}</p>
                 )}
                 <p className="text-xs text-gray-500">{t('teacher.subjectSelectionInfo')}</p>
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <Label>
+                  {t('teacher.teachableGrades')}
+                </Label>
+                <div className="relative">
+                  <GraduationCap className="absolute left-3 top-3 h-4 w-4 text-muted-foreground z-10" />
+                  <div className="border rounded-md p-3 pl-10 bg-white min-h-[80px] max-h-[120px] overflow-y-auto">
+                    {loadingGrades ? (
+                      <div className="flex items-center justify-center py-4">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                        <span className="ml-2 text-sm text-muted-foreground">{t('common.loading')}</span>
+                      </div>
+                    ) : grades && grades.length > 0 ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        {grades.map((grade) => (
+                          <div key={grade.id} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`grade-${grade.id}`}
+                              checked={formData.teachable_grades.includes(grade.id)}
+                              onCheckedChange={() => handleGradeToggle(grade.id)}
+                              disabled={loading}
+                            />
+                            <Label
+                              htmlFor={`grade-${grade.id}`}
+                              className="text-sm font-normal cursor-pointer"
+                            >
+                              {getLocalizedGradeName(grade)}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground py-4 text-center">
+                        {t('teacher.noGradesAvailable')}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500">{t('teacher.teachableGradesInfo')}</p>
               </div>
 
               <div className="space-y-2">

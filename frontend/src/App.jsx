@@ -8,7 +8,27 @@ import { AuthProvider } from './contexts/AuthContext'
 // Import page components
 import LoginPage from './pages/auth/LoginPage'
 import StudentDashboard from './pages/dashboard/StudentDashboard'
-import TeacherDashboard from './pages/dashboard/TeacherDashboard'
+import TeacherDashboard from './pages/teacher/TeacherDashboard'
+import TeacherProfileOverviewPage from './pages/teacher/TeacherProfileOverviewPage'
+import TeacherMyClassesPage from './pages/teacher/TeacherMyClassesPage'
+import TeacherMySchedulePage from './pages/teacher/TeacherMySchedulePage'
+import TeacherViewStudentPage from './pages/teacher/ViewStudentPage'
+import TeacherLessonsPage from './pages/teacher/LessonsPage'
+import AddLessonPage from './pages/teacher/AddLessonPage'
+import EditLessonPage from './pages/teacher/EditLessonPage'
+import ViewLessonPage from './pages/teacher/ViewLessonPage'
+import LessonExercisesPage from './pages/teacher/LessonExercisesPage'
+import LessonExerciseManagementPage from './pages/teacher/LessonExerciseManagementPage'
+import CreateLessonExercisePage from './pages/teacher/CreateLessonExercisePage'
+import EditLessonExercisePage from './pages/teacher/EditLessonExercisePage'
+import ViewLessonExercisePage from './pages/teacher/ViewLessonExercisePage'
+import AssessmentToolsPage from './pages/teacher/AssessmentToolsPage'
+
+import HomeworkPage from './pages/teacher/HomeworkPage';
+import CreateHomeworkPage from './pages/teacher/CreateHomeworkPage'
+import ViewHomeworkPage from './pages/teacher/ViewHomeworkPage'
+import ExamsPage from './pages/teacher/ExamsPage'
+import GradingPage from './pages/teacher/GradingPage'
 import ParentDashboard from './pages/dashboard/ParentDashboard'
 import AdminDashboard from './pages/dashboard/AdminDashboard'
 
@@ -47,6 +67,10 @@ import GradesPage from './pages/admin/GradesPage'
 import AddGradePage from './pages/admin/AddGradePage'
 import EditGradePage from './pages/admin/EditGradePage'
 import ViewGradePage from './pages/admin/ViewGradePage'
+import TracksPage from './pages/admin/TracksPage'
+import AddTrackPage from './pages/admin/AddTrackPage'
+import EditTrackPage from './pages/admin/EditTrackPage'
+import ViewTrackPage from './pages/admin/ViewTrackPage'
 import ClassesPage from './pages/admin/ClassesPage'
 import AddClassPage from './pages/admin/AddClassPage'
 import EditClassPage from './pages/admin/EditClassPage'
@@ -59,10 +83,17 @@ import TimetablesPage from './pages/admin/TimetablesPage'
 import AddTimetablePage from './pages/admin/AddTimetablePage'
 import EditTimetablePage from './pages/admin/EditTimetablePage'
 import ViewTimetablePage from './pages/admin/ViewTimetablePage'
+import LessonsManagementPage from './pages/admin/LessonsManagementPage'
+import CreateLessonPage from './pages/admin/CreateLessonPage'
+import AdminEditLessonPage from './pages/admin/EditLessonPage'
+import AdminViewLessonPage from './pages/admin/ViewLessonPage'
+import ExercisesManagementPage from './pages/admin/ExercisesManagementPage'
+import AddExercisePage from './pages/admin/AddExercisePage'
+import EditExercisePage from './pages/admin/EditExercisePage'
+import ViewExercisePage from './pages/admin/ViewExercisePage'
 
 // Import feature pages
 import LessonsPage from './pages/lessons/LessonsPage'
-import AssignmentsPage from './pages/homework/AssignmentsPage'
 import AttendancePage from './pages/attendance/AttendancePage'
 import RewardsPage from './pages/rewards/RewardsPage'
 
@@ -118,8 +149,185 @@ const AppRoutes = () => {
           </ProtectedRoute>
         } 
       />
-      
+
+      {/* Teacher Profile Routes */}
       <Route 
+        path="/teacher/profile/overview" 
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <TeacherProfileOverviewPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/teacher/profile/my-classes" 
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <TeacherMyClassesPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/teacher/profile/my-schedule" 
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <TeacherMySchedulePage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/teacher/students/view/:studentId" 
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <TeacherViewStudentPage />
+          </ProtectedRoute>
+        } 
+      />
+
+      {/* Teacher Content Management Routes */}
+      <Route 
+        path="/teacher/content/lessons" 
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <TeacherLessonsPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/teacher/content/lessons/add" 
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <AddLessonPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/teacher/content/lessons/edit/:id" 
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <EditLessonPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route
+        path="/teacher/content/lessons/view/:id"
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <ViewLessonPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Teacher Exercise Routes */}
+      <Route
+        path="/teacher/content/lesson-exercises"
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <LessonExercisesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/content/lessons/:lessonId/exercises"
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <LessonExerciseManagementPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/content/lessons/:lessonId/exercises/add"
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <CreateLessonExercisePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/content/lesson-exercises/create"
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <CreateLessonExercisePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/content/lesson-exercises/:id"
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <ViewLessonExercisePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/content/lesson-exercises/:id/edit"
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <EditLessonExercisePage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Teacher Assignments & Assessment Routes */}
+      <Route
+        path="/teacher/assignments/assessment-tools"
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <AssessmentToolsPage />
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/teacher/assignments/homework"
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <HomeworkPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/homework/create"
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <CreateHomeworkPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/homework/view/:id"
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <ViewHomeworkPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/homework/edit/:id"
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <CreateHomeworkPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/assignments/exams"
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <ExamsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/assignments/grading"
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <GradingPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
         path="/parent" 
         element={
           <ProtectedRoute requiredRoles={['PARENT']}>
@@ -420,21 +628,53 @@ const AppRoutes = () => {
           </ProtectedRoute>
         } 
       />
-      <Route 
-        path="/admin/academic-management/grades/:id/edit" 
+      <Route
+        path="/admin/academic-management/grades/:id/edit"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <EditGradePage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/academic-management/classes" 
+      <Route
+        path="/admin/academic-management/tracks"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <TracksPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/academic-management/tracks/add"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <AddTrackPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/academic-management/tracks/:id"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <ViewTrackPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/academic-management/tracks/:id/edit"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <EditTrackPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/academic-management/classes"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <ClassesPage />
           </ProtectedRoute>
-        } 
+        }
       />
       <Route 
         path="/admin/academic-management/classes/add" 
@@ -534,15 +774,74 @@ const AppRoutes = () => {
       />
 
       {/* Admin Education Management Routes */}
-      <Route 
-        path="/admin/education-management/lessons" 
+      <Route
+        path="/admin/education-management/lessons"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
-            <div>Lessons/Courses Page - Coming Soon</div>
+            <LessonsManagementPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
+      <Route
+        path="/admin/education-management/lessons/create"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <CreateLessonPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/education-management/lessons/:id/edit"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <AdminEditLessonPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/lessons/:id"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <AdminViewLessonPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Admin Exercise Management Routes */}
+      <Route
+        path="/admin/education-management/exercises"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <ExercisesManagementPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/education-management/exercises/add"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <AddExercisePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/education-management/exercises/edit/:id"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <EditExercisePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/education-management/exercises/view/:id"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <ViewExercisePage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
         path="/admin/education-management/assignments" 
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
@@ -686,20 +985,46 @@ const AppRoutes = () => {
       />
 
       {/* Feature pages - accessible to all authenticated users */}
-      <Route 
-        path="/lessons" 
+      <Route
+        path="/lessons"
         element={
           <ProtectedRoute requiredRoles={['STUDENT', 'TEACHER', 'PARENT', 'ADMIN', 'STAFF']}>
             <LessonsPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      
-      <Route 
+
+      {/* Student Exercise Routes */}
+      <Route
+        path="/exercises"
+        element={
+          <ProtectedRoute requiredRoles={['STUDENT']}>
+            <div>Student Exercises Page - Coming Soon</div>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/exercises/:id"
+        element={
+          <ProtectedRoute requiredRoles={['STUDENT']}>
+            <div>Exercise Details Page - Coming Soon</div>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/exercises/:id/practice"
+        element={
+          <ProtectedRoute requiredRoles={['STUDENT']}>
+            <div>Exercise Practice Page - Coming Soon</div>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
         path="/homework" 
         element={
           <ProtectedRoute requiredRoles={['STUDENT', 'TEACHER', 'PARENT', 'ADMIN', 'STAFF']}>
-            <AssignmentsPage />
+            <HomeworkPage />
           </ProtectedRoute>
         } 
       />
@@ -730,14 +1055,16 @@ const AppRoutes = () => {
 
 function App() {
   return (
-    <LanguageProvider>
-      <Router>
-        <AuthProvider>
-          <AppRoutes />
-          <Toaster position="top-right" richColors />
-        </AuthProvider>
-      </Router>
-    </LanguageProvider>
+    <ThemeProvider>
+      <LanguageProvider>
+        <Router>
+          <AuthProvider>
+            <AppRoutes />
+            <Toaster position="top-right" richColors />
+          </AuthProvider>
+        </Router>
+      </LanguageProvider>
+    </ThemeProvider>
   )
 }
 

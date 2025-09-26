@@ -28,7 +28,11 @@ class RegisterView(generics.CreateAPIView):
 class ProfileView(generics.RetrieveUpdateAPIView):
     queryset = User.objects.all()
     permission_classes = (IsAuthenticated,)
-    serializer_class = UserProfileSerializer
+    
+    def get_serializer_class(self):
+        if self.request.method in ['PUT', 'PATCH']:
+            return UserUpdateSerializer
+        return UserProfileSerializer
 
     def get_object(self):
         return self.request.user
@@ -52,15 +56,33 @@ class LoginView(APIView):
         user = authenticate(request, email=email, password=password)
 
         if user:
+            # Check if user is using default password
+            default_password = 'defaultStrongPassword25'
+            if password == default_password and not user.force_password_change:
+                # Mark user for forced password change
+                user.force_password_change = True
+                user.save()
+            
+            # Set user as online and update last_login
+            from django.utils import timezone
+            user.set_online_status(True)
+            user.last_login = timezone.now()
+            user.save(update_fields=['last_login'])
+
             # If authentication is successful, use our serializer to get tokens
             serializer = MyTokenObtainPairSerializer.get_token(user)
             refresh = str(serializer)
             access = str(serializer.access_token)
 
+            # Use UserUpdateSerializer to get complete user data including profile
+            user_serializer = UserUpdateSerializer(user)
+
             return Response(
                 {
                     "refresh": refresh,
                     "access": access,
+                    "force_password_change": user.force_password_change,
+                    "user": user_serializer.data
                 },
                 status=status.HTTP_200_OK,
             )
@@ -68,6 +90,149 @@ class LoginView(APIView):
         return Response(
             {"error": "Invalid Credentials"},
             status=status.HTTP_401_UNAUTHORIZED
+        )
+
+
+class LogoutView(APIView):
+    """API endpoint for user logout"""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        """Mark user as offline during logout"""
+        try:
+            user = request.user
+            user.set_online_status(False)
+
+            return Response(
+                {"message": "Logout successful"},
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            return Response(
+                {"error": f"Logout failed: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class HeartbeatView(APIView):
+    """API endpoint for tracking user activity"""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        """Update user's last seen timestamp and ensure they're marked as online"""
+        try:
+            user = request.user
+            user.update_last_seen()
+
+            # Ensure user is marked as online (in case they weren't)
+            if not user.is_online:
+                user.set_online_status(True)
+
+            return Response(
+                {
+                    "status": "success",
+                    "last_seen": user.last_seen,
+                    "is_online": user.is_online
+                },
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            return Response(
+                {"error": f"Heartbeat failed: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class CleanupInactiveUsersView(APIView):
+    """API endpoint for cleanup of inactive users (admin only)"""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        """Mark users as offline if they haven't been active for a while"""
+        if not request.user.role == 'ADMIN':
+            return Response(
+                {"error": "Admin access required"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        try:
+            from datetime import timedelta
+
+            # Mark users as offline if they haven't been seen in 10 minutes
+            inactive_threshold = timezone.now() - timedelta(minutes=10)
+
+            updated_count = User.objects.filter(
+                is_online=True,
+                last_seen__lt=inactive_threshold
+            ).update(is_online=False)
+
+            return Response(
+                {
+                    "status": "success",
+                    "users_marked_offline": updated_count,
+                    "threshold_minutes": 10
+                },
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            return Response(
+                {"error": f"Cleanup failed: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class ChangePasswordView(APIView):
+    """API endpoint for changing user password"""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        current_password = request.data.get('current_password')
+        new_password = request.data.get('new_password')
+        confirm_password = request.data.get('confirm_password')
+
+        if not all([current_password, new_password, confirm_password]):
+            return Response(
+                {"error": "All fields are required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Check if new passwords match
+        if new_password != confirm_password:
+            return Response(
+                {"error": "New passwords do not match"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Validate current password
+        if not user.check_password(current_password):
+            return Response(
+                {"error": "Current password is incorrect"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Validate new password strength
+        if len(new_password) < 8:
+            return Response(
+                {"error": "Password must be at least 8 characters long"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Check if new password is different from current
+        if user.check_password(new_password):
+            return Response(
+                {"error": "New password must be different from current password"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Set new password and clear force password change flag
+        user.set_password(new_password)
+        user.force_password_change = False
+        user.save()
+
+        return Response(
+            {"message": "Password changed successfully"},
+            status=status.HTTP_200_OK
         )
 
 
@@ -97,7 +262,7 @@ class UserViewSet(viewsets.ModelViewSet):
     """ViewSet for listing, retrieving, and updating users"""
     permission_classes = [IsAdminOrReadOnly]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['role', 'is_active', 'profile__school_subject']
+    filterset_fields = ['role', 'is_active', 'profile__school_subject', 'profile__teachable_grades']
     search_fields = ['first_name', 'last_name', 'email', 'profile__phone']
     ordering_fields = ['first_name', 'last_name', 'email', 'created_at']
     ordering = ['last_name', 'first_name']
@@ -118,20 +283,104 @@ class UserViewSet(viewsets.ModelViewSet):
             'profile__school_subject'  # Subject specialization for teachers
         ).prefetch_related(
             'student_enrollments__school_class__grade__educational_level',  # Academic information
-            'student_enrollments__academic_year'  # Academic year information
+            'student_enrollments__academic_year',  # Academic year information
+            'profile__teachable_grades',  # Teachable grades for teachers
+            'teaching_classes__grade__educational_level',  # Teacher's classes
+            'teaching_classes__academic_year'  # Academic year for teacher's classes
         ).all()
-        
+
         # Additional filtering by role
         role = self.request.query_params.get('role')
         if role:
             queryset = queryset.filter(role=role.upper())
-        
+
         # Filter teachers by subject specialization
         subject_id = self.request.query_params.get('subject_id')
         if subject_id and role and role.upper() == 'TEACHER':
             queryset = queryset.filter(profile__school_subject_id=subject_id)
-        
+
         return queryset
+
+    @action(detail=False, methods=['get'])
+    def my_classes(self, request):
+        """Get current teacher's assigned classes"""
+        if request.user.role != 'TEACHER':
+            return Response({'error': 'Only teachers can access this endpoint'}, status=403)
+
+        from schools.models import SchoolClass
+        from schools.serializers import SchoolClassSerializer
+
+        # Get teacher's assigned classes with related data
+        classes = SchoolClass.objects.filter(
+            teachers=request.user
+        ).select_related(
+            'grade',
+            'grade__educational_level',
+            'track',
+            'academic_year'
+        ).prefetch_related(
+            'student_enrollments__student'
+        )
+
+        serializer = SchoolClassSerializer(classes, many=True)
+        return Response({
+            'classes': serializer.data,
+            'teacher': {
+                'id': request.user.id,
+                'name': request.user.full_name,
+                'subject': request.user.profile.school_subject.name if request.user.profile.school_subject else None
+            }
+        })
+
+    @action(detail=False, methods=['get'])
+    def my_teachable_classes(self, request):
+        """Get all classes that match teacher's subject and teachable grades (for assignment purposes)"""
+        if request.user.role != 'TEACHER':
+            return Response({'error': 'Only teachers can access this endpoint'}, status=403)
+
+        from schools.models import SchoolClass
+        from schools.serializers import SchoolClassSerializer
+
+        # Get classes that match teacher's teachable grades and current academic year
+        teachable_grades = request.user.profile.teachable_grades.all()
+        if not teachable_grades.exists():
+            return Response({
+                'classes': [],
+                'message': 'No teachable grades assigned to teacher'
+            })
+
+        # Get current academic year
+        from schools.models import AcademicYear
+        current_year = AcademicYear.objects.filter(is_current=True).first()
+        if not current_year:
+            return Response({
+                'classes': [],
+                'message': 'No current academic year set'
+            })
+
+        classes = SchoolClass.objects.filter(
+            grade__in=teachable_grades,
+            academic_year=current_year
+        ).select_related(
+            'grade',
+            'grade__educational_level',
+            'track',
+            'academic_year'
+        ).prefetch_related(
+            'teachers',
+            'student_enrollments__student'
+        )
+
+        serializer = SchoolClassSerializer(classes, many=True)
+        return Response({
+            'classes': serializer.data,
+            'teacher': {
+                'id': request.user.id,
+                'name': request.user.full_name,
+                'subject': request.user.profile.school_subject.name if request.user.profile.school_subject else None,
+                'teachable_grades': [{'id': g.id, 'name': g.name} for g in teachable_grades]
+            }
+        })
 
 
 # =====================================

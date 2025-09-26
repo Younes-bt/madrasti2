@@ -18,16 +18,35 @@ import {
 import { apiMethods } from '../../services/api';
 import { toast } from 'sonner';
 
+// Utility function to get multilingual name based on current language
+const getMultilingualName = (item, language) => {
+  if (!item) return '';
+
+  switch (language) {
+    case 'ar':
+      return item.name_arabic || item.name || '';
+    case 'fr':
+      return item.name_french || item.name || '';
+    case 'en':
+    default:
+      return item.name || '';
+  }
+};
+
 const AddClassPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const currentLanguage = i18n.language;
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [grades, setGrades] = useState([]);
   const [academicYears, setAcademicYears] = useState([]);
+  const [tracks, setTracks] = useState([]);
+  const [filteredTracks, setFilteredTracks] = useState([]);
 
   const [formData, setFormData] = useState({
     grade: '',
+    track: 'none', // Optional track field - 'none' means no track
     academic_year: '',
     section: ''
   });
@@ -36,17 +55,37 @@ const AddClassPage = () => {
     fetchFormData();
   }, []);
 
+  // Filter tracks when grade changes
+  useEffect(() => {
+    if (formData.grade && tracks.length > 0) {
+      const filtered = tracks.filter(track => track.grade?.toString() === formData.grade.toString());
+      setFilteredTracks(filtered);
+
+      // Reset track if current selection is no longer valid
+      if (formData.track && formData.track !== 'none' && !filtered.some(track => track.id.toString() === formData.track.toString())) {
+        setFormData(prev => ({ ...prev, track: 'none' }));
+      }
+    } else {
+      setFilteredTracks([]);
+      setFormData(prev => ({ ...prev, track: 'none' }));
+    }
+  }, [formData.grade, tracks]);
+
   const fetchFormData = async () => {
     try {
-      const [gradesResponse, academicYearsResponse] = await Promise.all([
+      const [gradesResponse, academicYearsResponse, tracksResponse] = await Promise.all([
         apiMethods.get('schools/grades/'),
-        apiMethods.get('schools/academic-years/')
+        apiMethods.get('schools/academic-years/'),
+        apiMethods.get('schools/tracks/')
       ]);
       let gradesData = gradesResponse.results || (Array.isArray(gradesResponse) ? gradesResponse : gradesResponse.data?.results || gradesResponse.data || []);
       setGrades(gradesData);
 
       let academicYearsData = academicYearsResponse.results || (Array.isArray(academicYearsResponse) ? academicYearsResponse : academicYearsResponse.data?.results || academicYearsResponse.data || []);
       setAcademicYears(academicYearsData);
+
+      let tracksData = tracksResponse.results || (Array.isArray(tracksResponse) ? tracksResponse : tracksResponse.data?.results || tracksResponse.data || []);
+      setTracks(tracksData);
 
       // Set default academic year to current one if available
       const currentYear = academicYearsData.find(y => y.is_current);
@@ -97,7 +136,32 @@ const AddClassPage = () => {
         ...formData,
         grade: parseInt(formData.grade),
         academic_year: parseInt(formData.academic_year),
+        track: formData.track && formData.track !== 'none' ? parseInt(formData.track) : null
       };
+
+      // Debug: Log what we're sending
+      console.log('=== CLASS CREATION DEBUG ===');
+      console.log('Form Data:', formData);
+      console.log('Submit Data:', submitData);
+      console.log('Academic Years Available:', academicYears);
+      console.log('Filtered Tracks:', filteredTracks);
+      console.log('Selected Track Details:', filteredTracks.find(t => t.id.toString() === formData.track?.toString()));
+
+      // Validate required fields before sending
+      if (!submitData.academic_year || isNaN(submitData.academic_year)) {
+        console.error('❌ VALIDATION ERROR: academic_year is missing or invalid:', submitData.academic_year);
+        toast.error('Academic Year is required and must be valid');
+        return;
+      }
+
+      if (!submitData.grade || isNaN(submitData.grade)) {
+        console.error('❌ VALIDATION ERROR: grade is missing or invalid:', submitData.grade);
+        toast.error('Grade is required and must be valid');
+        return;
+      }
+
+      console.log('✅ All required fields validated successfully');
+      console.log('============================');
 
       await apiMethods.post('schools/classes/', submitData);
       toast.success(t('classes.createSuccess'));
@@ -107,6 +171,16 @@ const AddClassPage = () => {
       if (error.response?.data) {
         const apiErrors = error.response.data;
         const newErrors = {};
+
+        // Check for duplicate class error (IntegrityError)
+        if (error.response.status === 500 &&
+            (apiErrors.detail?.includes('IntegrityError') ||
+             apiErrors.message?.includes('UNIQUE constraint') ||
+             JSON.stringify(apiErrors).includes('unique_together'))) {
+          toast.error(t('classes.duplicateError') || 'A class with this grade, track, section, and academic year already exists.');
+          return;
+        }
+
         Object.keys(apiErrors).forEach(key => {
           newErrors[key] = Array.isArray(apiErrors[key]) ? apiErrors[key][0] : apiErrors[key];
         });
@@ -169,7 +243,7 @@ const AddClassPage = () => {
                     <SelectContent>
                       {grades.map((grade) => (
                         <SelectItem key={grade.id} value={grade.id.toString()}>
-                          {grade.name}
+                          {getMultilingualName(grade, currentLanguage)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -178,6 +252,39 @@ const AddClassPage = () => {
                     <p className="text-sm text-red-600">{errors.grade}</p>
                   )}
                 </div>
+
+                {/* Track Selection */}
+                {filteredTracks.length > 0 && (
+                  <div className="space-y-2">
+                    <Label htmlFor="track" className="text-sm font-medium">
+                      {t('classes.track') || 'Track / Specialization'}
+                    </Label>
+                    <Select
+                      value={formData.track || ""}
+                      onValueChange={(value) => handleSelectChange('track', value)}
+                    >
+                      <SelectTrigger className={errors.track ? 'border-red-500' : ''}>
+                        <SelectValue placeholder={t('classes.selectTrack') || 'Select track (optional)'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">
+                          {t('classes.noTrack') || 'No specific track'}
+                        </SelectItem>
+                        {filteredTracks.map((track) => (
+                          <SelectItem key={track.id} value={track.id.toString()}>
+                            {getMultilingualName(track, currentLanguage)} {track.code && `(${track.code})`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.track && (
+                      <p className="text-sm text-red-600">{errors.track}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      {t('classes.trackHint') || 'Select a track for specialized programs (optional)'}
+                    </p>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="academic_year" className="text-sm font-medium">

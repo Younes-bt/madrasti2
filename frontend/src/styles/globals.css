@@ -1,8 +1,19 @@
-@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700&family=Cairo:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @layer base {
   :root {
+    --radius: 0.5rem;
+    --sidebar-width: 16rem;
+    --sidebar-width-mobile: 18rem;
+    --sidebar-width-icon: 3rem;
+  }
+
+  /* Light theme - default */
+  :root:not(.dark) {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
@@ -20,10 +31,9 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --sidebar-background: 210 40% 96%;
+    --sidebar-background: 73 51% 94%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
     --sidebar-primary-foreground: 0 0% 98%;
@@ -33,8 +43,9 @@
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
+  /* Dark theme - only when .dark class is present */
   .dark {
-    --background: 0 0% 4%;
+    --background: 0 0% 0%;
     --foreground: 210 40% 98%;
     --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
@@ -114,4 +125,89 @@
     direction: ltr;
     text-align: left;
   }
+}
+
+/* Force solid backgrounds for sidebar and header */
+[data-sidebar="sidebar"],
+[data-slot="sidebar-inner"],
+.group\\/sidebar-wrapper [data-sidebar="sidebar"] {
+  background-color: hsl(var(--sidebar-background)) !important;
+  color: hsl(var(--sidebar-foreground)) !important;
+  backdrop-filter: none !important;
+}
+
+/* Mobile sidebar */
+[data-mobile="true"][data-sidebar="sidebar"] {
+  background-color: hsl(var(--sidebar-background)) !important;
+  color: hsl(var(--sidebar-foreground)) !important;
+  backdrop-filter: none !important;
+}
+
+/* Header backgrounds */
+header[class*="bg-background"],
+header[class*="backdrop-blur"] {
+  background-color: hsl(var(--background)) !important;
+  backdrop-filter: none !important;
+}
+
+header[class*="bg-card"] {
+  background-color: hsl(var(--card)) !important;
+  backdrop-filter: none !important;
+}
+
+/* Remove any transparency from backdrop filters */
+.backdrop-blur-sm,
+.backdrop-blur {
+  backdrop-filter: none !important;
+}
+
+/* Ensure SidebarInset doesn't interfere */
+[data-slot="sidebar-inset"] {
+  background-color: hsl(var(--background)) !important;
+}
+
+/* ShadCN Sidebar background fixes only */
+[data-sidebar="sidebar"] {
+  border-right: 1px solid hsl(var(--sidebar-border));
+}
+
+/* ShadCN Sidebar custom properties support */
+.w-\\(--sidebar-width\\) {
+  width: var(--sidebar-width);
+}
+
+.w-\\(--sidebar-width-icon\\) {
+  width: var(--sidebar-width-icon);
+}
+
+.w-\\[calc\\(var\\(--sidebar-width-icon\\)\\+\\(--spacing\\(4\\)\\)\\)\\] {
+  width: calc(var(--sidebar-width-icon) + 1rem);
+}
+
+/* Dialog/modal default styles - only when no Tailwind classes are present */
+[data-radix-dialog-overlay]:not([class*="bg-"]) {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.dark [data-radix-dialog-overlay]:not([class*="bg-"]) {
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+[data-radix-dialog-content]:not([class*="bg-"]) {
+  background-color: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  border: 1px solid hsl(var(--border));
+}
+
+/* Dropdown and select default styles */
+[data-radix-dropdown-menu-content]:not([class*="bg-"]),
+[data-radix-select-content]:not([class*="bg-"]) {
+  background-color: hsl(var(--popover));
+  color: hsl(var(--popover-foreground));
+  border: 1px solid hsl(var(--border));
+}
+
+/* Dark mode color scheme */
+.dark {
+  color-scheme: dark;
 }

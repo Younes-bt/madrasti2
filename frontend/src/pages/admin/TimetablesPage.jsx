@@ -1,24 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-  Calendar, 
-  Plus, 
-  Eye, 
-  Edit, 
-  Trash2,
-  Copy,
-  Download,
-  Filter,
-  Search,
-  Clock,
-  Users,
-  BookOpen,
-  MapPin,
-  CheckCircle,
-  XCircle,
-  AlertTriangle
+  Calendar, Plus, Eye, Edit, Trash2, Copy, Filter, Search, Clock, Users, BookOpen, CheckCircle, XCircle, MoreVertical
 } from 'lucide-react';
 import AdminPageLayout from '../../components/admin/layout/AdminPageLayout';
 import { Button } from '../../components/ui/button';
@@ -26,44 +11,36 @@ import { Input } from '../../components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
 } from '../../components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../../components/ui/dropdown-menu"
 import attendanceService from '../../services/attendance';
 import { apiMethods } from '../../services/api';
 import { toast } from 'sonner';
+import { Skeleton } from '../../components/ui/skeleton';
 
 const TimetablesPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [timetables, setTimetables] = useState([]);
-  const [filteredTimetables, setFilteredTimetables] = useState([]);
   const [classes, setClasses] = useState([]);
   const [academicYears, setAcademicYears] = useState([]);
   
-  // Filters
   const [filters, setFilters] = useState({
     search: '',
     class: 'all',
     academicYear: 'all',
-    status: 'all' // all, active, inactive
+    status: 'all'
   });
 
-  // attendanceService is already imported as a singleton
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  useEffect(() => {
-    applyFilters();
-  }, [timetables, filters]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const [timetablesResponse, classesResponse, academicYearsResponse] = await Promise.all([
@@ -72,13 +49,10 @@ const TimetablesPage = () => {
         apiMethods.get('schools/academic-years/')
       ]);
 
-      let timetablesData = timetablesResponse.results || (Array.isArray(timetablesResponse) ? timetablesResponse : timetablesResponse.data?.results || timetablesResponse.data || []);
-      let classesData = classesResponse.results || (Array.isArray(classesResponse) ? classesResponse : classesResponse.data?.results || classesResponse.data || []);
-      let academicYearsData = academicYearsResponse.results || (Array.isArray(academicYearsResponse) ? academicYearsResponse : academicYearsResponse.data?.results || academicYearsResponse.data || []);
-
-      setTimetables(timetablesData);
-      setClasses(classesData);
-      setAcademicYears(academicYearsData);
+      const safeData = (res) => res.results || (Array.isArray(res) ? res : res.data?.results || res.data || []);
+      setTimetables(safeData(timetablesResponse));
+      setClasses(safeData(classesResponse));
+      setAcademicYears(safeData(academicYearsResponse));
       
     } catch (error) {
       console.error('Failed to fetch data:', error);
@@ -86,39 +60,27 @@ const TimetablesPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
-  const applyFilters = () => {
-    let filtered = [...timetables];
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
-    // Search filter
-    if (filters.search) {
+  const filteredTimetables = useMemo(() => {
+    return timetables.filter(timetable => {
       const searchTerm = filters.search.toLowerCase();
-      filtered = filtered.filter(timetable => 
+      const matchesSearch = !filters.search || 
         timetable.school_class_name?.toLowerCase().includes(searchTerm) ||
         timetable.academic_year_name?.toLowerCase().includes(searchTerm) ||
-        timetable.created_by_name?.toLowerCase().includes(searchTerm)
-      );
-    }
+        timetable.created_by_name?.toLowerCase().includes(searchTerm);
+      
+      const matchesClass = filters.class === 'all' || timetable.school_class?.toString() === filters.class;
+      const matchesYear = filters.academicYear === 'all' || timetable.academic_year?.toString() === filters.academicYear;
+      const matchesStatus = filters.status === 'all' || timetable.is_active === (filters.status === 'active');
 
-    // Class filter
-    if (filters.class && filters.class !== 'all') {
-      filtered = filtered.filter(timetable => timetable.school_class?.toString() === filters.class);
-    }
-
-    // Academic year filter
-    if (filters.academicYear && filters.academicYear !== 'all') {
-      filtered = filtered.filter(timetable => timetable.academic_year?.toString() === filters.academicYear);
-    }
-
-    // Status filter
-    if (filters.status !== 'all') {
-      const isActive = filters.status === 'active';
-      filtered = filtered.filter(timetable => timetable.is_active === isActive);
-    }
-
-    setFilteredTimetables(filtered);
-  };
+      return matchesSearch && matchesClass && matchesYear && matchesStatus;
+    });
+  }, [timetables, filters]);
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -126,13 +88,11 @@ const TimetablesPage = () => {
 
   const handleDelete = async (timetableId) => {
     if (!confirm(t('timetables.confirmDelete'))) return;
-
     try {
       await attendanceService.deleteTimetable(timetableId);
       toast.success(t('timetables.deleteSuccess'));
       fetchData();
-    } catch (error) {
-      console.error('Failed to delete timetable:', error);
+    } catch {
       toast.error(t('timetables.deleteError'));
     }
   };
@@ -142,14 +102,12 @@ const TimetablesPage = () => {
       const duplicateData = {
         school_class: timetable.school_class,
         academic_year: timetable.academic_year,
-        is_active: false // New duplicates are inactive by default
+        is_active: false
       };
-      
       const newTimetable = await attendanceService.createTimetable(duplicateData);
       toast.success(t('timetables.duplicateSuccess'));
       navigate(`/admin/timetables/edit/${newTimetable.id}`);
-    } catch (error) {
-      console.error('Failed to duplicate timetable:', error);
+    } catch {
       toast.error(t('timetables.duplicateError'));
     }
   };
@@ -162,54 +120,20 @@ const TimetablesPage = () => {
       });
       toast.success(t('timetables.statusUpdateSuccess'));
       fetchData();
-    } catch (error) {
-      console.error('Failed to update status:', error);
+    } catch {
       toast.error(t('timetables.statusUpdateError'));
     }
   };
 
-  const getStatusConfig = (isActive) => {
-    return isActive 
-      ? { 
-          icon: CheckCircle, 
-          color: 'bg-green-100 text-green-800 border-green-200', 
-          label: t('common.active') 
-        }
-      : { 
-          icon: XCircle, 
-          color: 'bg-gray-100 text-gray-800 border-gray-200', 
-          label: t('common.inactive') 
-        };
-  };
-
   const ActionButtons = () => (
-    <div className="flex gap-2">
-      <Button
-        onClick={() => navigate('/admin/timetables/add')}
-        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
-      >
-        <Plus className="h-4 w-4 mr-2" />
-        {t('timetables.addTimetable')}
-      </Button>
-    </div>
+    <Button
+      onClick={() => navigate('/admin/timetables/add')}
+      className="bg-primary text-primary-foreground hover:bg-primary/90"
+    >
+      <Plus className="h-4 w-4 mr-2" />
+      {t('timetables.addTimetable')}
+    </Button>
   );
-
-  if (loading) {
-    return (
-      <AdminPageLayout
-        title={t('timetables.timetables')}
-        subtitle={t('timetables.manageAllTimetables')}
-        actions={[<ActionButtons key="actions" />]}
-      >
-        <div className="flex items-center justify-center h-64">
-          <div className="flex flex-col items-center gap-2">
-            <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
-          </div>
-        </div>
-      </AdminPageLayout>
-    );
-  }
 
   return (
     <AdminPageLayout
@@ -218,271 +142,233 @@ const TimetablesPage = () => {
       actions={[<ActionButtons key="actions" />]}
     >
       <div className="space-y-6">
-        {/* Filters */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Filter className="h-5 w-5 text-blue-500" />
-              {t('common.filters')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder={t('timetables.searchPlaceholder')}
-                  value={filters.search}
-                  onChange={(e) => handleFilterChange('search', e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-
-              {/* Class Filter */}
-              <Select 
-                value={filters.class} 
-                onValueChange={(value) => handleFilterChange('class', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('common.allClasses')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('common.allClasses')}</SelectItem>
-                  {classes.map((cls) => (
-                    <SelectItem key={cls.id} value={cls.id.toString()}>
-                      {cls.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Academic Year Filter */}
-              <Select 
-                value={filters.academicYear} 
-                onValueChange={(value) => handleFilterChange('academicYear', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('common.allAcademicYears')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('common.allAcademicYears')}</SelectItem>
-                  {academicYears.map((year) => (
-                    <SelectItem key={year.id} value={year.id.toString()}>
-                      {year.year} {year.is_current ? `(${t('common.current')})` : ''}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Status Filter */}
-              <Select 
-                value={filters.status} 
-                onValueChange={(value) => handleFilterChange('status', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('common.allStatuses')}</SelectItem>
-                  <SelectItem value="active">{t('common.active')}</SelectItem>
-                  <SelectItem value="inactive">{t('common.inactive')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">{t('timetables.totalTimetables')}</p>
-                  <p className="text-2xl font-bold text-blue-600">{timetables.length}</p>
-                </div>
-                <Calendar className="h-8 w-8 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">{t('timetables.activeTimetables')}</p>
-                  <p className="text-2xl font-bold text-green-600">{timetables.filter(t => t.is_active).length}</p>
-                </div>
-                <CheckCircle className="h-8 w-8 text-green-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">{t('timetables.inactiveTimetables')}</p>
-                  <p className="text-2xl font-bold text-gray-600">{timetables.filter(t => !t.is_active).length}</p>
-                </div>
-                <XCircle className="h-8 w-8 text-gray-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">{t('timetables.totalSessions')}</p>
-                  <p className="text-2xl font-bold text-purple-600">
-                    {timetables.reduce((sum, t) => sum + (t.sessions?.length || 0), 0)}
-                  </p>
-                </div>
-                <Clock className="h-8 w-8 text-purple-500" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Timetables List */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-blue-500" />
-              {t('timetables.timetablesList')} ({filteredTimetables.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {filteredTimetables.length === 0 ? (
-              <div className="text-center py-12">
-                <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  {t('timetables.noTimetables')}
-                </h3>
-                <p className="text-sm text-gray-500 mb-6">
-                  {t('timetables.noTimetablesDescription')}
-                </p>
-                <Button 
-                  onClick={() => navigate('/admin/timetables/add')}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  {t('timetables.createFirst')}
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {filteredTimetables.map((timetable) => {
-                  const statusConfig = getStatusConfig(timetable.is_active);
-                  const StatusIcon = statusConfig.icon;
-                  const sessionsCount = timetable.sessions?.length || 0;
-                  const totalWeeklyHours = timetable.sessions?.reduce((sum, session) => {
-                    const start = new Date(`1970-01-01T${session.start_time}`);
-                    const end = new Date(`1970-01-01T${session.end_time}`);
-                    return sum + (end - start) / (1000 * 60 * 60);
-                  }, 0) || 0;
-
-                  return (
-                    <motion.div
-                      key={timetable.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className="p-6 border border-border rounded-lg hover:shadow-md transition-all"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="font-semibold text-lg">
-                              {timetable.school_class_name}
-                            </h3>
-                            <Badge className={statusConfig.color}>
-                              <StatusIcon className="h-3 w-3 mr-1" />
-                              {statusConfig.label}
-                            </Badge>
-                          </div>
-                          
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-1">
-                              <Calendar className="h-4 w-4" />
-                              <span>{timetable.academic_year_name}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Clock className="h-4 w-4" />
-                              <span>{sessionsCount} {t('timetables.sessions')}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <BookOpen className="h-4 w-4" />
-                              <span>{totalWeeklyHours}h {t('timetables.perWeek')}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Users className="h-4 w-4" />
-                              <span>{t('common.createdBy')}: {timetable.created_by_name}</span>
-                            </div>
-                          </div>
-
-                          <div className="text-xs text-muted-foreground">
-                            {t('common.created')}: {new Date(timetable.created_at).toLocaleDateString()}
-                            {timetable.updated_at !== timetable.created_at && (
-                              <span className="ml-4">
-                                {t('common.updated')}: {new Date(timetable.updated_at).toLocaleDateString()}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 ml-4">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => navigate(`/admin/timetables/view/${timetable.id}`)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => navigate(`/admin/timetables/edit/${timetable.id}`)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDuplicate(timetable)}
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => toggleStatus(timetable)}
-                            className={timetable.is_active ? 'text-red-600 hover:text-red-700' : 'text-green-600 hover:text-green-700'}
-                          >
-                            {timetable.is_active ? <XCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDelete(timetable.id)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <FilterControls 
+          filters={filters} 
+          handleFilterChange={handleFilterChange} 
+          classes={classes} 
+          academicYears={academicYears} 
+        />
+        <StatisticsCards timetables={timetables} />
+        
+        {loading ? (
+          <TimetableListSkeleton />
+        ) : (
+          <TimetablesList 
+            timetables={filteredTimetables}
+            onDelete={handleDelete}
+            onDuplicate={handleDuplicate}
+            onToggleStatus={toggleStatus}
+          />
+        )}
       </div>
     </AdminPageLayout>
   );
 };
+
+const FilterControls = ({ filters, handleFilterChange, classes, academicYears }) => {
+  const { t } = useTranslation();
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+          <Filter className="h-5 w-5 text-primary" />
+          {t('common.filters')}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder={t('timetables.searchPlaceholder')}
+              value={filters.search}
+              onChange={(e) => handleFilterChange('search', e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={filters.class} onValueChange={(value) => handleFilterChange('class', value)}>
+            <SelectTrigger><SelectValue placeholder={t('common.allClasses')} /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t('common.allClasses')}</SelectItem>
+              {classes.map((cls) => <SelectItem key={cls.id} value={cls.id.toString()}>{cls.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={filters.academicYear} onValueChange={(value) => handleFilterChange('academicYear', value)}>
+            <SelectTrigger><SelectValue placeholder={t('common.allAcademicYears')} /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t('common.allAcademicYears')}</SelectItem>
+              {academicYears.map((year) => <SelectItem key={year.id} value={year.id.toString()}>{year.year} {year.is_current ? `(${t('common.current')})` : ''}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
+            <SelectTrigger><SelectValue placeholder={t('common.allStatuses')} /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t('common.allStatuses')}</SelectItem>
+              <SelectItem value="active">{t('common.active')}</SelectItem>
+              <SelectItem value="inactive">{t('common.inactive')}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+const StatisticsCards = ({ timetables }) => {
+  const { t } = useTranslation();
+  const stats = useMemo(() => ({
+    total: timetables.length,
+    active: timetables.filter(t => t.is_active).length,
+    inactive: timetables.filter(t => !t.is_active).length,
+    sessions: timetables.reduce((sum, t) => sum + (t.sessions?.length || 0), 0)
+  }), [timetables]);
+
+  const statItems = [
+    { title: t('timetables.totalTimetables'), value: stats.total, icon: Calendar, color: 'text-blue-500' },
+    { title: t('timetables.activeTimetables'), value: stats.active, icon: CheckCircle, color: 'text-green-500' },
+    { title: t('timetables.inactiveTimetables'), value: stats.inactive, icon: XCircle, color: 'text-gray-500' },
+    { title: t('timetables.totalSessions'), value: stats.sessions, icon: Clock, color: 'text-purple-500' }
+  ];
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {statItems.map(item => (
+        <Card key={item.title}>
+          <CardContent className="p-6 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">{item.title}</p>
+              <p className={`text-2xl font-bold ${item.color.replace('text-', 'text-')}`}>{item.value}</p>
+            </div>
+            <item.icon className={`h-8 w-8 ${item.color}`} />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+};
+
+const TimetablesList = ({ timetables, onDelete, onDuplicate, onToggleStatus }) => {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  if (timetables.length === 0) {
+    return (
+      <div className="text-center py-16">
+        <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+        <h3 className="text-xl font-semibold mb-2">{t('timetables.noTimetables')}</h3>
+        <p className="text-muted-foreground mb-6">{t('timetables.noTimetablesDescription')}</p>
+        <Button onClick={() => navigate('/admin/timetables/add')}>
+          <Plus className="h-4 w-4 mr-2" />
+          {t('timetables.createFirst')}
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      {timetables.map((timetable) => (
+        <TimetableCard 
+          key={timetable.id} 
+          timetable={timetable} 
+          onDelete={onDelete}
+          onDuplicate={onDuplicate}
+          onToggleStatus={onToggleStatus}
+        />
+      ))}
+    </div>
+  );
+};
+
+const TimetableCard = ({ timetable, onDelete, onDuplicate, onToggleStatus }) => {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  const statusConfig = timetable.is_active 
+    ? { icon: CheckCircle, color: 'bg-green-100 text-green-800', label: t('common.active') }
+    : { icon: XCircle, color: 'bg-gray-100 text-gray-800', label: t('common.inactive') };
+  const StatusIcon = statusConfig.icon;
+
+  const sessionsCount = timetable.sessions?.length || 0;
+  const totalWeeklyHours = useMemo(() => 
+    timetable.sessions?.reduce((sum, session) => {
+      const start = new Date(`1970-01-01T${session.start_time}`);
+      const end = new Date(`1970-01-01T${session.end_time}`);
+      return sum + (end - start) / (1000 * 60 * 60);
+    }, 0) || 0, 
+  [timetable.sessions]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="bg-card border rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-300 flex flex-col"
+    >
+      <div className="p-6 flex-grow">
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex-1">
+            <h3 className="font-bold text-xl text-primary mb-1">{timetable.school_class_name}</h3>
+            <p className="text-sm text-muted-foreground">{timetable.academic_year_name}</p>
+          </div>
+          <Badge className={`${statusConfig.color} flex items-center gap-1`}>
+            <StatusIcon className="h-3 w-3" />
+            {statusConfig.label}
+          </Badge>
+        </div>
+        
+        <div className="space-y-3 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2"><Clock className="h-4 w-4" /><span>{sessionsCount} {t('timetables.sessions')}</span></div>
+          <div className="flex items-center gap-2"><BookOpen className="h-4 w-4" /><span>{totalWeeklyHours.toFixed(1)}h {t('timetables.perWeek')}</span></div>
+          <div className="flex items-center gap-2"><Users className="h-4 w-4" /><span>{t('common.createdBy')}: {timetable.created_by_name}</span></div>
+        </div>
+      </div>
+
+      <div className="border-t p-4 bg-muted/50 flex items-center justify-between">
+        <div className="text-xs text-muted-foreground">
+          {t('common.updated')}: {new Date(timetable.updated_at).toLocaleDateString()}
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => navigate(`/admin/timetables/view/${timetable.id}`)}><Eye className="mr-2 h-4 w-4" />{t('common.view')}</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate(`/admin/timetables/edit/${timetable.id}`)}><Edit className="mr-2 h-4 w-4" />{t('common.edit')}</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onDuplicate(timetable)}><Copy className="mr-2 h-4 w-4" />{t('common.duplicate')}</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onToggleStatus(timetable)}>
+              {timetable.is_active ? <XCircle className="mr-2 h-4 w-4" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+              {timetable.is_active ? t('common.deactivate') : t('common.activate')}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => onDelete(timetable.id)} className="text-red-600 focus:text-red-600 focus:bg-red-50">
+              <Trash2 className="mr-2 h-4 w-4" />{t('common.delete')}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </motion.div>
+  );
+};
+
+const TimetableListSkeleton = () => (
+  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+    {[...Array(6)].map((_, i) => (
+      <Card key={i}>
+        <CardHeader>
+          <Skeleton className="h-6 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-2/3" />
+        </CardContent>
+      </Card>
+    ))}
+  </div>
+);
 
 export default TimetablesPage;

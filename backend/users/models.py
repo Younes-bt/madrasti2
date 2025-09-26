@@ -42,6 +42,9 @@ class User(AbstractUser):
     
     # Account status and timestamps
     is_active = models.BooleanField(default=True)
+    is_online = models.BooleanField(default=False, help_text='Whether user is currently logged in')
+    last_seen = models.DateTimeField(null=True, blank=True, help_text='Last time user was active')
+    force_password_change = models.BooleanField(default=False, help_text='Force user to change password on next login')
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
 
@@ -80,6 +83,22 @@ class User(AbstractUser):
             return self.profile.full_name
         except Profile.DoesNotExist:
             return f"{self.first_name} {self.last_name}".strip()
+
+    def update_last_seen(self):
+        """Update the last seen timestamp to now."""
+        from django.utils import timezone
+        self.last_seen = timezone.now()
+        self.save(update_fields=['last_seen'])
+
+    def set_online_status(self, is_online=True):
+        """Set user online status and update last seen if going online."""
+        from django.utils import timezone
+        self.is_online = is_online
+        if is_online:
+            self.last_seen = timezone.now()
+            self.save(update_fields=['is_online', 'last_seen'])
+        else:
+            self.save(update_fields=['is_online'])
     
     class Meta:
         db_table = 'users_user'
@@ -133,6 +152,14 @@ class Profile(models.Model):
         related_name='teachers',
         verbose_name=_('School Subject'),
         help_text=_('The subject this teacher specializes in')
+    )
+
+    teachable_grades = models.ManyToManyField(
+        'schools.Grade',
+        blank=True,
+        related_name='teachers',
+        verbose_name=_('Teachable Grades'),
+        help_text=_('The grades this teacher is qualified to teach.')
     )
     
     hire_date = models.DateField(blank=True, null=True, verbose_name=_('Hire Date'))

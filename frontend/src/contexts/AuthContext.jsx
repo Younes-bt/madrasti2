@@ -93,6 +93,7 @@ export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState)
   const navigate = useNavigate()
   const location = useLocation()
+  const heartbeatInterval = React.useRef(null)
 
   // Initialize auth state from storage
   useEffect(() => {
@@ -133,6 +134,9 @@ export const AuthProvider = ({ children }) => {
                 refreshToken: savedRefreshToken,
               },
             })
+
+            // Start heartbeat for existing authenticated user
+            startHeartbeat()
           } catch (verifyError) {
             console.log('Token verification failed, attempting refresh...')
             
@@ -156,6 +160,9 @@ export const AuthProvider = ({ children }) => {
                     refreshToken: response.refresh || savedRefreshToken,
                   },
                 })
+
+                // Start heartbeat after token refresh
+                startHeartbeat()
               } catch (refreshError) {
                 console.log('Token refresh failed, clearing auth state')
                 // Clear invalid tokens
@@ -187,6 +194,13 @@ export const AuthProvider = ({ children }) => {
     initializeAuth()
   }, [])
 
+  // Cleanup heartbeat on unmount
+  useEffect(() => {
+    return () => {
+      stopHeartbeat()
+    }
+  }, [])
+
   // Login function
   const login = async (credentials) => {
     try {
@@ -201,19 +215,22 @@ export const AuthProvider = ({ children }) => {
 
       console.log('Login response:', response) // Debug log
 
-      const { access: token, refresh: refreshToken } = response
+      const { access: token, refresh: refreshToken, force_password_change, user: userFromResponse } = response
 
       // Validate response structure
       if (!token || !refreshToken) {
         throw new Error('Login response missing tokens')
       }
 
-      // Extract user information from JWT token
-      const user = extractUserFromJWT(token)
+      // Extract user information from JWT token or use user from response
+      let user = userFromResponse || extractUserFromJWT(token)
       
       if (!user) {
         throw new Error('Unable to extract user information from token')
       }
+
+      // Add force_password_change to user object
+      user = { ...user, force_password_change: force_password_change || false }
 
       console.log('Extracted user from JWT:', user) // Debug log
 
@@ -227,6 +244,15 @@ export const AuthProvider = ({ children }) => {
         type: AUTH_ACTIONS.LOGIN_SUCCESS,
         payload: { user, token, refreshToken },
       })
+
+      // Start heartbeat to track user activity
+      startHeartbeat()
+
+      // Check if user needs to change password
+      if (force_password_change) {
+        console.log('User needs to change password') // Debug log
+        return { success: true, user, force_password_change: true }
+      }
 
       // Role-based redirection after successful login
       const roleRoutes = {
@@ -265,26 +291,79 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  // Logout function
-  const logout = async () => {
+  // Heartbeat function
+  const sendHeartbeat = async () => {
     try {
       // Import auth service dynamically to avoid circular dependencies
       const { default: authService } = await import('../services/auth.js')
-      
-      // Call auth service logout (clears storage)
-      authService.logout()
 
-      // Also clear from authStorage (our context storage)
+      if (state.token && state.isAuthenticated) {
+        await authService.sendHeartbeat()
+      }
+    } catch (error) {
+      console.error('Heartbeat failed:', error)
+      // If heartbeat fails, it might mean the user's session is invalid
+      // We could handle this by refreshing the token or logging out
+    }
+  }
+
+  // Start heartbeat when user logs in
+  const startHeartbeat = () => {
+    // Clear any existing interval
+    if (heartbeatInterval.current) {
+      clearInterval(heartbeatInterval.current)
+    }
+
+    // Send heartbeat every 2 minutes (120 seconds)
+    heartbeatInterval.current = setInterval(() => {
+      sendHeartbeat()
+    }, 120000) // 2 minutes in milliseconds
+
+    // Send initial heartbeat immediately
+    sendHeartbeat()
+  }
+
+  // Stop heartbeat
+  const stopHeartbeat = () => {
+    if (heartbeatInterval.current) {
+      clearInterval(heartbeatInterval.current)
+      heartbeatInterval.current = null
+    }
+  }
+
+  // Logout function
+  const logout = async () => {
+    try {
+      // Stop heartbeat first
+      stopHeartbeat()
+
+      // Import auth service dynamically to avoid circular dependencies
+      const { default: authService } = await import('../services/auth.js')
+
+      // Call backend logout endpoint to mark user as offline
+      if (state.token && state.isAuthenticated) {
+        await authService.logout()
+      }
+
+      // Clear from authStorage (our context storage)
       authStorage.remove('user')
       authStorage.remove('token')
       authStorage.remove('refreshToken')
 
       // Update state
       dispatch({ type: AUTH_ACTIONS.LOGOUT })
-      
+
       return { success: true }
     } catch (error) {
       console.error('Logout error:', error)
+
+      // Even if logout API fails, clear local storage and state
+      stopHeartbeat()
+      authStorage.remove('user')
+      authStorage.remove('token')
+      authStorage.remove('refreshToken')
+      dispatch({ type: AUTH_ACTIONS.LOGOUT })
+
       return { success: false, error: error.message }
     }
   }
@@ -299,6 +378,51 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Update user error:', error)
       return { success: false, error: error.message }
+    }
+  }
+
+  // Change password
+  const changePassword = async (passwordData) => {
+    try {
+      dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: true })
+      dispatch({ type: AUTH_ACTIONS.CLEAR_ERROR })
+
+      // Import auth service dynamically to avoid circular dependencies
+      const { default: authService } = await import('../services/auth.js')
+      
+      // Format the data to match backend expectations
+      const formattedData = {
+        current_password: passwordData.currentPassword,
+        new_password: passwordData.newPassword,
+        confirm_password: passwordData.confirmPassword
+      }
+      
+      // Call actual API
+      const response = await authService.changePassword(formattedData)
+
+      // Update user to clear force_password_change flag
+      const updatedUser = { ...state.user, force_password_change: false }
+      authStorage.set('user', updatedUser)
+      dispatch({ type: AUTH_ACTIONS.UPDATE_USER, payload: { force_password_change: false } })
+
+      dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: false })
+      
+      return { success: true, message: response.message }
+    } catch (error) {
+      console.error('Change password error:', error)
+      let errorMessage = 'Password change failed. Please try again.'
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+
+      dispatch({
+        type: AUTH_ACTIONS.LOGIN_ERROR,
+        payload: errorMessage,
+      })
+      
+      return { success: false, error: errorMessage }
     }
   }
 
@@ -375,6 +499,7 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     updateUser,
+    changePassword,
     refreshToken,
     clearError,
     

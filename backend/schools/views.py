@@ -1,11 +1,13 @@
 # schools/views.py
 
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, filters
+from django_filters.rest_framework import DjangoFilterBackend
 from .models import (
     School,
     AcademicYear,
     EducationalLevel,
     Grade,
+    Track,
     SchoolClass,
     Room,
     Subject
@@ -15,6 +17,7 @@ from .serializers import (
     AcademicYearSerializer,
     EducationalLevelSerializer,
     GradeSerializer,
+    TrackSerializer,
     SchoolClassSerializer,
     RoomSerializer,
     SubjectSerializer
@@ -72,7 +75,25 @@ class GradeViewSet(viewsets.ModelViewSet):
     """API endpoint for managing grades."""
     queryset = Grade.objects.select_related('educational_level').all()
     serializer_class = GradeSerializer
-    
+
+    def get_permissions(self):
+        """Allow any authenticated user to list/view, but only admins to create/edit."""
+        if self.action in ['list', 'retrieve']:
+            self.permission_classes = [permissions.IsAuthenticated]
+        else:
+            self.permission_classes = [permissions.IsAdminUser]
+        return super().get_permissions()
+
+class TrackViewSet(viewsets.ModelViewSet):
+    """API endpoint for managing tracks."""
+    queryset = Track.objects.select_related('grade', 'grade__educational_level').all()
+    serializer_class = TrackSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['grade', 'is_active']
+    search_fields = ['name', 'name_arabic', 'code']
+    ordering_fields = ['order', 'name']
+    pagination_class = None
+
     def get_permissions(self):
         """Allow any authenticated user to list/view, but only admins to create/edit."""
         if self.action in ['list', 'retrieve']:
@@ -83,7 +104,7 @@ class GradeViewSet(viewsets.ModelViewSet):
 
 class SchoolClassViewSet(viewsets.ModelViewSet):
     """API endpoint for managing classes."""
-    queryset = SchoolClass.objects.select_related('grade', 'academic_year').all()
+    queryset = SchoolClass.objects.select_related('grade', 'track', 'academic_year').all()
     serializer_class = SchoolClassSerializer
     # REMOVE this line: permission_classes = [permissions.IsAdminUser]
 
@@ -114,6 +135,7 @@ class SubjectViewSet(viewsets.ModelViewSet):
     """API endpoint for managing subjects."""
     queryset = Subject.objects.all()
     serializer_class = SubjectSerializer
+    pagination_class = None
     # REMOVE this line: permission_classes = [permissions.IsAdminUser]
 
     def get_permissions(self):

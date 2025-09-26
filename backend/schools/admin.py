@@ -6,6 +6,7 @@ from .models import (
     School,
     EducationalLevel,
     Grade,
+    Track,
     SchoolClass,
     Room,
     Subject,
@@ -21,6 +22,12 @@ class GradeInline(admin.TabularInline):
     extra = 1  # Number of empty forms to display
     ordering = ('grade_number',)
 
+class TrackInline(admin.TabularInline):
+    """Allows editing Tracks directly within the Grade admin page."""
+    model = Track
+    extra = 1
+    ordering = ('order', 'name')
+
 class SubjectGradeInline(admin.TabularInline):
     """Allows editing Subject configurations directly within the Grade admin page."""
     model = SubjectGrade
@@ -31,8 +38,8 @@ class SchoolClassInline(admin.TabularInline):
     """Allows viewing related SchoolClasses from the Grade admin page."""
     model = SchoolClass
     extra = 0
-    fields = ('section', 'academic_year')
-    readonly_fields = ('section', 'academic_year')
+    fields = ('track', 'section', 'academic_year')
+    readonly_fields = ('track', 'section', 'academic_year')
     can_delete = False
     show_change_link = True
 
@@ -63,17 +70,25 @@ class EducationalLevelAdmin(admin.ModelAdmin):
 
 @admin.register(Grade)
 class GradeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'educational_level', 'grade_number', 'passing_grade')
+    list_display = ('name', 'code', 'educational_level', 'grade_number', 'passing_grade')
     list_filter = ('educational_level',)
-    search_fields = ('name', 'educational_level__name')
-    inlines = [SubjectGradeInline, SchoolClassInline] # Add Subject and Class editors here
+    search_fields = ('name', 'code', 'educational_level__name')
+    inlines = [TrackInline, SubjectGradeInline, SchoolClassInline] # Add Track, Subject and Class editors here
+
+@admin.register(Track)
+class TrackAdmin(admin.ModelAdmin):
+    list_display = ('name', 'grade', 'code', 'is_active', 'order')
+    list_filter = ('grade__educational_level', 'grade', 'is_active')
+    search_fields = ('name', 'name_arabic', 'name_french', 'code')
+    list_editable = ('order', 'is_active')
+    autocomplete_fields = ['grade']
 
 @admin.register(SchoolClass)
 class SchoolClassAdmin(admin.ModelAdmin):
-    list_display = ('name', 'grade', 'academic_year')
-    list_filter = ('academic_year', 'grade__educational_level')
-    search_fields = ('name', 'grade__name')
-    autocomplete_fields = ['grade']
+    list_display = ('name', 'grade', 'track', 'academic_year')
+    list_filter = ('academic_year', 'grade__educational_level', 'track')
+    search_fields = ('name', 'grade__name', 'track__name')
+    autocomplete_fields = ['grade', 'track']
     # The 'name' field is auto-generated, so we don't need it in the form
     exclude = ('name',)
 

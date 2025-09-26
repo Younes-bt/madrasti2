@@ -193,6 +193,17 @@ const ViewGradePage = () => {
                       <span className="text-lg font-semibold">{grade.grade_number}</span>
                     </div>
                   </div>
+
+                  <Separator />
+
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                      {t('grades.code', 'Grade Code')}
+                    </h4>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="default">{grade.code}</Badge>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Educational Level */}

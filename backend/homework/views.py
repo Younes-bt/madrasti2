@@ -12,21 +12,27 @@ from datetime import timedelta
 from .models import (
     # Reward Models
     RewardSettings, RewardType, StudentWallet, RewardTransaction,
-    
-    # Badge Models  
+
+    # Badge Models
     Badge, StudentBadge,
-    
+
     # Leaderboard Models
     Leaderboard, LeaderboardEntry, WeeklyLeaderboardSnapshot,
-    
+
     # Textbook Models
     TextbookLibrary,
-    
-    # Assignment Models
-    Assignment, AssignmentReward, Question, QuestionChoice, BookExercise,
-    
+
+    # Exercise Models
+    Exercise, ExerciseReward,
+
+    # Homework Models (renamed from Assignment)
+    Homework, HomeworkReward, Question, QuestionChoice, BookExercise,
+
     # Submission Models
-    Submission, QuestionAnswer, AnswerFile, BookExerciseAnswer, BookExerciseFile
+    Submission, QuestionAnswer, AnswerFile, BookExerciseAnswer, BookExerciseFile,
+
+    # Exercise Submission Models
+    ExerciseSubmission, ExerciseAnswer, ExerciseAnswerFile
 )
 
 from .serializers import (
@@ -42,10 +48,13 @@ from .serializers import (
     
     # Textbook Serializers
     TextbookLibrarySerializer,
+
+    # Exercise Serializers
+    ExerciseCreateSerializer, ExerciseDetailSerializer,
     
-    # Assignment Serializers
-    AssignmentListSerializer, AssignmentDetailSerializer, AssignmentCreateSerializer,
-    AssignmentRewardSerializer, AssignmentStatisticsSerializer, AssignmentDuplicateSerializer,
+    # Homework Serializers (renamed from Assignment)
+    HomeworkListSerializer, HomeworkDetailSerializer, HomeworkCreateSerializer,
+    HomeworkRewardSerializer, HomeworkStatisticsSerializer, HomeworkDuplicateSerializer,
     
     # Question Serializers
     QuestionSerializer, QuestionCreateSerializer, QuestionChoiceSerializer,
@@ -197,22 +206,42 @@ class TextbookLibraryViewSet(viewsets.ModelViewSet):
         return queryset
 
 # =====================================
-# ASSIGNMENT VIEWS
+# EXERCISE VIEWS
 # =====================================
 
-class AssignmentViewSet(viewsets.ModelViewSet):
+class ExerciseViewSet(viewsets.ModelViewSet):
+    queryset = Exercise.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return ExerciseCreateSerializer
+        return ExerciseDetailSerializer
+
+    def get_queryset(self):
+        queryset = Exercise.objects.all()
+        lesson_id = self.request.query_params.get('lesson')
+        if lesson_id:
+            queryset = queryset.filter(lesson_id=lesson_id)
+        return queryset
+
+# =====================================
+# HOMEWORK VIEWS (renamed from ASSIGNMENT)
+# =====================================
+
+class HomeworkViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     
     def get_serializer_class(self):
         if self.action == 'list':
-            return AssignmentListSerializer
+            return HomeworkListSerializer
         elif self.action in ['create', 'update', 'partial_update']:
-            return AssignmentCreateSerializer
-        return AssignmentDetailSerializer
+            return HomeworkCreateSerializer
+        return HomeworkDetailSerializer
     
     def get_queryset(self):
         user = self.request.user
-        queryset = Assignment.objects.all()
+        queryset = Homework.objects.all()
         
         if user.role == 'STUDENT':
             # Students see assignments for their class
@@ -231,7 +260,7 @@ class AssignmentViewSet(viewsets.ModelViewSet):
         subject_id = self.request.query_params.get('subject')
         grade_id = self.request.query_params.get('grade')
         class_id = self.request.query_params.get('class')
-        assignment_type = self.request.query_params.get('type')
+        homework_type = self.request.query_params.get('type')
         
         if subject_id:
             queryset = queryset.filter(subject_id=subject_id)
@@ -239,36 +268,36 @@ class AssignmentViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(grade_id=grade_id)
         if class_id:
             queryset = queryset.filter(school_class_id=class_id)
-        if assignment_type:
-            queryset = queryset.filter(assignment_type=assignment_type)
+        if homework_type:
+            queryset = queryset.filter(homework_type=homework_type)
         
         return queryset
     
     @action(detail=True, methods=['post'])
     def publish(self, request, pk=None):
         """Publish an assignment"""
-        assignment = self.get_object()
-        if request.user != assignment.teacher and request.user.role not in ['ADMIN', 'STAFF']:
+        homework = self.get_object()
+        if request.user != homework.teacher and request.user.role not in ['ADMIN', 'STAFF']:
             return Response({'error': 'Permission denied'}, status=403)
         
-        assignment.is_published = True
-        assignment.save()
+        homework.is_published = True
+        homework.save()
         
-        return Response({'message': 'Assignment published successfully'})
+        return Response({'message': 'Homework published successfully'})
     
     @action(detail=True, methods=['get'])
     def statistics(self, request, pk=None):
         """Get assignment statistics"""
-        assignment = self.get_object()
+        homework = self.get_object()
         
         # Only teacher, admin, staff can view statistics
-        if request.user != assignment.teacher and request.user.role not in ['ADMIN', 'STAFF']:
+        if request.user != homework.teacher and request.user.role not in ['ADMIN', 'STAFF']:
             return Response({'error': 'Permission denied'}, status=403)
         
-        submissions = Submission.objects.filter(assignment=assignment)
+        submissions = Submission.objects.filter(homework=homework)
         
         stats = {
-            'total_students': assignment.school_class.students.count() if hasattr(assignment.school_class, 'students') else 0,
+            'total_students': homework.school_class.students.count() if hasattr(homework.school_class, 'students') else 0,
             'submitted_count': submissions.filter(status__in=['submitted', 'auto_graded', 'manually_graded']).count(),
             'pending_count': submissions.filter(status__in=['draft', 'in_progress']).count(),
             'late_count': submissions.filter(is_late=True).count(),
@@ -279,47 +308,47 @@ class AssignmentViewSet(viewsets.ModelViewSet):
         if stats['total_students'] > 0:
             stats['completion_rate'] = (stats['submitted_count'] / stats['total_students']) * 100
         
-        serializer = AssignmentStatisticsSerializer(stats)
+        serializer = HomeworkStatisticsSerializer(stats)
         return Response(serializer.data)
     
     @action(detail=True, methods=['post'])
     def duplicate(self, request, pk=None):
         """Duplicate an assignment"""
-        assignment = self.get_object()
-        serializer = AssignmentDuplicateSerializer(data=request.data)
+        homework = self.get_object()
+        serializer = HomeworkDuplicateSerializer(data=request.data)
         
         if serializer.is_valid():
             # Create duplicate assignment
-            new_assignment = Assignment.objects.create(
+            new_homework = Homework.objects.create(
                 title=serializer.validated_data['new_title'],
-                title_arabic=assignment.title_arabic,
-                description=assignment.description,
-                instructions=assignment.instructions,
-                subject=assignment.subject,
-                grade=assignment.grade,
+                title_arabic=homework.title_arabic,
+                description=homework.description,
+                instructions=homework.instructions,
+                subject=homework.subject,
+                grade=homework.grade,
                 school_class_id=serializer.validated_data['school_class_id'],
-                lesson=assignment.lesson,
+                lesson=homework.lesson,
                 teacher=request.user,
-                assignment_format=assignment.assignment_format,
-                assignment_type=assignment.assignment_type,
+                homework_format=homework.homework_format,
+                homework_type=homework.homework_type,
                 due_date=serializer.validated_data['new_due_date'],
-                estimated_duration=assignment.estimated_duration,
-                time_limit=assignment.time_limit,
-                is_timed=assignment.is_timed,
-                total_points=assignment.total_points,
-                auto_grade_qcm=assignment.auto_grade_qcm,
-                randomize_questions=assignment.randomize_questions,
-                show_results_immediately=assignment.show_results_immediately,
-                allow_multiple_attempts=assignment.allow_multiple_attempts,
-                max_attempts=assignment.max_attempts,
-                allow_late_submissions=assignment.allow_late_submissions,
-                late_penalty_percentage=assignment.late_penalty_percentage,
+                estimated_duration=homework.estimated_duration,
+                time_limit=homework.time_limit,
+                is_timed=homework.is_timed,
+                total_points=homework.total_points,
+                auto_grade_qcm=homework.auto_grade_qcm,
+                randomize_questions=homework.randomize_questions,
+                show_results_immediately=homework.show_results_immediately,
+                allow_multiple_attempts=homework.allow_multiple_attempts,
+                max_attempts=homework.max_attempts,
+                allow_late_submissions=homework.allow_late_submissions,
+                late_penalty_percentage=homework.late_penalty_percentage,
             )
             
             # Duplicate questions
-            for question in assignment.questions.all():
+            for question in homework.questions.all():
                 new_question = Question.objects.create(
-                    assignment=new_assignment,
+                    homework=new_homework,
                     question_type=question.question_type,
                     question_text=question.question_text,
                     question_text_arabic=question.question_text_arabic,
@@ -343,39 +372,39 @@ class AssignmentViewSet(viewsets.ModelViewSet):
                     )
             
             # Duplicate book exercises
-            for exercise in assignment.book_exercises.all():
+            for book_exercise in homework.book_exercises.all():
                 BookExercise.objects.create(
-                    assignment=new_assignment,
-                    book_title=exercise.book_title,
-                    book_title_arabic=exercise.book_title_arabic,
-                    publisher=exercise.publisher,
-                    isbn=exercise.isbn,
-                    edition=exercise.edition,
-                    chapter=exercise.chapter,
-                    chapter_arabic=exercise.chapter_arabic,
-                    page_number=exercise.page_number,
-                    exercise_number=exercise.exercise_number,
-                    specific_questions=exercise.specific_questions,
-                    additional_notes=exercise.additional_notes,
-                    page_image=exercise.page_image,
-                    points=exercise.points,
+                    homework=new_homework,
+                    book_title=book_exercise.book_title,
+                    book_title_arabic=book_exercise.book_title_arabic,
+                    publisher=book_exercise.publisher,
+                    isbn=book_exercise.isbn,
+                    edition=book_exercise.edition,
+                    chapter=book_exercise.chapter,
+                    chapter_arabic=book_exercise.chapter_arabic,
+                    page_number=book_exercise.page_number,
+                    exercise_number=book_exercise.exercise_number,
+                    specific_questions=book_exercise.specific_questions,
+                    additional_notes=book_exercise.additional_notes,
+                    page_image=book_exercise.page_image,
+                    points=book_exercise.points,
                 )
             
             # Duplicate reward config
-            if hasattr(assignment, 'reward_config'):
-                AssignmentReward.objects.create(
-                    assignment=new_assignment,
-                    completion_points=assignment.reward_config.completion_points,
-                    completion_coins=assignment.reward_config.completion_coins,
-                    perfect_score_bonus=assignment.reward_config.perfect_score_bonus,
-                    high_score_bonus=assignment.reward_config.high_score_bonus,
-                    early_submission_bonus=assignment.reward_config.early_submission_bonus,
-                    on_time_bonus=assignment.reward_config.on_time_bonus,
-                    difficulty_multiplier=assignment.reward_config.difficulty_multiplier,
-                    weekend_multiplier=assignment.reward_config.weekend_multiplier,
+            if hasattr(homework, 'reward_config'):
+                HomeworkReward.objects.create(
+                    homework=new_homework,
+                    completion_points=homework.reward_config.completion_points,
+                    completion_coins=homework.reward_config.completion_coins,
+                    perfect_score_bonus=homework.reward_config.perfect_score_bonus,
+                    high_score_bonus=homework.reward_config.high_score_bonus,
+                    early_submission_bonus=homework.reward_config.early_submission_bonus,
+                    on_time_bonus=homework.reward_config.on_time_bonus,
+                    difficulty_multiplier=homework.reward_config.difficulty_multiplier,
+                    weekend_multiplier=homework.reward_config.weekend_multiplier,
                 )
             
-            return Response({'message': 'Assignment duplicated successfully', 'id': new_assignment.id})
+            return Response({'message': 'Homework duplicated successfully', 'id': new_homework.id})
         
         return Response(serializer.errors, status=400)
 
@@ -388,10 +417,16 @@ class QuestionViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
-        assignment_id = self.request.query_params.get('assignment')
-        if assignment_id:
-            return Question.objects.filter(assignment_id=assignment_id)
-        return Question.objects.all()
+        queryset = Question.objects.all()
+        homework_id = self.request.query_params.get('homework')
+        exercise_id = self.request.query_params.get('exercise')
+
+        if homework_id:
+            queryset = queryset.filter(homework_id=homework_id)
+        elif exercise_id:
+            queryset = queryset.filter(exercise_id=exercise_id)
+        
+        return queryset
     
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
@@ -415,9 +450,9 @@ class BookExerciseViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
-        assignment_id = self.request.query_params.get('assignment')
-        if assignment_id:
-            return BookExercise.objects.filter(assignment_id=assignment_id)
+        homework_id = self.request.query_params.get('homework')
+        if homework_id:
+            return BookExercise.objects.filter(homework_id=homework_id)
         return BookExercise.objects.all()
 
 # =====================================
@@ -443,7 +478,7 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         if user.role == 'STUDENT':
             queryset = queryset.filter(student=user)
         elif user.role == 'TEACHER':
-            queryset = queryset.filter(assignment__teacher=user)
+            queryset = queryset.filter(homework__teacher=user)
         elif user.role in ['ADMIN', 'STAFF']:
             queryset = queryset.all()
         elif user.role == 'PARENT':
@@ -451,11 +486,11 @@ class SubmissionViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(student__role='STUDENT')  # Add parent-child logic
         
         # Filters
-        assignment_id = self.request.query_params.get('assignment')
+        homework_id = self.request.query_params.get('homework')
         status_filter = self.request.query_params.get('status')
         
-        if assignment_id:
-            queryset = queryset.filter(assignment_id=assignment_id)
+        if homework_id:
+            queryset = queryset.filter(homework_id=homework_id)
         if status_filter:
             queryset = queryset.filter(status=status_filter)
         
@@ -464,40 +499,40 @@ class SubmissionViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def start(self, request, pk=None):
         """Start an assignment (create submission)"""
-        assignment = get_object_or_404(Assignment, pk=pk)
+        homework = get_object_or_404(Homework, pk=pk)
         
         if request.user.role != 'STUDENT':
             return Response({'error': 'Only students can start assignments'}, status=403)
         
         # Check if assignment is published and not overdue
-        if not assignment.is_published:
-            return Response({'error': 'Assignment not published'}, status=400)
+        if not homework.is_published:
+            return Response({'error': 'Homework not published'}, status=400)
         
         # Check if student already has a submission
         existing_submission = Submission.objects.filter(
-            assignment=assignment,
+            homework=homework,
             student=request.user
         ).first()
         
-        if existing_submission and not assignment.allow_multiple_attempts:
-            return Response({'error': 'Assignment already started'}, status=400)
+        if existing_submission and not homework.allow_multiple_attempts:
+            return Response({'error': 'Homework already started'}, status=400)
         
         # Create new submission
         attempt_number = 1
         if existing_submission:
             attempt_number = existing_submission.attempt_number + 1
-            if attempt_number > assignment.max_attempts:
+            if homework.max_attempts > 0 and attempt_number > homework.max_attempts:
                 return Response({'error': 'Maximum attempts reached'}, status=400)
         
         submission = Submission.objects.create(
-            assignment=assignment,
+            homework=homework,
             student=request.user,
             status='in_progress',
             started_at=timezone.now(),
             attempt_number=attempt_number
         )
         
-        serializer = self.get_serializer(submission)
+        serializer = SubmissionDetailSerializer(submission)
         return Response(serializer.data)
     
     @action(detail=True, methods=['post'])
@@ -509,7 +544,7 @@ class SubmissionViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Permission denied'}, status=403)
         
         if submission.status in ['submitted', 'auto_graded', 'manually_graded']:
-            return Response({'error': 'Assignment already submitted'}, status=400)
+            return Response({'error': 'Homework already submitted'}, status=400)
         
         submission.status = 'submitted'
         submission.submitted_at = timezone.now()
@@ -520,24 +555,24 @@ class SubmissionViewSet(viewsets.ModelViewSet):
             submission.time_taken = int(time_diff.total_seconds() / 60)  # Minutes
         
         # Check if late
-        if submission.submitted_at > submission.assignment.due_date:
+        if submission.submitted_at > submission.homework.due_date:
             submission.is_late = True
             submission.status = 'late'
         
         submission.save()
         
         # Auto-grade QCM questions if enabled
-        if submission.assignment.auto_grade_qcm:
+        if submission.homework.auto_grade_qcm:
             self._auto_grade_submission(submission)
         
-        return Response({'message': 'Assignment submitted successfully'})
+        return Response({'message': 'Homework submitted successfully'})
     
     @action(detail=True, methods=['post'])
     def grade(self, request, pk=None):
         """Grade a submission (teacher only)"""
         submission = self.get_object()
         
-        if request.user != submission.assignment.teacher and request.user.role not in ['ADMIN', 'STAFF']:
+        if request.user != submission.homework.teacher and request.user.role not in ['ADMIN', 'STAFF']:
             return Response({'error': 'Permission denied'}, status=403)
         
         serializer = SubmissionGradeSerializer(submission, data=request.data, partial=True, context={'request': request})
@@ -597,8 +632,8 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         if submission.status not in ['submitted', 'auto_graded', 'manually_graded']:
             return
         
-        assignment = submission.assignment
-        reward_config = getattr(assignment, 'reward_config', None)
+        homework = submission.homework
+        reward_config = getattr(homework, 'reward_config', None)
         
         if not reward_config:
             return
@@ -611,8 +646,8 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         coins += reward_config.completion_coins
         
         # Performance bonus
-        if submission.total_score and assignment.total_points:
-            score_percentage = (float(submission.total_score) / float(assignment.total_points)) * 100
+        if submission.total_score and homework.total_points:
+            score_percentage = (float(submission.total_score) / float(homework.total_points)) * 100
             
             if score_percentage >= 100:
                 points += reward_config.perfect_score_bonus
@@ -624,8 +659,8 @@ class SubmissionViewSet(viewsets.ModelViewSet):
             points += reward_config.on_time_bonus
             
             # Early submission bonus (>24h early)
-            if submission.submitted_at and assignment.due_date:
-                time_diff = assignment.due_date - submission.submitted_at
+            if submission.submitted_at and homework.due_date:
+                time_diff = homework.due_date - submission.submitted_at
                 if time_diff.total_seconds() > 86400:  # 24 hours
                     points += reward_config.early_submission_bonus
         
@@ -633,7 +668,7 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         points = int(points * float(reward_config.difficulty_multiplier))
         
         # Weekend bonus
-        if assignment.assigned_date.weekday() >= 5:  # Saturday/Sunday
+        if homework.assigned_date.weekday() >= 5:  # Saturday/Sunday
             points = int(points * float(reward_config.weekend_multiplier))
         
         # Save rewards
@@ -655,7 +690,7 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         wallet.weekly_points += submission.points_earned
         wallet.assignments_completed += 1
         
-        if submission.total_score == submission.assignment.total_points:
+        if submission.total_score == submission.homework.total_points:
             wallet.perfect_scores += 1
         
         if not submission.is_late:
@@ -667,12 +702,12 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         # Create transaction record
         RewardTransaction.objects.create(
             student=submission.student,
-            assignment=submission.assignment,
+            homework=submission.homework,
             submission=submission,
             transaction_type='earned',
             points_earned=submission.points_earned,
             coins_earned=submission.coins_earned,
-            reason=f"Completed assignment: {submission.assignment.title}"
+            reason=f"Completed homework: {submission.homework.title}"
         )
 
 # =====================================
@@ -694,7 +729,7 @@ class QuestionAnswerViewSet(viewsets.ModelViewSet):
         if user.role == 'STUDENT':
             queryset = queryset.filter(submission__student=user)
         elif user.role == 'TEACHER':
-            queryset = queryset.filter(submission__assignment__teacher=user)
+            queryset = queryset.filter(submission__homework__teacher=user)
         elif user.role in ['ADMIN', 'STAFF']:
             queryset = queryset.all()
         
@@ -715,7 +750,7 @@ class BookExerciseAnswerViewSet(viewsets.ModelViewSet):
         if user.role == 'STUDENT':
             queryset = queryset.filter(submission__student=user)
         elif user.role == 'TEACHER':
-            queryset = queryset.filter(submission__assignment__teacher=user)
+            queryset = queryset.filter(submission__homework__teacher=user)
         elif user.role in ['ADMIN', 'STAFF']:
             queryset = queryset.all()
         

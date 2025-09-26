@@ -14,8 +14,11 @@ from .models import (
     # Textbook Models
     TextbookLibrary,
     
-    # Assignment Models
-    Assignment, AssignmentReward, Question, QuestionChoice, BookExercise,
+    # Exercise Models
+    Exercise, ExerciseReward,
+
+    # Homework Models (renamed from Assignment)
+    Homework, HomeworkReward, Question, QuestionChoice, BookExercise,
     
     # Submission Models
     Submission, QuestionAnswer, AnswerFile, BookExerciseAnswer, BookExerciseFile
@@ -123,26 +126,47 @@ class QuestionChoiceSerializer(serializers.ModelSerializer):
 
 class QuestionSerializer(serializers.ModelSerializer):
     choices = QuestionChoiceSerializer(many=True, read_only=True)
-    
+
     class Meta:
         model = Question
         fields = '__all__'
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        # Ensure choices are always included and properly ordered
+        if instance.choices.exists():
+            choices = instance.choices.all().order_by('order')
+            representation['choices'] = QuestionChoiceSerializer(choices, many=True).data
+        else:
+            representation['choices'] = []
+        return representation
+
 class QuestionCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating questions with choices"""
-    choices = QuestionChoiceSerializer(many=True, required=False)
-    
+    choices = serializers.ListField(
+        child=serializers.DictField(),
+        required=False,
+        write_only=True
+    )
+
     class Meta:
         model = Question
         fields = '__all__'
-    
+
     def create(self, validated_data):
         choices_data = validated_data.pop('choices', [])
+
+        # For standalone questions, set the author
+        if not validated_data.get('homework') and not validated_data.get('exercise'):
+            validated_data['author'] = self.context['request'].user
+
         question = Question.objects.create(**validated_data)
-        
+
         for choice_data in choices_data:
+            # Remove the question field if it exists (shouldn't be needed)
+            choice_data.pop('question', None)
             QuestionChoice.objects.create(question=question, **choice_data)
-        
+
         return question
 
 class BookExerciseSerializer(serializers.ModelSerializer):
@@ -151,15 +175,48 @@ class BookExerciseSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 # =====================================
-# ASSIGNMENT SERIALIZERS
+# EXERCISE SERIALIZERS
 # =====================================
 
-class AssignmentRewardSerializer(serializers.ModelSerializer):
+class ExerciseRewardSerializer(serializers.ModelSerializer):
     class Meta:
-        model = AssignmentReward
+        model = ExerciseReward
+        exclude = ['id', 'exercise']
+
+class ExerciseCreateSerializer(serializers.ModelSerializer):
+    reward_config = ExerciseRewardSerializer(write_only=True)
+
+    class Meta:
+        model = Exercise
+        fields = '__all__'
+        read_only_fields = ['created_by']
+
+    def create(self, validated_data):
+        reward_data = validated_data.pop('reward_config')
+        validated_data['created_by'] = self.context['request'].user
+        exercise = Exercise.objects.create(**validated_data)
+        ExerciseReward.objects.create(exercise=exercise, **reward_data)
+        return exercise
+
+class ExerciseDetailSerializer(serializers.ModelSerializer):
+    reward_config = ExerciseRewardSerializer(read_only=True)
+    created_by = BasicUserSerializer(read_only=True)
+    questions = QuestionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Exercise
         fields = '__all__'
 
-class AssignmentListSerializer(serializers.ModelSerializer):
+# =====================================
+# HOMEWORK SERIALIZERS (renamed from ASSIGNMENT)
+# =====================================
+
+class HomeworkRewardSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HomeworkReward
+        fields = '__all__'
+
+class HomeworkListSerializer(serializers.ModelSerializer):
     """List view serializer for assignments"""
     teacher = BasicUserSerializer(read_only=True)
     subject_name = serializers.CharField(source='subject.name', read_only=True)
@@ -169,19 +226,19 @@ class AssignmentListSerializer(serializers.ModelSerializer):
     submissions_count = serializers.ReadOnlyField()
     
     class Meta:
-        model = Assignment
+        model = Homework
         fields = [
-            'id', 'title', 'title_arabic', 'assignment_type', 'assignment_format',
+            'id', 'title', 'title_arabic', 'homework_type', 'homework_format',
             'due_date', 'total_points', 'is_published', 'is_overdue', 'submissions_count',
             'teacher', 'subject_name', 'grade_name', 'class_name', 'created_at'
         ]
 
-class AssignmentDetailSerializer(serializers.ModelSerializer):
+class HomeworkDetailSerializer(serializers.ModelSerializer):
     """Detail view serializer for assignments"""
     teacher = BasicUserSerializer(read_only=True)
     questions = QuestionSerializer(many=True, read_only=True)
     book_exercises = BookExerciseSerializer(many=True, read_only=True)
-    reward_config = AssignmentRewardSerializer(read_only=True)
+    reward_config = HomeworkRewardSerializer(read_only=True)
     subject_name = serializers.CharField(source='subject.name', read_only=True)
     grade_name = serializers.CharField(source='grade.name', read_only=True)
     class_name = serializers.CharField(source='school_class.name', read_only=True)
@@ -189,13 +246,13 @@ class AssignmentDetailSerializer(serializers.ModelSerializer):
     submissions_count = serializers.ReadOnlyField()
     
     class Meta:
-        model = Assignment
+        model = Homework
         fields = '__all__'
 
-class AssignmentCreateSerializer(serializers.ModelSerializer):
+class HomeworkCreateSerializer(serializers.ModelSerializer):
     """Create/Update serializer for assignments"""
     class Meta:
-        model = Assignment
+        model = Homework
         fields = '__all__'
         read_only_fields = ['teacher', 'assigned_date']
     
@@ -285,7 +342,7 @@ class BookExerciseAnswerSerializer(serializers.ModelSerializer):
 class SubmissionListSerializer(serializers.ModelSerializer):
     """List view for submissions"""
     student = BasicUserSerializer(read_only=True)
-    assignment_title = serializers.CharField(source='assignment.title', read_only=True)
+    assignment_title = serializers.CharField(source='homework.title', read_only=True)
     
     class Meta:
         model = Submission
@@ -298,7 +355,7 @@ class SubmissionListSerializer(serializers.ModelSerializer):
 class SubmissionDetailSerializer(serializers.ModelSerializer):
     """Detail view for submissions"""
     student = BasicUserSerializer(read_only=True)
-    assignment = AssignmentDetailSerializer(read_only=True)
+    homework = HomeworkDetailSerializer(read_only=True)
     answers = QuestionAnswerSerializer(many=True, read_only=True)
     book_exercise_answers = BookExerciseAnswerSerializer(many=True, read_only=True)
     graded_by = BasicUserSerializer(read_only=True)
@@ -312,7 +369,7 @@ class SubmissionCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Submission
         fields = [
-            'assignment', 'status', 'started_at', 'submitted_at',
+            'homework', 'status', 'started_at', 'submitted_at',
             'time_taken', 'attempt_number'
         ]
         read_only_fields = ['student']
@@ -344,7 +401,7 @@ class SubmissionGradeSerializer(serializers.ModelSerializer):
 # STATISTICS SERIALIZERS
 # =====================================
 
-class AssignmentStatisticsSerializer(serializers.Serializer):
+class HomeworkStatisticsSerializer(serializers.Serializer):
     """Statistics for an assignment"""
     total_students = serializers.IntegerField()
     submitted_count = serializers.IntegerField()
@@ -388,7 +445,7 @@ class BulkQuestionCreateSerializer(serializers.Serializer):
         
         return questions
 
-class AssignmentDuplicateSerializer(serializers.Serializer):
+class HomeworkDuplicateSerializer(serializers.Serializer):
     """Serializer for duplicating assignments"""
     new_title = serializers.CharField(max_length=200)
     new_due_date = serializers.DateTimeField()

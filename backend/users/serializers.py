@@ -13,17 +13,40 @@ class ProfileSerializer(serializers.ModelSerializer):
     ar_full_name = serializers.ReadOnlyField()
     profile_picture_url = serializers.ReadOnlyField()
     age = serializers.ReadOnlyField()
-    
+    school_subject = serializers.SerializerMethodField()
+    teachable_grades = serializers.SerializerMethodField()
+
     class Meta:
         model = Profile
         fields = [
-            'ar_first_name', 'ar_last_name', 'phone', 'date_of_birth', 'address', 
-            'profile_picture', 'profile_picture_url', 'bio', 'emergency_contact_name', 
-            'emergency_contact_phone', 'linkedin_url', 'twitter_url', 'department', 
-            'position', 'school_subject', 'hire_date', 'salary', 'full_name', 'ar_full_name', 'age', 
+            'ar_first_name', 'ar_last_name', 'phone', 'date_of_birth', 'address',
+            'profile_picture', 'profile_picture_url', 'bio', 'emergency_contact_name',
+            'emergency_contact_phone', 'linkedin_url', 'twitter_url', 'department',
+            'position', 'school_subject', 'teachable_grades', 'hire_date', 'salary', 'full_name', 'ar_full_name', 'age',
             'created_at', 'updated_at'
         ]
         read_only_fields = ('created_at', 'updated_at')
+    
+    def get_school_subject(self, obj):
+        """Return school subject details if available"""
+        if obj.school_subject:
+            return {
+                'id': obj.school_subject.id,
+                'name': obj.school_subject.name,
+                'code': getattr(obj.school_subject, 'code', None)
+            }
+        return None
+
+    def get_teachable_grades(self, obj):
+        """Return teachable grades list"""
+        return [
+            {
+                'id': grade.id,
+                'name': grade.name,
+                'level': getattr(grade, 'level', None)
+            }
+            for grade in obj.teachable_grades.all()
+        ]
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):
@@ -44,6 +67,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     department = serializers.CharField(required=False, allow_blank=True)
     position = serializers.CharField(required=False, allow_blank=True)
     school_subject = serializers.IntegerField(required=False, allow_null=True)
+    teachable_grades = serializers.ListField(child=serializers.IntegerField(), required=False, allow_empty=True)
     hire_date = serializers.DateField(required=False, allow_null=True)
     
     # Student enrollment fields (only used if role is STUDENT)
@@ -63,9 +87,9 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         fields = [
             'email', 'password', 'first_name', 'last_name', 'role',
             # Profile fields
-            'ar_first_name', 'ar_last_name', 'phone', 'date_of_birth', 'address', 'bio', 
+            'ar_first_name', 'ar_last_name', 'phone', 'date_of_birth', 'address', 'bio',
             'emergency_contact_name', 'emergency_contact_phone',
-            'department', 'position', 'school_subject', 'hire_date',
+            'department', 'position', 'school_subject', 'teachable_grades', 'hire_date',
             # Student enrollment fields
             'school_class_id', 'academic_year_id', 'enrollment_date', 'student_number',
             # Parent information fields
@@ -135,7 +159,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         profile_fields = [
             'ar_first_name', 'ar_last_name', 'phone', 'date_of_birth', 'address', 'bio',
             'emergency_contact_name', 'emergency_contact_phone',
-            'department', 'position', 'school_subject', 'hire_date'
+            'department', 'position', 'school_subject', 'teachable_grades', 'hire_date'
         ]
         
         for field in profile_fields:
@@ -186,6 +210,18 @@ class UserRegisterSerializer(serializers.ModelSerializer):
                             value = None
                     except (ValueError, Subject.DoesNotExist):
                         value = None
+                elif attr == 'teachable_grades' and value:
+                    # Handle teachable_grades many-to-many field
+                    from schools.models import Grade
+                    grade_ids = value if isinstance(value, list) else []
+                    profile.save()  # Save profile before setting M2M
+                    if grade_ids:
+                        try:
+                            grades = Grade.objects.filter(id__in=grade_ids)
+                            profile.teachable_grades.set(grades)
+                        except Exception:
+                            pass
+                    continue  # Skip the normal setattr since we handled it
                 setattr(profile, attr, value)
             profile.save()
         
@@ -297,6 +333,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     department = serializers.CharField(required=False, allow_blank=True)
     position = serializers.CharField(required=False, allow_blank=True)
     school_subject = serializers.IntegerField(required=False, allow_null=True)
+    teachable_grades = serializers.ListField(child=serializers.IntegerField(), required=False, allow_empty=True)
     hire_date = serializers.DateField(required=False, allow_null=True)
     salary = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, allow_null=True)
     profile_picture_url = serializers.SerializerMethodField()
@@ -307,10 +344,10 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             'id', 'email', 'first_name', 'last_name', 'role', 'is_active',
             'created_at', 'updated_at',
             # Profile fields
-            'ar_first_name', 'ar_last_name', 'phone', 'date_of_birth', 'address', 
-            'profile_picture', 'profile_picture_url', 'bio', 
+            'ar_first_name', 'ar_last_name', 'phone', 'date_of_birth', 'address',
+            'profile_picture', 'profile_picture_url', 'bio',
             'emergency_contact_name', 'emergency_contact_phone',
-            'linkedin_url', 'twitter_url', 'department', 'position', 'school_subject',
+            'linkedin_url', 'twitter_url', 'department', 'position', 'school_subject', 'teachable_grades',
             'hire_date', 'salary'
         ]
         read_only_fields = ('id', 'email', 'role', 'is_active', 'created_at', 'updated_at', 'profile_picture_url')
@@ -329,7 +366,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         profile_fields = [
             'ar_first_name', 'ar_last_name', 'phone', 'date_of_birth', 'address',
             'profile_picture', 'bio', 'emergency_contact_name', 'emergency_contact_phone',
-            'linkedin_url', 'twitter_url', 'department', 'position', 'school_subject', 'hire_date', 'salary'
+            'linkedin_url', 'twitter_url', 'department', 'position', 'school_subject', 'teachable_grades', 'hire_date', 'salary'
         ]
         
         for field in profile_fields:
@@ -357,6 +394,20 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                                 value = None
                         except (ValueError, Subject.DoesNotExist):
                             value = None
+                    elif attr == 'teachable_grades':
+                        # Handle teachable_grades many-to-many field
+                        from schools.models import Grade
+                        grade_ids = value if isinstance(value, list) else []
+                        profile.save()  # Save profile before setting M2M
+                        if grade_ids:
+                            try:
+                                grades = Grade.objects.filter(id__in=grade_ids)
+                                profile.teachable_grades.set(grades)
+                            except Exception:
+                                pass
+                        else:
+                            profile.teachable_grades.clear()
+                        continue  # Skip the normal setattr since we handled it
                     setattr(profile, attr, value)
                 profile.save()
             except Profile.DoesNotExist:
@@ -393,6 +444,14 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                 'department': profile.department,
                 'position': profile.position,
                 'school_subject': school_subject_data,
+                'teachable_grades': [
+                    {
+                        'id': grade.id,
+                        'name': grade.name,
+                        'level': getattr(grade, 'level', None)
+                    }
+                    for grade in profile.teachable_grades.all()
+                ],
                 'hire_date': profile.hire_date,
                 'salary': profile.salary,
             })
@@ -463,14 +522,17 @@ class UserBasicSerializer(serializers.ModelSerializer):
     Useful for lists where you don't need all profile details.
     """
     full_name = serializers.ReadOnlyField()
+    ar_first_name = serializers.CharField(source='profile.ar_first_name', read_only=True)
+    ar_last_name = serializers.CharField(source='profile.ar_last_name', read_only=True)
     profile_picture_url = serializers.SerializerMethodField()
     phone = serializers.SerializerMethodField()
     position = serializers.SerializerMethodField()
-    
+    school_subject = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ('id', 'email', 'first_name', 'last_name', 'full_name', 'role', 'profile_picture_url', 'phone', 'position')
-    
+        fields = ('id', 'email', 'first_name', 'last_name', 'ar_first_name', 'ar_last_name', 'full_name', 'role', 'is_active', 'is_online', 'last_seen', 'last_login', 'profile_picture_url', 'phone', 'position', 'school_subject')
+
     def get_profile_picture_url(self, obj):
         try:
             if obj.profile.profile_picture:
@@ -478,18 +540,32 @@ class UserBasicSerializer(serializers.ModelSerializer):
         except Profile.DoesNotExist:
             pass
         return None
-    
+
     def get_phone(self, obj):
         try:
             return obj.profile.phone
         except Profile.DoesNotExist:
             return None
-    
+
     def get_position(self, obj):
         try:
             return obj.profile.position
         except Profile.DoesNotExist:
             return None
+    
+    def get_school_subject(self, obj):
+        try:
+            if obj.profile.school_subject:
+                subject = obj.profile.school_subject
+                return {
+                    'id': subject.id,
+                    'name': subject.name,
+                    'name_arabic': subject.name_arabic,
+                    'name_french': subject.name_french
+                }
+        except Profile.DoesNotExist:
+            pass
+        return None
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):

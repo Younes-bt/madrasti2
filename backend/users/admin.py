@@ -39,7 +39,7 @@ class ProfileInline(admin.StackedInline):
             'classes': ('collapse',)
         }),
         ('Professional Information', {
-            'fields': ('department', 'position', 'school_subject', 'hire_date', 'salary'),
+            'fields': ('department', 'position', 'school_subject', 'teachable_grades', 'hire_date', 'salary'),
             'classes': ('collapse',)
         }),
     )
@@ -75,7 +75,7 @@ class CustomUserAdmin(UserAdmin):
     
     search_fields = ('email', 'first_name', 'last_name', 'profile__phone', 'profile__school_subject__name')
     filter_horizontal = ()
-    list_filter = ('role', 'is_staff', 'is_superuser', 'is_active', 'profile__school_subject', 'groups')
+    list_filter = ('role', 'is_staff', 'is_superuser', 'is_active', 'profile__school_subject', 'profile__teachable_grades', 'groups')
     
     def get_school_subject(self, obj):
         """Display school subject for teachers."""
@@ -93,7 +93,7 @@ class ProfileAdmin(admin.ModelAdmin):
     Standalone Profile admin for advanced profile management.
     """
     list_display = ('user', 'ar_full_name', 'phone', 'department', 'position', 'school_subject', 'hire_date', 'created_at')
-    list_filter = ('department', 'position', 'school_subject', 'hire_date')
+    list_filter = ('department', 'position', 'school_subject', 'teachable_grades', 'hire_date')
     search_fields = ('user__email', 'user__first_name', 'user__last_name', 'ar_first_name', 'ar_last_name', 'phone', 'department', 'school_subject__name')
     readonly_fields = ('created_at', 'updated_at', 'full_name', 'ar_full_name', 'age', 'profile_picture_url')
     
@@ -121,7 +121,7 @@ class ProfileAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
         ('Professional Information', {
-            'fields': ('department', 'position', 'school_subject', 'hire_date', 'salary')
+            'fields': ('department', 'position', 'school_subject', 'teachable_grades', 'hire_date', 'salary')
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),

@@ -29,6 +29,7 @@ const AddGradePage = () => {
   const [formData, setFormData] = useState({
     educational_level: '',
     grade_number: '',
+    code: '',
     name: '',
     name_arabic: '',
     name_french: '',
@@ -86,6 +87,11 @@ const AddGradePage = () => {
     // Validate grade number
     if (!formData.grade_number || formData.grade_number < 1) {
       newErrors.grade_number = t('grades.validation.gradeNumberRequired');
+    }
+
+    // Validate code
+    if (!formData.code.trim()) {
+      newErrors.code = t('grades.validation.codeRequired', 'Code is required');
     }
 
     // Validate name
@@ -228,6 +234,24 @@ const AddGradePage = () => {
                   />
                   {errors.grade_number && (
                     <p className="text-sm text-red-600">{errors.grade_number}</p>
+                  )}
+                </div>
+
+                {/* Grade Code */}
+                <div className="space-y-2">
+                  <Label htmlFor="code" className="text-sm font-medium">
+                    {t('grades.code', 'Grade Code')} <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="code"
+                    name="code"
+                    value={formData.code}
+                    onChange={handleInputChange}
+                    placeholder={t('grades.codePlaceholder', 'e.g., G1, 1BAC')}
+                    className={errors.code ? 'border-red-500' : ''}
+                  />
+                  {errors.code && (
+                    <p className="text-sm text-red-600">{errors.code}</p>
                   )}
                 </div>
 

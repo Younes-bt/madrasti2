@@ -149,19 +149,42 @@ class AuthService {
   }
 
   /**
-   * User Logout
-   * Clears all stored authentication data
+   * Send Heartbeat
+   * Updates user's last seen timestamp and online status
+   * @returns {Promise<Object>} Heartbeat response
    */
-  logout() {
+  async sendHeartbeat() {
     try {
+      const response = await apiMethods.post('users/heartbeat/');
+      return response;
+    } catch (error) {
+      console.error('Heartbeat failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * User Logout
+   * Calls backend logout endpoint and clears all stored authentication data
+   */
+  async logout() {
+    try {
+      // Call backend logout endpoint to mark user as offline
+      try {
+        await apiMethods.post('users/logout/');
+      } catch (error) {
+        // Log but don't throw - we still want to clear local storage
+        console.error('Backend logout failed:', error);
+      }
+
       // Clear stored tokens and user data using authStorage
       authStorage.remove('token');
       authStorage.remove('refreshToken');
       authStorage.remove('user');
-      
+
       // Dispatch logout event
       window.dispatchEvent(new CustomEvent('auth-logout'));
-      
+
       return true;
     } catch (error) {
       console.error('Logout error:', error);
@@ -276,6 +299,7 @@ export const {
   verifyToken,
   changePassword,
   requestPasswordReset,
+  sendHeartbeat,
   logout,
   isAuthenticated,
   isTokenValid,

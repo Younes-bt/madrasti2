@@ -145,11 +145,11 @@ const TeachersManagementPage = () => {
       setTeachers(teachersData);
 
       // Update statistics based on all teachers data
-      const activeCount = teachersData.filter(teacher => teacher.is_active).length;
+      const onlineCount = teachersData.filter(teacher => teacher.is_online).length;
       setStats({
         total: teachersData.length,
-        active: activeCount,
-        inactive: teachersData.length - activeCount
+        active: onlineCount,
+        inactive: teachersData.length - onlineCount
       });
 
 
@@ -187,7 +187,7 @@ const TeachersManagementPage = () => {
     // Apply status filter
     let matchesStatus = true;
     if (statusFilter !== 'all') {
-      matchesStatus = statusFilter === 'active' ? teacher.is_active : !teacher.is_active;
+      matchesStatus = statusFilter === 'active' ? teacher.is_online : !teacher.is_online;
     }
 
     return matchesSearch && matchesStatus;
@@ -200,6 +200,18 @@ const TeachersManagementPage = () => {
       return `${teacher.ar_first_name || ''} ${teacher.ar_last_name || ''}`.trim();
     }
     return teacher.full_name || `${teacher.first_name || ''} ${teacher.last_name || ''}`.trim();
+  };
+
+  const getDisplaySubject = (subject) => {
+    if (!subject) return null;
+    const lang = i18n.language;
+    if (lang === 'ar' && subject.name_arabic) {
+      return subject.name_arabic;
+    }
+    if (lang === 'fr' && subject.name_french) {
+      return subject.name_french;
+    }
+    return subject.name;
   };
 
   const handleViewTeacher = (teacherId) => {
@@ -251,7 +263,7 @@ const TeachersManagementPage = () => {
               </div>
               <div className="absolute -bottom-1 -right-1">
                 <motion.div
-                  className={`w-4 h-4 rounded-full border-2 border-white ${teacher.is_active ? 'bg-green-500' : 'bg-gray-400'}`}
+                  className={`w-4 h-4 rounded-full border-2 border-white ${teacher.is_online ? 'bg-green-500' : 'bg-gray-400'}`}
                   animate={{ scale: [1, 1.2, 1] }}
                   transition={{ repeat: Infinity, duration: 2 }}
                 />
@@ -266,8 +278,8 @@ const TeachersManagementPage = () => {
                 {getDisplayName(teacher)}
               </motion.h3>
               <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <Award className="h-3 w-3" />
-                {teacher.position || 'Teacher'}
+                <BookOpen className="h-3 w-3" />
+                {getDisplaySubject(teacher.school_subject) || teacher.position || t('teachers.teacher', 'Teacher')}
               </p>
               <motion.div
                 initial={{ scale: 0 }}
@@ -275,12 +287,12 @@ const TeachersManagementPage = () => {
                 transition={{ delay: index * 0.1 + 0.3 }}
               >
                 <Badge
-                  className={`mt-2 text-xs transition-colors ${teacher.is_active 
+                  className={`mt-2 text-xs transition-colors ${teacher.is_online 
                     ? 'bg-green-100 text-green-800 hover:bg-green-200 border border-green-300' 
                     : 'bg-gray-100 text-gray-800 hover:bg-gray-200 border border-gray-300'
                   }`}
                 >
-                  {teacher.is_active ? t('status.active') : t('status.inactive')}
+                  {teacher.is_online ? t('status.online') : t('status.offline')}
                 </Badge>
               </motion.div>
             </div>

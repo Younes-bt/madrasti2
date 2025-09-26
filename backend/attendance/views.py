@@ -162,6 +162,106 @@ class TimetableSessionViewSet(viewsets.ModelViewSet):
         
         serializer = TodaySessionsSerializer(sessions, many=True)
         return Response({'sessions': serializer.data})
+    
+    @action(detail=False, methods=['get'])
+    def teacher_classes(self, request):
+        """Get all classes assigned to the current teacher"""
+        print(f"DEBUG: teacher_classes called by user: {request.user} (role: {getattr(request.user, 'role', 'No role')})")
+        
+        if not request.user.is_authenticated:
+            return Response({'error': 'Authentication required'}, 
+                          status=status.HTTP_401_UNAUTHORIZED)
+                          
+        if request.user.role != 'TEACHER':
+            return Response({'error': 'Only teachers can access this endpoint'}, 
+                          status=status.HTTP_403_FORBIDDEN)
+        
+        # Get unique classes for this teacher through timetable sessions
+        from schools.models import SchoolClass
+        print(f"DEBUG: Looking for classes for teacher: {request.user.id}")
+        
+        classes = SchoolClass.objects.filter(
+            timetables__sessions__teacher=request.user,
+            timetables__sessions__is_active=True,
+            timetables__is_active=True
+        ).distinct().select_related(
+            'grade__educational_level',
+            'room'
+        ).prefetch_related(
+            'student_enrollments__student',
+            'timetables__sessions__subject'
+        )
+        
+        print(f"DEBUG: Found {classes.count()} classes for teacher")
+        
+        # Format the response
+        classes_data = []
+        for school_class in classes:
+            # Get active students
+            active_students = school_class.student_enrollments.filter(
+                is_active=True
+            ).select_related('student')
+            
+            # Get subjects taught by this teacher in this class
+            teacher_subjects = TimetableSession.objects.filter(
+                teacher=request.user,
+                timetable__school_class=school_class,
+                is_active=True
+            ).select_related('subject').values(
+                'subject__id', 'subject__name', 'subject__name_arabic', 'subject__code'
+            ).distinct()
+            
+            # Get weekly sessions count
+            weekly_sessions = TimetableSession.objects.filter(
+                teacher=request.user,
+                timetable__school_class=school_class,
+                is_active=True
+            ).count()
+            
+            classes_data.append({
+                'id': school_class.id,
+                'name': school_class.name,
+                'section': school_class.section,
+                'grade': {
+                    'id': school_class.grade.id,
+                    'name': school_class.grade.name,
+                    'grade_number': school_class.grade.grade_number,
+                    'educational_level': {
+                        'id': school_class.grade.educational_level.id,
+                        'name': school_class.grade.educational_level.name,
+                        'level': school_class.grade.educational_level.level
+                    }
+                },
+                'room': {
+                    'id': school_class.room.id,
+                    'name': school_class.room.name,
+                    'type': school_class.room.room_type
+                } if school_class.room else None,
+                'student_count': active_students.count(),
+                'students': [
+                    {
+                        'id': enrollment.student.id,
+                        'full_name': enrollment.student.full_name,
+                        'first_name': enrollment.student.first_name,
+                        'last_name': enrollment.student.last_name,
+                        'student_number': enrollment.student_number,
+                        'enrollment_date': enrollment.enrollment_date
+                    }
+                    for enrollment in active_students
+                ],
+                'subjects_taught': list(teacher_subjects),
+                'weekly_sessions': weekly_sessions,
+                'academic_year': {
+                    'id': school_class.timetables.filter(is_active=True).first().academic_year.id,
+                    'year': school_class.timetables.filter(is_active=True).first().academic_year.year
+                } if school_class.timetables.filter(is_active=True).exists() else None
+            })
+        
+        print(f"DEBUG: Returning {len(classes_data)} classes data")
+        return Response({
+            'classes': classes_data,
+            'total_classes': len(classes_data)
+        })
 
 # =====================================
 # ATTENDANCE SESSION VIEWSETS

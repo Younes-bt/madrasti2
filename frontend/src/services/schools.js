@@ -275,6 +275,53 @@ class SchoolsService {
     }
   }
 
+  // ==================== TRACKS ====================
+
+  /**
+   * Get Tracks
+   * @param {Object} params - Query parameters
+   * @returns {Promise<Object>} Tracks list
+   */
+  async getTracks(params = {}) {
+    try {
+      const response = await apiMethods.get('schools/tracks/', { params });
+      return response;
+    } catch (error) {
+      console.error('Get tracks failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get Track by ID
+   * @param {number} trackId - Track ID
+   * @returns {Promise<Object>} Track data
+   */
+  async getTrackById(trackId) {
+    try {
+      const response = await apiMethods.get(`schools/tracks/${trackId}/`);
+      return response;
+    } catch (error) {
+      console.error('Get track failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get Tracks for a Grade
+   * @param {number} gradeId - Grade ID
+   * @returns {Promise<Object>} Tracks for grade
+   */
+  async getTracksForGrade(gradeId) {
+    try {
+      const response = await apiMethods.get('schools/tracks/', { params: { grade: gradeId } });
+      return response;
+    } catch (error) {
+      console.error('Get tracks for grade failed:', error);
+      throw error;
+    }
+  }
+
   // ==================== CLASSES ====================
 
   /**

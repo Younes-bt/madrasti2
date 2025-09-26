@@ -26,29 +26,35 @@ export const ThemeProvider = ({
   useEffect(() => {
     const root = window.document.documentElement
 
-    root.classList.remove('light', 'dark')
+    // Remove dark class first
+    root.classList.remove('dark')
 
     if (theme === 'system') {
       const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches
         ? 'dark'
         : 'light'
 
-      root.classList.add(systemTheme)
-    } else {
-      root.classList.add(theme)
+      // Only add 'dark' class if system preference is dark
+      if (systemTheme === 'dark') {
+        root.classList.add('dark')
+      }
+    } else if (theme === 'dark') {
+      // Only add 'dark' class for dark theme
+      root.classList.add('dark')
     }
+    // For light theme, we don't add any class (Tailwind default is light)
   }, [theme])
 
   const value = {
     theme,
-    setTheme: (theme) => {
+    setTheme: (newTheme) => {
       try {
-        localStorage.setItem(storageKey, theme)
+        localStorage.setItem(storageKey, newTheme)
       } catch (error) {
         // Handle storage errors
         console.warn('Failed to save theme preference:', error)
       }
-      setTheme(theme)
+      setTheme(newTheme)
     },
   }
 

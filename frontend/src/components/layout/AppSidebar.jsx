@@ -1,15 +1,15 @@
 "use client"
 
 import React, { useState } from 'react'
-import { 
-  Home, 
-  Users, 
-  BookOpen, 
-  Calendar, 
-  ClipboardList, 
-  Award, 
-  Settings, 
-  BarChart3, 
+import {
+  Home,
+  Users,
+  BookOpen,
+  Calendar,
+  ClipboardList,
+  Award,
+  Settings,
+  BarChart3,
   GraduationCap,
   UserCheck,
   FileText,
@@ -35,7 +35,8 @@ import {
   Layers,
   Users2,
   CarFront,
-  Monitor
+  Monitor,
+  Target
 } from 'lucide-react'
 import { Badge } from '../ui/badge'
 import { useLanguage } from '../../hooks/useLanguage'
@@ -118,6 +119,7 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
             { key: 'academic-years', label: t('adminSidebar.academicManagement.academicYears'), path: '/admin/academic-management/academic-years' },
             { key: 'educational-levels', label: t('adminSidebar.academicManagement.educationalLevels'), path: '/admin/academic-management/educational-levels' },
             { key: 'grades', label: t('adminSidebar.academicManagement.grades'), path: '/admin/academic-management/grades' },
+            { key: 'tracks', label: t('adminSidebar.academicManagement.tracks'), path: '/admin/academic-management/tracks' },
             { key: 'classes', label: t('adminSidebar.academicManagement.classes'), path: '/admin/academic-management/classes' },
             { key: 'subjects', label: t('adminSidebar.academicManagement.subjects'), path: '/admin/academic-management/subjects' },
             { key: 'timetables', label: t('adminSidebar.academicManagement.timetables'), path: '/admin/academic-management/timetables' },
@@ -131,6 +133,7 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
           tooltip: t('adminSidebar.educationManagement.tooltip'),
           items: [
             { key: 'lessons-courses', label: t('adminSidebar.educationManagement.lessonsCourses'), path: '/admin/education-management/lessons' },
+            { key: 'exercises', label: t('adminSidebar.educationManagement.exercises'), path: '/admin/education-management/exercises' },
             { key: 'assignments', label: t('adminSidebar.educationManagement.assignments'), path: '/admin/education-management/assignments' },
             { key: 'homework', label: t('adminSidebar.educationManagement.homework'), path: '/admin/education-management/homework' },
             { key: 'exams', label: t('adminSidebar.educationManagement.exams'), path: '/admin/education-management/exams' },
@@ -180,43 +183,96 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
       ],
 
       [USER_ROLES.TEACHER]: [
+        // 👨‍🏫 My Teaching Profile
         {
-          key: 'lessons',
+          key: 'teacher-profile',
+          icon: UserCog,
+          label: t('teacherSidebar.profile.title'),
+          tooltip: t('teacherSidebar.profile.tooltip'),
+          items: [
+            { key: 'profile-overview', label: t('teacherSidebar.profile.overview'), path: '/teacher/profile/overview' },
+            { key: 'my-classes', label: t('teacherSidebar.profile.myClasses'), path: '/teacher/profile/my-classes' },
+            { key: 'my-schedule', label: t('teacherSidebar.profile.mySchedule'), path: '/teacher/profile/my-schedule' },
+          ]
+        },
+        // 📚 Lessons & Content
+        {
+          key: 'lessons-content',
           icon: BookOpen,
-          label: t('navigation.lessons'),
-          tooltip: t('navigation.lessons'),
+          label: t('teacherSidebar.lessonsContent.title'),
+          tooltip: t('teacherSidebar.lessonsContent.tooltip'),
           items: [
-            { key: 'lessons-list', label: t('teacher.myClasses'), path: ROUTES.LESSONS.LIST },
-            { key: 'lessons-create', label: t('lessons.createLesson'), path: ROUTES.LESSONS.CREATE },
+            { key: 'lessons', label: t('teacherSidebar.lessonsContent.lessons'), path: '/teacher/content/lessons' },
+            { key: 'lesson-exercises', label: t('teacherSidebar.lessonsContent.lessonExercises'), path: '/teacher/content/lesson-exercises' },
+            { key: 'materials', label: t('teacherSidebar.lessonsContent.materials'), path: '/teacher/content/materials' },
+            { key: 'media-library', label: t('teacherSidebar.lessonsContent.mediaLibrary'), path: '/teacher/content/media-library' },
+            { key: 'templates', label: t('teacherSidebar.lessonsContent.templates'), path: '/teacher/content/templates' },
           ]
         },
+        // 📝 Assignments & Assessment (Mandatory)
         {
-          key: 'homework',
-          icon: ClipboardList,
-          label: t('navigation.homework'),
-          tooltip: t('navigation.homework'),
+          key: 'assignments-assessment',
+          icon: ClipboardCheck,
+          label: t('teacherSidebar.assignments.title'),
+          tooltip: t('teacherSidebar.assignments.tooltip'),
           items: [
-            { key: 'homework-list', label: t('assignments.assignments'), path: ROUTES.HOMEWORK.LIST },
-            { key: 'homework-create', label: t('homework.createAssignment'), path: ROUTES.HOMEWORK.CREATE },
-            { key: 'homework-grades', label: t('teacher.pendingGrading'), path: ROUTES.HOMEWORK.GRADES },
+            { key: 'homework', label: t('teacherSidebar.assignments.homework'), path: '/teacher/assignments/homework' },
+            { key: 'exams', label: t('teacherSidebar.assignments.exams'), path: '/teacher/assignments/exams' },
+            { key: 'grading', label: t('teacherSidebar.assignments.grading'), path: '/teacher/assignments/grading' },
+            { key: 'assessment-tools', label: t('teacherSidebar.assignments.assessmentTools'), path: '/teacher/assignments/assessment-tools' },
           ]
         },
+        // 👥 Student Management
         {
-          key: 'attendance',
-          icon: UserCheck,
-          label: t('navigation.attendance'),
-          tooltip: t('navigation.attendance'),
-          items: [
-            { key: 'attendance-today', label: t('time.today'), path: ROUTES.ATTENDANCE.LIST },
-            { key: 'attendance-reports', label: t('navigation.reports'), path: ROUTES.ATTENDANCE.REPORTS },
-          ]
-        },
-        {
-          key: 'students',
+          key: 'student-management',
           icon: Users,
-          label: t('navigation.students'),
-          tooltip: t('navigation.students'),
-          path: '/teacher/students',
+          label: t('teacherSidebar.students.title'),
+          tooltip: t('teacherSidebar.students.tooltip'),
+          items: [
+            { key: 'my-students', label: t('teacherSidebar.students.myStudents'), path: '/teacher/students/my-students' },
+            { key: 'attendance', label: t('teacherSidebar.students.attendance'), path: '/teacher/students/attendance' },
+            { key: 'progress', label: t('teacherSidebar.students.progress'), path: '/teacher/students/progress' },
+            { key: 'parent-communication', label: t('teacherSidebar.students.parentCommunication'), path: '/teacher/students/parent-communication' },
+          ]
+        },
+        // 📊 Teaching Analytics
+        {
+          key: 'teaching-analytics',
+          icon: BarChart3,
+          label: t('teacherSidebar.analytics.title'),
+          tooltip: t('teacherSidebar.analytics.tooltip'),
+          items: [
+            { key: 'class-performance', label: t('teacherSidebar.analytics.classPerformance'), path: '/teacher/analytics/class-performance' },
+            { key: 'student-analytics', label: t('teacherSidebar.analytics.studentAnalytics'), path: '/teacher/analytics/student-analytics' },
+            { key: 'assignment-stats', label: t('teacherSidebar.analytics.assignmentStats'), path: '/teacher/analytics/assignment-stats' },
+            { key: 'reports', label: t('teacherSidebar.analytics.reports'), path: '/teacher/analytics/reports' },
+          ]
+        },
+        // 📅 Planning & Organization
+        {
+          key: 'planning-organization',
+          icon: Calendar1,
+          label: t('teacherSidebar.planning.title'),
+          tooltip: t('teacherSidebar.planning.tooltip'),
+          items: [
+            { key: 'lesson-planner', label: t('teacherSidebar.planning.lessonPlanner'), path: '/teacher/planning/lesson-planner' },
+            { key: 'calendar', label: t('teacherSidebar.planning.calendar'), path: '/teacher/planning/calendar' },
+            { key: 'tasks', label: t('teacherSidebar.planning.tasks'), path: '/teacher/planning/tasks' },
+            { key: 'resources', label: t('teacherSidebar.planning.resources'), path: '/teacher/planning/resources' },
+          ]
+        },
+        // 💬 Communication Hub
+        {
+          key: 'communication-hub',
+          icon: MessageSquare,
+          label: t('teacherSidebar.communication.title'),
+          tooltip: t('teacherSidebar.communication.tooltip'),
+          items: [
+            { key: 'announcements', label: t('teacherSidebar.communication.announcements'), path: '/teacher/communication/announcements' },
+            { key: 'messages', label: t('teacherSidebar.communication.messages'), path: '/teacher/communication/messages' },
+            { key: 'forums', label: t('teacherSidebar.communication.forums'), path: '/teacher/communication/forums' },
+            { key: 'notifications', label: t('teacherSidebar.communication.notifications'), path: '/teacher/communication/notifications' },
+          ]
         }
       ],
 
@@ -227,6 +283,13 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
           label: t('navigation.lessons'),
           tooltip: t('navigation.lessons'),
           path: ROUTES.LESSONS.LIST,
+        },
+        {
+          key: 'exercises',
+          icon: Target,
+          label: t('navigation.exercises'),
+          tooltip: t('navigation.practiceExercises'),
+          path: '/exercises',
         },
         {
           key: 'homework',
@@ -326,8 +389,8 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
         {
           key: 'routes',
           icon: Car,
-          label: 'My Routes',
-          tooltip: 'My Routes',
+          label: t('navigation.routes'),
+          tooltip: t('navigation.routes'),
           path: '/driver/routes',
         },
         {
@@ -340,6 +403,7 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
       ]
     }
 
+    console.log('teacherSidebar.profile.title:', t('teacherSidebar.profile.title'));
     return [
       ...baseItems,
       ...(roleSpecificItems[userRole] || [])

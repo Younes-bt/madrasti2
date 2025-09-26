@@ -225,8 +225,8 @@ const ClassesPage = () => {
           {/* Add more StatCards as needed */}
         </motion.div>
 
-        <motion.div 
-          className="flex flex-col sm:flex-row gap-4 bg-card/50 p-4 rounded-lg border backdrop-blur-sm"
+        <motion.div
+          className="flex flex-col sm:flex-row gap-4 bg-card p-4 rounded-lg border shadow-sm"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
@@ -237,11 +237,11 @@ const ClassesPage = () => {
               placeholder={t('classes.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-background/50"
+              className="pl-10"
             />
           </div>
           <Select value={gradeFilter} onValueChange={setGradeFilter}>
-            <SelectTrigger className="w-full sm:w-[200px] bg-background/50">
+            <SelectTrigger className="w-full sm:w-[200px]">
               <Filter className="h-4 w-4 mr-2" />
               <SelectValue placeholder={t('classes.filterByGrade')} />
             </SelectTrigger>
@@ -255,7 +255,7 @@ const ClassesPage = () => {
             </SelectContent>
           </Select>
           <Select value={academicYearFilter} onValueChange={setAcademicYearFilter}>
-            <SelectTrigger className="w-full sm:w-[200px] bg-background/50">
+            <SelectTrigger className="w-full sm:w-[200px]">
               <Filter className="h-4 w-4 mr-2" />
               <SelectValue placeholder={t('classes.filterByYear')} />
             </SelectTrigger>
@@ -274,7 +274,7 @@ const ClassesPage = () => {
           {loading ? (
             Array(6).fill(0).map((_, i) => (
               <div key={i} className="animate-pulse">
-                <div className="bg-card/50 rounded-lg p-6 space-y-3">
+                <div className="bg-card rounded-lg p-6 space-y-3 border shadow-sm">
                   <div className="h-4 bg-muted rounded w-3/4"></div>
                   <div className="h-3 bg-muted rounded w-1/2"></div>
                   <div className="h-8 bg-muted rounded w-full"></div>

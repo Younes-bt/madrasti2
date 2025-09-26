@@ -19,19 +19,20 @@ class LessonTaggingInline(admin.TabularInline):
 @admin.register(Lesson)
 class LessonAdmin(admin.ModelAdmin):
     list_display = ('title', 'subject', 'grade', 'cycle', 'order', 'difficulty_level', 'is_active', 'created_by')
-    list_filter = ('subject', 'grade__educational_level', 'cycle', 'difficulty_level', 'is_active', 'created_at')
+    list_filter = ('subject', 'grade__educational_level', 'cycle', 'difficulty_level', 'is_active', 'created_at', 'tracks')
     search_fields = ('title', 'title_arabic', 'title_french', 'description')
     autocomplete_fields = ['subject', 'grade', 'created_by']
+    filter_horizontal = ('tracks',)
     
     fieldsets = (
         ('Basic Information', {
-            'fields': ('subject', 'grade', 'title', 'title_arabic', 'title_french', 'description')
+            'fields': ('subject', 'grade', 'tracks', 'title', 'title_arabic', 'title_french', 'description')
         }),
         ('Academic Organization', {
             'fields': ('cycle', 'order', 'difficulty_level', 'is_active')
         }),
         ('Content', {
-            'fields': ('content', 'objectives', 'prerequisites'),
+            'fields': ('objectives', 'prerequisites'),
             'classes': ('collapse',)
         }),
         ('Metadata', {
@@ -50,7 +51,7 @@ class LessonAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
     
     def get_queryset(self, request):
-        return super().get_queryset(request).select_related('subject', 'grade', 'created_by')
+        return super().get_queryset(request).select_related('subject', 'grade', 'created_by').prefetch_related('tracks')
 
 @admin.register(LessonResource)
 class LessonResourceAdmin(admin.ModelAdmin):
