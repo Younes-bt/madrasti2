@@ -207,8 +207,8 @@ We will process lessons in batches of 10, prioritizing by:
 ### Batch 13: First Year Baccalaureate Literature (1ère Bac Lettres) (IDs: 199, 200, 222, 223, 227, 228, 241, 242, 254, 255) - NEW
 - [x] ID 199: Arabic - Communication: Journalistic Discourse ✅
 - [x] ID 200: Arabic - Expression and Creation: Production of a Journalistic Article ✅
-- [ ] ID 222: French - La nouvelle réaliste : Aux champs
-- [ ] ID 223: French - La nouvelle fantastique : Le chevalier double
+- [x] ID 222: French - La nouvelle réaliste : Aux champs ✅
+- [x] ID 223: French - La nouvelle fantastique : Le chevalier double ✅
 - [ ] ID 227: English - Unit 1: Our cultural heritage
 - [ ] ID 228: English - Unit 2: Education
 - [ ] ID 241: Islamic Education - Faith and the Unseen
