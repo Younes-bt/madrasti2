@@ -11,9 +11,7 @@ import {
   Clock,
   Copy,
   Upload,
-  Zap,
-  User,
-  Users
+  Zap
 } from 'lucide-react';
 import AdminPageLayout from '../../components/admin/layout/AdminPageLayout';
 import { Button } from '../../components/ui/button';
@@ -49,15 +47,16 @@ const AddTimetablePage = () => {
   const [errors, setErrors] = useState({});
   
   const [formData, setFormData] = useState({
+    educational_level: '',
+    grade: '',
     school_class: '',
     academic_year: '',
     is_active: true
   });
 
-  // Class teacher assignment state
-  const [classTeachers, setClassTeachers] = useState([]);
-  const [availableTeachers, setAvailableTeachers] = useState([]);
 
+  const [educationalLevels, setEducationalLevels] = useState([]);
+  const [grades, setGrades] = useState([]);
   const [classes, setClasses] = useState([]);
   const [academicYears, setAcademicYears] = useState([]);
   const [subjects, setSubjects] = useState([]);
@@ -202,21 +201,21 @@ const AddTimetablePage = () => {
 
   const fetchReferenceData = async () => {
     try {
-      const [classesResponse, academicYearsResponse, subjectsResponse, teachersResponse, roomsResponse] = await Promise.all([
-        apiMethods.get('schools/classes/'),
+      const [levelsResponse, academicYearsResponse, subjectsResponse, teachersResponse, roomsResponse] = await Promise.all([
+        apiMethods.get('schools/levels/'),
         apiMethods.get('schools/academic-years/'),
         apiMethods.get('schools/subjects/'),
         apiMethods.get('users/users/', { params: { role: 'TEACHER' } }),
         apiMethods.get('schools/rooms/')
       ]);
 
-      let classesData = classesResponse.results || (Array.isArray(classesResponse) ? classesResponse : classesResponse.data?.results || classesResponse.data || []);
+      let levelsData = levelsResponse.results || (Array.isArray(levelsResponse) ? levelsResponse : levelsResponse.data?.results || levelsResponse.data || []);
       let academicYearsData = academicYearsResponse.results || (Array.isArray(academicYearsResponse) ? academicYearsResponse : academicYearsResponse.data?.results || academicYearsResponse.data || []);
       let subjectsData = subjectsResponse.results || (Array.isArray(subjectsResponse) ? subjectsResponse : subjectsResponse.data?.results || subjectsResponse.data || []);
       let teachersData = teachersResponse.results || (Array.isArray(teachersResponse) ? teachersResponse : teachersResponse.data?.results || teachersResponse.data || []);
       let roomsData = roomsResponse.results || (Array.isArray(roomsResponse) ? roomsResponse : roomsResponse.data?.results || roomsResponse.data || []);
 
-      setClasses(classesData);
+      setEducationalLevels(levelsData);
       setAcademicYears(academicYearsData);
       setSubjects(subjectsData);
       setTeachers(teachersData);
@@ -240,81 +239,56 @@ const AddTimetablePage = () => {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
 
-    // When class changes, fetch its current teachers
-    if (name === 'school_class' && value) {
-      fetchClassTeachers(value);
+  };
+
+  // Fetch grades when educational level changes
+  const handleLevelChange = async (levelId) => {
+    setFormData(prev => ({
+      ...prev,
+      educational_level: levelId,
+      grade: '', // Reset grade selection
+      school_class: '' // Reset class selection
+    }));
+
+    if (levelId) {
+      try {
+        const response = await apiMethods.get(`schools/grades/?educational_level=${levelId}`);
+        const gradesData = Array.isArray(response) ? response : (response.results || response.data || []);
+        setGrades(gradesData);
+        setClasses([]); // Clear classes
+      } catch (error) {
+        console.error('Failed to fetch grades:', error);
+        setGrades([]);
+        setClasses([]);
+      }
+    } else {
+      setGrades([]);
+      setClasses([]);
     }
   };
 
-  const fetchClassTeachers = async (classId) => {
-    try {
-      const classResponse = await apiMethods.get(`schools/classes/${classId}/`);
-      const classData = classResponse.data || classResponse;
+  // Fetch classes when grade changes
+  const handleGradeChange = async (gradeId) => {
+    setFormData(prev => ({
+      ...prev,
+      grade: gradeId,
+      school_class: '' // Reset class selection
+    }));
 
-      setClassTeachers(classData.teachers || []);
-
-      // Get available teachers for assignment (not already assigned to this class)
-      const assignedTeacherIds = (classData.teachers || []).map(t => t.id);
-      const availableTeachersForAssignment = teachers.filter(t => !assignedTeacherIds.includes(t.id));
-      setAvailableTeachers(availableTeachersForAssignment);
-
-    } catch (error) {
-      console.error('Failed to fetch class teachers:', error);
-      setClassTeachers([]);
-      setAvailableTeachers(teachers);
+    if (gradeId) {
+      try {
+        const response = await apiMethods.get(`schools/classes/?grade=${gradeId}`);
+        const classesData = Array.isArray(response) ? response : (response.results || response.data || []);
+        setClasses(classesData);
+      } catch (error) {
+        console.error('Failed to fetch classes:', error);
+        setClasses([]);
+      }
+    } else {
+      setClasses([]);
     }
   };
 
-  const assignTeacherToClass = async (teacherId) => {
-    if (!formData.school_class) {
-      toast.error('Please select a class first');
-      return;
-    }
-
-    try {
-      const classResponse = await apiMethods.get(`schools/classes/${formData.school_class}/`);
-      const classData = classResponse.data || classResponse;
-
-      const currentTeacherIds = (classData.teachers || []).map(t => t.id);
-      const updatedTeacherIds = [...currentTeacherIds, parseInt(teacherId)];
-
-      await apiMethods.patch(`schools/classes/${formData.school_class}/`, {
-        teachers: updatedTeacherIds
-      });
-
-      // Refresh the class teachers
-      await fetchClassTeachers(formData.school_class);
-      toast.success('Teacher assigned to class successfully');
-
-    } catch (error) {
-      console.error('Failed to assign teacher to class:', error);
-      toast.error('Failed to assign teacher to class');
-    }
-  };
-
-  const removeTeacherFromClass = async (teacherId) => {
-    if (!formData.school_class) return;
-
-    try {
-      const classResponse = await apiMethods.get(`schools/classes/${formData.school_class}/`);
-      const classData = classResponse.data || classResponse;
-
-      const currentTeacherIds = (classData.teachers || []).map(t => t.id);
-      const updatedTeacherIds = currentTeacherIds.filter(id => id !== teacherId);
-
-      await apiMethods.patch(`schools/classes/${formData.school_class}/`, {
-        teachers: updatedTeacherIds
-      });
-
-      // Refresh the class teachers
-      await fetchClassTeachers(formData.school_class);
-      toast.success('Teacher removed from class successfully');
-
-    } catch (error) {
-      console.error('Failed to remove teacher from class:', error);
-      toast.error('Failed to remove teacher from class');
-    }
-  };
 
   const validateStep1 = () => {
     const newErrors = {};
@@ -623,15 +597,69 @@ const AddTimetablePage = () => {
                 <CardContent className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
+                      <Label htmlFor="educational_level" className="text-sm font-medium">
+                        {t('schools.educationalLevel')} <span className="text-red-500">*</span>
+                      </Label>
+                      <Select
+                        value={formData.educational_level || undefined}
+                        onValueChange={handleLevelChange}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={t('schools.selectEducationalLevel')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {educationalLevels.map((level) => (
+                            <SelectItem key={level.id} value={level.id.toString()}>
+                              {level.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="grade" className="text-sm font-medium">
+                        {t('schools.grade')} <span className="text-red-500">*</span>
+                      </Label>
+                      <Select
+                        value={formData.grade || undefined}
+                        onValueChange={handleGradeChange}
+                        disabled={!formData.educational_level}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={
+                            formData.educational_level
+                              ? t('schools.selectGrade')
+                              : t('schools.selectLevelFirst')
+                          } />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {grades.map((grade) => (
+                            <SelectItem key={grade.id} value={grade.id.toString()}>
+                              {grade.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
                       <Label htmlFor="school_class" className="text-sm font-medium">
                         {t('classes.class')} <span className="text-red-500">*</span>
                       </Label>
-                      <Select 
-                        value={formData.school_class || undefined} 
+                      <Select
+                        value={formData.school_class || undefined}
                         onValueChange={(value) => handleInputChange('school_class', value)}
+                        disabled={!formData.grade}
                       >
                         <SelectTrigger className={errors.school_class ? 'border-red-500' : ''}>
-                          <SelectValue placeholder={t('classes.selectClass')} />
+                          <SelectValue placeholder={
+                            formData.grade
+                              ? t('classes.selectClass')
+                              : t('schools.selectGradeFirst')
+                          } />
                         </SelectTrigger>
                         <SelectContent>
                           {classes.map((cls) => (
@@ -650,8 +678,8 @@ const AddTimetablePage = () => {
                       <Label htmlFor="academic_year" className="text-sm font-medium">
                         {t('classes.academicYear')} <span className="text-red-500">*</span>
                       </Label>
-                      <Select 
-                        value={formData.academic_year || undefined} 
+                      <Select
+                        value={formData.academic_year || undefined}
                         onValueChange={(value) => handleInputChange('academic_year', value)}
                       >
                         <SelectTrigger className={errors.academic_year ? 'border-red-500' : ''}>
@@ -684,91 +712,6 @@ const AddTimetablePage = () => {
                 </CardContent>
               </Card>
 
-              {/* Teacher Assignment Section */}
-              {formData.school_class && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Users className="h-5 w-5 text-green-600" />
-                      {t('timetables.classTeachers') || 'Class Teachers'}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {/* Current Teachers */}
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">
-                        {t('timetables.assignedTeachers') || 'Assigned Teachers'} ({classTeachers.length})
-                      </Label>
-                      {classTeachers.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
-                          {classTeachers.map((teacher) => (
-                            <Badge
-                              key={teacher.id}
-                              variant="secondary"
-                              className="flex items-center gap-2 px-3 py-1"
-                            >
-                              <User className="h-3 w-3" />
-                              {teacher.name}
-                              {teacher.subject && (
-                                <span className="text-xs text-muted-foreground">
-                                  ({teacher.subject})
-                                </span>
-                              )}
-                              <button
-                                onClick={() => removeTeacherFromClass(teacher.id)}
-                                className="ml-1 text-red-500 hover:text-red-700"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </button>
-                            </Badge>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">
-                          {t('timetables.noTeachersAssigned') || 'No teachers assigned to this class yet.'}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Add Teacher */}
-                    {availableTeachers.length > 0 && (
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium">
-                          {t('timetables.assignTeacher') || 'Assign Teacher'}
-                        </Label>
-                        <div className="flex gap-2">
-                          <Select onValueChange={(value) => value && assignTeacherToClass(value)}>
-                            <SelectTrigger className="flex-1">
-                              <SelectValue placeholder={t('teachers.selectTeacher') || 'Select a teacher to assign'} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {availableTeachers.map((teacher) => (
-                                <SelectItem key={teacher.id} value={teacher.id.toString()}>
-                                  <div className="flex items-center gap-2">
-                                    <User className="h-4 w-4" />
-                                    <span>{teacher.full_name}</span>
-                                    {teacher.profile?.school_subject && (
-                                      <Badge variant="outline" className="ml-2 text-xs">
-                                        {teacher.profile.school_subject.name}
-                                      </Badge>
-                                    )}
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    )}
-
-                    {availableTeachers.length === 0 && teachers.length > 0 && (
-                      <p className="text-sm text-muted-foreground">
-                        {t('timetables.allTeachersAssigned') || 'All teachers are already assigned to this class.'}
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
 
               <Card>
                 <CardHeader>

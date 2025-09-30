@@ -1,6 +1,7 @@
 # schools/views.py
 
 from rest_framework import viewsets, permissions, filters
+from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import (
     School,
@@ -62,7 +63,8 @@ class EducationalLevelViewSet(viewsets.ModelViewSet):
     """API endpoint for managing educational levels."""
     queryset = EducationalLevel.objects.prefetch_related('grades').all()
     serializer_class = EducationalLevelSerializer
-    
+    pagination_class = None  # Disable pagination to return all levels
+
     def get_permissions(self):
         """Allow any authenticated user to list/view, but only admins to create/edit."""
         if self.action in ['list', 'retrieve']:
@@ -75,6 +77,12 @@ class GradeViewSet(viewsets.ModelViewSet):
     """API endpoint for managing grades."""
     queryset = Grade.objects.select_related('educational_level').all()
     serializer_class = GradeSerializer
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['educational_level']
+    search_fields = ['name']
+    ordering_fields = ['name', 'educational_level__name']
+    ordering = ['educational_level__name', 'name']
+    pagination_class = None  # Disable pagination to return all grades
 
     def get_permissions(self):
         """Allow any authenticated user to list/view, but only admins to create/edit."""
@@ -106,7 +114,12 @@ class SchoolClassViewSet(viewsets.ModelViewSet):
     """API endpoint for managing classes."""
     queryset = SchoolClass.objects.select_related('grade', 'track', 'academic_year').all()
     serializer_class = SchoolClassSerializer
-    # REMOVE this line: permission_classes = [permissions.IsAdminUser]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['grade', 'academic_year', 'track']
+    search_fields = ['name']
+    ordering_fields = ['name', 'grade__name']
+    ordering = ['grade__name', 'name']
+    pagination_class = None  # Disable pagination to return all classes
 
     def get_permissions(self):
         """Allow any authenticated user to list/view, but only admins to create/edit."""

@@ -110,9 +110,10 @@ const ClassesPage = () => {
   const fetchClasses = async () => {
     setLoading(true);
     try {
+      // Fetch ALL classes (pagination is now disabled on the backend)
       const response = await apiMethods.get('schools/classes/');
-      let classesData = response.results || (Array.isArray(response) ? response : response.data?.results || response.data || []);
-      
+      let classesData = Array.isArray(response) ? response : (response.results || response.data?.results || response.data || []);
+
       setClasses(classesData);
       setFilteredClasses(classesData);
 

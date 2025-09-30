@@ -2194,5 +2194,13 @@
     "interactive": "Interactive",
     "createExerciseAction": "Create Exercise",
     "selectLessonTitle": "Select a lesson to create an exercise for"
+  },
+  "schools": {
+    "educationalLevel": "Educational Level",
+    "selectEducationalLevel": "Select Educational Level",
+    "selectLevelFirst": "Select a level first",
+    "grade": "Grade",
+    "selectGrade": "Select Grade",
+    "selectGradeFirst": "Select a grade first"
   }
 }

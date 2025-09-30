@@ -20,7 +20,9 @@ import {
   ListChecks,
   MessageSquare,
   Check,
-  X
+  X,
+  Upload,
+  Image as ImageIcon
 } from 'lucide-react';
 import AdminPageLayout from '../../components/admin/layout/AdminPageLayout';
 import { Button } from '../../components/ui/button';
@@ -168,10 +170,12 @@ const AddExercisePage = () => {
   const addQuestion = () => {
     setQuestions(prev => [...prev, {
       question_text: '',
+      question_text_arabic: '',
+      question_image: null,
       question_type: 'qcm_single',
       points: '1.00',
       order: prev.length,
-      choices: [{ choice_text: '', is_correct: true }, { choice_text: '', is_correct: false }]
+      choices: [{ choice_text: '', choice_text_arabic: '', is_correct: true }, { choice_text: '', choice_text_arabic: '', is_correct: false }]
     }]);
   };
 
@@ -185,7 +189,7 @@ const AddExercisePage = () => {
       if (value === 'open_long' || value === 'open_short') {
         newQuestions[index].choices = [];
       } else if (!newQuestions[index].choices || newQuestions[index].choices.length === 0) {
-        newQuestions[index].choices = [{ choice_text: '', is_correct: true }, { choice_text: '', is_correct: false }];
+        newQuestions[index].choices = [{ choice_text: '', choice_text_arabic: '', is_correct: true }, { choice_text: '', choice_text_arabic: '', is_correct: false }];
       }
     }
     setQuestions(newQuestions);
@@ -193,8 +197,45 @@ const AddExercisePage = () => {
 
   const addChoice = (qIndex) => {
     const newQuestions = [...questions];
-    newQuestions[qIndex].choices.push({ choice_text: '', is_correct: false });
+    newQuestions[qIndex].choices.push({ choice_text: '', choice_text_arabic: '', is_correct: false });
     setQuestions(newQuestions);
+  };
+
+  // Handle image upload for questions
+  const handleQuestionImageUpload = async (index, file) => {
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Please upload a valid image file (JPEG, PNG, GIF, or WebP)');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error('Image file size must be less than 5MB');
+      return;
+    }
+
+    try {
+      // For now, create a local URL for preview
+      // In production, you'll want to upload to Cloudinary here
+      const imageUrl = URL.createObjectURL(file);
+      handleQuestionChange(index, 'question_image', imageUrl);
+      handleQuestionChange(index, 'question_image_file', file);
+      toast.success('Image uploaded successfully');
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error('Failed to upload image');
+    }
+  };
+
+  // Remove image from question
+  const removeQuestionImage = (index) => {
+    handleQuestionChange(index, 'question_image', null);
+    handleQuestionChange(index, 'question_image_file', null);
   };
 
   const removeChoice = (qIndex, cIndex) => {
@@ -206,6 +247,12 @@ const AddExercisePage = () => {
   const handleChoiceChange = (qIndex, cIndex, value) => {
     const newQuestions = [...questions];
     newQuestions[qIndex].choices[cIndex].choice_text = value;
+    setQuestions(newQuestions);
+  };
+
+  const handleChoiceArabicChange = (qIndex, cIndex, value) => {
+    const newQuestions = [...questions];
+    newQuestions[qIndex].choices[cIndex].choice_text_arabic = value;
     setQuestions(newQuestions);
   };
 
@@ -291,11 +338,14 @@ const AddExercisePage = () => {
           const questionPayload = {
             exercise: newExerciseId,
             question_text: q.question_text,
+            question_text_arabic: q.question_text_arabic || '',
+            question_image: q.question_image || null,
             question_type: q.question_type,
             points: q.points,
             order: index,
             choices: q.choices.map(c => ({
               choice_text: c.choice_text,
+              choice_text_arabic: c.choice_text_arabic || '',
               is_correct: c.is_correct
             }))
           };
@@ -461,6 +511,72 @@ const AddExercisePage = () => {
                           <Label htmlFor={`q_text_${qIndex}`}>{t('exercises.question')} #{qIndex + 1}</Label>
                           <Textarea id={`q_text_${qIndex}`} value={q.question_text} onChange={(e) => handleQuestionChange(qIndex, 'question_text', e.target.value)} placeholder={t('exercises.questionTextPlaceholder')} className={errors[`q_${qIndex}_text`] ? 'border-destructive' : ''} />
                           {errors[`q_${qIndex}_text`] && <p className="text-sm text-destructive mt-1">{errors[`q_${qIndex}_text`]}</p>}
+
+                          {/* Arabic Question Text */}
+                          <div className="mt-3">
+                            <Label htmlFor={`q_text_arabic_${qIndex}`}>Arabic Question Text (Optional)</Label>
+                            <Textarea
+                              id={`q_text_arabic_${qIndex}`}
+                              value={q.question_text_arabic || ''}
+                              onChange={(e) => handleQuestionChange(qIndex, 'question_text_arabic', e.target.value)}
+                              placeholder="النص العربي للسؤال (اختياري)"
+                              dir="rtl"
+                              className="text-right"
+                            />
+                          </div>
+
+                          {/* Question Image Upload */}
+                          <div className="mt-3">
+                            <Label>{t('exercises.questionImage')} (Optional)</Label>
+                            <div className="space-y-2">
+                              {q.question_image ? (
+                                <div className="relative">
+                                  <img
+                                    src={q.question_image}
+                                    alt={`Question ${qIndex + 1} image`}
+                                    className="max-w-full h-auto rounded-md border border-muted/50 shadow-sm"
+                                    style={{ maxHeight: '200px' }}
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => removeQuestionImage(qIndex)}
+                                    className="absolute top-2 right-2"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6">
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => {
+                                      const file = e.target.files[0];
+                                      if (file) {
+                                        handleQuestionImageUpload(qIndex, file);
+                                      }
+                                    }}
+                                    className="hidden"
+                                    id={`q_image_${qIndex}`}
+                                  />
+                                  <label
+                                    htmlFor={`q_image_${qIndex}`}
+                                    className="cursor-pointer flex flex-col items-center justify-center text-center"
+                                  >
+                                    <ImageIcon className="h-8 w-8 text-muted-foreground mb-2" />
+                                    <span className="text-sm text-muted-foreground">
+                                      Click to upload an image (physics diagrams, charts, etc.)
+                                    </span>
+                                    <span className="text-xs text-muted-foreground mt-1">
+                                      JPEG, PNG, GIF, WebP up to 5MB
+                                    </span>
+                                  </label>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
                         <Button variant="ghost" size="icon" onClick={() => removeQuestion(qIndex)} className="ml-2 shrink-0"><Trash2 className="h-4 w-4 text-destructive" /></Button>
                       </div>
@@ -489,10 +605,19 @@ const AddExercisePage = () => {
                           {errors[`q_${qIndex}_choice`] && <p className="text-sm text-destructive">{errors[`q_${qIndex}_choice`]}</p>}
                           <div className="space-y-2">
                             {q.choices.map((c, cIndex) => (
-                              <div key={cIndex} className="flex items-center gap-2">
-                                <Checkbox id={`q_${qIndex}_c_${cIndex}_correct`} checked={c.is_correct} onCheckedChange={() => handleCorrectChoiceChange(qIndex, cIndex, q.question_type)} />
-                                <Input value={c.choice_text} onChange={(e) => handleChoiceChange(qIndex, cIndex, e.target.value)} placeholder={`${t('exercises.choice')} ${cIndex + 1}`} />
-                                <Button variant="ghost" size="icon" onClick={() => removeChoice(qIndex, cIndex)} disabled={q.choices.length <= 2}><X className="h-4 w-4" /></Button>
+                              <div key={cIndex} className="space-y-2 p-3 border rounded-md">
+                                <div className="flex items-center gap-2">
+                                  <Checkbox id={`q_${qIndex}_c_${cIndex}_correct`} checked={c.is_correct} onCheckedChange={() => handleCorrectChoiceChange(qIndex, cIndex, q.question_type)} />
+                                  <Input value={c.choice_text} onChange={(e) => handleChoiceChange(qIndex, cIndex, e.target.value)} placeholder={`${t('exercises.choice')} ${cIndex + 1}`} className="flex-1" />
+                                  <Button variant="ghost" size="icon" onClick={() => removeChoice(qIndex, cIndex)} disabled={q.choices.length <= 2}><X className="h-4 w-4" /></Button>
+                                </div>
+                                <Input
+                                  value={c.choice_text_arabic || ''}
+                                  onChange={(e) => handleChoiceArabicChange(qIndex, cIndex, e.target.value)}
+                                  placeholder={`الخيار ${cIndex + 1} بالعربية (اختياري)`}
+                                  dir="rtl"
+                                  className="text-right text-sm"
+                                />
                               </div>
                             ))}
                           </div>

@@ -1,0 +1,25 @@
+Cours du premier semestre
+Typologie réseau
+La typologie des réseaux 
+ Présentation Assistée par Ordinateur
+La présentation assistée par ordinateur 
+L’animation d’une diapositive – la transition entre les diapositives 
+L’insertion des images dans une diapositive – l’image en mouvement 
+L’insertion de tableau – graphique – et du son dans une diapositive 
+Les films dans une présentation – insertion de liens hypertexte 
+ Programmation Logo
+ 
+Notion de la programmation 
+Les procédures de XLOGO 
+Les variabes dans XLOGO 
+La production et la gestion d’un programme XLOGO 
+La récursivité dans XLOGO 
+
+ Cours du deuxième semestre:
+Recherches documentaires sur le Web
+ 
+Site web et navigateurs 
+Les moteurs de recherche 
+La recherche avec les opérateurs 
+Le téléchargement 
+ 

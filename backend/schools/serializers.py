@@ -89,6 +89,9 @@ class GradeSerializer(serializers.ModelSerializer):
     tracks_count = serializers.SerializerMethodField()
     classes_count = serializers.SerializerMethodField()
 
+    # Dynamic name based on request language
+    name = serializers.SerializerMethodField()
+
     class Meta:
         model = Grade
         fields = ('id', 'educational_level', 'educational_level_name', 'educational_level_name_arabic',
@@ -103,10 +106,25 @@ class GradeSerializer(serializers.ModelSerializer):
         """Get the number of classes in this grade"""
         return obj.classes.count()
 
+    def get_name(self, obj):
+        """Get name based on request language"""
+        request = self.context.get('request')
+        if request:
+            # Check Accept-Language header
+            accept_language = request.META.get('HTTP_ACCEPT_LANGUAGE', 'en')
+            if 'ar' in accept_language and obj.name_arabic:
+                return obj.name_arabic
+            elif 'fr' in accept_language and obj.name_french:
+                return obj.name_french
+        return obj.name  # Default fallback
+
 class EducationalLevelSerializer(serializers.ModelSerializer):
     # Nesting GradeSerializer to show grades under each level
     grades = GradeSerializer(many=True, read_only=True)
     grades_count = serializers.SerializerMethodField()
+
+    # Dynamic name based on request language
+    name = serializers.SerializerMethodField()
 
     class Meta:
         model = EducationalLevel
@@ -115,6 +133,18 @@ class EducationalLevelSerializer(serializers.ModelSerializer):
     def get_grades_count(self, obj):
         """Get the number of grades in this level"""
         return obj.grades.count()
+
+    def get_name(self, obj):
+        """Get name based on request language"""
+        request = self.context.get('request')
+        if request:
+            # Check Accept-Language header
+            accept_language = request.META.get('HTTP_ACCEPT_LANGUAGE', 'en')
+            if 'ar' in accept_language and obj.name_arabic:
+                return obj.name_arabic
+            elif 'fr' in accept_language and obj.name_french:
+                return obj.name_french
+        return obj.name  # Default fallback
 
 class SchoolClassSerializer(serializers.ModelSerializer):
     grade_id = serializers.IntegerField(source='grade.id', read_only=True)

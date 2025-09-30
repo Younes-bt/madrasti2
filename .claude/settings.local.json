@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Read(/D:\\OpiComTech\\Projects\\madrasti2\\frontend\\docs/**)"
+      "Read(/D:\\OpiComTech\\Projects\\madrasti2\\frontend\\docs/**)",
+      "Bash(python manage.py:*)"
     ],
     "deny": [],
     "ask": []

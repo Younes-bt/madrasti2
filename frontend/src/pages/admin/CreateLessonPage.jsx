@@ -15,6 +15,19 @@ import lessonsService from '../../services/lessons';
 import schoolsService from '../../services/schools';
 import { toast } from 'sonner';
 
+// Helper function to get localized subject name
+const getLocalizedSubjectName = (subject) => {
+  const currentLanguage = i18n.language;
+  switch (currentLanguage) {
+    case 'ar':
+      return subject.name_arabic || subject.name;
+    case 'fr':
+      return subject.name_french || subject.name;
+    default:
+      return subject.name;
+  }
+};
+
 // Helper function to get localized grade name
 const getLocalizedGradeName = (grade) => {
   const currentLanguage = i18n.language;
@@ -235,7 +248,7 @@ const CreateLessonPage = () => {
                     <SelectContent>
                       {subjects.map((subject) => (
                         <SelectItem key={subject.id} value={subject.id.toString()}>
-                          {subject.name}
+                          {getLocalizedSubjectName(subject)}
                         </SelectItem>
                       ))}
                     </SelectContent>

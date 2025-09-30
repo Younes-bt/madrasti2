@@ -1,0 +1,84 @@
+
+Cours de Grammaire
+[table sort=”desc,asc”]
+العنوان,الدرس
+Les types de phrases, 
+La phrase sans verbe, 
+Le Groupe Nominal Sujet (GNS), 
+Le groupe verbal (GV), 
+Les déterminants, 
+La phrase interrogative, 
+Expansion et réduction de la phrase, 
+L’adjectif qualificatif, 
+Le complément d’objet direct (COD), 
+Le complément d’objet indirect (COI), 
+Les pronoms démonstratifs, 
+Les pronoms possessifs, 
+La coordination, 
+L’adverbe de manière, 
+[/table]
+
+Cours de Conjugaison
+[table sort=”desc,asc”]
+العنوان,الدرس
+Les trois groupes de verbes, 
+Temps – terminaisons – personnes, 
+Passé – Présent – Futur, 
+Présent des verbes usuels, 
+Passé composé des verbes du 1er groupe, 
+Passé composé des verbes du 2ème groupe, 
+Passé composé de quelques verbes du 3ème groupe, 
+Verbes pronominaux au présent de l’indicatif, 
+Le futur de l’indicatif, 
+Etre-avoir et les verbes du 1er groupe à l’imparfait, 
+L’imparfait des verbes pronominaux usuels, 
+[/table]
+
+Cours d’Orthographe
+[table sort=”desc,asc”]
+العنوان,الدرس
+a – à, 
+La ponctuation, 
+Les féminins en [é] & [ée], 
+Tout – toute(s) – tous, 
+Le participe passé, 
+Accord de l’adjectif, 
+Mots en [eur] & [eure], 
+Pronoms – déterminants, 
+[et – est] – [é – er] – [on – ont] – [son – sont], 
+C’est – ces – ses, 
+Les mots invariables, 
+[/table]
+
+Cours de Lexique
+[table sort=”desc,asc”]
+العنوان,الدرس
+Le dictionnaire, 
+Les homonymes, 
+Les suffixes, 
+Les préfixes, 
+[/table]
+
+Pièces de théâtre éducatives
+[table sort=”desc,asc”]
+العنوان,الدرس
+Rêve…en 2000 et quleques, 
+Au restaurant, 
+Profs et élèves, 
+Le petit prince hongrois, 
+Le petit malade, 
+Des parents dans l’embarras, 
+Le moustique, 
+Mauvais élève, 
+Le loup pendu, 
+Le dentiste avait-il une dent contre lui, 
+Leçon d’orthographe, 
+Le chapeau enfoncé, 
+Le jeu des acteurs, 
+La chèvre et le loup, 
+Le petit chat têtu, 
+Un bandit qui retourne sa veste, 
+L’appendicite, 
+Une voyante qui n’a pas perdu la boule!, 
+Discussion, 
+[/

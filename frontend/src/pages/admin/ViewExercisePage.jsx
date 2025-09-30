@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useLanguage } from '../../hooks/useLanguage';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft,
@@ -41,6 +42,7 @@ import { toast } from 'sonner';
 
 const ViewExercisePage = () => {
   const { t } = useTranslation();
+  const { currentLanguage } = useLanguage();
   const navigate = useNavigate();
   const { id } = useParams();
   const [exercise, setExercise] = useState(null);
@@ -120,6 +122,22 @@ const ViewExercisePage = () => {
   const formatDateTime = (dateTime) => {
     if (!dateTime) return t('exercises.noLimit');
     return new Date(dateTime).toLocaleString();
+  };
+
+  // Helper function to get text based on current language
+  const getLocalizedText = (englishText, arabicText) => {
+    if (currentLanguage === 'ar' && arabicText) {
+      return arabicText;
+    }
+    return englishText;
+  };
+
+  // Helper function to get choice text based on current language
+  const getLocalizedChoiceText = (choice) => {
+    if (currentLanguage === 'ar' && choice.choice_text_arabic) {
+      return choice.choice_text_arabic;
+    }
+    return choice.choice_text;
   };
 
   if (loading) {
@@ -260,11 +278,33 @@ const ViewExercisePage = () => {
                   exercise.questions.map((question, index) => (
                     <div key={question.id} className="border p-4 rounded-lg">
                       <div className="flex justify-between items-start">
-                        <h4 className="font-semibold">{t('exercises.question')} #{index + 1}: {question.question_text}</h4>
+                        <h4 className="font-semibold" dir={currentLanguage === 'ar' ? 'rtl' : 'ltr'}>
+                          {t('exercises.question')} #{index + 1}: {getLocalizedText(question.question_text, question.question_text_arabic)}
+                        </h4>
                         <Badge variant="secondary">{question.points} {t('exercises.points')}</Badge>
                       </div>
                       <Badge variant="outline" className="mt-2 mb-3">{t(`exercises.questionTypes.${question.question_type}`)}</Badge>
-                      
+
+                      {/* Display question image if available */}
+                      {question.question_image && (
+                        <div className="mt-3 mb-3">
+                          <img
+                            src={question.question_image}
+                            alt={`Question ${index + 1} diagram`}
+                            className="max-w-full h-auto rounded-md border border-muted/50 shadow-sm"
+                            style={{ maxHeight: '400px' }}
+                          />
+                        </div>
+                      )}
+
+                      {/* Display Arabic question text if available and different from English */}
+                      {currentLanguage !== 'ar' && question.question_text_arabic && question.question_text_arabic !== question.question_text && (
+                        <div className="mt-2 p-2 bg-muted/30 rounded-md">
+                          <p className="text-sm text-muted-foreground mb-1">Arabic:</p>
+                          <p className="text-sm" dir="rtl">{question.question_text_arabic}</p>
+                        </div>
+                      )}
+
                       {['qcm_single', 'qcm_multiple', 'true_false'].includes(question.question_type) && (
                         <div className="mt-2 space-y-2">
                           <h5 className="text-sm font-medium text-muted-foreground">{t('exercises.choices')}</h5>
@@ -272,7 +312,15 @@ const ViewExercisePage = () => {
                             {question.choices.map(choice => (
                               <li key={choice.id} className={`flex items-center gap-2 text-sm p-2 rounded-md ${choice.is_correct ? 'bg-green-100 dark:bg-green-900/50' : 'bg-muted/50'}`}>
                                 {choice.is_correct ? <CheckCircle className="h-4 w-4 text-green-600" /> : <XCircle className="h-4 w-4 text-muted-foreground" />}
-                                <span>{choice.choice_text}</span>
+                                <span dir={currentLanguage === 'ar' ? 'rtl' : 'ltr'}>
+                                  {getLocalizedChoiceText(choice)}
+                                </span>
+                                {/* Show both languages when not in Arabic mode and Arabic text is available */}
+                                {currentLanguage !== 'ar' && choice.choice_text_arabic && choice.choice_text_arabic !== choice.choice_text && (
+                                  <span className="text-xs text-muted-foreground" dir="rtl">
+                                    ({choice.choice_text_arabic})
+                                  </span>
+                                )}
                               </li>
                             ))}
                           </ul>

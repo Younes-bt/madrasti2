@@ -418,20 +418,26 @@ const BulkImportStudentsPage = () => {
       gradeId,
       classId: '' // Reset class selection
     }));
-    
+
     if (gradeId) {
       try {
-        // Fetch classes for the selected grade
-        // This would typically be an API call to get classes for the grade
-        // For now, we'll use the sample classes from the status endpoint
-        const response = await apiMethods.get('users/bulk-import/status/');
+        // Fetch ALL classes for the selected grade from the proper endpoint
+        const response = await apiMethods.get(`schools/classes/?grade=${gradeId}`);
+
+        // Handle both paginated and non-paginated responses
+        const classes = Array.isArray(response) ? response : (response.results || response.data || []);
+
         setAvailableData(prev => ({
           ...prev,
-          classes: response.sample_classes?.filter(c => c.grade_id === parseInt(gradeId)) || []
+          classes: classes
         }));
       } catch (error) {
         console.error('Failed to fetch classes:', error);
         toast.error('Failed to load classes');
+        setAvailableData(prev => ({
+          ...prev,
+          classes: []
+        }));
       }
     } else {
       setAvailableData(prev => ({

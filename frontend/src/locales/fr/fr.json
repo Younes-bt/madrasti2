@@ -182,6 +182,18 @@
     "addFirstResource": "Ajouter la Première Ressource",
     "addResourcePlaceholder": "La fonctionnalité d'ajout de ressource sera bientôt implémentée"
   },
+  "calendar": {
+    "monday": "Lundi",
+    "tuesday": "Mardi",
+    "wednesday": "Mercredi",
+    "thursday": "Jeudi",
+    "friday": "Vendredi",
+    "saturday": "Samedi",
+    "sunday": "Dimanche",
+    "today": "Aujourd'hui",
+    "week": "Semaine",
+    "day": "Jour"
+  },
   "teacher": {
     "addNewTeacher": "Ajouter un Nouvel Enseignant",
     "addNewTeacherDescription": "Créer un compte enseignant avec rôle et permissions",
@@ -1868,5 +1880,13 @@
     "interactive": "Interactif",
     "createExerciseAction": "Créer un exercice",
     "selectLessonTitle": "Sélectionner une leçon pour créer un exercice"
+  },
+  "schools": {
+    "educationalLevel": "Niveau d'enseignement",
+    "selectEducationalLevel": "Sélectionner un niveau d'enseignement",
+    "selectLevelFirst": "Sélectionner d'abord un niveau",
+    "grade": "Classe",
+    "selectGrade": "Sélectionner une classe",
+    "selectGradeFirst": "Sélectionner d'abord une classe"
   }
 }

@@ -183,6 +183,18 @@
     "addFirstResource": "إضافة أول مورد",
     "addResourcePlaceholder": "سيتم تنفيذ وظيفة إضافة المورد قريباً"
   },
+  "calendar": {
+    "monday": "الاثنين",
+    "tuesday": "الثلاثاء",
+    "wednesday": "الأربعاء",
+    "thursday": "الخميس",
+    "friday": "الجمعة",
+    "saturday": "السبت",
+    "sunday": "الأحد",
+    "today": "اليوم",
+    "week": "أسبوع",
+    "day": "يوم"
+  },
   "status": {
     "active": "نشط",
     "inactive": "غير نشط",
@@ -1980,5 +1992,13 @@
     "interactive": "تفاعلي",
     "createExerciseAction": "إنشاء تمرين",
     "selectLessonTitle": "اختر درساً لإنشاء تمرين له"
+  },
+  "schools": {
+    "educationalLevel": "المستوى التعليمي",
+    "selectEducationalLevel": "اختر المستوى التعليمي",
+    "selectLevelFirst": "اختر المستوى أولاً",
+    "grade": "الصف",
+    "selectGrade": "اختر الصف",
+    "selectGradeFirst": "اختر الصف أولاً"
   }
 }

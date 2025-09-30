@@ -128,7 +128,7 @@ const AddStudentPage = () => {
       if (formData.grade_id && formData.academic_year_id) {
         try {
           const response = await apiMethods.get(`schools/classes/?grade=${formData.grade_id}&academic_year=${formData.academic_year_id}`);
-          setSchoolClasses(response.results || response.data || []);
+          setSchoolClasses(Array.isArray(response) ? response : (response.results || response.data || []));
           // Reset class selection
           setFormData(prev => ({ ...prev, school_class_id: '' }));
         } catch (error) {
