@@ -23,3 +23,7 @@ yarn-error.log*
 # Documentation (contains sensitive project info)
 docs/
 backend/docs/
+
+# Windows reserved device names accidentally generated
+nul
+backend/nul
