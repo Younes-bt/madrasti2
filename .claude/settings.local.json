@@ -1,8 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Read(/D:\\OpiComTech\\Projects\\madrasti2\\frontend\\docs/**)",
-      "Bash(python manage.py:*)"
+      "Bash(move lessonsmanagementcommandscreate_lesson_126*.py backendlessonsmanagementcommands)"
     ],
     "deny": [],
     "ask": []
