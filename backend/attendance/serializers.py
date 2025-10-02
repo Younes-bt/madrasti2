@@ -129,13 +129,38 @@ class AttendanceRecordSerializer(serializers.ModelSerializer):
     student = UserBasicSerializer(read_only=True)
     marked_by_name = serializers.CharField(source='marked_by.full_name', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
-    
+    class_name = serializers.CharField(source='attendance_session.timetable_session.timetable.school_class.name', read_only=True)
+    grade_name = serializers.CharField(source='attendance_session.timetable_session.timetable.school_class.grade.name', read_only=True)
+    class_id = serializers.IntegerField(source='attendance_session.timetable_session.timetable.school_class.id', read_only=True)
+    grade_id = serializers.IntegerField(source='attendance_session.timetable_session.timetable.school_class.grade.id', read_only=True)
+    track_id = serializers.SerializerMethodField()
+    track_name = serializers.SerializerMethodField()
+    educational_level_id = serializers.IntegerField(source='attendance_session.timetable_session.timetable.school_class.grade.educational_level.id', read_only=True)
+    educational_level_name = serializers.CharField(source='attendance_session.timetable_session.timetable.school_class.grade.educational_level.name', read_only=True)
+    subject_name = serializers.CharField(source='attendance_session.timetable_session.subject.name', read_only=True)
+
     class Meta:
         model = AttendanceRecord
         fields = [
-            'id', 'student', 'status', 'status_display', 'marked_at', 
-            'marked_by_name', 'arrival_time', 'notes', 'updated_at'
+            'id', 'student', 'status', 'status_display', 'marked_at',
+            'marked_by_name', 'arrival_time', 'notes', 'updated_at',
+            'class_name', 'grade_name', 'class_id', 'grade_id', 'track_id', 'track_name',
+            'educational_level_id', 'educational_level_name', 'subject_name'
         ]
+
+    def get_track_id(self, obj):
+        track = self._resolve_track(obj)
+        return track.id if track else None
+
+    def get_track_name(self, obj):
+        track = self._resolve_track(obj)
+        return track.name if track else None
+
+    def _resolve_track(self, obj):
+        try:
+            return obj.attendance_session.timetable_session.timetable.school_class.track
+        except AttributeError:
+            return None
 
 class AttendanceRecordUpdateSerializer(serializers.ModelSerializer):
     """Update attendance record"""
@@ -216,11 +241,12 @@ class AttendanceSessionDetailSerializer(serializers.ModelSerializer):
 
 class AttendanceSessionCreateSerializer(serializers.ModelSerializer):
     """Create attendance session"""
-    
+
     class Meta:
         model = AttendanceSession
-        fields = ['timetable_session', 'date', 'notes']
-    
+        fields = ['id', 'timetable_session', 'date', 'teacher', 'status', 'notes', 'created_at']
+        read_only_fields = ['id', 'teacher', 'status', 'created_at']
+
     def create(self, validated_data):
         validated_data['teacher'] = self.context['request'].user
         return super().create(validated_data)

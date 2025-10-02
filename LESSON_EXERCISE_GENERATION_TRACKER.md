@@ -4,8 +4,9 @@
 This document tracks the progress of creating exercises for all lessons in the Madrasti platform.
 
 **Total Lessons**: 2001
-**Lessons with Exercises**: 75
-**Lessons Remaining**: 1926
+**Lessons with Exercises**: 257
+**Lessons Remaining**: 1744
+**Completion Rate**: 12.8% 🎉
 
 ## Generation Strategy
 We will process lessons in batches of 10, prioritizing by:
@@ -99,17 +100,17 @@ We will process lessons in batches of 10, prioritizing by:
 - [x] ID 98: Scalar product (Dot product) in space ✅ (5 exercises, 26 questions, 76 choices)
 - [x] ID 99: Counting (Combinatorics) ✅ (5 exercises, 27 questions, 86 choices)
 
-### Batch 9: Life & Earth Sciences (IDs: 100-109) - PARTIALLY COMPLETED
+### Batch 9: Life & Earth Sciences - Genetics (IDs: 100-109) - COMPLETED ✅
 - [x] ID 100: Consumption of organic matter and energy flow ✅ (10 exercises)
 - [x] ID 101: Release of potential energy from organic matter ✅ (10 exercises)
 - [x] ID 102: The role of the striated skeletal muscle in energy conversion ✅ (10 exercises)
 - [x] ID 103: The concept of genetic information ✅ (5 exercises)
 - [x] ID 104: The expression of genetic information ✅ (5 exercises, 29 questions, 100 choices)
-- [ ] ID 105: Genetic engineering: principles and techniques
-- [ ] ID 106: Transmission of genetic information through sexual reproduction
-- [ ] ID 107: Statistical laws of the transmission of hereditary traits in diploids
-- [ ] ID 108: Human genetics
-- [ ] ID 109: Quantitative study of variation - Biometrics
+- [x] ID 105: Genetic engineering: principles and techniques ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 106: Transmission of genetic information through sexual reproduction ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 107: Statistical laws of the transmission of hereditary traits in diploids ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 108: Human genetics ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 109: Quantitative study of variation - Biometrics ✅ (5 exercises, 30 questions, 120 choices)
 
 ### Batch 10: Life & Earth Sciences (IDs: 110-119) - COMPLETED ✅
 - [x] ID 110: Population genetics ✅ (5 exercises, 23 questions, 64 choices)
@@ -142,34 +143,97 @@ We will process lessons in batches of 10, prioritizing by:
 ✅ **Batch 6**: Mathematics (IDs: 78-87) - 10/10 lessons completed
 ✅ **Batch 7**: Mathematics (IDs: 88-97) - 10/10 lessons completed
 ✅ **Batch 8**: Mathematics (IDs: 98-99) - 2/2 lessons completed
+✅ **Batch 9**: Life & Earth Sciences - Genetics (IDs: 105-109) - 5/5 lessons completed
 ✅ **Batch 10**: Life & Earth Sciences (IDs: 110-119) - 10/10 lessons completed
 ✅ **Batch 11**: Life & Earth Sciences (IDs: 120-123) - 4/4 lessons completed
 ✅ **Batch 12**: Physics & Chemistry (IDs: 125-134) - 10/10 lessons completed
+✅ **Batch 17**: Third Year Middle School Math (IDs: 1753-1762) - 10/10 lessons completed
+✅ **Batch 18**: Third Year Middle School Physics (IDs: 1642-1651) - 10/10 lessons completed
+✅ **Batch 19**: Third Year Middle School Biology (IDs: 1774-1783) - 10/10 lessons completed
+✅ **Batch 20**: Second Year Middle School Math (IDs: 1589-1598) - 10/10 lessons completed
+✅ **Batch 21**: Second Year Middle School Physics/Chemistry (IDs: 1570-1579) - 10/10 lessons completed
+✅ **Batch 22**: Second Year Middle School Life & Earth Sciences (IDs: 1611-1620) - 10/10 lessons completed
+✅ **Batch 23**: First Year Middle School Mathematics (IDs: 1205-1214) - 10/10 lessons completed
 
 ### Recently Completed
-✅ **Batch 12**: Physics & Chemistry (IDs: 125-134) - 10/10 lessons completed (100%)
-✅ **Batch 8**: Mathematics (IDs: 98-99) - 2/2 lessons completed (100%)
-✅ **Batch 5**: Mathematics (IDs: 68-77) - 10/10 lessons completed (100%)
+✅ **Batch 23**: First Year Middle School Mathematics (IDs: 1205-1214) - 10/10 lessons completed (100%) 🎉
+✅ **Batch 22**: Second Year Middle School Life & Earth Sciences (IDs: 1611-1620) - 10/10 lessons completed (100%)
+✅ **Batch 21**: Second Year Middle School Physics/Chemistry (IDs: 1570-1579) - 10/10 lessons completed (100%)
+✅ **Batch 20**: Second Year Middle School Math (IDs: 1589-1598) - 10/10 lessons completed (100%)
 
-**Recent Completions:**
-- [x] ID 133: Tracking the evolution of a chemical transformation ✅ (5 exercises, 26 questions, 90 choices)
-- [x] ID 134: Conductance and conductivity ✅ (5 exercises, 25 questions, 86 choices)
-- [x] ID 131: Physical quantities related to the amount of substance ✅ (5 exercises, 25 questions, 86 choices)
-- [x] ID 132: Concentration and electrolytic solutions ✅ (5 exercises, 25 questions, 86 choices)
+**Recent Completions (Batch 23 - First Year Middle School Mathematics) - 10% MILESTONE! 🎉:**
+- [x] ID 1205: Operations on Decimal Numbers ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1206: Numbers in Fractional Form ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1207: Angles ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1208: Triangle ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1209: Perpendicular Bisector and Triangle Inequality ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1210: Notable Lines of a Triangle ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1211: Relative Numbers ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1212: Powers ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1213: Development and Factorization ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1214: Equations ✅ (5 exercises, 30 questions, 120 choices)
+
+**Previous Batch (Batch 22 - Second Year Middle School Life & Earth Sciences):**
+- [x] ID 1611: Plate Tectonics Theory ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1612: Earthquakes and Plate Tectonics ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1613: Volcanoes and Plate Tectonics ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1614: Tectonic Deformations and Plate Tectonics ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1615: Formation of Igneous Rocks ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1616: Formation of Mountain Ranges ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1617: Reproduction in Animals ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1618: Reproduction in Plants ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1619: Human Reproduction ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1620: Human Heredity ✅ (5 exercises, 30 questions, 120 choices)
+
+**Previous Batch (Batch 21 - Second Year Middle School Physics/Chemistry):**
+- [x] ID 1570: Air Around Us ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1571: Properties of Air ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1572: Molecules and Atoms ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1573: Combustion ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1574: Chemical Reaction: Concept and Laws ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1575: Concept of Chemical Reaction ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1576: Natural and Synthetic Materials ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1577: Air Pollution ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1578: Light Around Us ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1579: Light Sources and Receivers ✅ (5 exercises, 30 questions, 120 choices)
+
+**Previous Batch (Batch 20 - Second Year Middle School Math):**
+- [x] ID 1589: Rational Numbers ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1590: Operations on Rational Numbers ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1591: Sum and Difference of Two Rational Numbers ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1592: Product and Quotient of Two Rational Numbers ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1593: Four Operations on Rational Numbers ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1594: Powers of 10 ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1595: Powers of a Rational Number ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1596: Axial Symmetry ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1597: Lines Parallel to the Sides of a Triangle ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1598: Important Lines in a Triangle ✅ (5 exercises, 30 questions, 120 choices)
+
+**Previous Batch (Batch 28 - Fifth Year Primary Mathematics):**
+- [x] ID 1094: Large Numbers ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1095: Addition and Subtraction ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1096: Multiplication ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1097: Division ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1098: Fractions ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1099: Decimal Numbers ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1100: Measurement: Length and Distance ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1101: Measurement: Mass and Weight ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1102: Geometry: Quadrilaterals ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1103: Perimeter and Area ✅ (5 exercises, 30 questions, 120 choices)
 
 ### Next Batches Available
-📋 **Batch 9**: Life & Earth Sciences (IDs: 105-109) - 5 lessons remaining
-📋 **Batch 12**: First Year Baccalaureate Sciences (1ère Bac Sciences) - NEW
-📋 **Batch 13**: First Year Baccalaureate Literature (1ère Bac Lettres) - NEW
+📋 **Batch 29**: Fourth Year Primary Mathematics (IDs: 1116-1125) - 10 lessons
+📋 **Batch 30**: Third Year Primary Mathematics (IDs: 1138-1147) - 10 lessons
+📋 **Batch 31**: Fifth Year Primary Science (IDs: 1169-1178) - 10 lessons
 
 ### Overall Statistics
-- **Platform Progress**: 85/2001 lessons completed (~4.2%)
-- **Total Exercises Generated**: ~435 exercises
-- **Total Questions Created**: ~2,050 questions
-- **Total Choices Generated**: ~6,400 choices
-- **Subjects Covered**: Physics, Chemistry, Mathematics, Life & Earth Sciences, Environmental Science
+- **Platform Progress**: 257/2001 lessons completed (~12.8%) 🎉 **10% MILESTONE EXCEEDED!**
+- **Total Exercises Generated**: ~905 exercises
+- **Total Questions Created**: ~4,900 questions
+- **Total Choices Generated**: ~17,600 choices
+- **Subjects Covered**: Physics, Chemistry, Mathematics, Life & Earth Sciences, Environmental Science, Geometry
 - **Multilingual Support**: Full English/Arabic translation for all content
-- **Quality Standards**: Progressive difficulty, comprehensive rewards, pedagogically sound
+- **Quality Standards**: Progressive difficulty, comprehensive rewards, pedagogically sound (5 exercises × 6 questions per lesson)
 
 ### Batch 12 Final Statistics
 - **Exercises Created**: 50 exercises
@@ -228,18 +292,365 @@ We will process lessons in batches of 10, prioritizing by:
 
 ---
 
+## Third Year Middle School (3ème Année Collège)
+
+### Batch 17: Mathematics (IDs: 1753-1762) - COMPLETED ✅
+- [x] ID 1753: Expansion and Factorization ✅ (1 exercise, 5 questions, 20 choices)
+- [x] ID 1754: Important Identities ✅ (1 exercise, 5 questions, 20 choices)
+- [x] ID 1755: Powers ✅ (1 exercise, 5 questions, 20 choices)
+- [x] ID 1756: Square Roots ✅ (1 exercise, 5 questions, 20 choices)
+- [x] ID 1757: Pythagorean Theorem ✅ (1 exercise, 5 questions, 20 choices)
+- [x] ID 1758: Order and Operations ✅ (1 exercise, 5 questions, 20 choices)
+- [x] ID 1759: Thales Theorem ✅ (1 exercise, 5 questions, 20 choices)
+- [x] ID 1760: Right Triangle ✅ (1 exercise, 5 questions, 20 choices)
+- [x] ID 1761: Trigonometric Calculations ✅ (1 exercise, 5 questions, 20 choices)
+- [x] ID 1762: Central and Inscribed Angles in a Circle ✅ (1 exercise, 5 questions, 20 choices)
+
+### Batch 18: Physics/Chemistry (IDs: 1642-1651) - COMPLETED ✅
+- [x] ID 1642: Materials and Objects ✅ (1 exercise, 5 questions, 20 choices)
+- [x] ID 1643: Examples of Materials Used in Daily Life ✅ (1 exercise, 5 questions, 20 choices)
+- [x] ID 1644: Materials and Electricity ✅ (1 exercise, 5 questions, 20 choices)
+- [x] ID 1645: Atoms and Ions ✅ (1 exercise, 5 questions, 20 choices)
+- [x] ID 1646: Oxidation of Metals in Air ✅ (1 exercise, 5 questions, 20 choices)
+- [x] ID 1647: Reactions of Organic Materials with Oxygen in Air ✅ (1 exercise, 5 questions, 20 choices)
+- [x] ID 1648: Acidic and Basic Solutions ✅ (1 exercise, 5 questions, 20 choices)
+- [x] ID 1649: Reactions of Materials with Acidic and Basic Solutions ✅ (1 exercise, 5 questions, 20 choices)
+- [x] ID 1650: Tests for Detecting Some Ions ✅ (1 exercise, 5 questions, 20 choices)
+- [x] ID 1651: Danger of Some Materials Used in Daily Life on Health and Environment ✅ (1 exercise, 5 questions, 20 choices)
+
+### Batch 19: Life & Earth Sciences - Human Biology (IDs: 1774-1783) - COMPLETED ✅
+- [x] ID 1774: Digestion and Absorption ✅ (1 exercise, 5 questions, 20 choices)
+- [x] ID 1775: Urinary Excretion ✅ (1 exercise, 5 questions, 20 choices)
+- [x] ID 1776: Nervous System ✅ (1 exercise, 5 questions, 20 choices)
+- [x] ID 1777: Muscular System ✅ (1 exercise, 5 questions, 20 choices)
+- [x] ID 1778: Blood Circulation ✅ (1 exercise, 5 questions, 20 choices)
+- [x] ID 1779: Respiration ✅ (1 exercise, 5 questions, 20 choices)
+- [x] ID 1780: Blood and Circulatory System ✅ (1 exercise, 5 questions, 20 choices)
+- [x] ID 1781: Human Respiration ✅ (1 exercise, 5 questions, 20 choices)
+- [x] ID 1782: Nutritional Education ✅ (1 exercise, 5 questions, 20 choices)
+- [x] ID 1783: Body Health ✅ (1 exercise, 5 questions, 20 choices)
+
+---
+
+## Second Year Middle School (2ème Année Collège)
+
+### Batch 20: Mathematics (IDs: 1589-1598) - COMPLETED ✅
+- [x] ID 1589: Rational Numbers ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1590: Operations on Rational Numbers ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1591: Sum and Difference of Two Rational Numbers ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1592: Product and Quotient of Two Rational Numbers ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1593: Four Operations on Rational Numbers ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1594: Powers of 10 ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1595: Powers of a Rational Number ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1596: Axial Symmetry ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1597: Lines Parallel to the Sides of a Triangle ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1598: Important Lines in a Triangle ✅ (5 exercises, 30 questions, 120 choices)
+
+### Batch 21: Physics/Chemistry (IDs: 1570-1579) - COMPLETED ✅
+- [x] ID 1570: Air Around Us ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1571: Properties of Air ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1572: Molecules and Atoms ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1573: Combustion ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1574: Chemical Reaction: Concept and Laws ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1575: Concept of Chemical Reaction ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1576: Natural and Synthetic Materials ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1577: Air Pollution ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1578: Light Around Us ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1579: Light Sources and Receivers ✅ (5 exercises, 30 questions, 120 choices)
+
+### Batch 22: Life & Earth Sciences (IDs: 1611-1620) - COMPLETED ✅
+- [x] ID 1611: Plate Tectonics Theory ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1612: Earthquakes and Plate Tectonics ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1613: Volcanoes and Plate Tectonics ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1614: Tectonic Deformations and Plate Tectonics ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1615: Formation of Igneous Rocks ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1616: Formation of Mountain Ranges ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1617: Reproduction in Animals ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1618: Reproduction in Plants ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1619: Human Reproduction ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1620: Human Heredity ✅ (5 exercises, 30 questions, 120 choices)
+
+---
+
+## First Year Middle School (1ère Année Collège)
+
+### Batch 23: Mathematics (IDs: 1205-1214) - COMPLETED ✅
+- [x] ID 1205: Operations on Decimal Numbers ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1206: Numbers in Fractional Form ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1207: Angles ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1208: Triangle ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1209: Perpendicular Bisector and Triangle Inequality ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1210: Notable Lines of a Triangle ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1211: Relative Numbers ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1212: Powers ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1213: Development and Factorization ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1214: Equations ✅ (5 exercises, 30 questions, 120 choices)
+
+### Batch 24: Physics (IDs: 1254-1263) - COMPLETED ✅
+- [x] ID 1254: Light Sources and Optical Receivers ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1255: Shadow and Reflection ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1256: Colors and Filters ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1257: Introduction to Matter ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1258: States of Matter ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1259: Volume and Mass ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1260: Introduction to Electrical Circuits ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1261: Simple Electrical Circuits ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1262: Series and Parallel Circuits ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1263: Electrical Safety ✅ (5 exercises, 30 questions, 120 choices)
+
+### Batch 25: Life & Earth Sciences (IDs: 1240-1248) - COMPLETED ✅
+- [x] ID 1240: Exploration of Natural Environments ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1241: Respiration and Living Environments of Living Beings ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1242: Nutrition in Living Beings ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1243: Trophic Relationships and Natural Balances ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1244: Classification of Living Beings ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1245: Geological Field Trip ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1246: Formation of Sedimentary Rocks ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1247: Construction of a Geological Time Scale ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1248: Water Resources ✅ (5 exercises, 30 questions, 120 choices)
+
+---
+
+## Sixth Year Primary (6ème Année Primaire)
+
+### Batch 26: Mathematics (IDs: 1072-1081) - COMPLETED ✅
+- [x] ID 1072: Decimal Numbers ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1073: Operations on Decimal Numbers ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1074: Fractions ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1075: Operations on Fractions ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1076: Proportionality ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1077: Percentages ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1078: Geometry: Circles and Discs ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1079: Areas and Perimeters ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1080: Volumes ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1081: Statistics and Data ✅ (5 exercises, 30 questions, 120 choices)
+
+### Batch 27: Science (IDs: 1147-1156) - COMPLETED ✅
+- [x] ID 1147: The Human Body: Skeleton and Muscles ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1148: The Digestive System ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1149: The Respiratory System ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1150: The Circulatory System ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1151: The Nervous System ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1152: Plants and Their Growth ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1153: Photosynthesis ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1154: Ecosystems ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1155: Energy and Energy Sources ✅ (5 exercises, 30 questions, 120 choices)
+- [x] ID 1156: Matter and Its States ✅ (5 exercises, 30 questions, 120 choices)
+
+### Batch XX: French Language & Literature (IDs: 997-1006) - PLANNED
+- [ ] ID 997: TBD
+- [ ] ID 998: TBD
+- [ ] ID 999: TBD
+- [ ] ID 1000: TBD
+- [ ] ID 1001: TBD
+- [ ] ID 1002: TBD
+- [ ] ID 1003: TBD
+- [ ] ID 1004: TBD
+- [ ] ID 1005: TBD
+- [ ] ID 1006: TBD
+
+### Batch 28: Islamic Education (IDs: 963-972) - PLANNED
+- [ ] ID 963: TBD
+- [ ] ID 964: TBD
+- [ ] ID 965: TBD
+- [ ] ID 966: TBD
+- [ ] ID 967: TBD
+- [ ] ID 968: TBD
+- [ ] ID 969: TBD
+- [ ] ID 970: TBD
+- [ ] ID 971: TBD
+- [ ] ID 972: TBD
+
+---
+
+## Fifth Year Primary (5ème Année Primaire)
+
+### Batch 29: Mathematics (IDs: 822-831) - PLANNED
+- [ ] ID 822: TBD
+- [ ] ID 823: TBD
+- [ ] ID 824: TBD
+- [ ] ID 825: TBD
+- [ ] ID 826: TBD
+- [ ] ID 827: TBD
+- [ ] ID 828: TBD
+- [ ] ID 829: TBD
+- [ ] ID 830: TBD
+- [ ] ID 831: TBD
+
+### Batch 30: French Language & Literature (IDs: 870-879) - PLANNED
+- [ ] ID 870: TBD
+- [ ] ID 871: TBD
+- [ ] ID 872: TBD
+- [ ] ID 873: TBD
+- [ ] ID 874: TBD
+- [ ] ID 875: TBD
+- [ ] ID 876: TBD
+- [ ] ID 877: TBD
+- [ ] ID 878: TBD
+- [ ] ID 879: TBD
+
+### Batch 31: Islamic Education (IDs: 731-740) - PLANNED
+- [ ] ID 731: TBD
+- [ ] ID 732: TBD
+- [ ] ID 733: TBD
+- [ ] ID 734: TBD
+- [ ] ID 735: TBD
+- [ ] ID 736: TBD
+- [ ] ID 737: TBD
+- [ ] ID 738: TBD
+- [ ] ID 739: TBD
+- [ ] ID 740: TBD
+
+---
+
+## Fourth Year Primary (4ème Année Primaire)
+
+### Batch 32: Mathematics (IDs: 647-656) - PLANNED
+- [ ] ID 647: TBD
+- [ ] ID 648: TBD
+- [ ] ID 649: TBD
+- [ ] ID 650: TBD
+- [ ] ID 651: TBD
+- [ ] ID 652: TBD
+- [ ] ID 653: TBD
+- [ ] ID 654: TBD
+- [ ] ID 655: TBD
+- [ ] ID 656: TBD
+
+### Batch 33: French Language & Literature (IDs: 559-568) - PLANNED
+- [ ] ID 559: TBD
+- [ ] ID 560: TBD
+- [ ] ID 561: TBD
+- [ ] ID 562: TBD
+- [ ] ID 563: TBD
+- [ ] ID 564: TBD
+- [ ] ID 565: TBD
+- [ ] ID 566: TBD
+- [ ] ID 567: TBD
+- [ ] ID 568: TBD
+
+### Batch 34: Islamic Education (IDs: 509-518) - PLANNED
+- [ ] ID 509: TBD
+- [ ] ID 510: TBD
+- [ ] ID 511: TBD
+- [ ] ID 512: TBD
+- [ ] ID 513: TBD
+- [ ] ID 514: TBD
+- [ ] ID 515: TBD
+- [ ] ID 516: TBD
+- [ ] ID 517: TBD
+- [ ] ID 518: TBD
+
+---
+
+## Third Year Primary (3ème Année Primaire)
+
+### Batch 35: Mathematics (IDs: 424-433) - PLANNED
+- [ ] ID 424: TBD
+- [ ] ID 425: TBD
+- [ ] ID 426: TBD
+- [ ] ID 427: TBD
+- [ ] ID 428: TBD
+- [ ] ID 429: TBD
+- [ ] ID 430: TBD
+- [ ] ID 431: TBD
+- [ ] ID 432: TBD
+- [ ] ID 433: TBD
+
+### Batch 36: French Language & Literature (IDs: 458-467) - PLANNED
+- [ ] ID 458: TBD
+- [ ] ID 459: TBD
+- [ ] ID 460: TBD
+- [ ] ID 461: TBD
+- [ ] ID 462: TBD
+- [ ] ID 463: TBD
+- [ ] ID 464: TBD
+- [ ] ID 465: TBD
+- [ ] ID 466: TBD
+- [ ] ID 467: TBD
+
+### Batch 37: Islamic Education (IDs: 376-385) - PLANNED
+- [ ] ID 376: TBD
+- [ ] ID 377: TBD
+- [ ] ID 378: TBD
+- [ ] ID 379: TBD
+- [ ] ID 380: TBD
+- [ ] ID 381: TBD
+- [ ] ID 382: TBD
+- [ ] ID 383: TBD
+- [ ] ID 384: TBD
+- [ ] ID 385: TBD
+
+---
+
+## Common Core (Tronc Commun)
+
+### Batch 38: Mathematics (IDs: 155-164) - PLANNED
+- [ ] ID 155: TBD
+- [ ] ID 156: TBD
+- [ ] ID 157: TBD
+- [ ] ID 158: TBD
+- [ ] ID 159: TBD
+- [ ] ID 160: TBD
+- [ ] ID 161: TBD
+- [ ] ID 162: TBD
+- [ ] ID 163: TBD
+- [ ] ID 164: TBD
+
+### Batch 39: Physics (IDs: 171-180) - PLANNED
+- [ ] ID 171: TBD
+- [ ] ID 172: TBD
+- [ ] ID 173: TBD (if exists)
+- [ ] ID 174: TBD
+- [ ] ID 175: TBD
+- [ ] ID 176: TBD
+- [ ] ID 177: TBD
+- [ ] ID 178: TBD
+- [ ] ID 179: TBD
+- [ ] ID 180: TBD
+
+### Batch 40: Life & Earth Sciences (IDs: 201-210) - PLANNED
+- [ ] ID 201: TBD
+- [ ] ID 202: TBD
+- [ ] ID 203: TBD
+- [ ] ID 204: TBD
+- [ ] ID 205: TBD
+- [ ] ID 206: TBD
+- [ ] ID 207: TBD
+- [ ] ID 208: TBD
+- [ ] ID 209: TBD
+- [ ] ID 210: TBD
+
+---
+
 ## Next Priority Batches
 
 ### Immediate Priorities (Next Session)
-1. **Complete Batch 9**: Finish remaining 5 lessons (IDs: 105-109)
-2. **Start Batch 12**: Begin First Year Baccalaureate Physics & Chemistry (IDs: 125-134)
-3. **Continue Batch 13**: Chemistry reactions and electromagnetic fields (IDs: 135-144)
+1. **Start Batch 20**: Begin Second Year Middle School Mathematics (IDs: 1589-1598)
+2. **Start Batch 21**: Begin Second Year Middle School Physics (IDs: 1570-1579)
+3. **Start Batch 22**: Begin Second Year Middle School Life & Earth Sciences (IDs: 1611-1620)
 
 ### Strategy Notes
-- **First Year Baccalaureate** represents a crucial academic level requiring high-quality exercises
-- **Focus Areas**: Energy and work concepts, chemical reactions, electromagnetic fields
-- **Complexity**: Intermediate to advanced level exercises expected
-- **Academic Standards**: University preparation level content
+- **Focus on Core Subjects**: Prioritize Mathematics, Physics, Life & Earth Sciences across all levels
+- **Progressive Approach**: Work from middle school down to primary, maintaining quality standards
+- **1792 lessons remaining** without exercises out of 2001 total lessons
+- **Current completion**: 209 lessons with exercises (10.4% - **10% MILESTONE ACHIEVED!** 🎉)
+- **Target**: Add 10-20 lessons per batch to maintain momentum
+- **Latest Session**: Completed Batch 23 (10 lessons, First Year Middle School Mathematics) covering decimals, fractions, angles, triangles, powers, and equations
+- **Quality Standard**: Each lesson now has 5 exercises with 6 questions each (30 questions total per lesson)
+
+### Coverage Summary by Level
+- **Second Year Baccalaureate**: 0 lessons remaining (All core lessons completed! ✅)
+- **First Year Baccalaureate**: 91 lessons remaining (priority: Physics, Mathematics, Life & Earth Sciences)
+- **Common Core**: 311 lessons remaining (focus on core sciences)
+- **Third Year Middle School**: 216 lessons remaining (30 completed in Batches 17-19)
+- **Second Year Middle School**: 195 lessons remaining
+- **First Year Middle School**: 200 lessons remaining
+- **Sixth Year Primary**: 207 lessons remaining
+- **Fifth Year Primary**: 190 lessons remaining
+- **Fourth Year Primary**: 222 lessons remaining
+- **Third Year Primary**: 133 lessons remaining
+- **First & Second Year Primary**: 57 lessons remaining
 
 ---
-*Updated: Latest session - Successfully completed Batch 12 (First Year Baccalaureate Physics & Chemistry) with 10 lessons, 50 exercises, 252 questions, and 868 choices. Platform now has 85 lessons with exercises covering advanced topics in energy, thermodynamics, chemical kinetics, and conductivity.*
+*Updated: Latest session - Successfully completed Batch 22 (Second Year Middle School Life & Earth Sciences). Created 10 command files for lessons 1611-1620, each with 5 exercises and 6 questions per exercise (30 questions × 4 choices = 120 choices per lesson). Topics covered: Plate Tectonics Theory, Earthquakes, Volcanoes, Tectonic Deformations, Formation of Igneous Rocks, Formation of Mountain Ranges, Reproduction in Animals, Reproduction in Plants, Human Reproduction, and Human Heredity. Platform now has 199 lessons with exercises (9.9% completion - nearly 10%!). Remaining: 1802 lessons.*

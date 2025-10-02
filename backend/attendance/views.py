@@ -390,9 +390,10 @@ class AttendanceSessionViewSet(viewsets.ModelViewSet):
         if session.teacher != request.user and request.user.role != 'ADMIN':
             return Response({'error': 'Access denied'}, status=status.HTTP_403_FORBIDDEN)
         
-        if session.status not in ['in_progress', 'not_started']:
-            return Response({'error': 'Cannot modify completed session'}, 
-                          status=status.HTTP_400_BAD_REQUEST)
+        # Allow editing completed sessions (teachers can correct mistakes)
+        # if session.status not in ['in_progress', 'not_started']:
+        #     return Response({'error': 'Cannot modify completed session'},
+        #                   status=status.HTTP_400_BAD_REQUEST)
         
         # Start session if not started
         if session.status == 'not_started':
@@ -499,8 +500,199 @@ class AttendanceRecordViewSet(viewsets.ModelViewSet):
         status_filter = self.request.query_params.get('status')
         if status_filter:
             queryset = queryset.filter(status=status_filter)
+
+        # Additional contextual filters
+        class_id = self.request.query_params.get('class_id')
+        if class_id:
+            queryset = queryset.filter(
+                attendance_session__timetable_session__timetable__school_class_id=class_id
+            )
+
+        grade_id = self.request.query_params.get('grade_id')
+        if grade_id:
+            queryset = queryset.filter(
+                attendance_session__timetable_session__timetable__school_class__grade_id=grade_id
+            )
+
+        track_id = self.request.query_params.get('track_id')
+        if track_id:
+            queryset = queryset.filter(
+                attendance_session__timetable_session__timetable__school_class__track_id=track_id
+            )
+
+        subject_id = self.request.query_params.get('subject_id')
+        if subject_id:
+            queryset = queryset.filter(
+                attendance_session__timetable_session__subject_id=subject_id
+            )
+
+        teacher_id = self.request.query_params.get('teacher_id')
+        if teacher_id:
+            queryset = queryset.filter(attendance_session__teacher_id=teacher_id)
+
+        search = self.request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(student__first_name__icontains=search)
+                | Q(student__last_name__icontains=search)
+                | Q(student__profile__ar_first_name__icontains=search)
+                | Q(student__profile__ar_last_name__icontains=search)
+                | Q(attendance_session__timetable_session__timetable__school_class__name__icontains=search)
+            )
         
         return queryset.order_by('-attendance_session__date')
+
+    @action(detail=False, methods=['get'], url_path='student-statistics/(?P<student_id>[^/.]+)')
+    def student_statistics(self, request, student_id=None):
+        """Get attendance statistics for a specific student"""
+        from decimal import Decimal
+        from datetime import datetime, timedelta
+
+        # Get date range from query params
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+        subject_id = request.query_params.get('subject_id')
+
+        # Build queryset
+        queryset = AttendanceRecord.objects.filter(student_id=student_id)
+
+        if start_date:
+            queryset = queryset.filter(attendance_session__date__gte=start_date)
+        if end_date:
+            queryset = queryset.filter(attendance_session__date__lte=end_date)
+        if subject_id:
+            queryset = queryset.filter(attendance_session__timetable_session__subject_id=subject_id)
+
+        # Get statistics
+        from django.db.models import Count, Q
+
+        stats = queryset.aggregate(
+            total=Count('id'),
+            present=Count('id', filter=Q(status='present')),
+            absent=Count('id', filter=Q(status='absent')),
+            late=Count('id', filter=Q(status='late')),
+            excused=Count('id', filter=Q(status='excused'))
+        )
+
+        total = stats['total'] or 0
+        present = stats['present'] or 0
+        absent = stats['absent'] or 0
+        late = stats['late'] or 0
+        excused = stats['excused'] or 0
+
+        # Calculate percentages
+        presence_rate = round((present / total * 100), 2) if total > 0 else 0
+        attendance_rate = round(((present + late) / total * 100), 2) if total > 0 else 0
+        absence_rate = round((absent / total * 100), 2) if total > 0 else 0
+        punctuality_rate = round((present / (present + late) * 100), 2) if (present + late) > 0 else 0
+
+        # Get student info
+        try:
+            student = User.objects.get(id=student_id)
+            student_name = student.full_name
+        except User.DoesNotExist:
+            student_name = "Unknown Student"
+
+        # Find consecutive absences
+        recent_records = queryset.order_by('-attendance_session__date')[:10]
+        consecutive_absences = 0
+        for record in recent_records:
+            if record.status == 'absent':
+                consecutive_absences += 1
+            else:
+                break
+
+        # Get last absence date
+        last_absence = queryset.filter(status='absent').order_by('-attendance_session__date').first()
+        last_absence_date = last_absence.attendance_session.date if last_absence else None
+
+        # Monthly breakdown (last 6 months)
+        monthly_breakdown = []
+        if total > 0:
+            from dateutil.relativedelta import relativedelta
+            from django.utils import timezone
+
+            today = timezone.now().date()
+            for i in range(5, -1, -1):
+                month_start = (today - relativedelta(months=i)).replace(day=1)
+                month_end = (month_start + relativedelta(months=1)) - timedelta(days=1)
+
+                month_stats = queryset.filter(
+                    attendance_session__date__gte=month_start,
+                    attendance_session__date__lte=month_end
+                ).aggregate(
+                    total=Count('id'),
+                    present=Count('id', filter=Q(status='present')),
+                    absent=Count('id', filter=Q(status='absent')),
+                    late=Count('id', filter=Q(status='late'))
+                )
+
+                month_total = month_stats['total'] or 0
+                if month_total > 0:
+                    monthly_breakdown.append({
+                        'month': month_start.strftime('%Y-%m'),
+                        'month_name': month_start.strftime('%B %Y'),
+                        'total': month_total,
+                        'present': month_stats['present'],
+                        'absent': month_stats['absent'],
+                        'late': month_stats['late'],
+                        'attendance_rate': round(((month_stats['present'] + month_stats['late']) / month_total * 100), 2)
+                    })
+
+        # Subject breakdown
+        subject_breakdown = []
+        subject_stats = queryset.values(
+            'attendance_session__timetable_session__subject__id',
+            'attendance_session__timetable_session__subject__name'
+        ).annotate(
+            total=Count('id'),
+            present=Count('id', filter=Q(status='present')),
+            absent=Count('id', filter=Q(status='absent')),
+            late=Count('id', filter=Q(status='late'))
+        )
+
+        for subject in subject_stats:
+            subject_total = subject['total'] or 0
+            if subject_total > 0:
+                subject_breakdown.append({
+                    'subject_id': subject['attendance_session__timetable_session__subject__id'],
+                    'subject_name': subject['attendance_session__timetable_session__subject__name'],
+                    'total': subject_total,
+                    'present': subject['present'],
+                    'absent': subject['absent'],
+                    'late': subject['late'],
+                    'attendance_rate': round(((subject['present'] + subject['late']) / subject_total * 100), 2)
+                })
+
+        # Recent attendance history
+        recent_history = []
+        for record in recent_records[:10]:
+            recent_history.append({
+                'date': record.attendance_session.date,
+                'subject_name': record.attendance_session.timetable_session.subject.name if record.attendance_session.timetable_session else 'N/A',
+                'status': record.status,
+                'status_display': record.get_status_display(),
+                'notes': record.notes or ''
+            })
+
+        return Response({
+            'student_id': int(student_id),
+            'student_name': student_name,
+            'total_sessions': total,
+            'present_count': present,
+            'absent_count': absent,
+            'late_count': late,
+            'excused_count': excused,
+            'presence_rate': float(presence_rate),
+            'attendance_rate': float(attendance_rate),
+            'absence_rate': float(absence_rate),
+            'punctuality_rate': float(punctuality_rate),
+            'consecutive_absences': consecutive_absences,
+            'last_absence_date': last_absence_date,
+            'monthly_breakdown': monthly_breakdown,
+            'subject_breakdown': subject_breakdown,
+            'recent_history': recent_history
+        })
 
 # =====================================
 # ABSENCE FLAG VIEWSET

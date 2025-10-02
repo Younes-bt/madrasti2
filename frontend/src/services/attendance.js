@@ -741,6 +741,22 @@ class AttendanceService {
   }
 
   /**
+   * Get Student Attendance Statistics
+   * @param {number} studentId - Student ID
+   * @param {Object} params - Query parameters (start_date, end_date, subject_id)
+   * @returns {Promise<Object>} Student attendance statistics
+   */
+  async getStudentStatistics(studentId, params = {}) {
+    try {
+      const response = await apiMethods.get(`attendance/records/student-statistics/${studentId}/`, { params });
+      return response;
+    } catch (error) {
+      console.error('Get student statistics failed:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get Student History
    * @param {Object} params - Query parameters
    * @returns {Promise<Object>} Student attendance history

@@ -1,25 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../hooks/useLanguage';
 import { useNavigate, useParams } from 'react-router-dom';
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Calendar, 
+import {
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
   GraduationCap,
   Building,
   Clock,
   Users,
   BookOpen,
-  ArrowLeft
+  ArrowLeft,
+  TrendingUp,
+  TrendingDown,
+  BarChart3,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle
 } from 'lucide-react';
 import { TeacherPageLayout } from '../../components/teacher/layout';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
+import { Progress } from '../../components/ui/progress';
 import { apiMethods } from '../../services/api';
+import attendanceService from '../../services/attendance';
 import { toast } from 'sonner';
 
 const TeacherViewStudentPage = () => {
@@ -28,6 +36,8 @@ const TeacherViewStudentPage = () => {
   const { studentId } = useParams();
   const [loading, setLoading] = useState(true);
   const [studentData, setStudentData] = useState(null);
+  const [attendanceStats, setAttendanceStats] = useState(null);
+  const [loadingStats, setLoadingStats] = useState(true);
 
   // Fetch student data
   const fetchStudentData = async () => {
@@ -47,9 +57,24 @@ const TeacherViewStudentPage = () => {
     }
   };
 
+  // Fetch attendance statistics
+  const fetchAttendanceStatistics = async () => {
+    setLoadingStats(true);
+    try {
+      const stats = await attendanceService.getStudentStatistics(studentId);
+      setAttendanceStats(stats);
+    } catch (error) {
+      console.error('Failed to fetch attendance statistics:', error);
+      // Don't show error toast, just leave stats as null
+    } finally {
+      setLoadingStats(false);
+    }
+  };
+
   useEffect(() => {
     if (studentId) {
       fetchStudentData();
+      fetchAttendanceStatistics();
     }
   }, [studentId]);
 
@@ -76,11 +101,33 @@ const TeacherViewStudentPage = () => {
 
   const formatDate = (dateString) => {
     if (!dateString) return '—';
-    return new Date(dateString).toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
     });
+  };
+
+  const getAttendanceStatusBadge = (rate) => {
+    if (rate >= 90) return { variant: 'default', label: t('attendance.statusExcellent', 'Excellent'), color: 'text-green-600' };
+    if (rate >= 75) return { variant: 'secondary', label: t('attendance.statusGood', 'Good'), color: 'text-blue-600' };
+    if (rate >= 60) return { variant: 'outline', label: t('attendance.statusFair', 'Fair'), color: 'text-yellow-600' };
+    return { variant: 'destructive', label: t('attendance.statusAtRisk', 'At Risk'), color: 'text-red-600' };
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'present':
+        return 'text-green-600 bg-green-50';
+      case 'absent':
+        return 'text-red-600 bg-red-50';
+      case 'late':
+        return 'text-yellow-600 bg-yellow-50';
+      case 'excused':
+        return 'text-blue-600 bg-blue-50';
+      default:
+        return 'text-gray-600 bg-gray-50';
+    }
   };
 
   return (
@@ -260,6 +307,187 @@ const TeacherViewStudentPage = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Attendance Statistics Section */}
+        {!loadingStats && attendanceStats && attendanceStats.total_sessions > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                {t('attendance.statistics', 'Attendance Statistics')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Summary Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Presence Rate */}
+                <Card className="bg-green-50 border-green-200">
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-green-600">{t('attendance.presenceRate', 'Presence Rate')}</p>
+                        <p className="text-2xl font-bold text-green-700">{attendanceStats.presence_rate}%</p>
+                        <p className="text-xs text-green-600">
+                          {attendanceStats.present_count}/{attendanceStats.total_sessions} {t('attendance.sessions', 'sessions')}
+                        </p>
+                      </div>
+                      <CheckCircle2 className="h-8 w-8 text-green-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Absence Rate */}
+                <Card className="bg-red-50 border-red-200">
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-red-600">{t('attendance.absenceRate', 'Absence Rate')}</p>
+                        <p className="text-2xl font-bold text-red-700">{attendanceStats.absence_rate}%</p>
+                        <p className="text-xs text-red-600">
+                          {attendanceStats.absent_count}/{attendanceStats.total_sessions} {t('attendance.sessions', 'sessions')}
+                        </p>
+                      </div>
+                      <XCircle className="h-8 w-8 text-red-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Late Rate */}
+                <Card className="bg-yellow-50 border-yellow-200">
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-yellow-600">{t('attendance.lateRate', 'Late Rate')}</p>
+                        <p className="text-2xl font-bold text-yellow-700">
+                          {attendanceStats.late_count > 0 ? ((attendanceStats.late_count / attendanceStats.total_sessions) * 100).toFixed(1) : 0}%
+                        </p>
+                        <p className="text-xs text-yellow-600">
+                          {attendanceStats.late_count}/{attendanceStats.total_sessions} {t('attendance.sessions', 'sessions')}
+                        </p>
+                      </div>
+                      <Clock className="h-8 w-8 text-yellow-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Punctuality Rate */}
+                <Card className="bg-blue-50 border-blue-200">
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-blue-600">{t('attendance.punctualityRate', 'Punctuality')}</p>
+                        <p className="text-2xl font-bold text-blue-700">{attendanceStats.punctuality_rate}%</p>
+                        <p className="text-xs text-blue-600">
+                          {t('attendance.onTime', 'On time arrivals')}
+                        </p>
+                      </div>
+                      <TrendingUp className="h-8 w-8 text-blue-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Overall Status Badge */}
+              <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                <div>
+                  <p className="text-sm font-medium">{t('attendance.overallStatus', 'Overall Attendance Status')}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t('attendance.basedOnAttendanceRate', 'Based on attendance rate')} ({attendanceStats.attendance_rate}%)
+                  </p>
+                </div>
+                <Badge variant={getAttendanceStatusBadge(attendanceStats.attendance_rate).variant} className="text-base px-4 py-2">
+                  {getAttendanceStatusBadge(attendanceStats.attendance_rate).label}
+                </Badge>
+              </div>
+
+              {/* Progress Bars */}
+              <div className="space-y-4">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-green-600">{t('attendance.present', 'Present')}</span>
+                    <span className="text-sm font-medium text-green-600">{attendanceStats.presence_rate}%</span>
+                  </div>
+                  <Progress value={attendanceStats.presence_rate} className="h-3 bg-green-100" />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-red-600">{t('attendance.absent', 'Absent')}</span>
+                    <span className="text-sm font-medium text-red-600">{attendanceStats.absence_rate}%</span>
+                  </div>
+                  <Progress value={attendanceStats.absence_rate} className="h-3 bg-red-100" indicatorClassName="bg-red-500" />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-yellow-600">{t('attendance.late', 'Late')}</span>
+                    <span className="text-sm font-medium text-yellow-600">
+                      {((attendanceStats.late_count / attendanceStats.total_sessions) * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                  <Progress
+                    value={(attendanceStats.late_count / attendanceStats.total_sessions) * 100}
+                    className="h-3 bg-yellow-100"
+                    indicatorClassName="bg-yellow-500"
+                  />
+                </div>
+              </div>
+
+              {/* Alerts */}
+              {attendanceStats.consecutive_absences >= 3 && (
+                <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-red-700">
+                      {t('attendance.consecutiveAbsencesAlert', 'Consecutive Absences Alert')}
+                    </p>
+                    <p className="text-xs text-red-600">
+                      {attendanceStats.consecutive_absences} {t('attendance.consecutiveAbsences', 'consecutive absences detected')}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Recent History */}
+              {attendanceStats.recent_history && attendanceStats.recent_history.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium mb-3">{t('attendance.recentHistory', 'Recent Attendance')}</h4>
+                  <div className="space-y-2">
+                    {attendanceStats.recent_history.slice(0, 5).map((record, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-sm font-medium">{new Date(record.date).toLocaleDateString()}</p>
+                            <p className="text-xs text-muted-foreground">{record.subject_name}</p>
+                          </div>
+                        </div>
+                        <Badge className={getStatusColor(record.status)}>
+                          {t(`attendance.${record.status}`, record.status_display)}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* No Attendance Data */}
+        {!loadingStats && (!attendanceStats || attendanceStats.total_sessions === 0) && (
+          <Card>
+            <CardContent className="text-center py-12">
+              <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {t('attendance.noAttendanceData', 'No Attendance Data')}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {t('attendance.noAttendanceDataDescription', 'No attendance records found for this student yet.')}
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </TeacherPageLayout>
   );

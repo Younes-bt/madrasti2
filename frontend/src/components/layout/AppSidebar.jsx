@@ -230,7 +230,8 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
           tooltip: t('teacherSidebar.students.tooltip'),
           items: [
             { key: 'my-students', label: t('teacherSidebar.students.myStudents'), path: '/teacher/students/my-students' },
-            { key: 'attendance', label: t('teacherSidebar.students.attendance'), path: '/teacher/students/attendance' },
+            { key: 'attendance', label: t('teacherSidebar.students.attendance'), path: '/teacher/attendance' },
+            { key: 'attendance-history', label: t('teacherSidebar.students.attendanceHistory'), path: '/teacher/attendance/history' },
             { key: 'progress', label: t('teacherSidebar.students.progress'), path: '/teacher/students/progress' },
             { key: 'parent-communication', label: t('teacherSidebar.students.parentCommunication'), path: '/teacher/students/parent-communication' },
           ]

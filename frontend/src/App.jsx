@@ -12,6 +12,8 @@ import TeacherDashboard from './pages/teacher/TeacherDashboard'
 import TeacherProfileOverviewPage from './pages/teacher/TeacherProfileOverviewPage'
 import TeacherMyClassesPage from './pages/teacher/TeacherMyClassesPage'
 import TeacherMySchedulePage from './pages/teacher/TeacherMySchedulePage'
+import TeacherAttendancePage from './pages/teacher/TeacherAttendancePage'
+import AttendanceHistoryPage from './pages/teacher/AttendanceHistoryPage'
 import TeacherViewStudentPage from './pages/teacher/ViewStudentPage'
 import TeacherLessonsPage from './pages/teacher/LessonsPage'
 import AddLessonPage from './pages/teacher/AddLessonPage'
@@ -91,6 +93,7 @@ import ExercisesManagementPage from './pages/admin/ExercisesManagementPage'
 import AddExercisePage from './pages/admin/AddExercisePage'
 import EditExercisePage from './pages/admin/EditExercisePage'
 import ViewExercisePage from './pages/admin/ViewExercisePage'
+import AttendanceReportsPage from './pages/admin/AttendanceReportsPage'
 
 // Import feature pages
 import LessonsPage from './pages/lessons/LessonsPage'
@@ -167,21 +170,37 @@ const AppRoutes = () => {
           </ProtectedRoute>
         } 
       />
-      <Route 
-        path="/teacher/profile/my-schedule" 
+      <Route
+        path="/teacher/profile/my-schedule"
         element={
           <ProtectedRoute requiredRoles={['TEACHER']}>
             <TeacherMySchedulePage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/teacher/students/view/:studentId" 
+      <Route
+        path="/teacher/attendance"
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <TeacherAttendancePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/attendance/history"
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <AttendanceHistoryPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/students/view/:studentId"
         element={
           <ProtectedRoute requiredRoles={['TEACHER']}>
             <TeacherViewStudentPage />
           </ProtectedRoute>
-        } 
+        }
       />
 
       {/* Teacher Content Management Routes */}
@@ -837,6 +856,16 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <ViewExercisePage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Admin Attendance Reports Route */}
+      <Route
+        path="/admin/reports/attendance"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <AttendanceReportsPage />
           </ProtectedRoute>
         }
       />
