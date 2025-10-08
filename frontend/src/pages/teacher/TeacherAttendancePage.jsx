@@ -16,7 +16,8 @@ import {
   Check,
   RotateCcw,
   UserCheck,
-  UserX
+  UserX,
+  AlertTriangle
 } from 'lucide-react';
 import TeacherPageLayout from '../../components/teacher/layout/TeacherPageLayout';
 import { Button } from '../../components/ui/button';
@@ -238,11 +239,23 @@ const TeacherAttendancePage = () => {
       toast.success(t('attendance.attendanceCreated'));
     } catch (error) {
       console.error('Failed to create attendance:', error);
+
+      // Check for duplicate attendance error
       if (error.response?.data) {
-        const errorMsg = Object.values(error.response.data).flat().join(', ');
-        toast.error(errorMsg || t('error.failedToCreate'));
+        const errorData = error.response.data;
+        const errorString = JSON.stringify(errorData).toLowerCase();
+
+        // Check if it's a unique constraint error (attendance already exists)
+        if (errorString.includes('unique') || errorString.includes('timetable_session') ||
+            (errorData.non_field_errors && errorData.non_field_errors.some(msg =>
+              msg.toLowerCase().includes('unique') || msg.toLowerCase().includes('already exists')))) {
+          toast.error(t('attendance.attendanceAlreadyExists'));
+        } else {
+          // Show generic error for other cases
+          toast.error(t('attendance.failedToCreateAttendance'));
+        }
       } else {
-        toast.error(t('error.failedToCreate'));
+        toast.error(t('attendance.failedToCreateAttendance'));
       }
     } finally {
       setIsCreatingAttendance(false);
@@ -629,6 +642,8 @@ const TeacherAttendancePage = () => {
                 <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
                   {students.map((record, index) => {
                     const status = studentStatuses[record.student.id] || record.status;
+                    const hasPendingFlags = record.has_pending_flags || false;
+                    const pendingFlagsCount = record.pending_flags_count || 0;
 
                     return (
                       <motion.div
@@ -644,8 +659,14 @@ const TeacherAttendancePage = () => {
                               {getStatusIcon(status)}
                             </div>
                             <div>
-                              <div className="font-medium">
+                              <div className="font-medium flex items-center gap-2">
                                 {record.student.full_name}
+                                {hasPendingFlags && (
+                                  <Badge variant="destructive" className="flex items-center gap-1 text-xs">
+                                    <AlertTriangle className="h-3 w-3" />
+                                    {pendingFlagsCount} {t('attendance.pendingFlag', { count: pendingFlagsCount })}
+                                  </Badge>
+                                )}
                               </div>
                               <div className="text-xs text-muted-foreground">
                                 {record.student.email}

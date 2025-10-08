@@ -44,6 +44,12 @@ import {
 } from 'lucide-react'
 import { cn } from '../../lib/utils'
 
+const extractTeacherSubject = (profileData) => {
+  if (!profileData) return null
+  return profileData.profile?.school_subject || profileData.school_subject || null
+}
+
+
 const CreateHomeworkPage = () => {
   const { t, isRTL } = useLanguage()
   const { user } = useAuth()
@@ -123,6 +129,7 @@ const CreateHomeworkPage = () => {
   const [academicYears, setAcademicYears] = useState([])
   const [loading, setLoading] = useState(true)
   const [teacherProfile, setTeacherProfile] = useState(null)
+  const teacherSubject = extractTeacherSubject(teacherProfile)
 
   const homeworkTypes = [
     {
@@ -187,18 +194,14 @@ const CreateHomeworkPage = () => {
 
   // Auto-set teacher's subject from profile data
   useEffect(() => {
-    const setTeacherSubject = () => {
-      if (teacherProfile && teacherProfile.profile && teacherProfile.profile.school_subject) {
-        const subjectId = teacherProfile.profile.school_subject.id
-        console.log('Auto-setting teacher subject:', teacherProfile.profile.school_subject)
-        updateHomeworkData('subject', subjectId.toString())
-      }
-    }
+    if (!teacherSubject || id) return
 
-    if (teacherProfile && !id) {
-      setTeacherSubject()
+    const subjectId = teacherSubject.id?.toString?.()
+    if (subjectId && homeworkData.subject !== subjectId) {
+      console.log('Auto-setting teacher subject:', teacherSubject)
+      updateHomeworkData('subject', subjectId)
     }
-  }, [teacherProfile, id])
+  }, [teacherSubject, id, homeworkData.subject])
 
   const loadHomeworkData = async (homeworkId) => {
     try {
@@ -370,14 +373,20 @@ const CreateHomeworkPage = () => {
     const currentStepConfig = steps[currentStep - 1]
 
     if (currentStep === 1) {
-      // Ensure teacher's subject is set
-      if (!homeworkData.subject && teacherProfile?.profile?.school_subject) {
-        updateHomeworkData('subject', teacherProfile.profile.school_subject.id.toString())
+      // Ensure teacher's subject is set if available
+      let subjectValue = homeworkData.subject
+      const teacherSubjectId = teacherSubject?.id != null ? teacherSubject.id.toString() : ''
+
+      if (!subjectValue && teacherSubjectId) {
+        subjectValue = teacherSubjectId
+        if (homeworkData.subject !== teacherSubjectId) {
+          updateHomeworkData('subject', teacherSubjectId)
+        }
       }
 
+      if (!subjectValue) newErrors.subject = 'Teacher subject not found'
       if (!homeworkData.title.trim()) newErrors.title = 'Title is required'
       if (!homeworkData.description.trim()) newErrors.description = 'Description is required'
-      if (!homeworkData.subject) newErrors.subject = 'Teacher subject not found'
       if (!homeworkData.grade) newErrors.grade = 'Grade is required'
       if (!homeworkData.school_class) newErrors.school_class = 'Class is required'
       if (!homeworkData.due_date) newErrors.due_date = 'Due date is required'
@@ -718,7 +727,7 @@ const CreateHomeworkPage = () => {
                         <BookOpen className="h-5 w-5 text-blue-600" />
                         <div>
                           <span className="text-base font-medium">
-                            {teacherProfile?.profile?.school_subject?.name || 'Loading your assigned subject...'}
+                            {teacherSubject?.name || 'Loading your assigned subject...'}
                           </span>
                           <p className="text-sm text-gray-600">
                             Homework will be created for your assigned subject
@@ -726,8 +735,8 @@ const CreateHomeworkPage = () => {
                         </div>
                       </div>
                     </div>
+                    {errors.subject && <p className="text-red-500 text-sm mt-2">{errors.subject}</p>}
                   </div>
-
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-medium mb-2 block">Grade *</label>
@@ -1199,7 +1208,7 @@ const CreateHomeworkPage = () => {
                     </div>
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">Subject</label>
-                      <p className="text-base">{teacherProfile?.profile?.school_subject?.name}</p>
+                      <p className="text-base">{teacherSubject?.name || 'Not assigned'}</p>
                     </div>
                   </div>
                   <div className="space-y-4">

@@ -34,6 +34,9 @@ import {
 } from '../../components/ui/select';
 import { Input } from '../../components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../components/ui/dialog';
+import { Textarea } from '../../components/ui/textarea';
+import { Label } from '../../components/ui/label';
 import attendanceService from '../../services/attendance';
 import { apiMethods } from '../../services/api';
 import { toast } from 'sonner';
@@ -373,6 +376,7 @@ const AttendanceReportsPage = () => {
   const [overviewLoading, setOverviewLoading] = useState(true);
   const [studentLoading, setStudentLoading] = useState(false);
   const [classLoading, setClassLoading] = useState(false);
+  const [flagsLoading, setFlagsLoading] = useState(false);
 
   const [overviewFilters, setOverviewFilters] = useState({
     dateRange: 'all_time',
@@ -402,6 +406,14 @@ const AttendanceReportsPage = () => {
 
   const [studentStatsCache, setStudentStatsCache] = useState([]);
   const [classStatsCache, setClassStatsCache] = useState([]);
+  const [pendingFlags, setPendingFlags] = useState([]);
+
+  // Flag dialog state
+  const [selectedFlag, setSelectedFlag] = useState(null);
+  const [isFlagDialogOpen, setIsFlagDialogOpen] = useState(false);
+  const [clearanceReason, setClearanceReason] = useState('');
+  const [clearanceNotes, setClearanceNotes] = useState('');
+  const [isClearing, setIsClearing] = useState(false);
 
   // Data
   const [overallStats, setOverallStats] = useState(null);
@@ -423,20 +435,27 @@ const AttendanceReportsPage = () => {
   }, []);
 
   useEffect(() => {
+    // Avoid referencing callback before initialization; depend on filter values instead
     fetchOverviewData();
-  }, [fetchOverviewData]);
+  }, [overviewDateRange, overviewClassId, overviewSubjectId, overviewTeacherId]);
 
   useEffect(() => {
     if (activeTab === 'students') {
       fetchStudentData();
     }
-  }, [activeTab, fetchStudentData]);
+  }, [activeTab, studentDateRange, studentGradeId, studentClassId, studentTrackId]);
 
   useEffect(() => {
     if (activeTab === 'classes') {
       fetchClassData();
     }
-  }, [activeTab, fetchClassData]);
+  }, [activeTab, classDateRange, classGradeId, classTrackId]);
+
+  useEffect(() => {
+    if (activeTab === 'flags') {
+      fetchFlagsData();
+    }
+  }, [activeTab]);
 
   const fetchDropdownData = async () => {
     try {
@@ -628,6 +647,24 @@ const AttendanceReportsPage = () => {
     }
   }, [classDateRange, classGradeId, classTrackId, t]);
 
+  const fetchFlagsData = useCallback(async () => {
+    setFlagsLoading(true);
+    try {
+      const flagsRes = await attendanceService.getAbsenceFlags({ is_cleared: false }).catch((err) => {
+        console.error('Flags fetch error:', err);
+        return { results: [] };
+      });
+
+      const flags = Array.isArray(flagsRes) ? flagsRes : flagsRes?.results || flagsRes?.pending_flags || [];
+      setPendingFlags(flags);
+    } catch (error) {
+      console.error('Failed to fetch absence flags:', error);
+      toast.error(t('attendance.failedToLoadData'));
+    } finally {
+      setFlagsLoading(false);
+    }
+  }, [t]);
+
   const filteredStudentStats = useMemo(
     () => filterStudentsByCriteria(studentStatsCache, studentFilters),
     [studentStatsCache, studentFilters]
@@ -702,8 +739,9 @@ const AttendanceReportsPage = () => {
   const currentLoading = useMemo(() => {
     if (activeTab === 'students') return studentLoading;
     if (activeTab === 'classes') return classLoading;
+    if (activeTab === 'flags') return flagsLoading;
     return overviewLoading;
-  }, [activeTab, classLoading, overviewLoading, studentLoading]);
+  }, [activeTab, classLoading, flagsLoading, overviewLoading, studentLoading]);
 
   const isInitialOverviewLoad = overviewLoading && !overallStats;
 
@@ -737,10 +775,52 @@ const AttendanceReportsPage = () => {
       fetchStudentData();
     } else if (activeTab === 'classes') {
       fetchClassData();
+    } else if (activeTab === 'flags') {
+      fetchFlagsData();
     } else {
       fetchOverviewData();
     }
     toast.success(t('attendance.dataRefreshed'));
+  };
+
+  const handleFlagClick = (flag) => {
+    setSelectedFlag(flag);
+    setClearanceReason('');
+    setClearanceNotes('');
+    setIsFlagDialogOpen(true);
+  };
+
+  const handleCloseFlagDialog = () => {
+    setIsFlagDialogOpen(false);
+    setSelectedFlag(null);
+    setClearanceReason('');
+    setClearanceNotes('');
+  };
+
+  const handleClearFlag = async () => {
+    if (!selectedFlag || !clearanceReason) {
+      toast.error(t('attendance.pleaseSelectReason'));
+      return;
+    }
+
+    setIsClearing(true);
+    try {
+      await attendanceService.clearAbsenceFlag(selectedFlag.id, {
+        clearance_reason: clearanceReason,
+        clearance_notes: clearanceNotes
+      });
+
+      toast.success(t('attendance.flagCleared'));
+      handleCloseFlagDialog();
+
+      // Refresh the flags list
+      fetchFlagsData();
+    } catch (error) {
+      console.error('Failed to clear flag:', error);
+      toast.error(t('attendance.failedToClearFlag'));
+    } finally {
+      setIsClearing(false);
+    }
   };
 
   if (isInitialOverviewLoad) {
@@ -870,12 +950,16 @@ const AttendanceReportsPage = () => {
 
         {/* Tabbed Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview">{t('attendance.overview')}</TabsTrigger>
             <TabsTrigger value="students">{t('common.students')}</TabsTrigger>
             <TabsTrigger value="teachers">{t('common.teachers')}</TabsTrigger>
             <TabsTrigger value="subjects">{t('common.subjects')}</TabsTrigger>
             <TabsTrigger value="classes">{t('common.classes')}</TabsTrigger>
+            <TabsTrigger value="flags" className="flex items-center gap-1">
+              <AlertTriangle className="h-3 w-3" />
+              {t('attendance.flags')}
+            </TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
@@ -1556,11 +1640,213 @@ const AttendanceReportsPage = () => {
             </Card>
           </TabsContent>
 
+          {/* Flags Tab - Students with Pending Absence Flags */}
+          <TabsContent value="flags" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-red-600" />
+                  {t('attendance.studentsWithFlags')}
+                </CardTitle>
+                <CardDescription>{t('attendance.studentsWithPendingFlags')}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {flagsLoading ? (
+                  <div className="flex items-center justify-center py-10">
+                    <div className="flex items-center gap-3 text-muted-foreground">
+                      <div className="h-4 w-4 rounded-full border-b-2 border-primary animate-spin" />
+                      <span>{t('common.loadingData')}</span>
+                    </div>
+                  </div>
+                ) : pendingFlags.length > 0 ? (
+                  <div className="space-y-4">
+                    {pendingFlags.map((flag) => (
+                      <div
+                        key={flag.id}
+                        className="p-4 border-2 border-red-200 rounded-lg bg-red-50/50 hover:bg-red-50 transition-colors cursor-pointer"
+                        onClick={() => handleFlagClick(flag)}
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-12 w-12">
+                              <AvatarImage src={flag.student?.profile_picture_url} />
+                              <AvatarFallback className="bg-red-100 text-red-700">
+                                <User className="h-5 w-5" />
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium text-lg">
+                                {flag.student?.full_name || `${flag.student?.first_name} ${flag.student?.last_name}`}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {flag.class_name}
+                              </p>
+                            </div>
+                          </div>
+                          <Badge variant="destructive" className="flex items-center gap-1">
+                            <AlertTriangle className="h-3 w-3" />
+                            {t('attendance.pendingFlag')}
+                          </Badge>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Calendar className="h-4 w-4" />
+                            <span>
+                              <strong>{t('attendance.absenceDate')}:</strong> {formatDate(flag.attendance_date)}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <BookOpen className="h-4 w-4" />
+                            <span>
+                              <strong>{t('common.subject')}:</strong> {flag.subject_name}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Clock className="h-4 w-4" />
+                            <span>
+                              <strong>{t('attendance.flagCreated')}:</strong> {formatDate(flag.created_at)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <div className="flex justify-center mb-4">
+                      <div className="p-4 bg-green-100 rounded-full">
+                        <CheckCircle2 className="h-12 w-12 text-green-600" />
+                      </div>
+                    </div>
+                    <h3 className="text-lg font-medium mb-2">
+                      {t('attendance.noFlags')}
+                    </h3>
+                    <p className="text-muted-foreground">
+                      {t('attendance.noFlagsDescription')}
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
         </Tabs>
       </div>
+
+      {/* Flag Details Dialog */}
+      <Dialog open={isFlagDialogOpen} onOpenChange={setIsFlagDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-600" />
+              {t('attendance.flagDetails')}
+            </DialogTitle>
+            <DialogDescription>
+              {t('attendance.flagDetailsDescription')}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedFlag && (
+            <div className="space-y-4">
+              {/* Student Info */}
+              <div className="p-4 bg-muted rounded-lg">
+                <div className="flex items-center gap-3 mb-3">
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage src={selectedFlag.student?.profile_picture_url} />
+                    <AvatarFallback className="bg-blue-100 text-blue-700">
+                      <User className="h-5 w-5" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-medium text-lg">
+                      {selectedFlag.student?.full_name || `${selectedFlag.student?.first_name} ${selectedFlag.student?.last_name}`}
+                    </p>
+                    <p className="text-sm text-muted-foreground">{selectedFlag.class_name}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">{t('attendance.absenceDate')}:</span>
+                    <span className="font-medium ml-2">
+                      {formatDate(selectedFlag.attendance_date)}
+                      {selectedFlag.session_start_time && selectedFlag.session_end_time && (
+                        <span className="text-muted-foreground ml-1">
+                          ({selectedFlag.session_start_time} - {selectedFlag.session_end_time})
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">{t('common.subject')}:</span>
+                    <span className="font-medium ml-2">{selectedFlag.subject_name}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">{t('common.teacher')}:</span>
+                    <span className="font-medium ml-2">{selectedFlag.teacher_name}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">{t('attendance.flagCreated')}:</span>
+                    <span className="font-medium ml-2">{formatDate(selectedFlag.created_at)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Clearance Form */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="clearance-reason">{t('attendance.clearanceReason')} *</Label>
+                  <Select value={clearanceReason} onValueChange={setClearanceReason}>
+                    <SelectTrigger id="clearance-reason">
+                      <SelectValue placeholder={t('attendance.selectReason')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="medical">{t('attendance.medical')}</SelectItem>
+                      <SelectItem value="family">{t('attendance.familyEmergency')}</SelectItem>
+                      <SelectItem value="parent_permission">{t('attendance.parentPermission')}</SelectItem>
+                      <SelectItem value="school_activity">{t('attendance.schoolActivity')}</SelectItem>
+                      <SelectItem value="other">{t('attendance.other')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="clearance-notes">{t('attendance.clearanceNotes')}</Label>
+                  <Textarea
+                    id="clearance-notes"
+                    value={clearanceNotes}
+                    onChange={(e) => setClearanceNotes(e.target.value)}
+                    placeholder={t('attendance.clearanceNotesPlaceholder')}
+                    rows={3}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCloseFlagDialog} disabled={isClearing}>
+              {t('common.cancel')}
+            </Button>
+            <Button onClick={handleClearFlag} disabled={isClearing || !clearanceReason}>
+              {isClearing ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  {t('attendance.clearing')}
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  {t('attendance.clearFlag')}
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminPageLayout>
   );
 };
 
 export default AttendanceReportsPage;
-

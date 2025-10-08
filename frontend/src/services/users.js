@@ -168,43 +168,15 @@ class UsersService {
   /**
    * Upload Profile Picture
    * @param {File} file - Image file
-   * @returns {Promise<Object>} Upload response with Cloudinary data
+   * @returns {Promise<Object>} Updated user profile data
    */
   async uploadProfilePicture(file) {
     try {
-      // First, get upload signature
-      const signatureResponse = await apiMethods.post('files/upload-signature/', {
-        file_type: 'image',
-        context: 'profile_picture',
-        folder: 'profiles',
-        max_size: 5242880 // 5MB
-      });
-
-      // Upload to Cloudinary
       const formData = new FormData();
-      formData.append('file', file);
-      formData.append('signature', signatureResponse.signature);
-      formData.append('timestamp', signatureResponse.timestamp);
-      formData.append('api_key', signatureResponse.api_key);
-      formData.append('folder', signatureResponse.folder);
+      formData.append('profile_picture', file);
 
-      const uploadResponse = await fetch(signatureResponse.upload_url, {
-        method: 'POST',
-        body: formData
-      });
-
-      if (!uploadResponse.ok) {
-        throw new Error('File upload failed');
-      }
-
-      const uploadResult = await uploadResponse.json();
-
-      // Update profile with new image
-      await this.patchProfile({
-        profile_picture: uploadResult.public_id
-      });
-
-      return uploadResult;
+      const response = await apiMethods.patch('users/profile/', formData);
+      return response;
     } catch (error) {
       console.error('Upload profile picture failed:', error);
       throw error;

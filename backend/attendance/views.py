@@ -137,6 +137,43 @@ class TimetableSessionViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(day_of_week=day)
         
         return queryset.order_by('day_of_week', 'session_order')
+
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def my_schedule(self, request):
+        """Get the current student's weekly timetable sessions.
+        Returns sessions for the student's active enrollment class and academic year.
+        """
+        user = request.user
+        if getattr(user, 'role', None) != 'STUDENT':
+            return Response({'error': 'Only students can access this endpoint'}, status=status.HTTP_403_FORBIDDEN)
+
+        enrollment = (StudentEnrollment.objects
+                       .select_related('school_class', 'academic_year')
+                       .filter(student=user, is_active=True)
+                       .first())
+
+        if not enrollment:
+            return Response({'sessions': [], 'message': 'No active enrollment found'}, status=status.HTTP_200_OK)
+
+        sessions = (TimetableSession.objects
+                    .select_related('timetable__school_class', 'subject', 'teacher', 'room')
+                    .filter(
+                        timetable__school_class=enrollment.school_class,
+                        timetable__academic_year=enrollment.academic_year,
+                        is_active=True
+                    )
+                    .order_by('day_of_week', 'session_order'))
+
+        serializer = TimetableSessionListSerializer(sessions, many=True)
+        return Response({
+            'class': {
+                'id': enrollment.school_class.id,
+                'name': enrollment.school_class.name,
+                'section': getattr(enrollment.school_class, 'section', None),
+            },
+            'academic_year': getattr(enrollment.academic_year, 'year', None),
+            'sessions': serializer.data
+        })
     
     @action(detail=False, methods=['get'])
     def today_sessions(self, request):

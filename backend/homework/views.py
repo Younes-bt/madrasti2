@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Q, Avg, Count
 from django.utils import timezone
 from datetime import timedelta
+from decimal import Decimal
 
 from .models import (
     # Reward Models
@@ -50,7 +51,7 @@ from .serializers import (
     TextbookLibrarySerializer,
 
     # Exercise Serializers
-    ExerciseCreateSerializer, ExerciseDetailSerializer,
+    ExerciseCreateSerializer, ExerciseDetailSerializer, ExerciseSubmissionSerializer, ExerciseAnswerInputSerializer,
     
     # Homework Serializers (renamed from Assignment)
     HomeworkListSerializer, HomeworkDetailSerializer, HomeworkCreateSerializer,
@@ -225,6 +226,222 @@ class ExerciseViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(lesson_id=lesson_id)
         return queryset
 
+
+    @action(detail=True, methods=['post'], url_path='start')
+    def start_exercise(self, request, pk=None):
+        '''Start an exercise attempt for the current student'''
+        exercise = self.get_object()
+        user = request.user
+
+        if user.role != 'STUDENT':
+            return Response({'detail': 'Only students can start exercises'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Check availability
+        now = timezone.now()
+        if not exercise.is_active or not exercise.is_published:
+            return Response({'detail': 'Exercise is not available'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if exercise.available_from and now < exercise.available_from:
+            return Response({'detail': 'Exercise is not yet available'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if exercise.available_until and now > exercise.available_until:
+            return Response({'detail': 'Exercise is no longer available'}, status=status.HTTP_400_BAD_REQUEST)
+
+        submissions_qs = ExerciseSubmission.objects.filter(exercise=exercise, student=user).order_by('-attempt_number')
+
+        if not exercise.allow_multiple_attempts and submissions_qs.exists():
+            serializer = ExerciseSubmissionSerializer(submissions_qs.first(), context={'request': request})
+            return Response({'detail': 'Exercise already attempted', 'submission': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
+
+        if exercise.max_attempts and exercise.max_attempts > 0 and submissions_qs.count() >= exercise.max_attempts:
+            return Response({'detail': 'Maximum attempts reached for this exercise'}, status=status.HTTP_400_BAD_REQUEST)
+
+        latest_attempt = submissions_qs.first()
+        attempt_number = (latest_attempt.attempt_number if latest_attempt else 0) + 1
+
+        submission = ExerciseSubmission.objects.create(
+            exercise=exercise,
+            student=user,
+            status='in_progress',
+            attempt_number=attempt_number
+        )
+
+        # Award attempt points before returning
+        self._award_exercise_attempt(submission)
+
+        serializer = ExerciseSubmissionSerializer(submission, context={'request': request})
+        return Response({'message': 'Exercise started successfully', 'submission': serializer.data})
+
+    @action(detail=True, methods=['post'], url_path='submit')
+    def submit_exercise(self, request, pk=None):
+        '''Submit exercise answers for grading'''
+        exercise = self.get_object()
+        user = request.user
+
+        if user.role != 'STUDENT':
+            return Response({'detail': 'Only students can submit exercises'}, status=status.HTTP_403_FORBIDDEN)
+
+        submission_id = request.data.get('submission_id')
+        if submission_id:
+            submission = get_object_or_404(ExerciseSubmission, pk=submission_id, exercise=exercise, student=user)
+        else:
+            submission = ExerciseSubmission.objects.filter(exercise=exercise, student=user).order_by('-created_at').first()
+            if not submission:
+                return Response({'detail': 'Exercise has not been started yet'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if submission.status in ['completed', 'auto_graded', 'reviewed'] and not exercise.allow_multiple_attempts:
+            serializer = ExerciseSubmissionSerializer(submission, context={'request': request})
+            return Response({'detail': 'Exercise already completed', 'submission': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
+
+        answers_payload = request.data.get('answers', [])
+        if not isinstance(answers_payload, list):
+            return Response({'detail': 'Answers must be provided as a list'}, status=status.HTTP_400_BAD_REQUEST)
+
+        answer_serializer = ExerciseAnswerInputSerializer(data=answers_payload, many=True)
+        answer_serializer.is_valid(raise_exception=True)
+        validated_answers = answer_serializer.validated_data
+
+        questions_lookup = {question.id: question for question in exercise.questions.all()}
+
+        submission.exercise_answers.all().delete()
+
+        auto_score = Decimal('0')
+        questions_answered = 0
+        questions_correct = 0
+
+        for answer_data in validated_answers:
+            question = questions_lookup.get(answer_data['question'])
+            if not question:
+                continue
+
+            selected_choice_ids = answer_data.get('selected_choice_ids') or []
+            text_answer = answer_data.get('text_answer', '')
+
+            exercise_answer = ExerciseAnswer.objects.create(
+                exercise_submission=submission,
+                question=question,
+                text_answer=text_answer or ''
+            )
+
+            if selected_choice_ids:
+                choices = QuestionChoice.objects.filter(question=question, id__in=selected_choice_ids)
+                exercise_answer.selected_choices.set(choices)
+            else:
+                exercise_answer.selected_choices.clear()
+
+            answered = bool(text_answer.strip()) or bool(selected_choice_ids)
+
+            if answered:
+                questions_answered += 1
+
+            is_correct = None
+            points_earned = Decimal('0')
+
+            if question.question_type in ['qcm_single', 'qcm_multiple', 'true_false']:
+                correct_choice_ids = set(question.choices.filter(is_correct=True).values_list('id', flat=True))
+                selected_ids = set(exercise_answer.selected_choices.values_list('id', flat=True))
+                points_value = Decimal(str(question.points))
+                is_correct = selected_ids == correct_choice_ids and len(correct_choice_ids) > 0
+                points_earned = points_value if is_correct else Decimal('0')
+                if is_correct:
+                    questions_correct += 1
+                auto_score += points_earned
+            elif answered:
+                # For open-ended questions without auto grading we cannot determine correctness yet
+                points_earned = None
+
+            exercise_answer.is_correct = is_correct
+            exercise_answer.points_earned = points_earned if points_earned is not None else None
+            exercise_answer.save()
+
+        submission.status = 'completed'
+        submission.completed_at = timezone.now()
+        submission.questions_answered = questions_answered
+        submission.questions_correct = questions_correct
+        submission.auto_score = auto_score
+        if exercise.total_points:
+            total_points_value = Decimal(str(exercise.total_points))
+            submission.total_score = auto_score
+            if total_points_value > 0:
+                submission.percentage_score = (auto_score / total_points_value) * Decimal('100')
+        submission.save()
+
+        # Award completion rewards
+        self._award_exercise_completion(submission)
+
+        serializer = ExerciseSubmissionSerializer(submission, context={'request': request})
+        return Response({'message': 'Exercise submitted successfully', 'submission': serializer.data})
+
+    def _get_or_create_wallet(self, student):
+        from .models import StudentWallet
+        wallet, _ = StudentWallet.objects.get_or_create(student=student)
+        return wallet
+
+    def _create_transaction(self, student, exercise, submission, points=0, coins=0, reason='Exercise reward'):
+        from .models import RewardTransaction
+        RewardTransaction.objects.create(
+            student=student,
+            exercise=exercise,
+            exercise_submission=submission,
+            transaction_type='earned',
+            points_earned=int(points or 0),
+            coins_earned=int(coins or 0),
+            reason=reason
+        )
+
+    def _award_exercise_attempt(self, submission):
+        exercise = submission.exercise
+        rewards = getattr(exercise, 'reward_config', None)
+        if not rewards:
+            return
+        attempt_points = int(getattr(rewards, 'attempt_points', 0) or 0)
+        if attempt_points <= 0:
+            return
+        wallet = self._get_or_create_wallet(submission.student)
+        wallet.total_points += attempt_points
+        wallet.weekly_points += attempt_points
+        wallet.save()
+        self._create_transaction(submission.student, exercise, submission, points=attempt_points, reason=f'Attempted exercise: {exercise.title}')
+
+    def _award_exercise_completion(self, submission):
+        exercise = submission.exercise
+        rewards = getattr(exercise, 'reward_config', None)
+        if not rewards:
+            return
+        points = int(getattr(rewards, 'completion_points', 0) or 0)
+        coins = int(getattr(rewards, 'completion_coins', 0) or 0)
+
+        pct = float(submission.percentage_score or 0)
+        if pct >= 100 and getattr(rewards, 'perfect_score_bonus', 0):
+            points += int(rewards.perfect_score_bonus or 0)
+        elif pct >= 80 and getattr(rewards, 'high_score_bonus', 0):
+            points += int(rewards.high_score_bonus or 0)
+
+        # Compare with previous best
+        previous_best = (submission.__class__.objects
+            .filter(exercise=exercise, student=submission.student, status='completed')
+            .exclude(id=submission.id)
+            .order_by('-total_score')
+            .first())
+        if previous_best and submission.total_score and previous_best.total_score and submission.total_score > previous_best.total_score:
+            points += int(getattr(rewards, 'improvement_bonus', 0) or 0)
+            submission.previous_best_score = previous_best.total_score
+
+        # Multipliers
+        try:
+            if getattr(rewards, 'difficulty_multiplier', None):
+                points = int(points * float(rewards.difficulty_multiplier))
+            if submission.attempt_number == 1 and getattr(rewards, 'first_attempt_multiplier', None):
+                points = int(points * float(rewards.first_attempt_multiplier))
+        except Exception:
+            pass
+
+        wallet = self._get_or_create_wallet(submission.student)
+        wallet.total_points += int(points)
+        wallet.total_coins += int(coins)
+        wallet.weekly_points += int(points)
+        wallet.save()
+        self._create_transaction(submission.student, exercise, submission, points=points, coins=coins, reason=f'Completed exercise: {exercise.title}')
 # =====================================
 # HOMEWORK VIEWS (renamed from ASSIGNMENT)
 # =====================================
@@ -241,27 +458,41 @@ class HomeworkViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         user = self.request.user
-        queryset = Homework.objects.all()
-        
+        queryset = Homework.objects.all().select_related(
+            'subject', 'grade', 'school_class', 'teacher'
+        ).prefetch_related(
+            'submissions__student', 'submissions__graded_by'
+        )
+
         if user.role == 'STUDENT':
-            # Students see assignments for their class
-            queryset = queryset.filter(school_class__students=user, is_published=True)
+            # Students see assignments for their enrolled classes
+            # Get student's active enrollment classes
+            from users.models import StudentEnrollment
+            student_classes = StudentEnrollment.objects.filter(
+                student=user,
+                is_active=True
+            ).values_list('school_class_id', flat=True)
+
+            queryset = queryset.filter(
+                school_class_id__in=student_classes,
+                is_published=True
+            )
         elif user.role == 'TEACHER':
             # Teachers see their own assignments
             queryset = queryset.filter(teacher=user)
         elif user.role == 'PARENT':
             # Parents see their children's assignments
-            queryset = queryset.filter(school_class__students__role='STUDENT', is_published=True)
+            queryset = queryset.filter(is_published=True)  # Add parent-child logic later
         elif user.role in ['ADMIN', 'STAFF']:
             # Admin/Staff see all assignments
             queryset = queryset.all()
-        
+
         # Filter by parameters
         subject_id = self.request.query_params.get('subject')
         grade_id = self.request.query_params.get('grade')
         class_id = self.request.query_params.get('class')
         homework_type = self.request.query_params.get('type')
-        
+
         if subject_id:
             queryset = queryset.filter(subject_id=subject_id)
         if grade_id:
@@ -270,7 +501,7 @@ class HomeworkViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(school_class_id=class_id)
         if homework_type:
             queryset = queryset.filter(homework_type=homework_type)
-        
+
         return queryset
     
     @action(detail=True, methods=['post'])
@@ -473,8 +704,20 @@ class SubmissionViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         user = self.request.user
-        queryset = Submission.objects.all()
-        
+        queryset = Submission.objects.all().select_related(
+            'student', 'homework', 'homework__subject', 'homework__grade',
+            'homework__school_class', 'graded_by'
+        ).prefetch_related(
+            'answers',
+            'answers__question',
+            'answers__question__choices',
+            'answers__selected_choices',
+            'answers__files',
+            'book_exercise_answers',
+            'book_exercise_answers__book_exercise',
+            'book_exercise_answers__files'
+        )
+
         if user.role == 'STUDENT':
             queryset = queryset.filter(student=user)
         elif user.role == 'TEACHER':
@@ -484,16 +727,16 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         elif user.role == 'PARENT':
             # Parents see their children's submissions
             queryset = queryset.filter(student__role='STUDENT')  # Add parent-child logic
-        
+
         # Filters
         homework_id = self.request.query_params.get('homework')
         status_filter = self.request.query_params.get('status')
-        
+
         if homework_id:
             queryset = queryset.filter(homework_id=homework_id)
         if status_filter:
             queryset = queryset.filter(status=status_filter)
-        
+
         return queryset
     
     @action(detail=True, methods=['post'])
@@ -537,52 +780,91 @@ class SubmissionViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def submit(self, request, pk=None):
-        """Submit an assignment"""
+        """Submit an assignment with answers"""
         submission = self.get_object()
-        
+
         if request.user != submission.student:
             return Response({'error': 'Permission denied'}, status=403)
-        
+
         if submission.status in ['submitted', 'auto_graded', 'manually_graded']:
             return Response({'error': 'Homework already submitted'}, status=400)
-        
+
+        # Process answers payload
+        answers_payload = request.data.get('answers', [])
+
+        if answers_payload and isinstance(answers_payload, list):
+            # Delete existing answers for this submission
+            submission.answers.all().delete()
+
+            # Get all questions for this homework
+            questions_lookup = {q.id: q for q in submission.homework.questions.all()}
+
+            # Create QuestionAnswer records
+            for answer_data in answers_payload:
+                question_id = answer_data.get('question')
+                question = questions_lookup.get(question_id)
+
+                if not question:
+                    continue
+
+                # Create the answer
+                question_answer = QuestionAnswer.objects.create(
+                    submission=submission,
+                    question=question,
+                    text_answer=answer_data.get('text_answer', '')
+                )
+
+                # Set selected choices if any
+                selected_choice_ids = answer_data.get('selected_choice_ids', [])
+                if selected_choice_ids:
+                    choices = QuestionChoice.objects.filter(
+                        question=question,
+                        id__in=selected_choice_ids
+                    )
+                    question_answer.selected_choices.set(choices)
+
+        # Update submission status
         submission.status = 'submitted'
         submission.submitted_at = timezone.now()
-        
+
         # Calculate time taken
         if submission.started_at:
             time_diff = submission.submitted_at - submission.started_at
             submission.time_taken = int(time_diff.total_seconds() / 60)  # Minutes
-        
+
         # Check if late
         if submission.submitted_at > submission.homework.due_date:
             submission.is_late = True
             submission.status = 'late'
-        
+
         submission.save()
-        
+
         # Auto-grade QCM questions if enabled
         if submission.homework.auto_grade_qcm:
             self._auto_grade_submission(submission)
-        
+
         return Response({'message': 'Homework submitted successfully'})
     
     @action(detail=True, methods=['post'])
     def grade(self, request, pk=None):
         """Grade a submission (teacher only)"""
         submission = self.get_object()
-        
+
         if request.user != submission.homework.teacher and request.user.role not in ['ADMIN', 'STAFF']:
             return Response({'error': 'Permission denied'}, status=403)
-        
+
         serializer = SubmissionGradeSerializer(submission, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
             submission = serializer.save()
-            
-            # Calculate rewards if not already calculated
-            if not submission.rewards_calculated:
-                self._calculate_rewards(submission)
-            
+
+            # Ensure status is set to manually_graded if not already
+            if submission.status not in ['manually_graded', 'auto_graded']:
+                submission.status = 'manually_graded'
+                submission.save()
+
+            # Always calculate rewards when teacher grades (even if already calculated, to update based on new scores)
+            self._calculate_rewards(submission)
+
             return Response(serializer.data)
         return Response(serializer.errors, status=400)
     
@@ -629,84 +911,102 @@ class SubmissionViewSet(viewsets.ModelViewSet):
     
     def _calculate_rewards(self, submission):
         """Calculate and award rewards for a submission"""
-        if submission.status not in ['submitted', 'auto_graded', 'manually_graded']:
+        if submission.status not in ['submitted', 'auto_graded', 'manually_graded', 'late']:
             return
-        
+
         homework = submission.homework
+
+        # Get or create reward config with default values
         reward_config = getattr(homework, 'reward_config', None)
-        
         if not reward_config:
-            return
-        
+            # Create default reward config if it doesn't exist
+            reward_config = HomeworkReward.objects.create(
+                homework=homework,
+                completion_points=10,
+                completion_coins=1,
+                perfect_score_bonus=20,
+                high_score_bonus=10,
+                early_submission_bonus=10,
+                on_time_bonus=5,
+                difficulty_multiplier=1.00,
+                weekend_multiplier=1.50
+            )
+
         points = 0
         coins = 0
-        
+
         # Base completion reward
         points += reward_config.completion_points
         coins += reward_config.completion_coins
-        
+
         # Performance bonus
         if submission.total_score and homework.total_points:
             score_percentage = (float(submission.total_score) / float(homework.total_points)) * 100
-            
+
             if score_percentage >= 100:
                 points += reward_config.perfect_score_bonus
             elif score_percentage >= 90:
                 points += reward_config.high_score_bonus
-        
+
         # Time bonus
         if not submission.is_late:
             points += reward_config.on_time_bonus
-            
+
             # Early submission bonus (>24h early)
             if submission.submitted_at and homework.due_date:
                 time_diff = homework.due_date - submission.submitted_at
                 if time_diff.total_seconds() > 86400:  # 24 hours
                     points += reward_config.early_submission_bonus
-        
+
         # Apply multipliers
         points = int(points * float(reward_config.difficulty_multiplier))
-        
+
         # Weekend bonus
         if homework.assigned_date.weekday() >= 5:  # Saturday/Sunday
             points = int(points * float(reward_config.weekend_multiplier))
-        
+
         # Save rewards
         submission.points_earned = points
         submission.coins_earned = coins
         submission.rewards_calculated = True
         submission.save()
-        
+
         # Award to student wallet
         self._award_to_student(submission)
     
     def _award_to_student(self, submission):
         """Award calculated rewards to student"""
+        # Safety check - ensure points and coins are set
+        if submission.points_earned is None:
+            submission.points_earned = 0
+        if submission.coins_earned is None:
+            submission.coins_earned = 0
+
         wallet, created = StudentWallet.objects.get_or_create(student=submission.student)
-        
+
         # Add to totals
-        wallet.total_points += submission.points_earned
-        wallet.total_coins += submission.coins_earned
-        wallet.weekly_points += submission.points_earned
+        wallet.total_points += submission.points_earned or 0
+        wallet.total_coins += submission.coins_earned or 0
+        wallet.weekly_points += submission.points_earned or 0
         wallet.assignments_completed += 1
-        
+
         if submission.total_score == submission.homework.total_points:
             wallet.perfect_scores += 1
-        
+
         if not submission.is_late:
             # Update streaks logic here
             pass
-        
+
         wallet.save()
-        
+
         # Create transaction record
         RewardTransaction.objects.create(
             student=submission.student,
             homework=submission.homework,
             submission=submission,
             transaction_type='earned',
-            points_earned=submission.points_earned,
-            coins_earned=submission.coins_earned,
+            points_earned=submission.points_earned or 0,
+            coins_earned=submission.coins_earned or 0,
             reason=f"Completed homework: {submission.homework.title}"
         )
 

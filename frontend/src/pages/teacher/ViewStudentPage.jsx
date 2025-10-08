@@ -26,6 +26,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { Badge } from '../../components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
 import { Progress } from '../../components/ui/progress';
+import StudentRewardSummary from '../../components/rewards/StudentRewardSummary';
 import { apiMethods } from '../../services/api';
 import attendanceService from '../../services/attendance';
 import { toast } from 'sonner';
@@ -307,6 +308,8 @@ const TeacherViewStudentPage = () => {
             </CardContent>
           </Card>
         </div>
+
+        <StudentRewardSummary studentId={studentId} className="shadow-sm" />
 
         {/* Attendance Statistics Section */}
         {!loadingStats && attendanceStats && attendanceStats.total_sessions > 0 && (

@@ -1,4 +1,5 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useLanguage } from '../../hooks/useLanguage'
 import { useAuth } from '../../hooks/useAuth'
 import { TeacherPageLayout } from '../../components/teacher/layout'
@@ -17,75 +18,149 @@ import {
   Clock
 } from 'lucide-react'
 import { cn } from '../../lib/utils'
+import attendanceService from '../../services/attendance'
+import lessonsService from '../../services/lessons'
+import homeworkService from '../../services/homework'
 
 const TeacherDashboard = () => {
   const { t, isRTL } = useLanguage()
   const { user } = useAuth()
+  const navigate = useNavigate()
 
-  // Mock data for dashboard statistics
+  // Live dashboard stats
+  const [stats, setStats] = useState({
+    classes: null,
+    lessons: null,
+    homework: null,
+  })
+  const [todaySessions, setTodaySessions] = useState([])
+  const [loadingStats, setLoadingStats] = useState(true)
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        setLoadingStats(true)
+
+        // Classes: dedupe teacher's sessions into unique classes
+        let classesCount = 0
+        try {
+          const sessionsRes = await attendanceService.getTimetableSessions({ my_sessions: true })
+          const sessions = sessionsRes.results || sessionsRes || []
+          const unique = new Set()
+          sessions.forEach(s => {
+            const key = s.timetable_id || s.school_class_id || s.class_name || s.school_class_name
+            if (key) unique.add(key)
+          })
+          classesCount = unique.size
+        } catch (e) {
+          // Fallback to teacher_classes endpoint
+          try {
+            const classesRes = await attendanceService.getTeacherClasses({})
+            const arr = classesRes.results || classesRes || []
+            classesCount = Array.isArray(arr) ? arr.length : 0
+          } catch {
+            classesCount = 0
+          }
+        }
+
+        // Lessons total (scoped by backend permissions)
+        let lessonsCount = 0
+        try {
+          const lessonsRes = await lessonsService.getLessons({ page_size: 1 })
+          lessonsCount = lessonsRes.count || 0
+        } catch {
+          lessonsCount = 0
+        }
+
+        // Homework total (published or all depending on backend default)
+        let homeworkCount = 0
+        try {
+          const hwRes = await homeworkService.getHomeworks({ page_size: 1 })
+          homeworkCount = hwRes.total || hwRes.count || 0
+        } catch {
+          homeworkCount = 0
+        }
+
+        // Today's sessions for quick preview
+        try {
+          const todayRes = await attendanceService.getTodaySessions({ my_sessions: true })
+          const sessions = todayRes.results || todayRes || []
+          setTodaySessions(Array.isArray(sessions) ? sessions.slice(0, 6) : [])
+        } catch {
+          setTodaySessions([])
+        }
+
+        setStats({ classes: classesCount, lessons: lessonsCount, homework: homeworkCount })
+      } finally {
+        setLoadingStats(false)
+      }
+    }
+    loadStats()
+  }, [])
+
   const dashboardStats = [
     {
       title: t('teacherSidebar.profile.myClasses'),
-      value: '5',
+      value: stats.classes ?? '—',
       subtitle: t('common.total'),
       icon: Users,
-      color: 'bg-blue-500',
-      trend: '+2 this year'
+      color: 'text-blue-600',
+      trend: null
     },
     {
       title: t('teacherSidebar.content.lessons'),
-      value: '32',
-      subtitle: t('common.published'),
-      icon: BookOpen,
-      color: 'bg-green-500',
-      trend: '+8 this month'
-    },
-    {
-      title: t('teacherSidebar.assignments.assignments'),
-      value: '18',
-      subtitle: t('status.pending'),
-      icon: ClipboardCheck,
-      color: 'bg-orange-500',
-      trend: '5 due today'
-    },
-    {
-      title: t('teacherSidebar.students.myStudents'),
-      value: '127',
+      value: stats.lessons ?? '—',
       subtitle: t('common.total'),
-      icon: Users,
-      color: 'bg-purple-500',
-      trend: 'Across all classes'
+      icon: BookOpen,
+      color: 'text-green-600',
+      trend: null
+    },
+    {
+      title: t('homework.homework', 'Homework'),
+      value: stats.homework ?? '—',
+      subtitle: t('common.total'),
+      icon: ClipboardCheck,
+      color: 'text-orange-600',
+      trend: null
+    },
+    {
+      title: `${t('common.today', 'Today')} ${t('common.schedule', 'Schedule')}`,
+      value: todaySessions.length,
+      subtitle: t('timetables.scheduled', 'Scheduled'),
+      icon: Calendar,
+      color: 'text-purple-600',
+      trend: null
     }
   ]
 
   const quickActions = [
     {
-      title: 'Create New Lesson',
-      description: 'Start creating a new lesson for your classes',
+      title: t('lessons.createLesson', 'Create Lesson'),
+      description: t('lessons.createDescription', 'Create a new lesson for students'),
       icon: BookOpen,
-      action: () => console.log('Navigate to create lesson'),
-      color: 'bg-blue-50 border-blue-200 hover:bg-blue-100'
+      action: () => navigate('/teacher/content/lessons/add'),
+      color: ''
     },
     {
-      title: 'Add Assignment',
-      description: 'Create and assign homework to students',
+      title: t('homework.title', 'Homework Management'),
+      description: t('assignments.tooltip', 'Create assignments, homework, and manage grading'),
       icon: ClipboardCheck,
-      action: () => console.log('Navigate to create assignment'),
-      color: 'bg-green-50 border-green-200 hover:bg-green-100'
+      action: () => navigate('/teacher/homework/create'),
+      color: ''
     },
     {
-      title: 'Take Attendance',
-      description: 'Mark attendance for today\'s classes',
+      title: t('navigation.attendance', 'Attendance'),
+      description: t('misc.todayOverview', "Today's Overview"),
       icon: Users,
-      action: () => console.log('Navigate to attendance'),
-      color: 'bg-orange-50 border-orange-200 hover:bg-orange-100'
+      action: () => navigate('/teacher/attendance'),
+      color: ''
     },
     {
-      title: 'View Analytics',
-      description: 'Check your students\' performance',
+      title: t('teacherSidebar.analytics.title', 'Teaching Analytics'),
+      description: t('teacherSidebar.analytics.tooltip', 'Analyze class and student performance'),
       icon: BarChart3,
-      action: () => console.log('Navigate to analytics'),
-      color: 'bg-purple-50 border-purple-200 hover:bg-purple-100'
+      action: () => navigate('/teacher/analytics/class-performance'),
+      color: ''
     }
   ]
 
@@ -123,7 +198,7 @@ const TeacherDashboard = () => {
   return (
     <TeacherPageLayout
       title={t('teacherSidebar.dashboard')}
-      subtitle={`Welcome back, ${user?.first_name || 'Teacher'}! Here's what's happening in your classes today.`}
+      subtitle={`${t('common.welcome', 'Welcome')}, ${user?.first_name || 'Teacher'}!`}
       showRefreshButton={true}
     >
       {/* Statistics Cards */}
@@ -133,21 +208,21 @@ const TeacherDashboard = () => {
             <CardContent className="pt-6">
               <div className="flex items-center">
                 <div className={cn(
-                  'p-2 rounded-lg',
-                  stat.color,
-                  'text-white'
+                  'p-2 rounded-lg bg-muted',
                 )}>
-                  <stat.icon className="h-6 w-6" />
+                  <stat.icon className={cn('h-6 w-6', stat.color)} />
                 </div>
                 <div className={cn('ml-4', isRTL && 'mr-4 ml-0')}>
-                  <p className="text-2xl font-bold">{stat.value}</p>
+                  <p className="text-2xl font-bold">{loadingStats ? '…' : stat.value}</p>
                   <p className="text-sm text-muted-foreground">{stat.title}</p>
                 </div>
               </div>
-              <div className="mt-4 flex items-center text-sm">
-                <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-                <span className="text-green-600">{stat.trend}</span>
-              </div>
+              {stat.trend && (
+                <div className="mt-4 flex items-center text-sm">
+                  <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
+                  <span className="text-green-600">{stat.trend}</span>
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}
@@ -160,7 +235,7 @@ const TeacherDashboard = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Plus className="h-5 w-5" />
-                Quick Actions
+                {t('common.quickActions', 'Quick Actions')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -168,18 +243,15 @@ const TeacherDashboard = () => {
                 {quickActions.map((action, index) => (
                   <Card 
                     key={index} 
-                    className={cn(
-                      'cursor-pointer transition-all duration-200',
-                      action.color
-                    )}
+                    className={cn('cursor-pointer transition-colors border hover:bg-accent')}
                     onClick={action.action}
                   >
                     <CardContent className="pt-6">
                       <div className="flex items-center gap-3">
-                        <action.icon className="h-8 w-8 text-gray-600" />
+                        <action.icon className="h-8 w-8 text-muted-foreground" />
                         <div>
-                          <h3 className="font-semibold text-gray-900">{action.title}</h3>
-                          <p className="text-sm text-gray-600">{action.description}</p>
+                          <h3 className="font-semibold text-foreground">{action.title}</h3>
+                          <p className="text-sm text-muted-foreground">{action.description}</p>
                         </div>
                       </div>
                     </CardContent>
@@ -196,13 +268,13 @@ const TeacherDashboard = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5" />
-                Recent Activity
+                {t('common.recentActivity', 'Recent Activity')}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {recentActivity.map((activity, index) => (
-                  <div key={index} className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                  <div key={index} className="flex items-start gap-3 p-3 rounded-lg hover:bg-accent transition-colors">
                     <div className={cn('p-1 rounded', activity.color)}>
                       <activity.icon className="h-4 w-4" />
                     </div>
@@ -216,7 +288,7 @@ const TeacherDashboard = () => {
               </div>
               <Button variant="outline" className="w-full mt-4">
                 <Eye className="h-4 w-4 mr-2" />
-                View All Activity
+                {t('common.viewAll', 'View All')}
               </Button>
             </CardContent>
           </Card>
@@ -228,36 +300,28 @@ const TeacherDashboard = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            Today's Schedule
+            {`${t('common.today', 'Today')} ${t('common.schedule', 'Schedule')}`}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 border rounded-lg">
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="font-semibold">Mathematics</h3>
-                <span className="text-sm text-muted-foreground">Grade 10A</span>
-              </div>
-              <p className="text-sm text-muted-foreground">8:00 AM - 9:00 AM</p>
-              <p className="text-sm text-muted-foreground">Room 101</p>
+          {todaySessions.length === 0 ? (
+            <div className="text-sm text-muted-foreground">{t('teacherSidebar.myScheduleDesc', 'View your personal teaching schedule and timetable')}</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {todaySessions.slice(0, 3).map((s, i) => (
+                <div key={i} className="p-4 border rounded-lg bg-card">
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="font-semibold">{s.subject_name || t('subjects', 'Subject')}</h3>
+                    <span className="text-sm text-muted-foreground">{s.class_name || s.school_class_name || ''}</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{s.start_time} - {s.end_time}</p>
+                  {s.room_name && (
+                    <p className="text-sm text-muted-foreground">{s.room_name}</p>
+                  )}
+                </div>
+              ))}
             </div>
-            <div className="p-4 border rounded-lg">
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="font-semibold">Physics</h3>
-                <span className="text-sm text-muted-foreground">Grade 11B</span>
-              </div>
-              <p className="text-sm text-muted-foreground">10:00 AM - 11:00 AM</p>
-              <p className="text-sm text-muted-foreground">Room 204</p>
-            </div>
-            <div className="p-4 border rounded-lg">
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="font-semibold">Chemistry</h3>
-                <span className="text-sm text-muted-foreground">Grade 12A</span>
-              </div>
-              <p className="text-sm text-muted-foreground">2:00 PM - 3:00 PM</p>
-              <p className="text-sm text-muted-foreground">Lab 301</p>
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </TeacherPageLayout>

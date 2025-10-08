@@ -13,6 +13,7 @@ import schoolsServiceImport from './schools.js';
 import homeworkServiceImport from './homework.js';
 import attendanceServiceImport from './attendance.js';
 import lessonsServiceImport from './lessons.js';
+import rewardsServiceImport from './rewards.js';
 import errorHandlerImport from './errorHandler.js';
 
 // Re-export services
@@ -40,6 +41,7 @@ export { default as schoolsService } from './schools.js';
 export { default as homeworkService } from './homework.js';
 export { default as attendanceService } from './attendance.js';
 export { default as lessonsService } from './lessons.js';
+export { default as rewardsService } from './rewards.js';
 
 // Error handling
 export { default as errorHandler } from './errorHandler.js';
@@ -61,7 +63,8 @@ export const services = {
   schools: schoolsServiceImport,
   homework: homeworkServiceImport,
   attendance: attendanceServiceImport,
-  lessons: lessonsServiceImport
+  lessons: lessonsServiceImport,
+  rewards: rewardsServiceImport
 };
 
 // API endpoints summary for reference

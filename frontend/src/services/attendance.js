@@ -196,6 +196,20 @@ class AttendanceService {
   }
 
   /**
+   * Get current student's weekly schedule
+   * @returns {Promise<Object>} Sessions grouped for the student's class
+   */
+  async getMySchedule() {
+    try {
+      const response = await apiMethods.get('attendance/timetable-sessions/my_schedule/');
+      return response;
+    } catch (error) {
+      console.error('Get my schedule failed:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get Teacher Classes
    * @param {Object} params - Query parameters
    * @returns {Promise<Object>} Teacher's assigned classes
@@ -578,6 +592,22 @@ class AttendanceService {
       return response;
     } catch (error) {
       console.error('Get pending absence flags failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Clear Absence Flag
+   * @param {number} flagId - Absence flag ID
+   * @param {Object} clearanceData - Clearance data (clearance_reason, clearance_notes, clearance_document)
+   * @returns {Promise<Object>} Clearance response
+   */
+  async clearAbsenceFlag(flagId, clearanceData) {
+    try {
+      const response = await apiMethods.post(`attendance/absence-flags/${flagId}/clear/`, clearanceData);
+      return response;
+    } catch (error) {
+      console.error('Clear absence flag failed:', error);
       throw error;
     }
   }

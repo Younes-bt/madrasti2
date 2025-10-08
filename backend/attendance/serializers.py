@@ -138,6 +138,8 @@ class AttendanceRecordSerializer(serializers.ModelSerializer):
     educational_level_id = serializers.IntegerField(source='attendance_session.timetable_session.timetable.school_class.grade.educational_level.id', read_only=True)
     educational_level_name = serializers.CharField(source='attendance_session.timetable_session.timetable.school_class.grade.educational_level.name', read_only=True)
     subject_name = serializers.CharField(source='attendance_session.timetable_session.subject.name', read_only=True)
+    has_pending_flags = serializers.SerializerMethodField()
+    pending_flags_count = serializers.SerializerMethodField()
 
     class Meta:
         model = AttendanceRecord
@@ -145,7 +147,8 @@ class AttendanceRecordSerializer(serializers.ModelSerializer):
             'id', 'student', 'status', 'status_display', 'marked_at',
             'marked_by_name', 'arrival_time', 'notes', 'updated_at',
             'class_name', 'grade_name', 'class_id', 'grade_id', 'track_id', 'track_name',
-            'educational_level_id', 'educational_level_name', 'subject_name'
+            'educational_level_id', 'educational_level_name', 'subject_name',
+            'has_pending_flags', 'pending_flags_count'
         ]
 
     def get_track_id(self, obj):
@@ -161,6 +164,14 @@ class AttendanceRecordSerializer(serializers.ModelSerializer):
             return obj.attendance_session.timetable_session.timetable.school_class.track
         except AttributeError:
             return None
+
+    def get_has_pending_flags(self, obj):
+        """Check if student has any uncleared absence flags"""
+        return obj.student.absence_flags.filter(is_cleared=False).exists()
+
+    def get_pending_flags_count(self, obj):
+        """Get count of uncleared absence flags for this student"""
+        return obj.student.absence_flags.filter(is_cleared=False).count()
 
 class AttendanceRecordUpdateSerializer(serializers.ModelSerializer):
     """Update attendance record"""
@@ -268,16 +279,20 @@ class StudentAbsenceFlagSerializer(serializers.ModelSerializer):
     student = UserBasicSerializer(read_only=True)
     cleared_by = UserBasicSerializer(read_only=True)
     clearance_reason_display = serializers.CharField(source='get_clearance_reason_display', read_only=True)
-    
+
     # Attendance details
     attendance_date = serializers.DateField(source='attendance_record.attendance_session.date', read_only=True)
+    session_start_time = serializers.TimeField(source='attendance_record.attendance_session.timetable_session.start_time', read_only=True)
+    session_end_time = serializers.TimeField(source='attendance_record.attendance_session.timetable_session.end_time', read_only=True)
     subject_name = serializers.CharField(source='attendance_record.attendance_session.timetable_session.subject.name', read_only=True)
+    teacher_name = serializers.CharField(source='attendance_record.attendance_session.teacher.full_name', read_only=True)
     class_name = serializers.CharField(source='attendance_record.attendance_session.timetable_session.timetable.school_class.name', read_only=True)
-    
+
     class Meta:
         model = StudentAbsenceFlag
         fields = [
-            'id', 'student', 'attendance_date', 'subject_name', 'class_name',
+            'id', 'student', 'attendance_date', 'session_start_time', 'session_end_time',
+            'subject_name', 'teacher_name', 'class_name',
             'is_cleared', 'created_at', 'cleared_at', 'cleared_by',
             'clearance_reason', 'clearance_reason_display', 'clearance_notes',
             'clearance_document'

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   Home,
   Users,
@@ -36,13 +36,14 @@ import {
   Users2,
   CarFront,
   Monitor,
-  Target
+  Target,
+  Sparkles
 } from 'lucide-react'
 import { Badge } from '../ui/badge'
 import { useLanguage } from '../../hooks/useLanguage'
 import { useAuth } from '../../contexts/AuthContext'
 import { USER_ROLES, ROUTES } from '../../utils/constants'
-import { permissions } from '../../utils/permissions'
+import { apiMethods } from '../../services/api'
 import {
   Sidebar,
   SidebarContent,
@@ -66,9 +67,10 @@ import {
 } from "../ui/collapsible"
 
 export function AppSidebar({ onNavigate, currentPath, ...props }) {
-  const { t, currentLanguage, isRTL } = useLanguage()
+  const { t, currentLanguage } = useLanguage()
   const { user } = useAuth()
   const [openItems, setOpenItems] = useState({})
+  const [studentWallet, setStudentWallet] = useState(null)
 
   const toggleItem = (key) => {
     setOpenItems(prev => ({
@@ -76,6 +78,42 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
       [key]: !prev[key]
     }))
   }
+
+  // Load student wallet for STUDENT role to show total points in header
+  useEffect(() => {
+    const loadWallet = async () => {
+      try {
+        if (user?.role === USER_ROLES.STUDENT) {
+          const data = await apiMethods.get('homework/student-wallets/my_wallet/')
+          setStudentWallet(data || null)
+        } else {
+          setStudentWallet(null)
+        }
+      } catch {
+        // Non-blocking: silently ignore if wallet endpoint not available
+        setStudentWallet(null)
+      }
+    }
+    loadWallet()
+  }, [user])
+
+  // Resolve localized full name
+  const getLocalizedFullName = () => {
+    if (!user) return ''
+    if (currentLanguage === 'ar') {
+      const arFirst = user.ar_first_name || user.profile?.ar_first_name
+      const arLast = user.ar_last_name || user.profile?.ar_last_name
+      if (arFirst || arLast) return `${arFirst || ''} ${arLast || ''}`.trim()
+    }
+    return (
+      user.full_name ||
+      `${user.first_name || ''} ${user.last_name || ''}`.trim() ||
+      user.email ||
+      ''
+    )
+  }
+
+  const avatarUrl = user?.profile_picture_url || user?.profile?.profile_picture_url || null
 
   // Navigation items configuration based on user roles
   const getNavigationItems = () => {
@@ -278,47 +316,96 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
       ],
 
       [USER_ROLES.STUDENT]: [
+        // 👤 My Profile
+        {
+          key: 'student-profile',
+          icon: UserCog,
+          label: t('studentSidebar.profile.title'),
+          tooltip: t('studentSidebar.profile.tooltip'),
+          items: [
+            { key: 'profile-overview', label: t('studentSidebar.profile.overview'), path: '/student/profile/overview' },
+            { key: 'profile-settings', label: t('studentSidebar.profile.settings'), path: '/student/profile/settings' },
+          ]
+        },
+        // 📅 My Timetable
+        {
+          key: 'timetable',
+          icon: Calendar1,
+          label: t('studentSidebar.timetable.title'),
+          tooltip: t('studentSidebar.timetable.tooltip'),
+          path: '/student/timetable',
+        },
+        // 📊 My Attendance
+        {
+          key: 'attendance',
+          icon: UserCheck,
+          label: t('studentSidebar.attendance.title'),
+          tooltip: t('studentSidebar.attendance.tooltip'),
+          items: [
+            { key: 'attendance-report', label: t('studentSidebar.attendance.myReport'), path: '/student/attendance/report' },
+            { key: 'attendance-history', label: t('studentSidebar.attendance.history'), path: '/student/attendance/history' },
+          ]
+        },
+        // 📚 My Lessons
         {
           key: 'lessons',
           icon: BookOpen,
-          label: t('navigation.lessons'),
-          tooltip: t('navigation.lessons'),
-          path: ROUTES.LESSONS.LIST,
-        },
-        {
-          key: 'exercises',
-          icon: Target,
-          label: t('navigation.exercises'),
-          tooltip: t('navigation.practiceExercises'),
-          path: '/exercises',
-        },
-        {
-          key: 'homework',
-          icon: ClipboardList,
-          label: t('navigation.homework'),
-          tooltip: t('navigation.homework'),
+          label: t('studentSidebar.lessons.title'),
+          tooltip: t('studentSidebar.lessons.tooltip'),
           items: [
-            { key: 'homework-pending', label: t('status.pending'), path: ROUTES.HOMEWORK.LIST, badge: 3 },
-            { key: 'homework-completed', label: t('status.completed'), path: '/homework/completed' },
-            { key: 'homework-grades', label: t('assignments.score'), path: ROUTES.HOMEWORK.GRADES },
+            { key: 'all-lessons', label: t('studentSidebar.lessons.allLessons'), path: ROUTES.LESSONS.LIST },
+            { key: 'my-subjects', label: t('studentSidebar.lessons.mySubjects'), path: '/student/lessons/subjects' },
+            { key: 'favorites', label: t('studentSidebar.lessons.favorites'), path: '/student/lessons/favorites' },
           ]
         },
+        // ✏️ My Exercises & Practice
         {
-          key: 'attendance',
-          icon: Calendar,
-          label: t('navigation.attendance'),
-          tooltip: t('navigation.attendance'),
-          path: ROUTES.ATTENDANCE.LIST,
-        },
-        {
-          key: 'rewards',
-          icon: Award,
-          label: t('gamification.achievements'),
-          tooltip: t('gamification.achievements'),
+          key: 'exercises',
+          icon: PenTool,
+          label: t('studentSidebar.exercises.title'),
+          tooltip: t('studentSidebar.exercises.tooltip'),
           items: [
-            { key: 'badges', label: t('gamification.badges'), path: '/rewards/badges' },
-            { key: 'leaderboard', label: t('gamification.leaderboard'), path: ROUTES.HOMEWORK.LEADERBOARD },
-            { key: 'points', label: t('gamification.points'), path: '/rewards/points' },
+            { key: 'all-exercises', label: t('studentSidebar.exercises.allExercises'), path: ROUTES.STUDENT_EXERCISES.LIST },
+            { key: 'practice-mode', label: t('studentSidebar.exercises.practiceMode'), path: ROUTES.STUDENT_EXERCISES.PRACTICE },
+            { key: 'my-progress', label: t('studentSidebar.exercises.myProgress'), path: ROUTES.STUDENT_EXERCISES.PROGRESS },
+          ]
+        },
+        // 📝 My Homework & Assignments
+        {
+          key: 'homework',
+          icon: ClipboardCheck,
+          label: t('studentSidebar.homework.title'),
+          tooltip: t('studentSidebar.homework.tooltip'),
+          items: [
+            { key: 'homework-pending', label: t('studentSidebar.homework.pending'), path: ROUTES.STUDENT_HOMEWORK.PENDING },
+            { key: 'homework-completed', label: t('studentSidebar.homework.completed'), path: ROUTES.STUDENT_HOMEWORK.COMPLETED },
+            { key: 'homework-grades', label: t('studentSidebar.homework.grades'), path: ROUTES.STUDENT_HOMEWORK.GRADES },
+            { key: 'homework-feedback', label: t('studentSidebar.homework.feedback'), path: ROUTES.STUDENT_HOMEWORK.FEEDBACK },
+          ]
+        },
+        // 🏆 Achievements & Rewards
+        {
+          key: 'achievements',
+          icon: Award,
+          label: t('studentSidebar.achievements.title'),
+          tooltip: t('studentSidebar.achievements.tooltip'),
+          items: [
+            { key: 'my-badges', label: t('studentSidebar.achievements.myBadges'), path: '/student/achievements/badges' },
+            { key: 'leaderboard', label: t('studentSidebar.achievements.leaderboard'), path: ROUTES.HOMEWORK.LEADERBOARD },
+            { key: 'my-points', label: t('studentSidebar.achievements.myPoints'), path: ROUTES.STUDENT_ACHIEVEMENTS.MY_POINTS },
+            { key: 'my-rank', label: t('studentSidebar.achievements.myRank'), path: '/student/achievements/rank' },
+          ]
+        },
+        // 📈 My Performance
+        {
+          key: 'performance',
+          icon: BarChart3,
+          label: t('studentSidebar.performance.title'),
+          tooltip: t('studentSidebar.performance.tooltip'),
+          items: [
+            { key: 'performance-overview', label: t('studentSidebar.performance.overview'), path: '/student/performance/overview' },
+            { key: 'subject-performance', label: t('studentSidebar.performance.bySubject'), path: '/student/performance/subjects' },
+            { key: 'progress-report', label: t('studentSidebar.performance.progressReport'), path: '/student/performance/reports' },
           ]
         }
       ],
@@ -507,22 +594,35 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
 
   return (
     <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <span className="text-lg font-bold">M</span>
+      <SidebarHeader className="border-b border-white/5 dark:border-white/10">
+        <div className="px-3 pt-5 pb-4">
+          <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-primary/20 via-primary/10 to-transparent text-sidebar-foreground shadow-sm">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.35),transparent_55%)] opacity-40" />
+            <div className="relative flex items-center gap-4 px-4 py-5">
+              <div className="relative">
+                <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-2 border-white/40 bg-primary/20 text-lg font-semibold text-white shadow-inner">
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="profile" className="h-full w-full object-cover" />
+                  ) : (
+                    <span>{(user?.first_name?.[0] || user?.full_name?.[0] || '?').toUpperCase()}</span>
+                  )}
+                </div>
               </div>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">Madrasti 2.0</span>
-                <span className="truncate text-xs">
+              <div className="flex flex-1 flex-col text-left">
+                <span className="text-base font-semibold leading-tight">{getLocalizedFullName()}</span>
+                <span className="text-xs font-medium uppercase tracking-wide text-sidebar-foreground/70">
                   {user?.role && getRoleDisplayName(user.role)}
                 </span>
+                {user?.role === USER_ROLES.STUDENT && (
+                  <span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-amber-300">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    {t('rewards.points', 'Points')}: {studentWallet?.total_points ?? 0}
+                  </span>
+                )}
               </div>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+            </div>
+          </div>
+        </div>
       </SidebarHeader>
 
       <SidebarContent>
@@ -558,3 +658,4 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
     </Sidebar>
   )
 }
+

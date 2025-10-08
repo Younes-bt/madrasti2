@@ -190,11 +190,30 @@ export const ROUTES = {
     GRADES: '/homework/grades',
     LEADERBOARD: '/homework/leaderboard',
   },
+  STUDENT_HOMEWORK: {
+    PENDING: '/student/homework/pending',
+    WORK: '/student/homework/:id',
+    COMPLETED: '/student/homework/completed',
+    GRADES: '/student/homework/grades',
+    FEEDBACK: '/student/homework/feedback',
+  },
+  STUDENT_EXERCISES: {
+    LIST: '/student/exercises',
+    PRACTICE: '/student/exercises/practice',
+    PROGRESS: '/student/exercises/progress',
+    VIEW: '/student/exercises/:exerciseId',
+  },
   LESSONS: {
-    LIST: '/lessons',
+    LIST: '/student/lessons',
     CREATE: '/lessons/create',
     EDIT: '/lessons/edit/:id',
-    VIEW: '/lessons/:id',
+    VIEW: '/student/lessons/:lessonId',
+  },
+  STUDENT_ACHIEVEMENTS: {
+    MY_BADGES: '/student/achievements/badges',
+    LEADERBOARD: '/student/achievements/leaderboard',
+    MY_POINTS: '/student/achievements/points',
+    MY_RANK: '/student/achievements/rank',
   },
   ADMIN: {
     USERS: '/admin/users',
@@ -353,3 +372,4 @@ export const ERROR_CODES = {
   NETWORK_ERROR: 'NETWORK_ERROR',
   TIMEOUT_ERROR: 'TIMEOUT_ERROR',
 }
+

@@ -489,6 +489,8 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             if current_enrollment:
                 data.update({
                     'grade': current_enrollment.school_class.grade.name,
+                    'grade_name_arabic': getattr(current_enrollment.school_class.grade, 'name_arabic', None),
+                    'grade_name_french': getattr(current_enrollment.school_class.grade, 'name_french', None),
                     'class_name': current_enrollment.school_class.name,
                     'enrollment_date': current_enrollment.enrollment_date,
                     'student_id': current_enrollment.student_number,
@@ -498,6 +500,8 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                 # Set empty academic fields if no enrollment found
                 data.update({
                     'grade': None,
+                    'grade_name_arabic': None,
+                    'grade_name_french': None,
                     'class_name': None,
                     'enrollment_date': None,
                     'student_id': None,
@@ -507,6 +511,8 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             # Set empty academic fields for non-students
             data.update({
                 'grade': None,
+                'grade_name_arabic': None,
+                'grade_name_french': None,
                 'class_name': None,
                 'enrollment_date': None,
                 'student_id': None,

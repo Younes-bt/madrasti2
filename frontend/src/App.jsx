@@ -8,6 +8,21 @@ import { AuthProvider } from './contexts/AuthContext'
 // Import page components
 import LoginPage from './pages/auth/LoginPage'
 import StudentDashboard from './pages/dashboard/StudentDashboard'
+import StudentProfileOverview from './pages/student/StudentProfileOverview'
+import StudentTimetablePage from './pages/student/StudentTimetablePage'
+import StudentAttendanceReport from './pages/student/StudentAttendanceReport'
+import StudentProfileSettings from './pages/student/StudentProfileSettings'
+import StudentAttendanceHistory from './pages/student/StudentAttendanceHistory'
+import StudentLessonsPage from './pages/student/StudentLessonsPage'
+import StudentViewLessonPage from './pages/student/StudentViewLessonPage'
+import StudentExerciseEntryPage from './pages/student/StudentExerciseEntryPage'
+import StudentPointsPage from './pages/student/StudentPointsPage'
+import StudentHomeworkPendingPage from './pages/student/StudentHomeworkPendingPage'
+import StudentHomeworkWorkPage from './pages/student/StudentHomeworkWorkPage'
+import StudentHomeworkCompletedPage from './pages/student/StudentHomeworkCompletedPage'
+import StudentHomeworkGradesPage from './pages/student/StudentHomeworkGradesPage'
+import StudentHomeworkFeedbackPage from './pages/student/StudentHomeworkFeedbackPage'
+import StudentSubmissionReviewPage from './pages/student/StudentSubmissionReviewPage'
 import TeacherDashboard from './pages/teacher/TeacherDashboard'
 import TeacherProfileOverviewPage from './pages/teacher/TeacherProfileOverviewPage'
 import TeacherMyClassesPage from './pages/teacher/TeacherMyClassesPage'
@@ -31,6 +46,7 @@ import CreateHomeworkPage from './pages/teacher/CreateHomeworkPage'
 import ViewHomeworkPage from './pages/teacher/ViewHomeworkPage'
 import ExamsPage from './pages/teacher/ExamsPage'
 import GradingPage from './pages/teacher/GradingPage'
+import GradeSubmissionPage from './pages/teacher/GradeSubmissionPage'
 import ParentDashboard from './pages/dashboard/ParentDashboard'
 import AdminDashboard from './pages/dashboard/AdminDashboard'
 
@@ -135,16 +151,144 @@ const AppRoutes = () => {
       <Route path="/dashboard" element={<DashboardRedirect />} />
       
       {/* Role-based protected routes */}
-      <Route 
-        path="/student" 
+      <Route
+        path="/student"
         element={
           <ProtectedRoute requiredRoles={['STUDENT']}>
             <StudentDashboard />
           </ProtectedRoute>
-        } 
+        }
       />
-      
-      <Route 
+
+      {/* Student Profile Routes */}
+      <Route
+        path="/student/profile/overview"
+        element={
+          <ProtectedRoute requiredRoles={['STUDENT']}>
+            <StudentProfileOverview />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Student Timetable */}
+      <Route
+        path="/student/timetable"
+        element={
+          <ProtectedRoute requiredRoles={['STUDENT']}>
+            <StudentTimetablePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/attendance/report"
+        element={
+          <ProtectedRoute requiredRoles={['STUDENT']}>
+            <StudentAttendanceReport />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/attendance/history"
+        element={
+          <ProtectedRoute requiredRoles={['STUDENT']}>
+            <StudentAttendanceHistory />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/profile/settings"
+        element={
+          <ProtectedRoute requiredRoles={['STUDENT']}>
+            <StudentProfileSettings />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/student/lessons"
+        element={
+          <ProtectedRoute requiredRoles={['STUDENT']}>
+            <StudentLessonsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/lessons/:lessonId"
+        element={
+          <ProtectedRoute requiredRoles={['STUDENT']}>
+            <StudentViewLessonPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/student/exercises/:exerciseId"
+        element={
+          <ProtectedRoute requiredRoles={['STUDENT']}>
+            <StudentExerciseEntryPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/student/achievements/points"
+        element={
+          <ProtectedRoute requiredRoles={['STUDENT']}>
+            <StudentPointsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/student/homework/pending"
+        element={
+          <ProtectedRoute requiredRoles={['STUDENT']}>
+            <StudentHomeworkPendingPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/homework/:id"
+        element={
+          <ProtectedRoute requiredRoles={['STUDENT']}>
+            <StudentHomeworkWorkPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/homework/completed"
+        element={
+          <ProtectedRoute requiredRoles={['STUDENT']}>
+            <StudentHomeworkCompletedPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/homework/grades"
+        element={
+          <ProtectedRoute requiredRoles={['STUDENT']}>
+            <StudentHomeworkGradesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/homework/feedback"
+        element={
+          <ProtectedRoute requiredRoles={['STUDENT']}>
+            <StudentHomeworkFeedbackPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/homework/submission/:submissionId"
+        element={
+          <ProtectedRoute requiredRoles={['STUDENT']}>
+            <StudentSubmissionReviewPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
         path="/teacher" 
         element={
           <ProtectedRoute requiredRoles={['TEACHER']}>
@@ -342,6 +486,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute requiredRoles={['TEACHER']}>
             <GradingPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/grading/:submissionId"
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <GradeSubmissionPage />
           </ProtectedRoute>
         }
       />
@@ -1098,3 +1250,7 @@ function App() {
 }
 
 export default App
+
+
+
+

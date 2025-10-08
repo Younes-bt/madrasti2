@@ -28,6 +28,7 @@ import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Progress } from '../../components/ui/progress';
+import StudentRewardSummary from '../../components/rewards/StudentRewardSummary';
 import { apiMethods } from '../../services/api';
 import attendanceService from '../../services/attendance';
 import { toast } from 'sonner';
@@ -344,6 +345,13 @@ const ViewStudentPage = () => {
                 />
               </CardContent>
             </Card>
+
+            <StudentRewardSummary
+              studentId={studentId}
+              className="shadow-sm"
+              title={t('adminStudentView.rewardsTitle', 'Rewards & Points')}
+              description={t('adminStudentView.rewardsDescription', 'Track how this student earns and spends rewards.')}
+            />
 
             {/* Parent Information */}
             <Card>

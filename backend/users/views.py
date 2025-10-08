@@ -30,7 +30,10 @@ class ProfileView(generics.RetrieveUpdateAPIView):
     permission_classes = (IsAuthenticated,)
     
     def get_serializer_class(self):
-        if self.request.method in ['PUT', 'PATCH']:
+        # For GET (retrieve) return UserUpdateSerializer to include
+        # academic, parent, and flattened profile fields expected by the frontend.
+        # Keep the same serializer for updates.
+        if self.request.method in ['GET', 'PUT', 'PATCH']:
             return UserUpdateSerializer
         return UserProfileSerializer
 

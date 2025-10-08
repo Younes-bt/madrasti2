@@ -48,6 +48,12 @@ const TeacherProfileOverviewPage = () => {
   const [formData, setFormData] = useState({});
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+
+  const resolvedAvatarUrl = profileData?.profile_picture_url ||
+    profileData?.profile?.profile_picture_url ||
+    user?.profile_picture_url ||
+    user?.profile?.profile_picture_url ||
+    null;
   const fileInputRef = useRef(null);
 
   // Fetch profile data
@@ -73,6 +79,18 @@ const TeacherProfileOverviewPage = () => {
         emergency_contact_phone: profile.emergency_contact_phone || '',
         linkedin_url: profile.linkedin_url || '',
         twitter_url: profile.twitter_url || '',
+      });
+
+      const pictureUrl = data.profile_picture_url || profile.profile_picture_url || null;
+      updateUser({
+        first_name: data.first_name || user?.first_name,
+        last_name: data.last_name || user?.last_name,
+        profile_picture_url: pictureUrl,
+        profile: {
+          ...(user?.profile || {}),
+          ...profile,
+          profile_picture_url: pictureUrl,
+        },
       });
     } catch (error) {
       console.error('Failed to fetch profile data:', error);
@@ -172,14 +190,25 @@ const TeacherProfileOverviewPage = () => {
       setIsEditing(false);
       setSelectedImage(null);
       setImagePreview(null);
-      
-      // Update auth user context with new data
+
+      const updatedProfile = updatedData.profile || {};
+      const updatedPictureUrl =
+        updatedData.profile_picture_url ||
+        updatedProfile.profile_picture_url ||
+        imagePreview ||
+        null;
+
       updateUser({
-        ...user,
         first_name: formData.first_name,
         last_name: formData.last_name,
+        profile_picture_url: updatedPictureUrl,
+        profile: {
+          ...(user?.profile || {}),
+          ...updatedProfile,
+          profile_picture_url: updatedPictureUrl,
+        },
       });
-      
+
       toast.success(t('success.profileUpdated'));
     } catch (error) {
       console.error('Failed to save profile:', error);
@@ -324,9 +353,13 @@ const TeacherProfileOverviewPage = () => {
               <div className="flex flex-col items-center text-center">
                 <div className="relative mb-4">
                   <Avatar className="h-24 w-24">
-                    <AvatarImage src={imagePreview || profileData?.profile?.profile_picture_url} />
+                    <AvatarImage
+                    src={imagePreview || resolvedAvatarUrl}
+                    alt={profileData?.full_name || profileData?.first_name || 'profile photo'}
+                  />
                     <AvatarFallback className="text-lg">
-                      {profileData?.first_name?.[0]}{profileData?.last_name?.[0]}
+                      {(profileData?.first_name || user?.first_name || '?').slice(0, 1).toUpperCase()}
+                      {(profileData?.last_name || user?.last_name || '').slice(0, 1).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   {isEditing && (

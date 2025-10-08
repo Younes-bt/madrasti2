@@ -1,7 +1,9 @@
 # homework/serializers.py
-from datetime import time, datetime, date, timezone
+from datetime import time, datetime, date
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from django.utils import timezone
+
 from .models import (
     # Reward Models
     RewardSettings, RewardType, StudentWallet, RewardTransaction,
@@ -15,7 +17,7 @@ from .models import (
     TextbookLibrary,
     
     # Exercise Models
-    Exercise, ExerciseReward,
+    Exercise, ExerciseReward, ExerciseSubmission, ExerciseAnswer,
 
     # Homework Models (renamed from Assignment)
     Homework, HomeworkReward, Question, QuestionChoice, BookExercise,
@@ -198,6 +200,36 @@ class ExerciseCreateSerializer(serializers.ModelSerializer):
         ExerciseReward.objects.create(exercise=exercise, **reward_data)
         return exercise
 
+class ExerciseAnswerSerializer(serializers.ModelSerializer):
+    question_id = serializers.IntegerField(source='question.id', read_only=True)
+    selected_choice_ids = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ExerciseAnswer
+        fields = ['id', 'question_id', 'text_answer', 'selected_choice_ids', 'is_correct', 'points_earned']
+
+    def get_selected_choice_ids(self, obj):
+        return list(obj.selected_choices.values_list('id', flat=True))
+
+class ExerciseSubmissionSerializer(serializers.ModelSerializer):
+    exercise_id = serializers.IntegerField(source='exercise.id', read_only=True)
+    student = BasicUserSerializer(read_only=True)
+    answers = ExerciseAnswerSerializer(source='exercise_answers', many=True, read_only=True)
+
+    class Meta:
+        model = ExerciseSubmission
+        fields = [
+            'id', 'exercise_id', 'student', 'status', 'attempt_number',
+            'started_at', 'completed_at', 'time_taken', 'total_score',
+            'percentage_score', 'auto_score', 'points_earned',
+            'questions_answered', 'questions_correct', 'answers'
+        ]
+
+class ExerciseAnswerInputSerializer(serializers.Serializer):
+    question = serializers.IntegerField()
+    text_answer = serializers.CharField(required=False, allow_blank=True)
+    selected_choice_ids = serializers.ListField(child=serializers.IntegerField(), required=False, allow_empty=True)
+
 class ExerciseDetailSerializer(serializers.ModelSerializer):
     reward_config = ExerciseRewardSerializer(read_only=True)
     created_by = BasicUserSerializer(read_only=True)
@@ -216,7 +248,81 @@ class HomeworkRewardSerializer(serializers.ModelSerializer):
         model = HomeworkReward
         fields = '__all__'
 
-class HomeworkListSerializer(serializers.ModelSerializer):
+class StudentHomeworkSerializerMixin:
+    """Shared helpers for exposing student-specific homework fields"""
+
+    def _get_student_submission(self, obj):
+        request = self.context.get('request')
+        user = getattr(request, 'user', None) if request else None
+        if not user or getattr(user, 'is_authenticated', False) is False:
+            return None
+        if getattr(user, 'role', None) != 'STUDENT':
+            return None
+
+        cache_key = '_student_submission_cache'
+        if hasattr(obj, cache_key):
+            return getattr(obj, cache_key)
+
+        submission = obj.submissions.filter(student=user).order_by('-attempt_number', '-created_at').first()
+        setattr(obj, cache_key, submission)
+        return submission
+
+    def _serialize_student_submission(self, submission):
+        if not submission:
+            return None
+
+        graded_by = submission.graded_by
+        return {
+            'id': submission.id,
+            'status': submission.status,
+            'started_at': submission.started_at,
+            'submitted_at': submission.submitted_at,
+            'time_taken': submission.time_taken,
+            'attempt_number': submission.attempt_number,
+            'is_late': submission.is_late,
+            'total_score': submission.total_score,
+            'auto_score': submission.auto_score,
+            'manual_score': submission.manual_score,
+            'points_earned': submission.points_earned,
+            'coins_earned': submission.coins_earned,
+            'bonus_points': submission.bonus_points,
+            'teacher_feedback': submission.teacher_feedback,
+            'graded_at': submission.graded_at,
+            'graded_by': BasicUserSerializer(graded_by, context=self.context).data if graded_by else None,
+        }
+
+    def _get_due_datetime(self, obj):
+        due_date = getattr(obj, 'due_date', None)
+        if not due_date:
+            return None
+        if timezone.is_naive(due_date):
+            try:
+                due_date = timezone.make_aware(due_date, timezone.get_current_timezone())
+            except Exception:
+                due_date = timezone.make_aware(due_date)
+        return due_date
+
+    def _student_status_for(self, obj, submission):
+        if submission:
+            return submission.status
+
+        if not obj.is_published:
+            return 'draft'
+
+        due_date = self._get_due_datetime(obj)
+        if due_date and timezone.now() > due_date:
+            return 'overdue'
+
+        return 'pending'
+
+    def _seconds_until_due(self, obj):
+        due_date = self._get_due_datetime(obj)
+        if not due_date:
+            return None
+        delta = due_date - timezone.now()
+        return int(delta.total_seconds())
+
+class HomeworkListSerializer(StudentHomeworkSerializerMixin, serializers.ModelSerializer):
     """List view serializer for assignments"""
     teacher = BasicUserSerializer(read_only=True)
     subject_name = serializers.CharField(source='subject.name', read_only=True)
@@ -224,16 +330,36 @@ class HomeworkListSerializer(serializers.ModelSerializer):
     class_name = serializers.CharField(source='school_class.name', read_only=True)
     is_overdue = serializers.ReadOnlyField()
     submissions_count = serializers.ReadOnlyField()
-    
+    student_submission = serializers.SerializerMethodField()
+    student_status = serializers.SerializerMethodField()
+    time_until_due = serializers.SerializerMethodField()
+    is_pending = serializers.SerializerMethodField()
+
     class Meta:
         model = Homework
         fields = [
             'id', 'title', 'title_arabic', 'homework_type', 'homework_format',
             'due_date', 'total_points', 'is_published', 'is_overdue', 'submissions_count',
-            'teacher', 'subject_name', 'grade_name', 'class_name', 'created_at'
+            'teacher', 'subject_name', 'grade_name', 'class_name', 'created_at',
+            'student_submission', 'student_status', 'time_until_due', 'is_pending'
         ]
 
-class HomeworkDetailSerializer(serializers.ModelSerializer):
+    def get_student_submission(self, obj):
+        submission = self._get_student_submission(obj)
+        return self._serialize_student_submission(submission)
+
+    def get_student_status(self, obj):
+        submission = self._get_student_submission(obj)
+        return self._student_status_for(obj, submission)
+
+    def get_time_until_due(self, obj):
+        return self._seconds_until_due(obj)
+
+    def get_is_pending(self, obj):
+        status = self.get_student_status(obj)
+        return status in {'pending', 'in_progress', 'draft', 'overdue'} and status not in {'submitted', 'auto_graded', 'manually_graded', 'late'}
+
+class HomeworkDetailSerializer(StudentHomeworkSerializerMixin, serializers.ModelSerializer):
     """Detail view serializer for assignments"""
     teacher = BasicUserSerializer(read_only=True)
     questions = QuestionSerializer(many=True, read_only=True)
@@ -244,10 +370,29 @@ class HomeworkDetailSerializer(serializers.ModelSerializer):
     class_name = serializers.CharField(source='school_class.name', read_only=True)
     is_overdue = serializers.ReadOnlyField()
     submissions_count = serializers.ReadOnlyField()
-    
+    student_submission = serializers.SerializerMethodField()
+    student_status = serializers.SerializerMethodField()
+    time_until_due = serializers.SerializerMethodField()
+    is_pending = serializers.SerializerMethodField()
+
     class Meta:
         model = Homework
         fields = '__all__'
+
+    def get_student_submission(self, obj):
+        submission = self._get_student_submission(obj)
+        return self._serialize_student_submission(submission)
+
+    def get_student_status(self, obj):
+        submission = self._get_student_submission(obj)
+        return self._student_status_for(obj, submission)
+
+    def get_time_until_due(self, obj):
+        return self._seconds_until_due(obj)
+
+    def get_is_pending(self, obj):
+        status = self.get_student_status(obj)
+        return status in {'pending', 'in_progress', 'draft', 'overdue'} and status not in {'submitted', 'auto_graded', 'manually_graded', 'late'}
 
 class HomeworkCreateSerializer(serializers.ModelSerializer):
     """Create/Update serializer for assignments"""

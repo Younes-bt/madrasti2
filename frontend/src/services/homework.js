@@ -85,6 +85,42 @@ class HomeworkService {
     }
   }
 
+  async getStudentSubmissions(params = {}) {
+    try {
+      const response = await apiMethods.get('homework/submissions/', { params });
+      return {
+        success: true,
+        data: response.results || response,
+        total: response.count || response.length,
+        next: response.next,
+        previous: response.previous
+      };
+    } catch (error) {
+      console.error('Error fetching submissions:', error);
+      return { success: false, error: this._extractErrorMessage(error, 'Failed to fetch submissions') };
+    }
+  }
+
+  async startHomework(homeworkId) {
+    try {
+      const response = await apiMethods.post(`homework/submissions/${homeworkId}/start/`, {});
+      return { success: true, data: response };
+    } catch (error) {
+      console.error(`Error starting homework ${homeworkId}:`, error);
+      return { success: false, error: this._extractErrorMessage(error, 'Failed to start homework') };
+    }
+  }
+
+  async submitHomework(submissionId, payload = {}) {
+    try {
+      const response = await apiMethods.post(`homework/submissions/${submissionId}/submit/`, payload);
+      return { success: true, data: response };
+    } catch (error) {
+      console.error(`Error submitting homework ${submissionId}:`, error);
+      return { success: false, error: this._extractErrorMessage(error, 'Failed to submit homework') };
+    }
+  }
+
   // ===============================
   // QUESTIONS & BOOK EXERCISES
   // ===============================
@@ -110,6 +146,42 @@ class HomeworkService {
   }
 
   // ===============================
+  // GRADING & SUBMISSIONS
+  // ===============================
+
+  async getSubmissionById(submissionId) {
+    try {
+      const response = await apiMethods.get(`homework/submissions/${submissionId}/`);
+      return { success: true, data: response };
+    } catch (error) {
+      console.error(`Error fetching submission ${submissionId}:`, error);
+      return { success: false, error: this._extractErrorMessage(error, 'Failed to fetch submission') };
+    }
+  }
+
+  async gradeSubmission(submissionId, gradeData) {
+    try {
+      const response = await apiMethods.post(`homework/submissions/${submissionId}/grade/`, gradeData);
+      return { success: true, data: response };
+    } catch (error) {
+      console.error(`Error grading submission ${submissionId}:`, error);
+      return { success: false, error: this._extractErrorMessage(error, 'Failed to grade submission') };
+    }
+  }
+
+  async updateQuestionAnswer(submissionId, answerId, feedback) {
+    try {
+      const response = await apiMethods.patch(`homework/question-answers/${answerId}/`, {
+        teacher_feedback: feedback
+      });
+      return { success: true, data: response };
+    } catch (error) {
+      console.error(`Error updating question answer ${answerId}:`, error);
+      return { success: false, error: this._extractErrorMessage(error, 'Failed to update answer feedback') };
+    }
+  }
+
+  // ===============================
   // STATISTICS & HELPERS
   // ===============================
 
@@ -123,7 +195,73 @@ class HomeworkService {
     }
   }
 
+  _toNumber(value) {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? null : parsed;
+  }
+
+  formatStudentSubmission(submission) {
+    if (!submission) {
+      return null;
+    }
+
+    return {
+      id: submission.id,
+      status: submission.status,
+      started_at: submission.started_at,
+      submitted_at: submission.submitted_at,
+      time_taken: submission.time_taken,
+      attempt_number: submission.attempt_number,
+      is_late: Boolean(submission.is_late),
+      total_score: this._toNumber(submission.total_score),
+      auto_score: this._toNumber(submission.auto_score),
+      manual_score: this._toNumber(submission.manual_score),
+      points_earned: this._toNumber(submission.points_earned),
+      coins_earned: this._toNumber(submission.coins_earned),
+      bonus_points: this._toNumber(submission.bonus_points),
+      teacher_feedback: submission.teacher_feedback,
+      graded_at: submission.graded_at,
+      graded_by: submission.graded_by || null,
+    };
+  }
+
+  _normalizeStudentStatus(status, { isOverdue = false } = {}) {
+    if (!status) {
+      return isOverdue ? 'overdue' : 'pending';
+    }
+
+    const value = status.toLowerCase();
+    if (['submitted', 'auto_graded', 'manually_graded'].includes(value)) {
+      return 'completed';
+    }
+    if (value === 'late') {
+      return 'late';
+    }
+    if (value === 'draft') {
+      return 'draft';
+    }
+    if (value === 'overdue') {
+      return 'overdue';
+    }
+    if (value === 'in_progress') {
+      return 'in_progress';
+    }
+    return 'pending';
+  }
+
   formatHomeworkFromAPI(apiHomework) {
+    if (!apiHomework) {
+      return null;
+    }
+
+    const studentSubmission = this.formatStudentSubmission(apiHomework.student_submission);
+    const studentStatus = apiHomework.student_status || studentSubmission?.status || null;
+    const normalizedStatus = this._normalizeStudentStatus(studentStatus, { isOverdue: Boolean(apiHomework.is_overdue) });
+    const dueDate = apiHomework.due_date ? new Date(apiHomework.due_date) : null;
+
     return {
       id: apiHomework.id,
       title: apiHomework.title,
@@ -136,16 +274,24 @@ class HomeworkService {
       class: { id: apiHomework.school_class, name: apiHomework.class_name },
       teacher: apiHomework.teacher,
       due_date: apiHomework.due_date,
-      total_points: apiHomework.total_points,
+      dueDate: dueDate,
+      dueDateISO: dueDate ? dueDate.toISOString() : null,
+      total_points: this._toNumber(apiHomework.total_points),
+      estimated_duration: this._toNumber(apiHomework.estimated_duration),
       is_published: apiHomework.is_published,
-      submissions_count: apiHomework.submissions_count,
-      is_overdue: apiHomework.is_overdue,
+      submissions_count: this._toNumber(apiHomework.submissions_count) ?? 0,
+      is_overdue: Boolean(apiHomework.is_overdue),
       questions: apiHomework.questions || [],
       book_exercises: apiHomework.book_exercises || [],
-      time_limit: apiHomework.time_limit,
-      allow_late_submissions: apiHomework.allow_late_submissions,
-      late_penalty_percentage: apiHomework.late_penalty_percentage,
+      time_limit: this._toNumber(apiHomework.time_limit),
+      allow_late_submissions: Boolean(apiHomework.allow_late_submissions),
+      late_penalty_percentage: this._toNumber(apiHomework.late_penalty_percentage),
       created_at: apiHomework.created_at,
+      student_submission: studentSubmission,
+      student_status: studentStatus,
+      studentStatusNormalized: normalizedStatus,
+      time_until_due: typeof apiHomework.time_until_due === 'number' ? apiHomework.time_until_due : null,
+      is_pending: apiHomework.is_pending ?? ['pending', 'in_progress', 'draft', 'overdue'].includes(normalizedStatus),
     };
   }
 
