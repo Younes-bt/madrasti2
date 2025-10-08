@@ -44,6 +44,8 @@ import { useLanguage } from '../../hooks/useLanguage'
 import { useAuth } from '../../contexts/AuthContext'
 import { USER_ROLES, ROUTES } from '../../utils/constants'
 import { apiMethods } from '../../services/api'
+import ThemeToggle from '../shared/ThemeToggle'
+import LanguageSwitcher from '../shared/LanguageSwitcher'
 import {
   Sidebar,
   SidebarContent,
@@ -636,18 +638,29 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
       </SidebarContent>
 
       <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={() => handleNavigation('/profile')}
-              tooltip={t('common.settings')}
-            >
-              <Settings />
-              <span>{t('common.settings')}</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-        <div className="mt-2 px-2">
+        <div className="px-3 py-2 space-y-3">
+          {/* Theme and Language Controls */}
+          <div className="flex items-center justify-between gap-2 pb-2 border-b border-white/5 dark:border-white/10">
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <LanguageSwitcher />
+            </div>
+          </div>
+
+          {/* Settings Link */}
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => handleNavigation('/profile')}
+                tooltip={t('common.settings')}
+              >
+                <Settings />
+                <span>{t('common.settings')}</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+
+          {/* Version Info */}
           <div className="text-center text-xs text-sidebar-foreground/70">
             <p>Madrasti 2.0 v2.0.0</p>
             <p>© 2025 OpiComTech</p>

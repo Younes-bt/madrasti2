@@ -9,7 +9,9 @@ import { PageErrorBoundary } from '../shared/ErrorBoundary'
 import LoadingSpinner from '../shared/LoadingSpinner'
 import LanguageSwitcher from '../shared/LanguageSwitcher'
 import ThemeToggle from '../shared/ThemeToggle'
-import { SidebarProvider, SidebarInset } from '../ui/sidebar'
+import { SidebarProvider, SidebarInset, SidebarTrigger } from '../ui/sidebar'
+import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink } from '../ui/breadcrumb'
+import { Separator } from '../ui/separator'
 import { cn } from '../../lib/utils'
 
 const Layout = ({
@@ -166,7 +168,7 @@ const Layout = ({
   return (
     <div className={cn(isRTL && 'rtl', className)}>
       <SidebarProvider defaultOpen={true}>
-        <AppSidebar 
+        <AppSidebar
           onNavigate={handleNavigate}
           currentPath={currentPath}
           className={cn(
@@ -175,25 +177,27 @@ const Layout = ({
           )}
         />
         <SidebarInset>
-          {/* Header */}
-          {showHeader && (
-            <Header
-              onMenuClick={handleSidebarToggle}
-              isSidebarOpen={sidebarOpen}
-              user={user}
-              notifications={notifications}
-              onNotificationClick={onNotificationClick}
-              onProfileClick={onProfileClick}
-              onLogout={handleLogout}
-            />
-          )}
-
           {/* Main Content */}
           <main className={cn('flex-1 flex flex-col', contentClassName)}>
+            {/* Header with Sidebar Trigger */}
+            <header className="flex h-14 shrink-0 items-center gap-2 border-b px-2 sm:px-4">
+              <SidebarTrigger className="-ml-1" />
+              <Separator orientation="vertical" className="h-4" />
+              <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem className="hidden sm:block">
+                    <BreadcrumbLink href="#">
+                      {user?.school_info?.name || 'Madrasti 2.0'}
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
+            </header>
+
             {/* Content Area */}
-            <div className="flex-1 overflow-auto p-4">
+            <div className="flex-1 overflow-auto p-2 sm:p-4">
               <PageErrorBoundary>
-                <div className="container mx-auto">
+                <div className="container mx-auto px-2 sm:px-4">
                   {children}
                 </div>
               </PageErrorBoundary>
@@ -201,7 +205,7 @@ const Layout = ({
 
             {/* Footer */}
             {showFooter && (
-              <Footer 
+              <Footer
                 variant={footerVariant}
                 schoolInfo={user?.school_info}
               />
