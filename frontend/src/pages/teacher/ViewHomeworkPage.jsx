@@ -30,6 +30,178 @@ import {
 } from 'lucide-react'
 import { cn } from '../../lib/utils'
 
+const renderFillBlankSentence = (question) => {
+  const blanks = question.blanks || []
+  const text = question.question_text || ''
+  const tokens = []
+  const regex = /\[(.+?)\]/g
+  let lastIndex = 0
+  const usedBlankIds = new Set()
+
+  const findBlankForToken = (tokenValue) => {
+    const normalized = (tokenValue || '').trim()
+    if (!normalized) return null
+
+    const byLabel = blanks.find(blank =>
+      Boolean(blank.label) && blank.label.toLowerCase() === normalized.toLowerCase()
+    )
+    if (byLabel) return byLabel
+
+    const orderNumber = parseInt(normalized.replace(/[^0-9]/g, ''), 10)
+    if (!Number.isNaN(orderNumber)) {
+      const byOrder = blanks.find(blank => blank.order === orderNumber)
+      if (byOrder) return byOrder
+    }
+
+    const fallback = blanks.find(blank => `B${blank.order}`.toLowerCase() === normalized.toLowerCase())
+    return fallback || null
+  }
+
+  text.replace(regex, (match, inner, offset) => {
+    if (offset > lastIndex) {
+      tokens.push({ type: 'text', value: text.slice(lastIndex, offset) })
+    }
+    const blank = findBlankForToken(inner)
+    if (blank) {
+      tokens.push({ type: 'blank', blank })
+      usedBlankIds.add(blank.id)
+    } else {
+      tokens.push({ type: 'text', value: match })
+    }
+    lastIndex = offset + match.length
+    return match
+  })
+
+  if (lastIndex < text.length) {
+    tokens.push({ type: 'text', value: text.slice(lastIndex) })
+  }
+
+  if (!tokens.length) {
+    tokens.push({ type: 'text', value: text })
+  }
+
+  blanks.forEach(blank => {
+    if (!usedBlankIds.has(blank.id)) {
+      tokens.push({ type: 'text', value: tokens.length ? ' ' : '' })
+      tokens.push({ type: 'blank', blank })
+      usedBlankIds.add(blank.id)
+    }
+  })
+
+  return (
+    <div className="flex flex-wrap items-baseline gap-2 text-base leading-relaxed">
+      {tokens.map((token, idx) => {
+        if (token.type === 'text') {
+          return (
+            <span key={`text-${idx}`} className="whitespace-pre-wrap">
+              {token.value}
+            </span>
+          )
+        }
+
+        const blank = token.blank
+        const label = blank.label || `Blank ${blank.order}`
+        return (
+          <span
+            key={`blank-${blank.id}-${idx}`}
+            className="inline-flex h-8 items-center justify-center rounded-full border border-primary/40 bg-muted/40 px-4 text-sm font-medium text-foreground shadow-sm"
+          >
+            {label}
+          </span>
+        )
+      })}
+    </div>
+  )
+}
+
+const renderFillBlankDetails = (question) => {
+  const blanks = question.blanks || []
+  if (!blanks.length) return null
+
+  return (
+    <div className="mt-3 space-y-2">
+      {blanks.map(blank => (
+        <div key={blank.id} className="rounded-md border border-border/60 bg-muted/10 p-3">
+          <p className="text-sm font-semibold mb-2">
+            Blank {blank.label || `#${blank.order}`}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {(blank.options || []).map(option => (
+              <Badge
+                key={option.id}
+                variant={option.is_correct ? 'default' : 'secondary'}
+                className={option.is_correct ? 'bg-green-600' : 'bg-muted-foreground/20 text-muted-foreground'}
+              >
+                {option.option_text}
+                {option.is_correct ? ' (Correct)' : ''}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+const renderOrderingDetails = (question) => {
+  const items = question.ordering_items || []
+  if (!items.length) return null
+
+  const sorted = [...items].sort((a, b) => a.correct_position - b.correct_position)
+  return (
+    <div className="space-y-2">
+      {sorted.map(item => (
+        <div key={item.id} className="flex items-center gap-3 rounded-md border border-border/60 bg-muted/20 px-3 py-2 text-sm">
+          <Badge variant="secondary" className="min-w-[2rem] justify-center">
+            {item.correct_position}
+          </Badge>
+          <span>{item.text}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+const renderMatchingDetails = (question) => {
+  const pairs = question.matching_pairs || []
+  if (!pairs.length) return null
+
+  return (
+    <div className="space-y-2">
+      {pairs.map(pair => (
+        <div key={pair.id} className="flex items-center justify-between rounded-md border border-border/60 bg-muted/20 px-3 py-2 text-sm">
+          <span className="font-semibold">{pair.left_text}</span>
+          <span className="text-muted-foreground">↔</span>
+          <span className="font-semibold text-primary">{pair.right_text}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+const getQuestionTypeLabel = (question) => {
+  switch (question.question_type) {
+    case 'qcm_single':
+      return 'QCM - Single Choice'
+    case 'qcm_multiple':
+      return 'QCM - Multiple Choice'
+    case 'true_false':
+      return 'True / False'
+    case 'open_short':
+      return 'Open - Short Answer'
+    case 'open_long':
+      return 'Open - Long Answer'
+    case 'fill_blank':
+      return 'Fill in the Blanks'
+    case 'ordering':
+      return 'Ordering'
+    case 'matching':
+      return 'Matching'
+    default:
+      return 'Question'
+  }
+}
+
 const ViewHomeworkPage = () => {
   const { t, isRTL } = useLanguage()
   const { user } = useAuth()
@@ -354,19 +526,46 @@ const ViewHomeworkPage = () => {
               <div className="space-y-4">
                 {homework.questions.map((question, index) => (
                   <Card key={question.id} className="border-l-4 border-l-blue-500">
-                    <CardContent className="pt-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <h4 className="font-semibold">Question {index + 1}</h4>
+                    <CardContent className="pt-4 space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center gap-3 mb-2">
+                            <h4 className="font-semibold">Question {index + 1}</h4>
+                            <Badge variant="secondary" className="bg-muted-foreground/20 text-muted-foreground">
+                              {getQuestionTypeLabel(question)}
+                            </Badge>
+                          </div>
+                          {question.question_type === 'fill_blank'
+                            ? renderFillBlankSentence(question)
+                            : (
+                              <p className="text-muted-foreground">
+                                {question.question_text}
+                              </p>
+                            )}
+                        </div>
                         <Badge variant="outline">{question.points} pts</Badge>
                       </div>
-                      <p className="text-muted-foreground mb-3">{question.question_text}</p>
 
-                      {/* QCM Choices */}
+                      {question.question_type === 'fill_blank' && renderFillBlankDetails(question)}
+
+                      {question.question_type === 'ordering' && (
+                        <div className="space-y-2">
+                          <p className="text-sm font-semibold">Correct Order:</p>
+                          {renderOrderingDetails(question)}
+                        </div>
+                      )}
+
+                      {question.question_type === 'matching' && (
+                        <div className="space-y-2">
+                          <p className="text-sm font-semibold">Matching Pairs:</p>
+                          {renderMatchingDetails(question)}
+                        </div>
+                      )}
+
                       {question.choices && Array.isArray(question.choices) && question.choices.length > 0 && (
                         <div className="space-y-2">
                           <p className="text-sm font-semibold">Choices:</p>
                           {question.choices.map((choice, choiceIndex) => {
-                            // Ensure choice is a valid object with required fields
                             if (!choice || typeof choice !== 'object') {
                               console.warn('Invalid choice object:', choice)
                               return null
@@ -374,10 +573,10 @@ const ViewHomeworkPage = () => {
 
                             return (
                               <div key={choice.id || choiceIndex} className={cn(
-                                "flex items-center gap-2 p-2 rounded border",
+                                'flex items-center gap-2 p-2 rounded border',
                                 choice.is_correct
-                                  ? "bg-green-50 border-green-200 text-green-800"
-                                  : "bg-gray-50 border-gray-200"
+                                  ? 'bg-green-50 border-green-200 text-green-800'
+                                  : 'bg-gray-50 border-gray-200'
                               )}>
                                 <span className="w-6 h-6 rounded-full bg-white border flex items-center justify-center text-xs">
                                   {String.fromCharCode(65 + choiceIndex)}

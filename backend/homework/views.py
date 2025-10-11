@@ -31,6 +31,7 @@ from .models import (
 
     # Submission Models
     Submission, QuestionAnswer, AnswerFile, BookExerciseAnswer, BookExerciseFile,
+    AnswerFillBlankSelection, AnswerOrderingSelection, AnswerMatchingSelection,
 
     # Exercise Submission Models
     ExerciseSubmission, ExerciseAnswer, ExerciseAnswerFile
@@ -814,14 +815,66 @@ class SubmissionViewSet(viewsets.ModelViewSet):
                     text_answer=answer_data.get('text_answer', '')
                 )
 
-                # Set selected choices if any
-                selected_choice_ids = answer_data.get('selected_choice_ids', [])
-                if selected_choice_ids:
-                    choices = QuestionChoice.objects.filter(
-                        question=question,
-                        id__in=selected_choice_ids
-                    )
-                    question_answer.selected_choices.set(choices)
+                question_type = question.question_type
+
+                if question_type in ['qcm_single', 'qcm_multiple', 'true_false']:
+                    selected_choice_ids = answer_data.get('selected_choice_ids', [])
+                    if selected_choice_ids:
+                        choices = QuestionChoice.objects.filter(
+                            question=question,
+                            id__in=selected_choice_ids
+                        )
+                        question_answer.selected_choices.set(choices)
+
+                elif question_type == 'fill_blank':
+                    blanks_lookup = {blank.id: blank for blank in question.blanks.all()}
+                    blank_answers = answer_data.get('blank_answers', [])
+                    for blank_answer in blank_answers:
+                        blank_id = blank_answer.get('blank')
+                        option_id = blank_answer.get('selected_option')
+                        blank_obj = blanks_lookup.get(blank_id)
+                        if not blank_obj:
+                            continue
+                        option = blank_obj.options.filter(id=option_id).first()
+                        if not option:
+                            continue
+                        AnswerFillBlankSelection.objects.create(
+                            question_answer=question_answer,
+                            blank=blank_obj,
+                            selected_option=option,
+                            is_correct=option.is_correct
+                        )
+
+                elif question_type == 'ordering':
+                    items_lookup = {item.id: item for item in question.ordering_items.all()}
+                    ordering_sequence = answer_data.get('ordering_sequence') or answer_data.get('ordering') or []
+                    for position, item_id in enumerate(ordering_sequence, start=1):
+                        item = items_lookup.get(item_id)
+                        if not item:
+                            continue
+                        AnswerOrderingSelection.objects.create(
+                            question_answer=question_answer,
+                            item=item,
+                            selected_position=position,
+                            is_correct=item.correct_position == position
+                        )
+
+                elif question_type == 'matching':
+                    pairs_lookup = {pair.id: pair for pair in question.matching_pairs.all()}
+                    matching_answers = answer_data.get('matching_answers', [])
+                    for match in matching_answers:
+                        left_id = match.get('left_pair')
+                        selected_right_id = match.get('selected_right_pair')
+                        left_pair = pairs_lookup.get(left_id)
+                        selected_pair = pairs_lookup.get(selected_right_id)
+                        if not left_pair or not selected_pair:
+                            continue
+                        AnswerMatchingSelection.objects.create(
+                            question_answer=question_answer,
+                            left_pair=left_pair,
+                            selected_right_pair=selected_pair,
+                            is_correct=left_pair.id == selected_pair.id
+                        )
 
         # Update submission status
         submission.status = 'submitted'
@@ -873,13 +926,15 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         auto_score = 0
         
         for answer in submission.answers.all():
-            if answer.question.question_type in ['qcm_single', 'qcm_multiple', 'true_false']:
+            question_type = answer.question.question_type
+
+            if question_type in ['qcm_single', 'qcm_multiple', 'true_false']:
                 correct_choices = answer.question.choices.filter(is_correct=True)
                 selected_choices = answer.selected_choices.all()
-                
-                if answer.question.question_type == 'qcm_single':
+
+                if question_type == 'qcm_single':
                     # Single choice: must select exactly one correct answer
-                    if (len(selected_choices) == 1 and 
+                    if (selected_choices.count() == 1 and 
                         selected_choices.first() in correct_choices):
                         answer.is_correct = True
                         answer.points_earned = answer.question.points
@@ -887,8 +942,8 @@ class SubmissionViewSet(viewsets.ModelViewSet):
                     else:
                         answer.is_correct = False
                         answer.points_earned = 0
-                
-                elif answer.question.question_type == 'qcm_multiple':
+
+                elif question_type == 'qcm_multiple':
                     # Multiple choice: must select all correct answers and no incorrect ones
                     if (set(selected_choices) == set(correct_choices)):
                         answer.is_correct = True
@@ -897,9 +952,52 @@ class SubmissionViewSet(viewsets.ModelViewSet):
                     else:
                         answer.is_correct = False
                         answer.points_earned = 0
-                
+
                 answer.save()
-        
+
+            elif question_type == 'fill_blank':
+                blanks = list(answer.question.blanks.all())
+                selections = list(answer.blank_selections.all())
+                if blanks and len(selections) == len(blanks) and all(sel.is_correct for sel in selections):
+                    answer.is_correct = True
+                    answer.points_earned = answer.question.points
+                    auto_score += float(answer.question.points)
+                else:
+                    answer.is_correct = False
+                    answer.points_earned = 0
+                answer.save()
+
+            elif question_type == 'ordering':
+                items = list(answer.question.ordering_items.all())
+                selections_by_item = {
+                    selection.item_id: selection for selection in answer.ordering_selections.all()
+                }
+                if items and all(
+                    selections_by_item.get(item.id) and selections_by_item[item.id].selected_position == item.correct_position
+                    for item in items
+                ):
+                    answer.is_correct = True
+                    answer.points_earned = answer.question.points
+                    auto_score += float(answer.question.points)
+                else:
+                    answer.is_correct = False
+                    answer.points_earned = 0
+                answer.save()
+
+            elif question_type == 'matching':
+                pairs = list(answer.question.matching_pairs.all())
+                selections = answer.matching_selections.all()
+                if pairs and selections.count() == len(pairs) and all(
+                    selection.left_pair_id == selection.selected_right_pair_id for selection in selections
+                ):
+                    answer.is_correct = True
+                    answer.points_earned = answer.question.points
+                    auto_score += float(answer.question.points)
+                else:
+                    answer.is_correct = False
+                    answer.points_earned = 0
+                answer.save()
+
         submission.auto_score = auto_score
         if not submission.manual_score:
             submission.total_score = auto_score

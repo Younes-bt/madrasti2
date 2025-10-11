@@ -91,6 +91,31 @@ const CreateHomeworkPage = () => {
       fields: []
     }
   ]
+  
+  // Question type options from backend
+  const ALL_QUESTION_TYPES = [
+    { id: 'qcm_single', label: 'QCM (Single Choice)' },
+    { id: 'qcm_multiple', label: 'QCM (Multiple Choices)' },
+    { id: 'true_false', label: 'True / False' },
+    { id: 'open_short', label: 'Open (Short Answer)' },
+    { id: 'open_long', label: 'Open (Long Answer)' },
+    { id: 'fill_blank', label: 'Fill in the Blanks' },
+    { id: 'matching', label: 'Matching' },
+    { id: 'ordering', label: 'Ordering' }
+  ]
+
+  const getAllowedQuestionTypesForFormat = (format) => {
+    switch (format) {
+      case 'qcm_only':
+        return ALL_QUESTION_TYPES.filter(t => t.id === 'qcm_single' || t.id === 'qcm_multiple')
+      case 'open_only':
+        return ALL_QUESTION_TYPES.filter(t => t.id === 'open_short' || t.id === 'open_long')
+      case 'mixed':
+        return ALL_QUESTION_TYPES
+      default:
+        return ALL_QUESTION_TYPES
+    }
+  }
 
   // Homework basic info
   const [homeworkData, setHomeworkData] = useState({
@@ -132,6 +157,15 @@ const CreateHomeworkPage = () => {
   const teacherSubject = extractTeacherSubject(teacherProfile)
 
   const homeworkTypes = [
+    {
+      id: 'mixed',
+      name: 'Mixed Questions',
+      nameAr: 'صيغة مختلطة',
+      description: 'Combine QCM, open, and other question types',
+      descriptionAr: 'دمج أسئلة متعددة الاختيارات والمفتوحة وأنواع أخرى',
+      icon: FileText,
+      color: 'bg-orange-500'
+    },
     {
       id: 'qcm_only',
       name: 'QCM Only',
@@ -307,37 +341,207 @@ const CreateHomeworkPage = () => {
   }
 
   const addQuestion = () => {
-    const newQuestion = {
-      id: Date.now(),
+    const defaultType = homeworkData.homework_format === 'qcm_only'
+      ? 'qcm_single'
+      : (homeworkData.homework_format === 'open_only' ? 'open_short' : 'qcm_single')
+
+    const now = Date.now()
+    const base = {
+      id: now,
       question_text: '',
-      question_type: homeworkData.homework_format === 'qcm_only' ? 'qcm_single' : 'open_short',
+      question_type: defaultType,
       points: 1,
-      order: questions.length + 1,
-      choices: homeworkData.homework_format === 'qcm_only' ? [
-        { id: Date.now() + 1, choice_text: '', choice_text_arabic: '', is_correct: false, order: 1 },
-        { id: Date.now() + 2, choice_text: '', choice_text_arabic: '', is_correct: false, order: 2 },
-        { id: Date.now() + 3, choice_text: '', choice_text_arabic: '', is_correct: false, order: 3 },
-        { id: Date.now() + 4, choice_text: '', choice_text_arabic: '', is_correct: false, order: 4 }
-      ] : []
+      order: questions.length + 1
     }
-    setQuestions(prev => [...prev, newQuestion])
+
+    let choices = []
+    if (defaultType === 'qcm_single' || defaultType === 'qcm_multiple') {
+      choices = [
+        { id: now + 1, choice_text: '', choice_text_arabic: '', is_correct: false, order: 1 },
+        { id: now + 2, choice_text: '', choice_text_arabic: '', is_correct: false, order: 2 },
+        { id: now + 3, choice_text: '', choice_text_arabic: '', is_correct: false, order: 3 },
+        { id: now + 4, choice_text: '', choice_text_arabic: '', is_correct: false, order: 4 }
+      ]
+    } else if (defaultType === 'true_false') {
+      choices = [
+        { id: now + 1, choice_text: 'True', choice_text_arabic: 'صحيح', is_correct: true, order: 1 },
+        { id: now + 2, choice_text: 'False', choice_text_arabic: 'خطأ', is_correct: false, order: 2 }
+      ]
+    }
+
+    setQuestions(prev => [...prev, { ...base, choices }])
   }
 
   const updateQuestion = (questionId, field, value) => {
-    setQuestions(prev => prev.map(q =>
-      q.id === questionId ? { ...q, [field]: value } : q
-    ))
+    setQuestions(prev => prev.map(q => {
+      if (q.id !== questionId) return q
+
+      // Handle question_type changes: initialize/reset choices appropriately
+      if (field === 'question_type') {
+        const now = Date.now()
+        let choices = []
+        let blanks
+        let ordering_items
+        let matching_pairs
+        if (value === 'qcm_single' || value === 'qcm_multiple') {
+          choices = [
+            { id: now + 1, choice_text: '', choice_text_arabic: '', is_correct: false, order: 1 },
+            { id: now + 2, choice_text: '', choice_text_arabic: '', is_correct: false, order: 2 },
+            { id: now + 3, choice_text: '', choice_text_arabic: '', is_correct: false, order: 3 },
+            { id: now + 4, choice_text: '', choice_text_arabic: '', is_correct: false, order: 4 }
+          ]
+        } else if (value === 'true_false') {
+          choices = [
+            { id: now + 1, choice_text: 'True', choice_text_arabic: 'صحيح', is_correct: true, order: 1 },
+            { id: now + 2, choice_text: 'False', choice_text_arabic: 'خطأ', is_correct: false, order: 2 }
+          ]
+        } else if (value === 'fill_blank') {
+          blanks = [{
+            id: now + 10,
+            order: 1,
+            label: 'B1',
+            options: [
+              { id: now + 11, option_text: '', is_correct: true, order: 1 },
+              { id: now + 12, option_text: '', is_correct: false, order: 2 },
+              { id: now + 13, option_text: '', is_correct: false, order: 3 },
+              { id: now + 14, option_text: '', is_correct: false, order: 4 }
+            ]
+          }]
+        } else if (value === 'ordering') {
+          ordering_items = [
+            { id: now + 21, text: '', correct_position: 1 },
+            { id: now + 22, text: '', correct_position: 2 }
+          ]
+        } else if (value === 'matching') {
+          matching_pairs = [
+            { id: now + 31, left_text: '', right_text: '', order: 1 },
+            { id: now + 32, left_text: '', right_text: '', order: 2 }
+          ]
+        }
+        return { ...q, question_type: value, choices, blanks, ordering_items, matching_pairs }
+      }
+
+      return { ...q, [field]: value }
+    }))
   }
 
   const updateChoice = (questionId, choiceId, field, value) => {
-    setQuestions(prev => prev.map(q =>
-      q.id === questionId ? {
-        ...q,
-        choices: q.choices.map(c =>
-          c.id === choiceId ? { ...c, [field]: value } : c
-        )
-      } : q
-    ))
+    setQuestions(prev => prev.map(q => {
+      if (q.id !== questionId) return q
+      let choices = q.choices || []
+      choices = choices.map(c => {
+        if (c.id !== choiceId) {
+          // Enforce single correct for qcm_single and true_false
+          if (field === 'is_correct' && value === true && (q.question_type === 'qcm_single' || q.question_type === 'true_false')) {
+            return { ...c, is_correct: false }
+          }
+          return c
+        }
+        return { ...c, [field]: value }
+      })
+      return { ...q, choices }
+    }))
+  }
+
+  // Fill-in-the-blanks helpers
+  const addBlank = (questionId) => {
+    setQuestions(prev => prev.map(q => {
+      if (q.id !== questionId) return q
+      const blanks = q.blanks || []
+      const newBlankId = Date.now()
+      const newBlank = {
+        id: newBlankId,
+        order: blanks.length + 1,
+        label: `B${blanks.length + 1}`,
+        options: [
+          { id: newBlankId + 1, option_text: '', is_correct: true, order: 1 },
+          { id: newBlankId + 2, option_text: '', is_correct: false, order: 2 },
+          { id: newBlankId + 3, option_text: '', is_correct: false, order: 3 },
+          { id: newBlankId + 4, option_text: '', is_correct: false, order: 4 }
+        ]
+      }
+      return { ...q, blanks: [...blanks, newBlank] }
+    }))
+  }
+
+  const updateBlank = (questionId, blankId, field, value) => {
+    setQuestions(prev => prev.map(q => {
+      if (q.id !== questionId) return q
+      const blanks = (q.blanks || []).map(b => b.id === blankId ? { ...b, [field]: value } : b)
+      return { ...q, blanks }
+    }))
+  }
+
+  const addBlankOption = (questionId, blankId) => {
+    setQuestions(prev => prev.map(q => {
+      if (q.id !== questionId) return q
+      const blanks = (q.blanks || []).map(b => {
+        if (b.id !== blankId) return b
+        const options = b.options || []
+        const newId = Date.now()
+        const newOpt = { id: newId, option_text: '', is_correct: false, order: options.length + 1 }
+        return { ...b, options: [...options, newOpt] }
+      })
+      return { ...q, blanks }
+    }))
+  }
+
+  const updateBlankOption = (questionId, blankId, optionId, field, value) => {
+    setQuestions(prev => prev.map(q => {
+      if (q.id !== questionId) return q
+      const blanks = (q.blanks || []).map(b => {
+        if (b.id !== blankId) return b
+        const options = (b.options || []).map(o => {
+          if (o.id !== optionId) {
+            if (field === 'is_correct' && value === true) {
+              return { ...o, is_correct: false }
+            }
+            return o
+          }
+          return { ...o, [field]: value }
+        })
+        return { ...b, options }
+      })
+      return { ...q, blanks }
+    }))
+  }
+
+  // Ordering helpers
+  const addOrderingItem = (questionId) => {
+    setQuestions(prev => prev.map(q => {
+      if (q.id !== questionId) return q
+      const items = q.ordering_items || []
+      const newId = Date.now()
+      const newItem = { id: newId, text: '', correct_position: items.length + 1 }
+      return { ...q, ordering_items: [...items, newItem] }
+    }))
+  }
+
+  const updateOrderingItem = (questionId, itemId, field, value) => {
+    setQuestions(prev => prev.map(q => {
+      if (q.id !== questionId) return q
+      const items = (q.ordering_items || []).map(it => it.id === itemId ? { ...it, [field]: value } : it)
+      return { ...q, ordering_items: items }
+    }))
+  }
+
+  // Matching helpers
+  const addMatchingPair = (questionId) => {
+    setQuestions(prev => prev.map(q => {
+      if (q.id !== questionId) return q
+      const pairs = q.matching_pairs || []
+      const newId = Date.now()
+      const newPair = { id: newId, left_text: '', right_text: '', order: pairs.length + 1 }
+      return { ...q, matching_pairs: [...pairs, newPair] }
+    }))
+  }
+
+  const updateMatchingPair = (questionId, pairId, field, value) => {
+    setQuestions(prev => prev.map(q => {
+      if (q.id !== questionId) return q
+      const pairs = (q.matching_pairs || []).map(p => p.id === pairId ? { ...p, [field]: value } : p)
+      return { ...q, matching_pairs: pairs }
+    }))
   }
 
   const removeQuestion = (questionId) => {
@@ -392,25 +596,72 @@ const CreateHomeworkPage = () => {
       if (!homeworkData.due_date) newErrors.due_date = 'Due date is required'
     }
 
-    if (currentStep === 2) {
-      // Validate content based on homework type
-      if (homeworkData.homework_format === 'qcm_only' || homeworkData.homework_format === 'open_only') {
-        if (questions.length === 0) {
-          newErrors.questions = 'At least one question is required'
-        } else {
-          questions.forEach((q, index) => {
-            if (!q.question_text.trim()) {
-              newErrors[`question_${q.id}`] = `Question ${index + 1} text is required`
-            }
-            if (q.question_type.startsWith('qcm_') && q.choices) {
-              const hasCorrect = q.choices.some(c => c.is_correct)
-              if (!hasCorrect) {
-                newErrors[`question_${q.id}_choices`] = `Question ${index + 1} must have at least one correct answer`
+      if (currentStep === 2) {
+        // Validate content based on homework type
+      if (homeworkData.homework_format === 'qcm_only' || homeworkData.homework_format === 'open_only' || homeworkData.homework_format === 'mixed') {
+          if (questions.length === 0) {
+            newErrors.questions = 'At least one question is required'
+          } else {
+            questions.forEach((q, index) => {
+              if (!q.question_text.trim()) {
+                newErrors[`question_${q.id}`] = `Question ${index + 1} text is required`
               }
-            }
-          })
+              if ((q.question_type.startsWith('qcm_') || q.question_type === 'true_false') && q.choices) {
+                const hasCorrect = q.choices.some(c => c.is_correct)
+                const correctCount = q.choices.filter(c => c.is_correct).length
+                if (!hasCorrect) {
+                  newErrors[`question_${q.id}_choices`] = `Question ${index + 1} must have at least one correct answer`
+                }
+                if ((q.question_type === 'qcm_single' || q.question_type === 'true_false') && correctCount !== 1) {
+                  newErrors[`question_${q.id}_choices`] = `Question ${index + 1} must have exactly one correct answer`
+                }
+              }
+              if (q.question_type === 'fill_blank') {
+                const blanks = q.blanks || []
+                if (blanks.length === 0) {
+                  newErrors[`question_${q.id}_blanks`] = `Question ${index + 1} must have at least one blank`
+                }
+                blanks.forEach((b, bi) => {
+                  const opts = b.options || []
+                  if (opts.length < 4) {
+                    newErrors[`question_${q.id}_blank_${b.id}_options`] = `Blank ${bi + 1} must have at least 4 options`
+                  }
+                  const correct = opts.filter(o => o.is_correct)
+                  if (correct.length !== 1) {
+                    newErrors[`question_${q.id}_blank_${b.id}_correct`] = `Blank ${bi + 1} must have exactly one correct option`
+                  }
+                  opts.forEach((o, oi) => {
+                    if (!o.option_text || !o.option_text.trim()) {
+                      newErrors[`question_${q.id}_blank_${b.id}_opt_${o.id}`] = `Blank ${bi + 1} option ${oi + 1} text is required`
+                    }
+                  })
+                })
+              }
+              if (q.question_type === 'ordering') {
+                const items = q.ordering_items || []
+                if (items.length < 2) {
+                  newErrors[`question_${q.id}_ordering`] = `Question ${index + 1} must have at least 2 items to order`
+                }
+                items.forEach((it, ii) => {
+                  if (!it.text || !it.text.trim()) {
+                    newErrors[`question_${q.id}_ordering_${it.id}`] = `Item ${ii + 1} text is required`
+                  }
+                })
+              }
+              if (q.question_type === 'matching') {
+                const pairs = q.matching_pairs || []
+                if (pairs.length < 2) {
+                  newErrors[`question_${q.id}_matching`] = `Question ${index + 1} must have at least 2 pairs`
+                }
+                pairs.forEach((p, pi) => {
+                  if (!p.left_text || !p.left_text.trim() || !p.right_text || !p.right_text.trim()) {
+                    newErrors[`question_${q.id}_matching_${p.id}`] = `Pair ${pi + 1} must have both left and right texts`
+                  }
+                })
+              }
+            })
+          }
         }
-      }
 
       if (homeworkData.homework_format === 'book_exercises') {
         if (bookExercises.length === 0) {
@@ -496,7 +747,7 @@ const CreateHomeworkPage = () => {
             is_required: true
           }
 
-          if (question.question_type.startsWith('qcm_') && question.choices) {
+          if ((question.question_type.startsWith('qcm_') || question.question_type === 'true_false') && question.choices) {
             questionPayload.choices = question.choices
               .filter(choice => choice.choice_text.trim())
               .map((choice, index) => ({
@@ -505,6 +756,33 @@ const CreateHomeworkPage = () => {
                 is_correct: choice.is_correct,
                 order: choice.order || index + 1
               }))
+          }
+
+          if (question.question_type === 'fill_blank' && question.blanks) {
+            questionPayload.blanks = question.blanks.map((b, bi) => ({
+              order: b.order || bi + 1,
+              label: b.label || `B${bi + 1}`,
+              options: (b.options || []).map((o, oi) => ({
+                option_text: o.option_text,
+                is_correct: !!o.is_correct,
+                order: o.order || oi + 1
+              }))
+            }))
+          }
+
+          if (question.question_type === 'ordering' && question.ordering_items) {
+            questionPayload.ordering_items = (question.ordering_items || []).map((it, ii) => ({
+              text: it.text,
+              correct_position: it.correct_position || ii + 1
+            }))
+          }
+
+          if (question.question_type === 'matching' && question.matching_pairs) {
+            questionPayload.matching_pairs = (question.matching_pairs || []).map((p, pi) => ({
+              left_text: p.left_text,
+              right_text: p.right_text,
+              order: p.order || pi + 1
+            }))
           }
 
           const createdQuestion = await homeworkService.createQuestion(questionPayload)
@@ -824,7 +1102,7 @@ const CreateHomeworkPage = () => {
       case 2:
         return (
           <div className="space-y-6">
-            {(homeworkData.homework_format === 'qcm_only' || homeworkData.homework_format === 'open_only') && (
+            {(homeworkData.homework_format === 'qcm_only' || homeworkData.homework_format === 'open_only' || homeworkData.homework_format === 'mixed') && (
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -871,6 +1149,23 @@ const CreateHomeworkPage = () => {
                           </div>
 
                           <div className="space-y-4">
+                            {/* Question type selector */}
+                            <div>
+                              <label className="text-sm font-medium mb-2 block">Question Type</label>
+                              <Select
+                                value={question.question_type}
+                                onValueChange={(val) => updateQuestion(question.id, 'question_type', val)}
+                              >
+                                <SelectTrigger className="text-base">
+                                  <SelectValue placeholder="Select question type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {getAllowedQuestionTypesForFormat(homeworkData.homework_format).map((t) => (
+                                    <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                             <div>
                               <label className="text-sm font-medium mb-2 block">Question Text *</label>
                               <Textarea
@@ -885,6 +1180,128 @@ const CreateHomeworkPage = () => {
                               )}
                             </div>
 
+                            {question.question_type === 'fill_blank' && (
+                              <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <label className="text-sm font-medium">Blanks</label>
+                                    <p className="text-xs text-muted-foreground">Use markers like [B1], [B2] in the question text to indicate blanks.</p>
+                                  </div>
+                                  <Button size="sm" variant="secondary" onClick={() => addBlank(question.id)}>
+                                    <Plus className="h-4 w-4 mr-1" /> Add Blank
+                                  </Button>
+                                </div>
+                                {errors[`question_${question.id}_blanks`] && (
+                                  <p className="text-red-500 text-sm">{errors[`question_${question.id}_blanks`]}</p>
+                                )}
+                                <div className="space-y-4">
+                                  {(question.blanks || []).map((blank, bi) => (
+                                    <div key={blank.id} className="border rounded-md p-3">
+                                      <div className="flex items-center gap-4 mb-2">
+                                        <label className="text-sm font-medium">Blank {blank.order}</label>
+                                        <Input
+                                          placeholder={`Label (e.g., B${bi + 1})`}
+                                          value={blank.label || ''}
+                                          onChange={(e) => updateBlank(question.id, blank.id, 'label', e.target.value)}
+                                          className="text-sm max-w-[200px]"
+                                        />
+                                      </div>
+                                      <div className="flex items-center justify-between mb-2">
+                                        <label className="text-sm font-medium">Options (one correct)</label>
+                                        <Button size="sm" variant="outline" onClick={() => addBlankOption(question.id, blank.id)}>
+                                          <Plus className="h-4 w-4 mr-1" /> Add Option
+                                        </Button>
+                                      </div>
+                                      {errors[`question_${question.id}_blank_${blank.id}_options`] && (
+                                        <p className="text-red-500 text-sm mb-2">{errors[`question_${question.id}_blank_${blank.id}_options`]}</p>
+                                      )}
+                                      {errors[`question_${question.id}_blank_${blank.id}_correct`] && (
+                                        <p className="text-red-500 text-sm mb-2">{errors[`question_${question.id}_blank_${blank.id}_correct`]}</p>
+                                      )}
+                                      <div className="space-y-2">
+                                        {(blank.options || []).map((opt, oi) => (
+                                          <div key={opt.id} className="flex items-center gap-3">
+                                            <Switch
+                                              checked={!!opt.is_correct}
+                                              onCheckedChange={(checked) => updateBlankOption(question.id, blank.id, opt.id, 'is_correct', checked)}
+                                            />
+                                            <Input
+                                              placeholder={`Option ${oi + 1}`}
+                                              value={opt.option_text}
+                                              onChange={(e) => updateBlankOption(question.id, blank.id, opt.id, 'option_text', e.target.value)}
+                                              className={cn("flex-1 text-base", errors[`question_${question.id}_blank_${blank.id}_opt_${opt.id}`] && 'border-red-500')}
+                                            />
+                                            <Badge variant={opt.is_correct ? 'default' : 'secondary'} className="min-w-16">
+                                              {opt.is_correct ? 'Correct' : 'Wrong'}
+                                            </Badge>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {question.question_type === 'ordering' && (
+                              <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <label className="text-sm font-medium">Ordering Items (correct order)</label>
+                                  <Button size="sm" variant="secondary" onClick={() => addOrderingItem(question.id)}>
+                                    <Plus className="h-4 w-4 mr-1" /> Add Item
+                                  </Button>
+                                </div>
+                                {errors[`question_${question.id}_ordering`] && (
+                                  <p className="text-red-500 text-sm">{errors[`question_${question.id}_ordering`]}</p>
+                                )}
+                                <div className="space-y-2">
+                                  {(question.ordering_items || []).map((it, ii) => (
+                                    <div key={it.id} className="flex items-center gap-3">
+                                      <Badge variant="secondary" className="min-w-8 justify-center">{ii + 1}</Badge>
+                                      <Input
+                                        placeholder={`Item ${ii + 1}`}
+                                        value={it.text}
+                                        onChange={(e) => updateOrderingItem(question.id, it.id, 'text', e.target.value)}
+                                        className={cn("flex-1 text-base", errors[`question_${question.id}_ordering_${it.id}`] && 'border-red-500')}
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {question.question_type === 'matching' && (
+                              <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <label className="text-sm font-medium">Matching Pairs</label>
+                                  <Button size="sm" variant="secondary" onClick={() => addMatchingPair(question.id)}>
+                                    <Plus className="h-4 w-4 mr-1" /> Add Pair
+                                  </Button>
+                                </div>
+                                {errors[`question_${question.id}_matching`] && (
+                                  <p className="text-red-500 text-sm">{errors[`question_${question.id}_matching`]}</p>
+                                )}
+                                <div className="space-y-2">
+                                  {(question.matching_pairs || []).map((p, pi) => (
+                                    <div key={p.id} className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                      <Input
+                                        placeholder={`Left ${pi + 1}`}
+                                        value={p.left_text}
+                                        onChange={(e) => updateMatchingPair(question.id, p.id, 'left_text', e.target.value)}
+                                        className={cn("text-base", errors[`question_${question.id}_matching_${p.id}`] && 'border-red-500')}
+                                      />
+                                      <Input
+                                        placeholder={`Right ${pi + 1}`}
+                                        value={p.right_text}
+                                        onChange={(e) => updateMatchingPair(question.id, p.id, 'right_text', e.target.value)}
+                                        className={cn("text-base", errors[`question_${question.id}_matching_${p.id}`] && 'border-red-500')}
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
                             <div className="w-24">
                               <label className="text-sm font-medium mb-2 block">Points</label>
                               <Input
@@ -896,7 +1313,7 @@ const CreateHomeworkPage = () => {
                               />
                             </div>
 
-                            {homeworkData.homework_format === 'qcm_only' && (
+                            {(question.question_type?.startsWith('qcm_') || question.question_type === 'true_false') && (
                               <div>
                                 <label className="text-sm font-medium mb-2 block">Answer Choices *</label>
                                 {errors[`question_${question.id}_choices`] && (
@@ -909,12 +1326,16 @@ const CreateHomeworkPage = () => {
                                         checked={choice.is_correct}
                                         onCheckedChange={(checked) => updateChoice(question.id, choice.id, 'is_correct', checked)}
                                       />
-                                      <Input
-                                        placeholder={`Choice ${choiceIndex + 1}`}
-                                        value={choice.choice_text}
-                                        onChange={(e) => updateChoice(question.id, choice.id, 'choice_text', e.target.value)}
-                                        className="flex-1 text-base"
-                                      />
+                                      {question.question_type === 'true_false' ? (
+                                        <Input value={choice.choice_text} disabled className="flex-1 text-base bg-gray-100" />
+                                      ) : (
+                                        <Input
+                                          placeholder={`Choice ${choiceIndex + 1}`}
+                                          value={choice.choice_text}
+                                          onChange={(e) => updateChoice(question.id, choice.id, 'choice_text', e.target.value)}
+                                          className="flex-1 text-base"
+                                        />
+                                      )}
                                       <Badge variant={choice.is_correct ? "default" : "secondary"} className="min-w-16">
                                         {choice.is_correct ? "Correct" : "Wrong"}
                                       </Badge>
@@ -1238,7 +1659,7 @@ const CreateHomeworkPage = () => {
                 {/* Content Summary */}
                 <div className="border rounded-lg p-4">
                   <h3 className="font-semibold mb-3">Content Summary</h3>
-                  {(homeworkData.homework_format === 'qcm_only' || homeworkData.homework_format === 'open_only') && (
+                  {(homeworkData.homework_format === 'qcm_only' || homeworkData.homework_format === 'open_only' || homeworkData.homework_format === 'mixed') && (
                     <p className="text-sm">
                       <span className="font-medium">{questions.length}</span> questions added
                     </p>

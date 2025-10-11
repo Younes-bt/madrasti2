@@ -21,9 +21,11 @@ from .models import (
 
     # Homework Models (renamed from Assignment)
     Homework, HomeworkReward, Question, QuestionChoice, BookExercise,
+    FillBlank, FillBlankOption, OrderingItem, MatchingPair,
     
     # Submission Models
-    Submission, QuestionAnswer, AnswerFile, BookExerciseAnswer, BookExerciseFile
+    Submission, QuestionAnswer, AnswerFile, BookExerciseAnswer, BookExerciseFile,
+    AnswerFillBlankSelection, AnswerOrderingSelection, AnswerMatchingSelection
 )
 
 User = get_user_model()
@@ -126,8 +128,33 @@ class QuestionChoiceSerializer(serializers.ModelSerializer):
         model = QuestionChoice
         fields = '__all__'
 
+class FillBlankOptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FillBlankOption
+        fields = '__all__'
+
+class FillBlankSerializer(serializers.ModelSerializer):
+    options = FillBlankOptionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = FillBlank
+        fields = '__all__'
+
+class OrderingItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderingItem
+        fields = '__all__'
+
+class MatchingPairSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MatchingPair
+        fields = '__all__'
+
 class QuestionSerializer(serializers.ModelSerializer):
     choices = QuestionChoiceSerializer(many=True, read_only=True)
+    blanks = FillBlankSerializer(many=True, read_only=True)
+    ordering_items = OrderingItemSerializer(many=True, read_only=True)
+    matching_pairs = MatchingPairSerializer(many=True, read_only=True)
 
     class Meta:
         model = Question
@@ -141,6 +168,21 @@ class QuestionSerializer(serializers.ModelSerializer):
             representation['choices'] = QuestionChoiceSerializer(choices, many=True).data
         else:
             representation['choices'] = []
+        # Include blanks/options
+        if instance.blanks.exists():
+            representation['blanks'] = FillBlankSerializer(instance.blanks.all(), many=True).data
+        else:
+            representation['blanks'] = []
+        # Include ordering items
+        if instance.ordering_items.exists():
+            representation['ordering_items'] = OrderingItemSerializer(instance.ordering_items.all(), many=True).data
+        else:
+            representation['ordering_items'] = []
+        # Include matching pairs
+        if instance.matching_pairs.exists():
+            representation['matching_pairs'] = MatchingPairSerializer(instance.matching_pairs.all(), many=True).data
+        else:
+            representation['matching_pairs'] = []
         return representation
 
 class QuestionCreateSerializer(serializers.ModelSerializer):
@@ -150,6 +192,9 @@ class QuestionCreateSerializer(serializers.ModelSerializer):
         required=False,
         write_only=True
     )
+    blanks = serializers.ListField(child=serializers.DictField(), required=False, write_only=True)
+    ordering_items = serializers.ListField(child=serializers.DictField(), required=False, write_only=True)
+    matching_pairs = serializers.ListField(child=serializers.DictField(), required=False, write_only=True)
 
     class Meta:
         model = Question
@@ -157,6 +202,9 @@ class QuestionCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         choices_data = validated_data.pop('choices', [])
+        blanks_data = validated_data.pop('blanks', [])
+        ordering_items_data = validated_data.pop('ordering_items', [])
+        matching_pairs_data = validated_data.pop('matching_pairs', [])
 
         # For standalone questions, set the author
         if not validated_data.get('homework') and not validated_data.get('exercise'):
@@ -165,9 +213,23 @@ class QuestionCreateSerializer(serializers.ModelSerializer):
         question = Question.objects.create(**validated_data)
 
         for choice_data in choices_data:
-            # Remove the question field if it exists (shouldn't be needed)
             choice_data.pop('question', None)
             QuestionChoice.objects.create(question=question, **choice_data)
+
+        # Fill-in-the-blanks nested create
+        for blank_data in blanks_data:
+            options = blank_data.pop('options', [])
+            blank_obj = FillBlank.objects.create(question=question, **blank_data)
+            for opt in options:
+                FillBlankOption.objects.create(blank=blank_obj, **opt)
+
+        # Ordering items
+        for item in ordering_items_data:
+            OrderingItem.objects.create(question=question, **item)
+
+        # Matching pairs
+        for pair in matching_pairs_data:
+            MatchingPair.objects.create(question=question, **pair)
 
         return question
 
@@ -272,6 +334,19 @@ class StudentHomeworkSerializerMixin:
             return None
 
         graded_by = submission.graded_by
+        answer_queryset = submission.answers.all().select_related('question').prefetch_related(
+            'selected_choices',
+            'blank_selections',
+            'blank_selections__blank',
+            'blank_selections__selected_option',
+            'ordering_selections',
+            'ordering_selections__item',
+            'matching_selections',
+            'matching_selections__left_pair',
+            'matching_selections__selected_right_pair'
+        )
+        answers = QuestionAnswerSerializer(answer_queryset, many=True, context=self.context).data if answer_queryset.exists() else []
+
         return {
             'id': submission.id,
             'status': submission.status,
@@ -289,6 +364,7 @@ class StudentHomeworkSerializerMixin:
             'teacher_feedback': submission.teacher_feedback,
             'graded_at': submission.graded_at,
             'graded_by': BasicUserSerializer(graded_by, context=self.context).data if graded_by else None,
+            'answers': answers,
         }
 
     def _get_due_datetime(self, obj):
@@ -431,10 +507,49 @@ class QuestionAnswerSerializer(serializers.ModelSerializer):
     question = QuestionSerializer(read_only=True)
     selected_choices = QuestionChoiceSerializer(many=True, read_only=True)
     files = AnswerFileSerializer(many=True, read_only=True)
-    
+    blank_selections = serializers.SerializerMethodField()
+    ordering_selections = serializers.SerializerMethodField()
+    matching_selections = serializers.SerializerMethodField()
+
     class Meta:
         model = QuestionAnswer
         fields = '__all__'
+
+    def get_blank_selections(self, obj):
+        selections = obj.blank_selections.all()
+        return [
+            {
+                'id': selection.id,
+                'blank': selection.blank_id,
+                'selected_option': selection.selected_option_id,
+                'is_correct': selection.is_correct
+            }
+            for selection in selections
+        ]
+
+    def get_ordering_selections(self, obj):
+        selections = obj.ordering_selections.all()
+        return [
+            {
+                'id': selection.id,
+                'item': selection.item_id,
+                'selected_position': selection.selected_position,
+                'is_correct': selection.is_correct
+            }
+            for selection in selections
+        ]
+
+    def get_matching_selections(self, obj):
+        selections = obj.matching_selections.all()
+        return [
+            {
+                'id': selection.id,
+                'left_pair': selection.left_pair_id,
+                'selected_right_pair': selection.selected_right_pair_id,
+                'is_correct': selection.is_correct
+            }
+            for selection in selections
+        ]
 
 class QuestionAnswerCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating/updating question answers"""

@@ -644,6 +644,63 @@ class QuestionChoice(models.Model):
     def __str__(self):
         return f"{self.question} - {self.choice_text[:30]}..."
 
+# =====================================
+# ADVANCED QUESTION STRUCTURES
+# - Fill in the Blanks
+# - Ordering
+# - Matching
+# =====================================
+
+class FillBlank(models.Model):
+    """A blank within a fill-in-the-blanks question"""
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='blanks')
+    order = models.PositiveIntegerField(default=1, help_text="Blank position (1-based)")
+    label = models.CharField(max_length=50, blank=True, help_text="Optional label like B1, B2")
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return f"Blank {self.order} for {self.question}"
+
+class FillBlankOption(models.Model):
+    """Options for a specific blank; one must be correct"""
+    blank = models.ForeignKey(FillBlank, on_delete=models.CASCADE, related_name='options')
+    option_text = models.CharField(max_length=300)
+    is_correct = models.BooleanField(default=False)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return f"Blank {self.blank.order} - {self.option_text[:30]}..."
+
+class OrderingItem(models.Model):
+    """An item that must be ordered by the student"""
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='ordering_items')
+    text = models.CharField(max_length=500)
+    correct_position = models.PositiveIntegerField(help_text="Correct order position (1-based)")
+
+    class Meta:
+        ordering = ['correct_position']
+
+    def __str__(self):
+        return f"{self.correct_position}. {self.text[:40]}"
+
+class MatchingPair(models.Model):
+    """A correct left-right pair for matching questions"""
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='matching_pairs')
+    left_text = models.CharField(max_length=300)
+    right_text = models.CharField(max_length=300)
+    order = models.PositiveIntegerField(default=0, help_text="Display order for authoring")
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return f"{self.left_text[:25]} ↔ {self.right_text[:25]}"
+
 class BookExercise(models.Model):
     """Reference to exercises from textbooks"""
     homework = models.ForeignKey(Homework, on_delete=models.CASCADE, related_name='book_exercises')
@@ -757,6 +814,36 @@ class QuestionAnswer(models.Model):
         
     def __str__(self):
         return f"{self.submission.student.get_full_name()} - {self.question}"
+
+class AnswerFillBlankSelection(models.Model):
+    """Student selection for a single blank in a fill-in-the-blanks question"""
+    question_answer = models.ForeignKey(QuestionAnswer, on_delete=models.CASCADE, related_name='blank_selections')
+    blank = models.ForeignKey(FillBlank, on_delete=models.CASCADE)
+    selected_option = models.ForeignKey(FillBlankOption, on_delete=models.CASCADE)
+    is_correct = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ['question_answer', 'blank']
+
+class AnswerOrderingSelection(models.Model):
+    """Student-selected position for an ordering item"""
+    question_answer = models.ForeignKey(QuestionAnswer, on_delete=models.CASCADE, related_name='ordering_selections')
+    item = models.ForeignKey(OrderingItem, on_delete=models.CASCADE)
+    selected_position = models.PositiveIntegerField()
+    is_correct = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ['question_answer', 'item']
+
+class AnswerMatchingSelection(models.Model):
+    """Student matching choice: which right item matched to a given left"""
+    question_answer = models.ForeignKey(QuestionAnswer, on_delete=models.CASCADE, related_name='matching_selections')
+    left_pair = models.ForeignKey(MatchingPair, on_delete=models.CASCADE, related_name='as_left')
+    selected_right_pair = models.ForeignKey(MatchingPair, on_delete=models.CASCADE, related_name='as_selected_right')
+    is_correct = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ['question_answer', 'left_pair']
 
 class AnswerFile(models.Model):
     """Files uploaded as part of an answer"""

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo, useRef, useLayoutEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
@@ -34,6 +34,407 @@ import { Separator } from '../../components/ui/separator'
 import { useLanguage } from '../../hooks/useLanguage'
 import { homeworkService } from '../../services'
 import { cn } from '../../lib/utils'
+
+const getNotAnsweredLabel = (t) => t?.('teacher.grading.notAnswered') || 'Not answered'
+
+const buildBlankSelectionMap = (question, selections, t) => {
+  const placeholder = getNotAnsweredLabel(t)
+  const blanks = question.blanks || []
+  const map = {}
+
+  blanks.forEach(blank => {
+    map[blank.id] = { text: placeholder, status: 'empty' }
+  })
+
+  const blankLookup = blanks.reduce((acc, blank) => {
+    acc[blank.id] = blank
+    return acc
+  }, {})
+
+  selections.forEach(selection => {
+    const blank = blankLookup[selection.blank]
+    if (!blank) return
+    if (selection.selected_option == null || selection.selected_option === undefined) {
+      map[blank.id] = { text: placeholder, status: 'empty' }
+      return
+    }
+    const option = (blank.options || []).find(opt => opt.id === selection.selected_option)
+    map[blank.id] = {
+      text: option?.option_text || placeholder,
+      status: selection.is_correct ? 'correct' : 'incorrect'
+    }
+  })
+
+  return map
+}
+
+const buildBlankCorrectMap = (question, t) => {
+  const fallback = t?.('teacher.grading.notProvided') || 'Not provided'
+  const blanks = question.blanks || []
+  const map = {}
+
+  blanks.forEach(blank => {
+    const correctOptions = (blank.options || []).filter(opt => opt.is_correct)
+    const text = correctOptions.length
+      ? correctOptions.map(opt => opt.option_text).join(', ')
+      : fallback
+    map[blank.id] = { text, status: 'correct' }
+  })
+
+  return map
+}
+
+const renderBlankTokens = (question, blankMap, t) => {
+  const blanks = question.blanks || []
+  const text = question.question_text || ''
+  const tokens = []
+  const regex = /\[(.+?)\]/g
+  let lastIndex = 0
+  const usedBlankIds = new Set()
+
+  const findBlankForToken = (tokenValue) => {
+    const normalized = (tokenValue || '').trim()
+    if (!normalized) return null
+
+    const byLabel = blanks.find(blank => Boolean(blank.label) && blank.label.toLowerCase() === normalized.toLowerCase())
+    if (byLabel) return byLabel
+
+    const orderNumber = parseInt(normalized.replace(/[^0-9]/g, ''), 10)
+    if (!Number.isNaN(orderNumber)) {
+      const byOrder = blanks.find(blank => blank.order === orderNumber)
+      if (byOrder) return byOrder
+    }
+
+    const fallback = blanks.find(blank => `B${blank.order}`.toLowerCase() === normalized.toLowerCase())
+    return fallback || null
+  }
+
+  text.replace(regex, (match, inner, offset) => {
+    if (offset > lastIndex) {
+      tokens.push({ type: 'text', value: text.slice(lastIndex, offset) })
+    }
+    const blank = findBlankForToken(inner)
+    if (blank) {
+      tokens.push({ type: 'blank', blank })
+      usedBlankIds.add(blank.id)
+    } else {
+      tokens.push({ type: 'text', value: match })
+    }
+    lastIndex = offset + match.length
+    return match
+  })
+
+  if (lastIndex < text.length) {
+    tokens.push({ type: 'text', value: text.slice(lastIndex) })
+  }
+
+  if (!tokens.length) {
+    tokens.push({ type: 'text', value: text })
+  }
+
+  blanks.forEach(blank => {
+    if (!usedBlankIds.has(blank.id)) {
+      tokens.push({ type: 'text', value: tokens.length ? ' ' : '' })
+      tokens.push({ type: 'blank', blank })
+      usedBlankIds.add(blank.id)
+    }
+  })
+
+  const placeholder = getNotAnsweredLabel(t)
+
+  return (
+    <div className="flex flex-wrap items-baseline gap-2 text-base leading-relaxed">
+      {tokens.map((token, idx) => {
+        if (token.type === 'text') {
+          return (
+            <span key={`text-${idx}`} className="whitespace-pre-wrap">
+              {token.value}
+            </span>
+          )
+        }
+
+        const blank = token.blank
+        const entry = blankMap?.[blank.id]
+        const displayText = entry?.text || placeholder
+        const status = entry?.status || 'empty'
+
+        let styling = 'inline-flex h-8 min-w-[120px] items-center justify-center rounded-full border px-4 text-sm font-medium shadow-sm'
+        if (status === 'correct') {
+          styling = cn(styling, 'border-green-300 bg-green-50 text-green-700')
+        } else if (status === 'incorrect') {
+          styling = cn(styling, 'border-red-300 bg-red-50 text-red-700')
+        } else {
+          styling = cn(styling, 'border-border/60 bg-muted/40 text-muted-foreground')
+        }
+
+        return (
+          <span key={`blank-${blank.id}-${idx}`} className={styling}>
+            {displayText}
+          </span>
+        )
+      })}
+    </div>
+  )
+}
+
+const renderOrderingList = (question, selections, t, { mode = 'student' } = {}) => {
+  const items = question.ordering_items || []
+  if (!items.length) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        {getNotAnsweredLabel(t)}
+      </p>
+    )
+  }
+
+  const selectionMap = new Map()
+  selections.forEach(selection => {
+    if (selection && selection.item !== undefined && selection.item !== null) {
+      selectionMap.set(selection.item, selection)
+    }
+  })
+
+  const rows = items.map(item => {
+    const selection = selectionMap.get(item.id)
+    return {
+      id: item.id,
+      text: item.text,
+      selectedPosition: selection?.selected_position ?? null,
+      isCorrect: selection?.is_correct ?? false,
+      correctPosition: item.correct_position
+    }
+  })
+
+  const sortedRows = [...rows].sort((a, b) => {
+    if (mode === 'correct') {
+      return a.correctPosition - b.correctPosition
+    }
+    if (a.selectedPosition === null || a.selectedPosition === undefined) return 1
+    if (b.selectedPosition === null || b.selectedPosition === undefined) return -1
+    return a.selectedPosition - b.selectedPosition
+  })
+
+  const correctLabel = t?.('teacher.grading.correctPosition') || 'Correct position'
+  const positionLabel = t?.('teacher.grading.position') || 'Position'
+
+  return (
+    <div className="space-y-2">
+      {sortedRows.map(row => {
+        let styling = 'flex items-center justify-between rounded-md border px-3 py-2 text-sm transition'
+        if (mode === 'correct') {
+          styling = cn(styling, 'border-green-200 bg-green-50 text-green-700')
+        } else if (row.selectedPosition === null || row.selectedPosition === undefined) {
+          styling = cn(styling, 'border-border/60 bg-muted/40 text-muted-foreground')
+        } else if (row.isCorrect) {
+          styling = cn(styling, 'border-green-300 bg-green-50 text-green-700')
+        } else {
+          styling = cn(styling, 'border-red-300 bg-red-50 text-red-700')
+        }
+
+        const badgeValue = mode === 'correct'
+          ? row.correctPosition
+          : row.selectedPosition !== null && row.selectedPosition !== undefined
+            ? row.selectedPosition
+            : '—'
+
+        return (
+          <div key={row.id} className={styling}>
+            <div className="flex items-center gap-3">
+              <Badge variant="secondary" className="min-w-[2rem] justify-center">
+                {badgeValue}
+              </Badge>
+              <span>{row.text}</span>
+            </div>
+            <span className="text-xs text-muted-foreground">
+              {mode === 'correct'
+                ? `${positionLabel} ${row.correctPosition}`
+                : `${correctLabel}: ${row.correctPosition}`}
+            </span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+const MatchingReview = ({ question, selections }) => {
+  const containerRef = useRef(null)
+  const leftRefs = useRef({})
+  const rightRefs = useRef({})
+  const [lines, setLines] = useState([])
+
+  const selectionMap = useMemo(() => {
+    const map = {}
+    selections.forEach(selection => {
+      if (selection && selection.left_pair !== undefined && selection.left_pair !== null) {
+        map[selection.left_pair] = selection
+      }
+    })
+    return map
+  }, [selections])
+
+  const rightStatusMap = useMemo(() => {
+    const map = {}
+    selections.forEach(selection => {
+      if (selection && selection.selected_right_pair !== undefined && selection.selected_right_pair !== null) {
+        map[selection.selected_right_pair] = selection.is_correct ? 'correct' : 'incorrect'
+      }
+    })
+    return map
+  }, [selections])
+
+  useLayoutEffect(() => {
+    const updateLines = () => {
+      if (!containerRef.current) return
+      const containerRect = containerRef.current.getBoundingClientRect()
+      const newLines = (question.matching_pairs || []).map(pair => {
+        const selection = selectionMap[pair.id]
+        if (!selection || !selection.selected_right_pair) return null
+
+        const leftEl = leftRefs.current[pair.id]
+        const rightEl = rightRefs.current[selection.selected_right_pair]
+        if (!leftEl || !rightEl) return null
+
+        const leftRect = leftEl.getBoundingClientRect()
+        const rightRect = rightEl.getBoundingClientRect()
+
+        return {
+          leftId: pair.id,
+          isCorrect: selection.is_correct,
+          x1: leftRect.right - containerRect.left,
+          y1: leftRect.top + leftRect.height / 2 - containerRect.top,
+          x2: rightRect.left - containerRect.left,
+          y2: rightRect.top + rightRect.height / 2 - containerRect.top
+        }
+      }).filter(Boolean)
+
+      setLines(newLines)
+    }
+
+    updateLines()
+    window.addEventListener('resize', updateLines)
+    return () => window.removeEventListener('resize', updateLines)
+  }, [question.matching_pairs, selectionMap])
+
+  const arrowId = `matching-review-arrow-${question.id}`
+
+  return (
+    <div ref={containerRef} className="relative">
+      <svg className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden="true">
+        <defs>
+          <marker id={arrowId} markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="rgba(148, 163, 184, 0.8)" />
+          </marker>
+        </defs>
+        {lines.map(line => (
+          <g key={`line-${line.leftId}`}>
+            <line
+              x1={line.x1}
+              y1={line.y1}
+              x2={line.x2}
+              y2={line.y2}
+              stroke={line.isCorrect ? 'rgba(34, 197, 94, 0.7)' : 'rgba(239, 68, 68, 0.7)'}
+              strokeWidth="2.5"
+              markerEnd={`url(#${arrowId})`}
+            />
+            <circle
+              cx={line.x1}
+              cy={line.y1}
+              r="4"
+              fill={line.isCorrect ? 'rgba(34, 197, 94, 0.9)' : 'rgba(239, 68, 68, 0.9)'}
+            />
+          </g>
+        ))}
+      </svg>
+
+      <div className="relative z-10 grid grid-cols-2 gap-4">
+        <div className="space-y-3">
+          {(question.matching_pairs || []).map(pair => {
+            const selection = selectionMap[pair.id]
+            const status = selection ? (selection.is_correct ? 'correct' : 'incorrect') : 'empty'
+            let styling = 'w-full rounded-full border px-4 py-3 text-left text-sm font-semibold tracking-wide'
+            if (status === 'correct') {
+              styling = cn(styling, 'border-green-300 bg-green-50 text-green-700')
+            } else if (status === 'incorrect') {
+              styling = cn(styling, 'border-red-300 bg-red-50 text-red-700')
+            } else {
+              styling = cn(styling, 'border-border/60 bg-muted/40 text-muted-foreground')
+            }
+
+            return (
+              <div
+                key={pair.id}
+                ref={el => {
+                  if (el) {
+                    leftRefs.current[pair.id] = el
+                  } else {
+                    delete leftRefs.current[pair.id]
+                  }
+                }}
+                className={styling}
+              >
+                {pair.left_text}
+              </div>
+            )
+          })}
+        </div>
+
+        <div className="space-y-3">
+          {(question.matching_pairs || []).map(option => {
+            const status = rightStatusMap[option.id] || 'empty'
+            let styling = 'w-full rounded-full border px-4 py-3 text-right text-sm font-semibold tracking-wide'
+            if (status === 'correct') {
+              styling = cn(styling, 'border-green-300 bg-green-50 text-green-700')
+            } else if (status === 'incorrect') {
+              styling = cn(styling, 'border-red-300 bg-red-50 text-red-700')
+            } else {
+              styling = cn(styling, 'border-border/60 bg-muted/40 text-muted-foreground')
+            }
+
+            return (
+              <div
+                key={option.id}
+                ref={el => {
+                  if (el) {
+                    rightRefs.current[option.id] = el
+                  } else {
+                    delete rightRefs.current[option.id]
+                  }
+                }}
+                className={styling}
+              >
+                {option.right_text}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const getQuestionTypeLabel = (question) => {
+  switch (question.question_type) {
+    case 'qcm_single':
+      return 'QCM - Single Choice'
+    case 'qcm_multiple':
+      return 'QCM - Multiple Choice'
+    case 'true_false':
+      return 'True / False'
+    case 'open_short':
+      return 'Open - Short Answer'
+    case 'open_long':
+      return 'Open - Long Answer'
+    case 'fill_blank':
+      return 'Fill in the Blanks'
+    case 'ordering':
+      return 'Ordering'
+    case 'matching':
+      return 'Matching'
+    default:
+      return 'Question'
+  }
+}
 
 const GradeSubmissionPage = () => {
   const navigate = useNavigate()
@@ -412,19 +813,26 @@ const GradeSubmissionPage = () => {
             {submission.answers?.map((answer, index) => {
               const question = answer.question
               const isAutoGraded = answer.is_correct !== null
+              const questionType = question.question_type
+              const blankSelections = answer.blank_selections || []
+              const orderingSelections = answer.ordering_selections || []
+              const matchingSelections = answer.matching_selections || []
+              const hasChoices = answer.selected_choices && answer.selected_choices.length > 0
+              const blankAnswerMap = questionType === 'fill_blank' ? buildBlankSelectionMap(question, blankSelections, t) : null
+              const blankCorrectMap = questionType === 'fill_blank' ? buildBlankCorrectMap(question, t) : null
 
               return (
-                <div key={answer.id} className="border rounded-lg p-4">
-                  <div className="flex items-start justify-between mb-3">
+                <div key={answer.id} className="border rounded-lg p-4 space-y-4">
+                  <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <h3 className="font-semibold">Question {index + 1}</h3>
+                        <Badge variant="secondary" className="bg-muted-foreground/20 text-muted-foreground">
+                          {getQuestionTypeLabel(question)}
+                        </Badge>
                         <Badge variant="outline">{question.points} pts</Badge>
                         {isAutoGraded && (
-                          <Badge
-                            variant={answer.is_correct ? 'default' : 'destructive'}
-                            className="flex items-center gap-1"
-                          >
+                          <Badge variant={answer.is_correct ? 'default' : 'destructive'} className="flex items-center gap-1">
                             {answer.is_correct ? (
                               <>
                                 <CheckCircle className="h-3 w-3" />
@@ -439,28 +847,29 @@ const GradeSubmissionPage = () => {
                           </Badge>
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground mb-3">
-                        {question.question_text}
-                      </p>
+                      {questionType === 'fill_blank'
+                        ? renderBlankTokens(question, buildBlankSelectionMap(question, [], t), t)
+                        : (
+                          <p className="text-sm text-muted-foreground">
+                            {question.question_text}
+                          </p>
+                        )}
                     </div>
                   </div>
 
-                  {/* Student's Answer */}
-                  <div className="bg-gray-50 rounded-lg p-3 mb-3">
-                    <p className="text-sm font-medium mb-2">Student's Answer:</p>
+                  <div className="bg-gray-50 rounded-lg p-3 space-y-3">
+                    <p className="text-sm font-medium">Student's Answer:</p>
                     {answer.text_answer && (
                       <p className="text-sm whitespace-pre-wrap">{answer.text_answer}</p>
                     )}
-                    {answer.selected_choices && answer.selected_choices.length > 0 && (
+                    {hasChoices && (
                       <div className="space-y-1">
                         {answer.selected_choices.map(choice => (
                           <div
                             key={choice.id}
                             className={cn(
                               'text-sm p-2 rounded',
-                              choice.is_correct
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-red-100 text-red-800'
+                              choice.is_correct ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                             )}
                           >
                             {choice.choice_text}
@@ -468,9 +877,74 @@ const GradeSubmissionPage = () => {
                         ))}
                       </div>
                     )}
+                    {questionType === 'fill_blank' && blankAnswerMap && (
+                      <div>{renderBlankTokens(question, blankAnswerMap, t)}</div>
+                    )}
+                    {questionType === 'ordering' && (
+                      <div>{renderOrderingList(question, orderingSelections, t)}</div>
+                    )}
+                    {questionType === 'matching' && (
+                      <div className="rounded-lg bg-white p-4">
+                        <MatchingReview question={question} selections={matchingSelections} />
+                      </div>
+                    )}
                   </div>
 
-                  {/* Grading Section for Open Questions */}
+                  {isAutoGraded && (() => {
+                    if (['qcm_single', 'qcm_multiple', 'true_false'].includes(questionType) && question.choices && question.choices.length > 0) {
+                      return (
+                        <div className="bg-green-50 rounded-lg p-3 space-y-1">
+                          <p className="text-sm font-medium">Correct Answer:</p>
+                          {question.choices.filter(choice => choice.is_correct).map(choice => (
+                            <div key={choice.id} className="text-sm text-green-700 flex items-center gap-2">
+                              <CheckCircle className="h-4 w-4" />
+                              <span>{choice.choice_text}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )
+                    }
+
+                    if (questionType === 'fill_blank' && blankCorrectMap) {
+                      return (
+                        <div className="bg-green-50 rounded-lg p-3">
+                          <p className="text-sm font-medium mb-2">Correct Answer:</p>
+                          {renderBlankTokens(question, blankCorrectMap, t)}
+                        </div>
+                      )
+                    }
+
+                    if (questionType === 'ordering') {
+                      const correctSelections = (question.ordering_items || []).map(item => ({
+                        item: item.id,
+                        selected_position: item.correct_position,
+                        is_correct: true
+                      }))
+                      return (
+                        <div className="bg-green-50 rounded-lg p-3">
+                          <p className="text-sm font-medium mb-2">Correct Order:</p>
+                          {renderOrderingList(question, correctSelections, t, { mode: 'correct' })}
+                        </div>
+                      )
+                    }
+
+                    if (questionType === 'matching') {
+                      return (
+                        <div className="bg-green-50 rounded-lg p-3 space-y-2">
+                          <p className="text-sm font-medium">Correct Pairs:</p>
+                          {(question.matching_pairs || []).map(pair => (
+                            <div key={pair.id} className="flex items-center gap-2 text-sm text-green-700">
+                              <CheckCircle className="h-4 w-4" />
+                              <span>{pair.left_text} {'->'} {pair.right_text}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )
+                    }
+
+                    return null
+                  })()}
+
                   {!isAutoGraded && (
                     <div className="space-y-3">
                       <div>
@@ -504,7 +978,6 @@ const GradeSubmissionPage = () => {
                     </div>
                   )}
 
-                  {/* Auto-graded points */}
                   {isAutoGraded && (
                     <div className="flex items-center gap-2 text-sm">
                       <span className="font-medium">Points Earned:</span>
