@@ -459,6 +459,7 @@
     "socialMediaLinks": "Liens Réseaux Sociaux",
     "profilePicture": "Photo de Profil",
     "position": "Poste",
+    "selectPosition": "Selectionner un poste",
     "department": "Département",
     "hireDate": "Date d'Embauche",
     "salary": "Salaire",
@@ -485,7 +486,7 @@
       "lastName": "Entrez le nom",
       "arabicFirstName": "أدخل الاسم الأول",
       "arabicLastName": "أدخل اسم العائلة",
-      "position": "Entrez le poste (ex: Secrétaire, Support IT, etc.)",
+      "position": "Selectionnez un poste",
       "email": "Entrez l'adresse email",
       "phone": "+212 6XX XX XX XX",
       "password": "Entrez un mot de passe sécurisé",
@@ -498,7 +499,22 @@
       "linkedinUrl": "https://linkedin.com/in/username",
       "twitterUrl": "https://twitter.com/username"
     },
-    "noBioProvided": "Aucune biographie n'a été fournie pour ce membre du personnel."
+    "noBioProvided": "Aucune biographie n'a �t� fournie pour ce membre du personnel.",
+    "positions": {
+      "DIRECTOR": "Directeur",
+      "ASSISTANT": "Assistant",
+      "IT_SUPPORT": "Specialiste support informatique",
+      "ACCOUNTANT": "Comptable",
+      "HR_COORDINATOR": "Coordinateur RH",
+      "COUNSELOR": "Conseiller scolaire",
+      "LIBRARIAN": "Bibliothecaire",
+      "NURSE": "Infirmier scolaire",
+      "SECURITY": "Agent de securite",
+      "MAINTENANCE": "Equipe de maintenance",
+      "SUPPORT": "Personnel de soutien",
+      "OTHER": "Autre",
+      "UNKNOWN": "Personnel"
+    }
   },
   "errors": {
     "accessDenied": "Accès refusé",
@@ -2320,3 +2336,11 @@
     "rewardsDescription": "Track how this student earns and spends rewards."
   }
 }
+
+
+
+
+
+
+
+

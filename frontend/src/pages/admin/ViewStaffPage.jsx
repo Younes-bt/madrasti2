@@ -12,6 +12,7 @@ import { Badge } from '../../components/ui/badge';
 import { apiMethods } from '../../services/api';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+import { getStaffPositionLabel } from '../../constants/staffPositions';
 
 // --- Reusable Theme Toggle Component (as in previous example) ---
 const useTheme = () => {
@@ -57,7 +58,7 @@ const DetailItem = ({ icon, label, value, children }) => (
 );
 
 const ViewStaffPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { staffId } = useParams();
   const [loading, setLoading] = useState(true);
@@ -218,7 +219,11 @@ const ViewStaffPage = () => {
               
               <TabsContent value="professional">
                  <div className="grid md:grid-cols-2 gap-x-8 gap-y-4">
-                    <DetailItem icon={<Briefcase size={20} />} label={t('staff.position')} value={staffData.position} />
+                    <DetailItem
+                      icon={<Briefcase size={20} />}
+                      label={i18n.language?.startsWith('ar') ? 'الوظيفة' : t('staff.position')}
+                      value={getStaffPositionLabel(t, staffData.position, i18n.language)}
+                    />
                     <DetailItem icon={<Building size={20} />} label={t('staff.department')} value={staffData.department} />
                     <DetailItem icon={<Calendar size={20} />} label={t('staff.hireDate')} value={formatDate(staffData.hire_date)} />
                     {staffData.salary && (

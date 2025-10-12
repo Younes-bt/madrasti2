@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Plus, Download, Edit, MapPin, Phone, Mail, Globe, Users, GraduationCap, BookOpen, TrendingUp, Calendar, Award, Building2, Sparkles } from 'lucide-react'
+import { Download, Edit, MapPin, Phone, Mail, Globe, Calendar, Building2, Sparkles } from 'lucide-react'
 import { motion, useInView, useMotionValue, useSpring, animate } from 'framer-motion'
 import { useLanguage } from '../../hooks/useLanguage'
 import { AdminPageLayout } from '../../components/admin/layout'
@@ -7,7 +7,7 @@ import { Button } from '../../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Badge } from '../../components/ui/badge'
 import { Separator } from '../../components/ui/separator'
-import { Progress } from '../../components/ui/progress'
+// Removed Progress-based KPI cards from this page
 import api from '../../services/api'
 
 const AnimatedCounter = ({ from = 0, to, duration = 2, className = "" }) => {
@@ -37,6 +37,16 @@ const AnimatedCounter = ({ from = 0, to, duration = 2, className = "" }) => {
   )
 }
 
+// Tailwind dynamic class mapping to avoid purge issues
+const gradientMap = {
+  blue: 'from-blue-500 to-purple-600',
+  green: 'from-green-500 to-green-600',
+  purple: 'from-purple-500 to-purple-600',
+  emerald: 'from-emerald-500 to-emerald-600',
+  indigo: 'from-indigo-500 to-blue-600'
+}
+
+
 const GlowingCard = ({ children, className = "", glowColor = "blue" }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
@@ -44,52 +54,21 @@ const GlowingCard = ({ children, className = "", glowColor = "blue" }) => (
     whileHover={{ y: -5, transition: { duration: 0.2 } }}
     className={`relative group ${className}`}
   >
-    <div className={`absolute -inset-0.5 bg-gradient-to-r from-${glowColor}-500 to-purple-600 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200`}></div>
+    <div className={`absolute -inset-0.5 bg-gradient-to-r ${gradientMap[glowColor] || gradientMap.blue} rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200`}></div>
     <div className="relative bg-background border rounded-lg backdrop-blur-sm">
       {children}
     </div>
   </motion.div>
 )
 
-const StatCard = ({ icon: Icon, title, value, subtitle, color, progress }) => (
-  <GlowingCard glowColor={color}>
-    <CardContent className="p-4 sm:p-6">
-      <div className="flex items-center space-x-3 sm:space-x-4">
-        <motion.div 
-          className={`p-2 sm:p-3 rounded-full bg-gradient-to-br from-${color}-500 to-${color}-600 text-white shadow-lg flex-shrink-0`}
-          whileHover={{ scale: 1.1, rotate: 5 }}
-          whileTap={{ scale: 0.95 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-        >
-          <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
-        </motion.div>
-        <div className="flex-1 space-y-1 min-w-0">
-          <p className="text-xs sm:text-sm text-muted-foreground truncate">{title}</p>
-          <div className={`text-lg sm:text-2xl font-bold text-${color}-600`}>
-            <AnimatedCounter to={value} />
-            {subtitle && <span className="text-xs sm:text-sm ml-1">{subtitle}</span>}
-          </div>
-          {progress !== undefined && (
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: "100%" }}
-              transition={{ delay: 0.5, duration: 1.5 }}
-            >
-              <Progress value={progress} className="h-1.5 sm:h-2 mt-2" />
-            </motion.div>
-          )}
-        </div>
-      </div>
-    </CardContent>
-  </GlowingCard>
-)
+// StatCard and KPI sections were removed from this page per request
 
 const SchoolDetailsPage = () => {
   const { t } = useLanguage()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [schoolConfig, setSchoolConfig] = useState(null)
-  const [stats, setStats] = useState(null)
+  // KPIs removed from this page; no stats state needed
 
   // Fetch school configuration data
   const fetchSchoolConfig = async () => {
@@ -130,16 +109,7 @@ const SchoolDetailsPage = () => {
         }
       }
       
-      // Fetch school statistics (this might need different endpoint)
-      // For now, we'll use mock data for statistics
-      setStats({
-        totalStudents: 1247,
-        totalTeachers: 84,
-        totalClasses: 12,
-        attendanceRate: 95,
-        assignmentCompletion: 87,
-        assignmentsThisWeek: 156
-      })
+      // KPIs/statistics are shown on the dashboard, not here
       
     } catch (err) {
       console.error('Error fetching school config:', err)
@@ -188,7 +158,7 @@ const SchoolDetailsPage = () => {
   return (
     <AdminPageLayout
       title={t('adminSidebar.schoolManagement.schoolDetails')}
-      subtitle="Manage your school's basic information and settings"
+      subtitle={t('school.details.subtitle', "Manage your school's basic information and settings")}
       showBackButton={true}
       showRefreshButton={true}
       onRefresh={handleRefresh}
@@ -241,7 +211,7 @@ const SchoolDetailsPage = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <Calendar className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
-                    <span>Founded {formatDate(schoolConfig.founded_date)}</span>
+                    <span>{t('school.details.created', 'Created')} {formatDate(schoolConfig.created_at)}</span>
                   </div>
                 </motion.div>
               </div>
@@ -266,41 +236,7 @@ const SchoolDetailsPage = () => {
             </div>
           </motion.div>
 
-          {/* Statistics Grid */}
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-          >
-            <StatCard
-              icon={Users}
-              title="Total Students"
-              value={stats?.totalStudents}
-              color="blue"
-              progress={((stats?.totalStudents / schoolConfig.student_capacity) * 100) || 0}
-            />
-            <StatCard
-              icon={GraduationCap}
-              title="Total Teachers"
-              value={stats?.totalTeachers}
-              color="green"
-            />
-            <StatCard
-              icon={BookOpen}
-              title="Active Classes"
-              value={stats?.totalClasses}
-              color="purple"
-            />
-            <StatCard
-              icon={TrendingUp}
-              title="Attendance Rate"
-              value={stats?.attendanceRate}
-              subtitle="%"
-              color="emerald"
-              progress={stats?.attendanceRate}
-            />
-          </motion.div>
+          {/* KPI cards removed; they will live on the dashboard */}
 
           {/* Main Content Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
@@ -315,7 +251,7 @@ const SchoolDetailsPage = () => {
                 <CardHeader className="pb-4">
                   <CardTitle className="flex items-center gap-2 text-xl">
                     <Globe className="h-5 w-5" />
-                    School Information
+                    {t('school.details.info', 'School Information')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -329,7 +265,7 @@ const SchoolDetailsPage = () => {
                       <div className="group">
                         <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                           <Phone className="h-4 w-4 group-hover:text-blue-500 transition-colors" />
-                          Phone Number
+                          {t('school.details.phone', 'Phone Number')}
                         </label>
                         <motion.p 
                           className="font-semibold text-lg group-hover:text-blue-600 transition-colors cursor-pointer"
@@ -342,7 +278,7 @@ const SchoolDetailsPage = () => {
                       <div className="group">
                         <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                           <Mail className="h-4 w-4 group-hover:text-green-500 transition-colors" />
-                          Email Address
+                          {t('school.details.email', 'Email Address')}
                         </label>
                         <motion.p 
                           className="font-semibold text-lg group-hover:text-green-600 transition-colors cursor-pointer"
@@ -356,7 +292,7 @@ const SchoolDetailsPage = () => {
                         <div className="group">
                           <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                             <Globe className="h-4 w-4 group-hover:text-purple-500 transition-colors" />
-                            Website
+                            {t('school.details.website', 'Website')}
                           </label>
                           <motion.a 
                             href={schoolConfig.website} 
@@ -381,7 +317,7 @@ const SchoolDetailsPage = () => {
                       <div className="group">
                         <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                           <MapPin className="h-4 w-4 group-hover:text-red-500 transition-colors" />
-                          Address
+                          {t('school.details.address', 'Address')}
                         </label>
                         <motion.p 
                           className="font-semibold text-lg group-hover:text-red-600 transition-colors"
@@ -421,95 +357,60 @@ const SchoolDetailsPage = () => {
                       {schoolConfig.student_capacity && (
                         <div className="group">
                           <label className="text-sm font-medium text-muted-foreground">
-                            Student Capacity
+                            {t('school.details.capacity', 'Student Capacity')}
                           </label>
                           <motion.p 
                             className="font-semibold text-lg group-hover:text-indigo-600 transition-colors"
                             whileHover={{ scale: 1.05 }}
                           >
-                            <AnimatedCounter to={schoolConfig.student_capacity} /> Students
+                            <AnimatedCounter to={schoolConfig.student_capacity} /> {t('school.details.students', 'Students')}
                           </motion.p>
                         </div>
                       )}
                     </motion.div>
                   </div>
 
+                  {/* Administration */}
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 1.4 }}
                     className="pt-6 border-t border-gray-200"
                   >
-                    <label className="text-sm font-medium text-muted-foreground">
-                      Last Updated
-                    </label>
-                    <p className="text-sm text-gray-600">{formatDate(schoolConfig.updated_at)}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-muted-foreground">
+                          {t('school.details.director', 'School Director')}
+                        </label>
+                        <p className="text-sm text-gray-800">
+                          {schoolConfig.director?.full_name || t('misc.notSet', 'Not Set')}
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-muted-foreground">
+                          {t('common.lastUpdated', 'Last Updated')}
+                        </label>
+                        <p className="text-sm text-gray-600">{formatDate(schoolConfig.updated_at)}</p>
+                      </div>
+                    </div>
                   </motion.div>
                 </CardContent>
               </GlowingCard>
             </motion.div>
 
-            {/* Performance Metrics */}
+            {/* Right Column */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.8 }}
               className="space-y-4 lg:space-y-6"
             >
-              <GlowingCard glowColor="emerald">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Award className="h-5 w-5" />
-                    Performance Metrics
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Assignment Completion</span>
-                      <span className="text-lg font-bold text-orange-600">
-                        <AnimatedCounter to={stats?.assignmentCompletion} />%
-                      </span>
-                    </div>
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: "100%" }}
-                      transition={{ delay: 1.5, duration: 1.5 }}
-                    >
-                      <Progress value={stats?.assignmentCompletion} className="h-3" />
-                    </motion.div>
-                  </div>
-
-                  <motion.div 
-                    className="text-center p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200"
-                    whileHover={{ scale: 1.02 }}
-                    transition={{ type: "spring", stiffness: 300 }}
-                  >
-                    <div className="text-2xl font-bold text-blue-600">
-                      <AnimatedCounter to={stats?.assignmentsThisWeek} />
-                    </div>
-                    <div className="text-sm text-blue-700">Assignments This Week</div>
-                  </motion.div>
-
-                  <motion.div 
-                    className="text-center p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200"
-                    whileHover={{ scale: 1.02 }}
-                    transition={{ type: "spring", stiffness: 300 }}
-                  >
-                    <div className="text-lg font-bold text-purple-600">
-                      {schoolConfig.director ? 'Assigned' : 'Not Set'}
-                    </div>
-                    <div className="text-sm text-purple-700">School Director</div>
-                  </motion.div>
-                </CardContent>
-              </GlowingCard>
-
               {/* Academic Year */}
               <GlowingCard glowColor="indigo">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Calendar className="h-5 w-5" />
-                    Academic Year
+                    {t('school.details.academicYear', 'Academic Year')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -533,9 +434,9 @@ const SchoolDetailsPage = () => {
                         ease: "easeInOut"
                       }}
                     >
-                      2024-2025
+                      {schoolConfig.current_academic_year?.year || t('misc.notSet', 'Not Set')}
                     </motion.div>
-                    <div className="text-sm text-indigo-700">Current Academic Year</div>
+                    <div className="text-sm text-indigo-700">{t('school.details.currentAcademicYear', 'Current Academic Year')}</div>
                   </motion.div>
                 </CardContent>
               </GlowingCard>

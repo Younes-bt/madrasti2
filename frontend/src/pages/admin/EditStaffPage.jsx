@@ -8,15 +8,19 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { STAFF_POSITION_OPTIONS, getStaffPositionLabel } from '../../constants/staffPositions';
 import { apiMethods } from '../../services/api';
 import { toast } from 'sonner';
 
 const EditStaffPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { staffId } = useParams();
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const language = i18n.language || 'en';
+  const isArabic = language.startsWith('ar');
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -408,17 +412,24 @@ const EditStaffPage = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="position" className="required">
-                  {t('staff.position')}
+                  {isArabic ? 'الوظيفة' : t('staff.position')}
                 </Label>
-                <Input
-                  id="position"
-                  type="text"
-                  value={formData.position}
-                  onChange={(e) => handleInputChange('position', e.target.value)}
-                  placeholder={t('staff.placeholders.position')}
-                  className={errors.position ? 'border-red-500' : ''}
+                <Select
+                  value={formData.position || undefined}
+                  onValueChange={(value) => handleInputChange('position', value)}
                   disabled={loading}
-                />
+                >
+                  <SelectTrigger className={`h-12 ${errors.position ? 'border-red-500' : ''}`}>
+                    <SelectValue placeholder={isArabic ? 'اختر الوظيفة' : t('staff.selectPosition')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STAFF_POSITION_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {getStaffPositionLabel(t, option.value, language)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 {errors.position && (
                   <p className="text-sm text-red-600">{errors.position}</p>
                 )}

@@ -24,6 +24,7 @@ import {
 } from '../../components/ui/select';
 import { apiMethods } from '../../services/api';
 import { toast } from 'sonner';
+import { getStaffPositionLabel } from '../../constants/staffPositions';
 
 const AnimatedCounter = ({ from = 0, to, duration = 2, className = "" }) => {
   const ref = useRef()
@@ -100,6 +101,7 @@ const StaffManagementPage = () => {
   const [statusFilter, setStatusFilter] = useState('all');
 
   const [stats, setStats] = useState({ total: 0, active: 0, inactive: 0 });
+  const language = i18n.language || 'en';
 
   const fetchStaffMembers = async () => {
     setLoading(true);
@@ -206,7 +208,7 @@ const StaffManagementPage = () => {
               </motion.h3>
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <Briefcase className="h-3 w-3" />
-                {staff.position || 'Staff'}
+                {getStaffPositionLabel(t, staff.position, language)}
               </p>
               <motion.div
                 initial={{ scale: 0 }}

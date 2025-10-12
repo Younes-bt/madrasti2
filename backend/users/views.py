@@ -16,8 +16,16 @@ import threading
 import time
 from django.utils import timezone
 
-from .models import User, StudentEnrollment, BulkImportJob
-from .serializers import UserRegisterSerializer, UserProfileSerializer, MyTokenObtainPairSerializer, StudentEnrollmentSerializer, StudentEnrollmentCreateSerializer, UserBasicSerializer, UserUpdateSerializer
+from .models import User, StudentEnrollment, BulkImportJob, Profile
+from .serializers import (
+    UserRegisterSerializer,
+    UserProfileSerializer,
+    MyTokenObtainPairSerializer,
+    StudentEnrollmentSerializer,
+    StudentEnrollmentCreateSerializer,
+    UserBasicSerializer,
+    UserUpdateSerializer
+)
 
 # The RegisterView and ProfileView remain the same
 class RegisterView(generics.CreateAPIView):
@@ -384,6 +392,28 @@ class UserViewSet(viewsets.ModelViewSet):
                 'teachable_grades': [{'id': g.id, 'name': g.name} for g in teachable_grades]
             }
         })
+
+    @action(detail=False, methods=['get'], url_path='staff-position-options')
+    def staff_position_options(self, request):
+        """Return available staff position choices with multilingual labels."""
+        language = 'en'
+        lang_param = request.query_params.get('lang') if hasattr(request, 'query_params') else None
+        header_lang = request.headers.get('Accept-Language') if hasattr(request, 'headers') else None
+        language = (lang_param or getattr(request, 'LANGUAGE_CODE', None) or language)
+        if header_lang and not lang_param:
+            language = header_lang.split(',')[0]
+        language = (language or 'en').split('-')[0]
+
+        options = []
+        for value, _ in Profile.Position.choices:
+            labels = Profile.POSITION_LABELS.get(value, {})
+            options.append({
+                'value': value,
+                'label': labels.get(language, labels.get('en')),
+                'labels': labels
+            })
+
+        return Response({'positions': options})
 
 
 # =====================================

@@ -112,6 +112,83 @@ class Profile(models.Model):
     One-to-One relationship with User model.
     """
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+
+    class Position(models.TextChoices):
+        DIRECTOR = 'DIRECTOR', _('Director')
+        ASSISTANT = 'ASSISTANT', _('Assistant')
+        IT_SUPPORT = 'IT_SUPPORT', _('IT Support Specialist')
+        ACCOUNTANT = 'ACCOUNTANT', _('Accountant')
+        HR_COORDINATOR = 'HR_COORDINATOR', _('HR Coordinator')
+        COUNSELOR = 'COUNSELOR', _('Counselor')
+        LIBRARIAN = 'LIBRARIAN', _('Librarian')
+        NURSE = 'NURSE', _('School Nurse')
+        SECURITY = 'SECURITY', _('Security Officer')
+        MAINTENANCE = 'MAINTENANCE', _('Maintenance Staff')
+        SUPPORT = 'SUPPORT', _('Support Staff')
+        OTHER = 'OTHER', _('Other')
+
+    POSITION_LABELS = {
+        Position.DIRECTOR: {
+            'en': 'Director',
+            'fr': 'Directeur',
+            'ar': 'المدير'
+        },
+        Position.ASSISTANT: {
+            'en': 'Assistant',
+            'fr': 'Assistant',
+            'ar': 'مساعد'
+        },
+        Position.IT_SUPPORT: {
+            'en': 'IT Support Specialist',
+            'fr': 'Spécialiste support informatique',
+            'ar': 'دعم تقنية المعلومات'
+        },
+        Position.ACCOUNTANT: {
+            'en': 'Accountant',
+            'fr': 'Comptable',
+            'ar': 'محاسب'
+        },
+        Position.HR_COORDINATOR: {
+            'en': 'HR Coordinator',
+            'fr': 'Coordonnateur RH',
+            'ar': 'منسق الموارد البشرية'
+        },
+        Position.COUNSELOR: {
+            'en': 'School Counselor',
+            'fr': 'Conseiller scolaire',
+            'ar': 'مستشار تربوي'
+        },
+        Position.LIBRARIAN: {
+            'en': 'Librarian',
+            'fr': 'Bibliothécaire',
+            'ar': 'أمين المكتبة'
+        },
+        Position.NURSE: {
+            'en': 'School Nurse',
+            'fr': 'Infirmier scolaire',
+            'ar': 'ممرضة المدرسة'
+        },
+        Position.SECURITY: {
+            'en': 'Security Officer',
+            'fr': 'Agent de sécurité',
+            'ar': 'مسؤول أمن'
+        },
+        Position.MAINTENANCE: {
+            'en': 'Maintenance Staff',
+            'fr': 'Personnel de maintenance',
+            'ar': 'فريق الصيانة'
+        },
+        Position.SUPPORT: {
+            'en': 'Support Staff',
+            'fr': 'Personnel de soutien',
+            'ar': 'طاقم الدعم'
+        },
+        Position.OTHER: {
+            'en': 'Other',
+            'fr': 'Autre',
+            'ar': 'أخرى'
+        }
+    }
     
     # Multilingual name fields
     ar_first_name = models.CharField(max_length=150, blank=True, null=True, verbose_name=_('Arabic First Name'))
@@ -141,7 +218,13 @@ class Profile(models.Model):
     
     # Professional information (for staff/teachers)
     department = models.CharField(max_length=100, blank=True, null=True, verbose_name=_('Department'))
-    position = models.CharField(max_length=100, blank=True, null=True, verbose_name=_('Position'))
+    position = models.CharField(
+        max_length=50,
+        choices=Position.choices,
+        blank=True,
+        null=True,
+        verbose_name=_('Position')
+    )
     
     # Subject specialization for teachers
     school_subject = models.ForeignKey(
@@ -202,6 +285,20 @@ class Profile(models.Model):
             today = date.today()
             return today.year - self.date_of_birth.year - ((today.month, today.day) < (self.date_of_birth.month, self.date_of_birth.day))
         return None
+
+    def get_position_label(self, language='en'):
+        if not self.position:
+            return None
+        language = (language or 'en').split('-')[0]
+        labels = self.POSITION_LABELS.get(self.position)
+        if not labels:
+            return None
+        return labels.get(language, labels.get('en'))
+
+    def get_position_labels(self):
+        if not self.position:
+            return None
+        return self.POSITION_LABELS.get(self.position, {})
     
     def __str__(self):
         return f"Profile of {self.user.email}"

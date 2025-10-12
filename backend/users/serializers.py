@@ -15,6 +15,8 @@ class ProfileSerializer(serializers.ModelSerializer):
     age = serializers.ReadOnlyField()
     school_subject = serializers.SerializerMethodField()
     teachable_grades = serializers.SerializerMethodField()
+    position_label = serializers.SerializerMethodField()
+    position_labels = serializers.SerializerMethodField()
 
     class Meta:
         model = Profile
@@ -22,7 +24,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             'ar_first_name', 'ar_last_name', 'phone', 'date_of_birth', 'address',
             'profile_picture', 'profile_picture_url', 'bio', 'emergency_contact_name',
             'emergency_contact_phone', 'linkedin_url', 'twitter_url', 'department',
-            'position', 'school_subject', 'teachable_grades', 'hire_date', 'salary', 'full_name', 'ar_full_name', 'age',
+            'position', 'position_label', 'position_labels', 'school_subject', 'teachable_grades', 'hire_date', 'salary', 'full_name', 'ar_full_name', 'age',
             'created_at', 'updated_at'
         ]
         read_only_fields = ('created_at', 'updated_at')
@@ -48,12 +50,33 @@ class ProfileSerializer(serializers.ModelSerializer):
             for grade in obj.teachable_grades.all()
         ]
 
+    def _get_language_code(self):
+        request = self.context.get('request') if isinstance(self.context, dict) else None
+        language = 'en'
+        if request:
+            # Priority: explicit query param, then Accept-Language header, then request.LANGUAGE_CODE
+            lang_param = request.query_params.get('lang') if hasattr(request, 'query_params') else None
+            header_lang = request.headers.get('Accept-Language') if hasattr(request, 'headers') else None
+            language = (lang_param or getattr(request, 'LANGUAGE_CODE', None) or language)
+            if header_lang and not lang_param:
+                language = header_lang.split(',')[0]
+        return (language or 'en').split('-')[0]
+
+    def get_position_label(self, obj):
+        language = self._get_language_code()
+        return obj.get_position_label(language)
+
+    def get_position_labels(self, obj):
+        labels = obj.get_position_labels()
+        return labels or {}
+
 
 class UserRegisterSerializer(serializers.ModelSerializer):
     """
     Serializer for user registration with profile creation.
     """
     password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
+    position = serializers.ChoiceField(choices=Profile.Position.choices, required=False, allow_blank=True, allow_null=True)
     
     # Profile fields for registration
     ar_first_name = serializers.CharField(required=False, allow_blank=True)
@@ -65,7 +88,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     emergency_contact_name = serializers.CharField(required=False, allow_blank=True)
     emergency_contact_phone = serializers.CharField(required=False, allow_blank=True)
     department = serializers.CharField(required=False, allow_blank=True)
-    position = serializers.CharField(required=False, allow_blank=True)
+    position = serializers.ChoiceField(choices=Profile.Position.choices, required=False, allow_blank=True, allow_null=True)
     school_subject = serializers.IntegerField(required=False, allow_null=True)
     teachable_grades = serializers.ListField(child=serializers.IntegerField(), required=False, allow_empty=True)
     hire_date = serializers.DateField(required=False, allow_null=True)
@@ -164,7 +187,10 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         
         for field in profile_fields:
             if field in validated_data:
-                profile_data[field] = validated_data.pop(field)
+                value = validated_data.pop(field)
+                if field == 'position' and not value:
+                    value = None
+                profile_data[field] = value
         
         # Separate enrollment data
         enrollment_data = {}
@@ -371,7 +397,10 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         
         for field in profile_fields:
             if field in validated_data:
-                profile_data[field] = validated_data.pop(field)
+                value = validated_data.pop(field)
+                if field == 'position' and not value:
+                    value = None
+                profile_data[field] = value
         
         # Update user fields
         for attr, value in validated_data.items():
@@ -412,12 +441,13 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                 profile.save()
             except Profile.DoesNotExist:
                 Profile.objects.create(user=instance, **profile_data)
-        
+
         return instance
 
     def to_representation(self, instance):
         # Include profile data in the response
         data = super().to_representation(instance)
+        language = self._get_language_code()
         try:
             profile = instance.profile
             # Handle school_subject relationship
@@ -443,6 +473,8 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                 'twitter_url': profile.twitter_url,
                 'department': profile.department,
                 'position': profile.position,
+                'position_label': profile.get_position_label(language),
+                'position_labels': profile.get_position_labels(),
                 'school_subject': school_subject_data,
                 'teachable_grades': [
                     {
@@ -521,6 +553,17 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         
         return data
 
+    def _get_language_code(self):
+        request = self.context.get('request') if hasattr(self, 'context') else None
+        language = 'en'
+        if request:
+            lang_param = request.query_params.get('lang') if hasattr(request, 'query_params') else None
+            header_lang = request.headers.get('Accept-Language') if hasattr(request, 'headers') else None
+            language = (lang_param or getattr(request, 'LANGUAGE_CODE', None) or language)
+            if header_lang and not lang_param:
+                language = header_lang.split(',')[0]
+        return (language or 'en').split('-')[0]
+
 
 class UserBasicSerializer(serializers.ModelSerializer):
     """
@@ -533,11 +576,16 @@ class UserBasicSerializer(serializers.ModelSerializer):
     profile_picture_url = serializers.SerializerMethodField()
     phone = serializers.SerializerMethodField()
     position = serializers.SerializerMethodField()
+    position_label = serializers.SerializerMethodField()
     school_subject = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ('id', 'email', 'first_name', 'last_name', 'ar_first_name', 'ar_last_name', 'full_name', 'role', 'is_active', 'is_online', 'last_seen', 'last_login', 'profile_picture_url', 'phone', 'position', 'school_subject')
+        fields = (
+            'id', 'email', 'first_name', 'last_name', 'ar_first_name', 'ar_last_name', 'full_name',
+            'role', 'is_active', 'is_online', 'last_seen', 'last_login', 'profile_picture_url',
+            'phone', 'position', 'position_label', 'school_subject'
+        )
 
     def get_profile_picture_url(self, obj):
         try:
@@ -558,6 +606,14 @@ class UserBasicSerializer(serializers.ModelSerializer):
             return obj.profile.position
         except Profile.DoesNotExist:
             return None
+
+    def get_position_label(self, obj):
+        try:
+            profile = obj.profile
+        except Profile.DoesNotExist:
+            return None
+        language = self._get_language_code()
+        return profile.get_position_label(language)
     
     def get_school_subject(self, obj):
         try:
@@ -572,6 +628,17 @@ class UserBasicSerializer(serializers.ModelSerializer):
         except Profile.DoesNotExist:
             pass
         return None
+
+    def _get_language_code(self):
+        request = self.context.get('request') if hasattr(self, 'context') else None
+        language = 'en'
+        if request:
+            lang_param = request.query_params.get('lang') if hasattr(request, 'query_params') else None
+            header_lang = request.headers.get('Accept-Language') if hasattr(request, 'headers') else None
+            language = (lang_param or getattr(request, 'LANGUAGE_CODE', None) or language)
+            if header_lang and not lang_param:
+                language = header_lang.split(',')[0]
+        return (language or 'en').split('-')[0]
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):

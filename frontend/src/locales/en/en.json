@@ -786,6 +786,7 @@
     "socialMediaLinks": "Social Media Links",
     "profilePicture": "Profile Picture",
     "position": "Position",
+    "selectPosition": "Select position",
     "department": "Department",
     "hireDate": "Hire Date",
     "salary": "Salary",
@@ -812,7 +813,7 @@
       "lastName": "Enter last name",
       "arabicFirstName": "أدخل الاسم الأول",
       "arabicLastName": "أدخل اسم العائلة",
-      "position": "Enter position (e.g. Secretary, IT Support, etc.)",
+      "position": "Select a staff position",
       "email": "Enter email address",
       "phone": "+212 6XX XX XX XX",
       "password": "Enter a secure password",
@@ -824,7 +825,22 @@
       "linkedinUrl": "https://linkedin.com/in/username",
       "twitterUrl": "https://twitter.com/username"
     },
-    "noBioProvided": "No biography has been provided for this staff member."
+    "noBioProvided": "No biography has been provided for this staff member.",
+    "positions": {
+      "DIRECTOR": "Director",
+      "ASSISTANT": "Assistant",
+      "IT_SUPPORT": "IT Support Specialist",
+      "ACCOUNTANT": "Accountant",
+      "HR_COORDINATOR": "HR Coordinator",
+      "COUNSELOR": "School Counselor",
+      "LIBRARIAN": "Librarian",
+      "NURSE": "School Nurse",
+      "SECURITY": "Security Officer",
+      "MAINTENANCE": "Maintenance Staff",
+      "SUPPORT": "Support Staff",
+      "OTHER": "Other",
+      "UNKNOWN": "Staff"
+    }
   },
   "errors": {
     "accessDenied": "Access Denied",
