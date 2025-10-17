@@ -23,6 +23,7 @@
     "phone": "الهاتف",
     "status": "الحالة",
     "joinedDate": "تاريخ الانضمام",
+    "enrollmentDate": "تاريخ التسجيل",
     "lastLogin": "آخر تسجيل دخول",
     "actions": "الإجراءات",
     "searchAndFilter": "البحث والتصفية",
@@ -83,7 +84,9 @@
     "subjects": "المواد",
     "subject": "المادة",
     "classes": "الفصول",
-    "allSubjects": "كل المواد"
+    "allSubjects": "كل المواد",
+    "results": "نتائج",
+    "popupBlocked": "يرجى السماح بالنوافذ المنبثقة لتصدير هذا التقرير."
   },
   "error": {
     "failedToLoadData": "فشل في تحميل البيانات. يرجى المحاولة مرة أخرى.",
@@ -327,7 +330,15 @@
     "teachableGradesInfo": "حدد جميع الصفوف التي يكون هذا المعلم مؤهلاً لتدريسها.",
     "teachers": "المعلمين",
     "myClasses": "فصولي",
-    "pendingGrading": "في انتظار التصحيح"
+    "pendingGrading": "في انتظار التصحيح",
+    "students": "الطلاب",
+    "subjects": "المواد",
+    "weeklyHours": "ساعات أسبوعية",
+    "subjectsTaught": "المواد المدرسة",
+    "totalClasses": "إجمالي الفصول",
+    "totalStudents": "إجمالي الطلاب",
+    "totalWeeklyHours": "إجمالي الساعات الأسبوعية",
+    "noClassesAssigned": "لم يتم تعيين فصول بعد"
   },
   "student": {
     "addNewStudent": "إضافة طالب جديد",
@@ -637,6 +648,8 @@
     "socialMediaLinks": "روابط وسائل التواصل الاجتماعي",
     "profilePicture": "صورة الملف الشخصي",
     "position": "الوظيفة",
+    "filterByPosition": "تصفية حسب الوظيفة",
+    "allPositions": "جميع الوظائف",
     "department": "القسم",
     "hireDate": "تاريخ التوظيف",
     "salary": "الراتب",
@@ -689,6 +702,7 @@
       "SECURITY": "مسؤول أمن",
       "MAINTENANCE": "فريق الصيانة",
       "SUPPORT": "طاقم الدعم",
+      "DRIVER": "سائق",
       "OTHER": "أخرى",
       "UNKNOWN": "موظف"
     }
@@ -1259,7 +1273,9 @@
         "inactiveParents": "أولياء الأمور غير النشطين",
         "inactiveParentsDescription": "أولياء الأمور غير النشطين أو المعلقين"
       }
-    }
+    },
+    "print": "طباعة",
+    "exportError": "فشل تصدير تفاصيل المدرسة. يرجى المحاولة مرة أخرى."
   },
   "parent": {
     "parents": "أولياء الأمور",
@@ -1471,7 +1487,14 @@
       "fileTooLarge": "الملف كبير جداً. الحد الأقصى: {{maxSize}}ميجابايت",
       "tooManyFiles": "ملفات كثيرة جداً. الحد الأقصى: {{maxFiles}}",
       "validationFailed": "فشل في التحقق من الملف"
-    }
+    },
+    "vehicleImages": "صور المركبة",
+    "addImagesToVehicle": "إضافة صور إلى {{vehicle}}",
+    "failedToLoadVehicleImages": "تعذّر تحميل صور المركبة",
+    "imagesAddedToVehicle": "تمت إضافة {{count}} صورة إلى {{vehicle}}",
+    "imageRemovedFromVehicle": "تمت إزالة الصورة من المركبة",
+    "failedToDeleteVehicleImage": "تعذّر حذف صورة المركبة",
+    "failedToUpdateVehicleFeatured": "تعذّر تحديث صورة المركبة المميزة"
   },
   "academicYears": {
     "title": "السنوات الدراسية",
@@ -2395,5 +2418,260 @@
   "adminStudentView": {
     "rewardsTitle": "Rewards & Points",
     "rewardsDescription": "Track how this student earns and spends rewards."
+  },
+  "school": {
+    "details": {
+      "subtitle": "إدارة المعلومات والإعدادات الأساسية للمدرسة",
+      "created": "تاريخ الإنشاء",
+      "info": "معلومات المدرسة",
+      "contact": "معلومات الاتصال",
+      "location": "معلومات الموقع",
+      "cityRegion": "المدينة والمنطقة",
+      "administration": "الإدارة",
+      "phone": "رقم الهاتف",
+      "fixPhone": "الهاتف الثابت",
+      "whatsapp": "واتساب",
+      "email": "البريد الإلكتروني",
+      "website": "الموقع الإلكتروني",
+      "address": "العنوان",
+      "students": "الطلاب",
+      "capacity": "الطاقة الاستيعابية للطلاب",
+      "codes": "رموز المؤسسة",
+      "schoolCode": "رمز المدرسة",
+      "pattent": "رقم الباتنت",
+      "rcCode": "رقم السجل التجاري",
+      "social": {
+        "label": "وسائل التواصل الاجتماعي",
+        "empty": "لم يتم إضافة أي حسابات تواصل اجتماعي بعد. انقر على تعديل لإضافة الروابط.",
+        "facebook": "فيسبوك",
+        "instagram": "إنستغرام",
+        "linkedin": "لينكد إن",
+        "twitter": "تويتر / إكس",
+        "youtube": "يوتيوب"
+      },
+      "academicYear": "السنة الدراسية",
+      "currentAcademicYear": "السنة الدراسية الحالية",
+      "director": "مدير المدرسة",
+      "exportFooter": "تقرير تفاصيل المدرسة",
+      "generatedOn": "تم الإنشاء في",
+      "managementSystem": "نظام إدارة المدرسة"
+    }
+  },
+  "vehicles": {
+    "title": "إدارة أسطول المركبات",
+    "subtitle": "إدارة سيارات وحافلات المدرسة والسائقين وسجل الصيانة",
+    "searchPlaceholder": "ابحث في المركبات بالاسم أو الطراز أو رقم اللوحة أو السائق...",
+    "page": {
+      "addTitle": "إضافة مركبة",
+      "addSubtitle": "سجّل مركبة جديدة في أسطول مدرستك.",
+      "formTitle": "بيانات المركبة",
+      "formSubtitle": "أدخل بيانات المركبة وتعيين السائق وإعدادات متابعة الصيانة.",
+      "backToList": "عودة إلى المركبات",
+      "cancel": "إلغاء",
+      "submit": "حفظ المركبة",
+      "saving": "جارٍ حفظ المركبة...",
+      "viewTitle": "تفاصيل المركبة",
+      "viewSubtitle": "راجع بيانات المركبة وتعيينات السائق وسجل الصيانة.",
+      "imagesSectionTitle": "صور المركبة",
+      "imagesSectionSubtitle": "اختياري: قم برفع صور لعرض هذه المركبة.",
+      "selectImages": "اختر الصور",
+      "imagesSelected": "تم اختيار {{count}} صورة/صور",
+      "noImagesSelected": "لم يتم اختيار أي صور بعد",
+      "uploadingImages": "جارٍ رفع الصور..."
+    },
+    "types": {
+      "bus": "حافلة",
+      "minibus": "حافلة صغيرة",
+      "van": "فان",
+      "car": "سيارة",
+      "other": "أخرى"
+    },
+    "fields": {
+      "name": "اسم المركبة",
+      "model": "الطراز",
+      "type": "نوع المركبة",
+      "plateNumber": "رقم اللوحة",
+      "driver": "السائق المعيّن",
+      "capacity": "سعة الركاب",
+      "manufactureYear": "سنة الصنع",
+      "color": "اللون",
+      "lastOilChange": "آخر تغيير زيت",
+      "lastService": "آخر صيانة",
+      "insuranceExpiry": "انتهاء التأمين",
+      "notes": "ملاحظات",
+      "status": "الحالة"
+    },
+    "placeholders": {
+      "name": "مثال: خط الصباح أ",
+      "model": "مثال: مرسيدس سبرينتر 516",
+      "type": "اختر نوع المركبة",
+      "plateNumber": "مثال: 12345-أ-ب-ج",
+      "driver": "اختر سائقاً",
+      "noDriver": "بدون سائق معيّن",
+      "capacity": "أدخل عدد المقاعد",
+      "manufactureYear": "أدخل سنة الصنع",
+      "color": "أدخل لون المركبة",
+      "notes": "أضف ملاحظات حول المركبة...",
+      "statusHint": "استخدم التبديل لتحديد ما إذا كانت المركبة في الخدمة"
+    },
+    "validation": {
+      "required": "{{field}} مطلوب.",
+      "nonNegative": "{{field}} يجب أن يكون صفراً أو أكبر.",
+      "yearRange": "{{field}} يجب أن يكون بين {{start}} و {{end}}.",
+      "invalidDate": "يرجى إدخال تاريخ صالح لـ {{field}}.",
+      "generic": "يرجى مراجعة الحقول المظللة والمحاولة مجدداً."
+    },
+    "status": {
+      "active": "نشطة",
+      "inactive": "غير نشطة"
+    },
+    "dialogs": {
+      "addVehicle": "إضافة مركبة",
+      "addVehicleHint": "سجّل سيارة أو حافلة جديدة ضمن أسطول مدرستك.",
+      "editVehicle": "تعديل المركبة",
+      "editVehicleHint": "حدّث معلومات المركبة وتعيين السائق.",
+      "maintenanceTitle": "سجل الصيانة · {{vehicle}}",
+      "maintenanceHint": "تابع تغييرات الزيت والإصلاحات وأعمال الصيانة لهذه المركبة."
+    },
+    "actions": {
+      "addVehicle": "إضافة مركبة",
+      "editVehicle": "تعديل المركبة",
+      "manageMaintenance": "سجل الصيانة",
+      "deleteVehicle": "حذف المركبة",
+      "viewVehicle": "عرض المركبة"
+    },
+    "toast": {
+      "loadDriversFailed": "تعذر تحميل قائمة السائقين.",
+      "loadFailed": "تعذر تحميل بيانات المركبات.",
+      "createSuccess": "تمت إضافة المركبة بنجاح.",
+      "updateSuccess": "تم تحديث بيانات المركبة بنجاح.",
+      "saveFailed": "تعذر حفظ بيانات المركبة. يرجى المحاولة مرة أخرى.",
+      "deleteSuccess": "تم حذف المركبة بنجاح.",
+      "deleteFailed": "تعذر حذف المركبة.",
+      "loadMaintenanceFailed": "تعذر تحميل سجلات الصيانة.",
+      "loadGasoilFailed": "تعذر تحميل سجلات الوقود.",
+      "createMaintenanceSuccess": "تمت إضافة سجل الصيانة بنجاح.",
+      "updateMaintenanceSuccess": "تم تحديث سجل الصيانة بنجاح.",
+      "saveMaintenanceFailed": "تعذر حفظ سجل الصيانة.",
+      "deleteMaintenanceSuccess": "تم حذف سجل الصيانة بنجاح.",
+      "deleteMaintenanceFailed": "تعذر حذف سجل الصيانة.",
+      "createGasoilSuccess": "تم إضافة سجل الوقود بنجاح.",
+      "saveGasoilFailed": "تعذّر حفظ سجل الوقود.",
+      "gasoilAttachmentsUploadSuccess": "تم رفع {{count}} من المرفقات بنجاح.",
+      "gasoilAttachmentsUploadFailed": "فشل رفع مرفقات الوقود.",
+      "maintenanceAttachmentsUploadSuccess": "تم رفع {{count}} من المرفقات بنجاح.",
+      "maintenanceAttachmentsUploadFailed": "فشل رفع مرفقات الصيانة.",
+      "imagesUploadSuccess": "تم تحميل {{count}} صورة بنجاح.",
+      "imagesUploadFailed": "تعذّر رفع صور المركبة."
+    },
+    "confirm": {
+      "deleteVehicle": "هل أنت متأكد أنك تريد حذف {{vehicle}}؟",
+      "deleteMaintenance": "هل تريد حذف سجل الصيانة بتاريخ {{date}}؟"
+    },
+    "stats": {
+      "totalVehicles": "إجمالي المركبات",
+      "totalHint": "كل المركبات المسجلة",
+      "activeVehicles": "المركبات النشطة",
+      "activeHint": "{{count}} مركبة نشطة حالياً",
+      "assignedDrivers": "السائقون المعيّنون",
+      "assignedHint": "مركبات لها سائق محدد",
+      "maintenanceDue": "تنبيهات الصيانة",
+      "maintenanceHint": "مركبات تحتاج إلى صيانة قريبة"
+    },
+    "filters": {
+      "byType": "تصفية حسب نوع المركبة",
+      "allTypes": "جميع الأنواع",
+      "byStatus": "تصفية حسب الحالة",
+      "allStatuses": "جميع الحالات"
+    },
+    "emptyState": {
+      "title": "لا توجد مركبات مسجلة بعد",
+      "subtitle": "أضف أول سيارة أو حافلة لبدء متابعة الخطوط والسائقين والصيانة."
+    },
+    "table": {
+      "vehicle": "المركبة",
+      "driver": "السائق",
+      "type": "النوع",
+      "lastOil": "آخر تغيير زيت",
+      "lastService": "آخر صيانة",
+      "status": "الحالة",
+      "plateNumber": "اللوحة: {{plate}}",
+      "unassigned": "غير معيّن",
+      "notRecorded": "غير مسجل",
+      "oilDue": "حان موعد تغيير الزيت",
+      "serviceDue": "حان موعد الصيانة"
+    },
+    "maintenance": {
+      "serviceDate": "تاريخ الخدمة",
+      "serviceType": "نوع الخدمة",
+      "serviceLocation": "مكان الخدمة",
+      "mileage": "الكيلومترات",
+      "cost": "التكلفة",
+      "description": "الوصف",
+      "serviceTypePlaceholder": "مثال: تغيير زيت، إصلاح مكابح",
+      "serviceLocationPlaceholder": "مثال: كراج المدينة، في الموقع",
+      "mileagePlaceholder": "أدخل عدد الكيلومترات عند الخدمة",
+      "costPlaceholder": "أدخل تكلفة الخدمة",
+      "descriptionPlaceholder": "صف الأعمال التي تم تنفيذها",
+      "addRecord": "إضافة سجل",
+      "updateRecord": "تحديث السجل",
+      "savingRecord": "جارٍ حفظ السجل...",
+      "historyTitle": "سجل الصيانة",
+      "records": "سجل/سجلات",
+        "loadingRecords": "جارٍ تحميل سجلات الصيانة...",
+        "noRecords": "لا توجد سجلات صيانة بعد",
+        "attachments": "المرفقات",
+        "attachmentsTitle": "مرفقات الصيانة",
+        "attachmentsDescription": "قم برفع صور الفواتير أو القطع المستبدلة أو وثائق الصيانة.",
+        "attachmentsAdd": "إضافة مرفقات",
+        "attachmentsSelected": "{{count}} مرفق محدد",
+        "noAttachments": "لا توجد مرفقات حتى الآن",
+        "uploadingAttachments": "جارٍ رفع المرفقات...",
+        "attachmentsInvalidType": "يُسمح فقط برفع ملفات الصور لمرفقات الصيانة.",
+        "attachmentsTooMany": "يمكنك رفع ما يصل إلى {{max}} صورة لكل سجل صيانة.",
+        "detailTitle": "تفاصيل سجل الصيانة",
+        "detailSubtitle": "اطلع على تفاصيل الخدمة الكاملة لـ {{vehicle}}.",
+        "detailSubtitleFallback": "عرض تفاصيل هذا السجل.",
+        "backToVehicle": "العودة إلى المركبة",
+        "noDescription": "لم يتم تقديم ملاحظات إضافية لهذه الصيانة."
+    },
+    "gasoil": {
+        "sectionTitle": "سجل التزود بالوقود",
+        "sectionDescription": "تتبع تعبئة الوقود (الغازوال) ومصاريفه لهذه المركبة.",
+        "addRecord": "إضافة تعبئة وقود",
+        "records": "سجل/سجلات",
+        "loadingRecords": "جارٍ تحميل سجلات الوقود...",
+        "noRecords": "لا توجد سجلات وقود بعد",
+        "refuelDate": "تاريخ التزود",
+        "liters": "اللترات",
+        "amount": "المبلغ",
+        "station": "المحطة",
+        "receiptNumber": "رقم الإيصال",
+        "notes": "ملاحظات",
+        "litersPlaceholder": "أدخل كمية اللترات",
+        "amountPlaceholder": "أدخل المبلغ المدفوع",
+        "stationPlaceholder": "مثال: محطة المدينة",
+        "receiptNumberPlaceholder": "رقم الإيصال أو المرجع (اختياري)",
+        "notesPlaceholder": "أضف ملاحظات حول عملية التزود...",
+        "detailSubtitle": "سجّل تعبئة وقود جديدة لـ {{vehicle}}.",
+        "detailSubtitleFallback": "سجّل تعبئة وقود جديدة.",
+        "attachmentsTitle": "مرفقات التزود",
+        "attachmentsDescription": "قم برفع صور الفواتير أو شاشة المضخة أو صور أخرى ذات صلة.",
+        "attachmentsAdd": "إضافة مرفقات",
+        "attachmentsSelected": "{{count}} مرفق محدد",
+        "noAttachments": "لا توجد مرفقات حتى الآن",
+        "uploadingAttachments": "جارٍ رفع المرفقات...",
+        "attachmentsInvalidType": "يُسمح فقط برفع ملفات الصور لمرفقات الوقود.",
+        "attachmentsTooMany": "يمكنك رفع ما يصل إلى {{max}} صورة لكل سجل وقود.",
+        "savingRecord": "جارٍ حفظ السجل..."
+    },
+    "sections": {
+      "generalInfo": "معلومات عامّة",
+      "maintenance": "نظرة على الصيانة"
+    },
+    "messages": {
+      "notFound": "المركبة غير موجودة",
+      "notFoundDescription": "تعذّر العثور على المركبة المطلوبة."
+    }
   }
 }

@@ -265,3 +265,77 @@ class RoomMediaViewSet(viewsets.ReadOnlyModelViewSet):
             object_id=room_id,
             relation_type__in=['ROOM_GALLERY', 'ROOM_FEATURED']
         ).order_by('order', 'created_at')
+
+
+class VehicleMediaViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Specialized viewset for vehicle media.
+    GET /api/vehicles/{vehicle_id}/media/
+    """
+
+    serializer_class = MediaRelationMinimalSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        vehicle_id = self.kwargs.get('vehicle_pk')
+        if not vehicle_id:
+            return MediaRelation.objects.none()
+
+        from schools.models import Vehicle
+        content_type = ContentType.objects.get_for_model(Vehicle)
+
+        return MediaRelation.objects.filter(
+            content_type=content_type,
+            object_id=vehicle_id,
+            relation_type__in=['VEHICLE_GALLERY', 'VEHICLE_FEATURED']
+        ).order_by('order', 'created_at')
+
+
+class VehicleMaintenanceMediaViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Specialized viewset for vehicle maintenance record media.
+    GET /api/vehicles/{vehicle_id}/maintenance-records/{record_id}/media/
+    """
+
+    serializer_class = MediaRelationMinimalSerializer
+    queryset = MediaRelation.objects.none()
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        maintenance_record_id = self.kwargs.get('maintenance_record_pk')
+        if not maintenance_record_id:
+            return MediaRelation.objects.none()
+
+        from schools.models import VehicleMaintenanceRecord
+        content_type = ContentType.objects.get_for_model(VehicleMaintenanceRecord)
+
+        return MediaRelation.objects.filter(
+            content_type=content_type,
+            object_id=maintenance_record_id,
+            relation_type='VEHICLE_MAINTENANCE_ATTACHMENT'
+        ).order_by('order', 'created_at')
+
+
+class VehicleGasoilMediaViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Specialized viewset for vehicle gasoil record media.
+    GET /api/vehicles/{vehicle_id}/gasoil-records/{record_id}/media/
+    """
+
+    serializer_class = MediaRelationMinimalSerializer
+    queryset = MediaRelation.objects.none()
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        gasoil_record_id = self.kwargs.get('gasoil_record_pk')
+        if not gasoil_record_id:
+            return MediaRelation.objects.none()
+
+        from schools.models import GasoilRecord
+        content_type = ContentType.objects.get_for_model(GasoilRecord)
+
+        return MediaRelation.objects.filter(
+            content_type=content_type,
+            object_id=gasoil_record_id,
+            relation_type='VEHICLE_GASOIL_ATTACHMENT'
+        ).order_by('order', 'created_at')

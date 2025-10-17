@@ -211,7 +211,7 @@ const RoomMediaManager = ({
                       console.error('Upload errors:', errors);
                     }}
                     relationData={{
-                      content_type_id: 9, // Hardcoded Room ContentType ID
+                      content_type_id: Number(contentTypeId) || contentTypeId,
                       object_id: parseInt(roomId),
                       relation_type: 'ROOM_GALLERY'
                     }}

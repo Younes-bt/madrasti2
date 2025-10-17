@@ -273,11 +273,18 @@ class UserViewSet(viewsets.ModelViewSet):
     """ViewSet for listing, retrieving, and updating users"""
     permission_classes = [IsAdminOrReadOnly]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['role', 'is_active', 'profile__school_subject', 'profile__teachable_grades']
-    search_fields = ['first_name', 'last_name', 'email', 'profile__phone']
+    filterset_fields = ['role', 'is_active', 'parent', 'profile__school_subject', 'profile__teachable_grades']
+    search_fields = [
+        'first_name',
+        'last_name',
+        'email',
+        'profile__phone',
+        'children__first_name',
+        'children__last_name'
+    ]
     ordering_fields = ['first_name', 'last_name', 'email', 'created_at']
     ordering = ['last_name', 'first_name']
-    
+
     def get_serializer_class(self):
         if self.action in ['update', 'partial_update']:
             return UserUpdateSerializer
@@ -293,6 +300,7 @@ class UserViewSet(viewsets.ModelViewSet):
             'parent__profile',  # Parent profile data
             'profile__school_subject'  # Subject specialization for teachers
         ).prefetch_related(
+            'children',
             'student_enrollments__school_class__grade__educational_level',  # Academic information
             'student_enrollments__academic_year',  # Academic year information
             'profile__teachable_grades',  # Teachable grades for teachers
@@ -305,12 +313,37 @@ class UserViewSet(viewsets.ModelViewSet):
         if role:
             queryset = queryset.filter(role=role.upper())
 
+        # Filter by profile position
+        position = self.request.query_params.get('position')
+        if position:
+            queryset = queryset.filter(profile__position=position.upper())
+
         # Filter teachers by subject specialization
         subject_id = self.request.query_params.get('subject_id')
         if subject_id and role and role.upper() == 'TEACHER':
             queryset = queryset.filter(profile__school_subject_id=subject_id)
 
-        return queryset
+        return queryset.distinct()
+
+    @action(detail=False, methods=['get'], url_path='available-drivers')
+    def available_drivers(self, request):
+        """Return minimal info about active staff members whose profile position is Driver."""
+        include_inactive = request.query_params.get('include_inactive', 'false').lower() in ['true', '1', 'yes']
+        drivers = self.get_queryset().filter(profile__position=Profile.Position.DRIVER)
+        if not include_inactive:
+            drivers = drivers.filter(is_active=True)
+
+        drivers = drivers.order_by('first_name', 'last_name', 'email')
+        data = [
+            {
+                'id': user.id,
+                'full_name': user.full_name,
+                'email': user.email,
+                'position': user.profile.position,
+            }
+            for user in drivers
+        ]
+        return Response(data)
 
     @action(detail=False, methods=['get'])
     def my_classes(self, request):
@@ -414,6 +447,38 @@ class UserViewSet(viewsets.ModelViewSet):
             })
 
         return Response({'positions': options})
+
+    @action(detail=True, methods=['get'], url_path='children')
+    def children(self, request, pk=None):
+        """Get all children (students) of a parent"""
+        parent = self.get_object()
+
+        if parent.role != User.Role.PARENT:
+            return Response(
+                {'error': 'User is not a parent'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Get all children with optimized queries
+        children = parent.children.select_related(
+            'profile'
+        ).prefetch_related(
+            'student_enrollments__school_class__grade',
+            'student_enrollments__academic_year'
+        ).filter(is_active=True)
+
+        serializer = UserUpdateSerializer(children, many=True, context={'request': request})
+
+        return Response({
+            'parent': {
+                'id': parent.id,
+                'name': parent.full_name,
+                'email': parent.email,
+                'phone': parent.profile.phone if hasattr(parent, 'profile') else None
+            },
+            'children': serializer.data,
+            'total_children': children.count()
+        })
 
 
 # =====================================

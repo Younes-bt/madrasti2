@@ -3,6 +3,8 @@
 from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.contrib.contenttypes.fields import GenericRelation
+from cloudinary.models import CloudinaryField
 
 # Refinement 1: Centralized Academic Year Management
 class AcademicYear(models.Model):
@@ -33,9 +35,19 @@ class School(models.Model):
     name_french = models.CharField(max_length=200, blank=True)
     
     phone = models.CharField(max_length=20)
+    fix_phone = models.CharField(max_length=20, blank=True)
+    whatsapp_num = models.CharField(max_length=20, blank=True)
     email = models.EmailField(unique=True)
     website = models.URLField(blank=True)
-    logo = models.ImageField(upload_to='school/', blank=True, null=True)
+    facebook_url = models.URLField(blank=True)
+    instagram_url = models.URLField(blank=True)
+    twitter_url = models.URLField(blank=True)
+    linkedin_url = models.URLField(blank=True)
+    youtube_url = models.URLField(blank=True)
+    school_code = models.CharField(max_length=50, blank=True)
+    pattent = models.CharField(max_length=50, blank=True)
+    rc_code = models.CharField(max_length=50, blank=True)
+    logo = CloudinaryField('image', folder='school/', blank=True, null=True)
     
     address = models.TextField()
     city = models.CharField(max_length=100)
@@ -70,6 +82,13 @@ class School(models.Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def logo_url(self):
+        """Return the absolute URL for the stored logo."""
+        if self.logo:
+            return self.logo.url
+        return None
 
     class Meta:
         verbose_name = "School Configuration"
@@ -215,6 +234,179 @@ class Room(models.Model):
     def image_count(self):
         """Get count of images associated with this room"""
         return self.get_images().count()
+
+class Vehicle(models.Model):
+    """Represents a school-owned vehicle such as a car, bus, or van."""
+
+    class VehicleType(models.TextChoices):
+        BUS = 'BUS', 'Bus'
+        MINIBUS = 'MINIBUS', 'Minibus'
+        VAN = 'VAN', 'Van'
+        CAR = 'CAR', 'Car'
+        OTHER = 'OTHER', 'Other'
+
+    school = models.ForeignKey(
+        School,
+        on_delete=models.CASCADE,
+        related_name='vehicles',
+        null=True,
+        blank=True,
+        help_text="Owning school, optional for single-school deployments"
+    )
+    name = models.CharField(
+        max_length=120,
+        help_text="Friendly name or route identifier for the vehicle",
+        blank=True
+    )
+    vehicle_type = models.CharField(
+        max_length=20,
+        choices=VehicleType.choices,
+        default=VehicleType.BUS
+    )
+    model = models.CharField(max_length=120, help_text="Manufacturer and model, e.g., Mercedes Sprinter")
+    plate_number = models.CharField(max_length=25, unique=True)
+    driver = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assigned_vehicles',
+        limit_choices_to={'profile__position': 'DRIVER'}
+    )
+    capacity = models.PositiveIntegerField(null=True, blank=True, help_text="Maximum number of passengers")
+    color = models.CharField(max_length=50, blank=True)
+    manufacture_year = models.PositiveIntegerField(null=True, blank=True)
+    last_oil_change_date = models.DateField(null=True, blank=True)
+    last_service_date = models.DateField(null=True, blank=True)
+    insurance_expiry_date = models.DateField(null=True, blank=True)
+    notes = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['vehicle_type', 'model', 'plate_number']
+
+    def __str__(self):
+        display_name = self.name or self.model
+        return f"{display_name} ({self.plate_number})"
+
+    def get_images(self):
+        """Return all media relations associated with this vehicle."""
+        from django.contrib.contenttypes.models import ContentType
+        from media.models import MediaRelation
+        content_type = ContentType.objects.get_for_model(self)
+        return MediaRelation.objects.filter(
+            content_type=content_type,
+            object_id=self.id,
+            relation_type__in=['VEHICLE_GALLERY', 'VEHICLE_FEATURED']
+        ).order_by('order', 'created_at')
+
+    def get_featured_image(self):
+        """Return the featured image relation if available."""
+        featured_relations = self.get_images().filter(is_featured=True)
+        if featured_relations.exists():
+            return featured_relations.first().media_file
+        return None
+
+    def get_gallery_images(self):
+        """Return non-featured gallery images."""
+        return self.get_images().filter(relation_type='VEHICLE_GALLERY', is_featured=False)
+
+    def get_image_count(self):
+        return self.get_images().count()
+
+    @property
+    def image_count(self):
+        return self.get_image_count()
+
+class VehicleMaintenanceRecord(models.Model):
+    """Keeps track of maintenance and repair history for a vehicle."""
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, related_name='maintenance_records')
+    service_date = models.DateField()
+    service_type = models.CharField(max_length=120, help_text="Type of service or repair performed")
+    description = models.TextField(blank=True)
+    service_location = models.CharField(max_length=255, blank=True, help_text="Where the service was carried out")
+    mileage = models.PositiveIntegerField(null=True, blank=True, help_text="Vehicle mileage at the time of service")
+    cost = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    attachments = GenericRelation(
+        'media.MediaRelation',
+        related_query_name='maintenance_record'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-service_date', '-created_at']
+
+    def __str__(self):
+        return f"{self.vehicle} - {self.service_type} on {self.service_date}"
+
+    def get_attachments(self):
+        """Return maintenance attachments ordered by display preference."""
+        attachments = getattr(self, '_prefetched_attachments', None)
+        if attachments is not None:
+            return attachments
+        return (
+            self.attachments.filter(relation_type='VEHICLE_MAINTENANCE_ATTACHMENT')
+            .select_related('media_file')
+            .order_by('order', 'created_at')
+        )
+
+    def get_attachments_count(self):
+        """Return the number of maintenance attachments."""
+        attachments = getattr(self, '_prefetched_attachments', None)
+        if attachments is not None:
+            return len(attachments)
+        return self.attachments.filter(relation_type='VEHICLE_MAINTENANCE_ATTACHMENT').count()
+
+    @property
+    def attachments_count(self):
+        return self.get_attachments_count()
+
+class GasoilRecord(models.Model):
+    """Tracks vehicle fuel (gasoil) refills."""
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, related_name='gasoil_records')
+    refuel_date = models.DateField()
+    liters = models.DecimalField(max_digits=8, decimal_places=2, help_text="Number of liters filled")
+    amount = models.DecimalField(max_digits=10, decimal_places=2, help_text="Total amount paid for the refill")
+    fuel_station = models.CharField(max_length=255, blank=True, help_text="Where the vehicle was refueled")
+    receipt_number = models.CharField(max_length=120, blank=True, help_text="Optional receipt or reference number")
+    notes = models.TextField(blank=True)
+    attachments = GenericRelation(
+        'media.MediaRelation',
+        related_query_name='gasoil_record'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-refuel_date', '-created_at']
+
+    def __str__(self):
+        return f"{self.vehicle} - {self.refuel_date} ({self.liters} L)"
+
+    def get_attachments(self):
+        """Return gasoil attachments ordered by display preference."""
+        attachments = getattr(self, '_prefetched_attachments', None)
+        if attachments is not None:
+            return attachments
+        return (
+            self.attachments.filter(relation_type='VEHICLE_GASOIL_ATTACHMENT')
+            .select_related('media_file')
+            .order_by('order', 'created_at')
+        )
+
+    def get_attachments_count(self):
+        """Return the number of gasoil attachments."""
+        attachments = getattr(self, '_prefetched_attachments', None)
+        if attachments is not None:
+            return len(attachments)
+        return self.attachments.filter(relation_type='VEHICLE_GASOIL_ATTACHMENT').count()
+
+    @property
+    def attachments_count(self):
+        return self.get_attachments_count()
 
 class Subject(models.Model):
     """An academic subject taught at the school, e.g., Mathematics."""

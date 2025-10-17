@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Download, Edit, MapPin, Phone, Mail, Globe, Calendar, Building2, Sparkles } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Download, Edit, MapPin, Phone, PhoneCall, Mail, Globe, Calendar, Building2, Sparkles, Facebook, Instagram, Twitter, Linkedin, Youtube, Share2, MessageCircle, Hash } from 'lucide-react'
 import { motion, useInView, useMotionValue, useSpring, animate } from 'framer-motion'
+import html2canvas from 'html2canvas'
+import { jsPDF } from 'jspdf'
 import { useLanguage } from '../../hooks/useLanguage'
 import { AdminPageLayout } from '../../components/admin/layout'
 import { Button } from '../../components/ui/button'
@@ -46,6 +49,16 @@ const gradientMap = {
   indigo: 'from-indigo-500 to-blue-600'
 }
 
+const slugify = (value = '') => {
+  return (value
+    .toString()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .replace(/_+/g, '_')
+    .slice(0, 60)) || 'school_details'
+}
 
 const GlowingCard = ({ children, className = "", glowColor = "blue" }) => (
   <motion.div
@@ -64,10 +77,12 @@ const GlowingCard = ({ children, className = "", glowColor = "blue" }) => (
 // StatCard and KPI sections were removed from this page per request
 
 const SchoolDetailsPage = () => {
-  const { t } = useLanguage()
+  const { t, currentLanguage, isRTL } = useLanguage()
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [schoolConfig, setSchoolConfig] = useState(null)
+  const [isExporting, setIsExporting] = useState(false)
   // KPIs removed from this page; no stats state needed
 
   // Fetch school configuration data
@@ -128,14 +143,544 @@ const SchoolDetailsPage = () => {
   }
 
   const handleEdit = () => {
-    // TODO: Navigate to edit school details page or open modal
-    console.log('Edit school details')
+    navigate('/admin/school-management/school-details/edit')
   }
 
-  const handleExport = () => {
-    // TODO: Export school details as PDF or Excel
-    console.log('Export school details')
+
+  const handleExport = async () => {
+    if (!schoolConfig || isExporting) return
+
+    setIsExporting(true)
+
+    const escapeHtml = (value = '') => {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+    }
+
+    const normalizeUrl = (url) => {
+      if (!url) return ''
+      return /^https?:\/\//i.test(url) ? url : `https://${url.replace(/^\/+/, '')}`
+    }
+
+    const notSetLabel = escapeHtml(t('misc.notSet', 'Not Set'))
+
+    const renderDetailRow = ({ label, value, href, htmlContent }) => {
+      const safeLabel = escapeHtml(label)
+      const safeHref = href ? escapeHtml(href) : ''
+      const hasHtmlContent =
+        typeof htmlContent === 'string' && htmlContent.replace(/<[^>]*>/g, '').trim().length > 0
+      const valueDefined = value !== undefined && value !== null
+      const hasValue = valueDefined && `${value}`.trim().length > 0
+      let content = ''
+      let rowHasValue = false
+
+      if (hasHtmlContent) {
+        content = htmlContent
+        rowHasValue = true
+      } else if (hasValue) {
+        const safeValue = escapeHtml(value)
+        content = href ? `<a href="${safeHref}" target="_blank" rel="noreferrer">${safeValue}</a>` : safeValue
+        rowHasValue = true
+      }
+
+      if (!rowHasValue) {
+        content = notSetLabel
+      }
+
+      return `
+        <div class="detail-row${rowHasValue ? '' : ' is-empty'}">
+          <span class="detail-label">${safeLabel}</span>
+          <span class="detail-value">${content}</span>
+        </div>
+      `
+    }
+
+    let container
+
+    try {
+      const safeLang = escapeHtml(currentLanguage || 'en')
+      const safeSchoolName = escapeHtml(schoolConfig.name || t('misc.notSet', 'Not Set'))
+      const arabicName = schoolConfig.name_arabic ? escapeHtml(schoolConfig.name_arabic) : ''
+      const headerLocationRaw = [schoolConfig.city, schoolConfig.region].filter(Boolean).join(', ')
+      const headerLocation = headerLocationRaw ? escapeHtml(headerLocationRaw) : notSetLabel
+      const createdDate = escapeHtml(formatDate(schoolConfig.created_at))
+      const updatedDate = escapeHtml(formatDate(schoolConfig.updated_at))
+      const academicYearValue = escapeHtml(
+        schoolConfig.current_academic_year?.year || t('misc.notSet', 'Not Set')
+      )
+      const capacityDisplay = schoolConfig.student_capacity
+        ? `${Number(schoolConfig.student_capacity).toLocaleString()} ${t(
+            'school.details.students',
+            'Students'
+          )}`
+        : t('misc.notSet', 'Not Set')
+      const capacityValue = escapeHtml(capacityDisplay)
+
+      const contactDetails = [
+        { label: t('school.details.phone', 'Phone Number'), value: schoolConfig.phone },
+        { label: t('school.details.fixPhone', 'Fixed Phone'), value: schoolConfig.fix_phone },
+        { label: t('school.details.whatsapp', 'WhatsApp'), value: schoolConfig.whatsapp_num },
+        {
+          label: t('school.details.email', 'Email Address'),
+          value: schoolConfig.email,
+          href: schoolConfig.email ? `mailto:${schoolConfig.email}` : undefined
+        },
+        {
+          label: t('school.details.website', 'Website'),
+          value: schoolConfig.website,
+          href: schoolConfig.website ? normalizeUrl(schoolConfig.website) : undefined
+        }
+      ]
+
+      const contactDetailsMarkup = contactDetails.map(renderDetailRow).join('')
+
+      const locationTokens = [
+        schoolConfig.city,
+        schoolConfig.region,
+        schoolConfig.postal_code
+      ].filter(Boolean)
+      const locationHtml = locationTokens.length
+        ? locationTokens.map((token) => `<span class="chip">${escapeHtml(token)}</span>`).join('')
+        : ''
+
+      const codeBadges = []
+      if (schoolConfig.school_code) {
+        codeBadges.push(
+          `<span class="chip chip-blue">${escapeHtml(
+            t('school.details.schoolCode', 'School Code')
+          )}: ${escapeHtml(schoolConfig.school_code)}</span>`
+        )
+      }
+      if (schoolConfig.pattent) {
+        codeBadges.push(
+          `<span class="chip chip-emerald">${escapeHtml(
+            t('school.details.pattent', 'Pattent')
+          )}: ${escapeHtml(schoolConfig.pattent)}</span>`
+        )
+      }
+      if (schoolConfig.rc_code) {
+        codeBadges.push(
+          `<span class="chip chip-purple">${escapeHtml(
+            t('school.details.rcCode', 'RC Code')
+          )}: ${escapeHtml(schoolConfig.rc_code)}</span>`
+        )
+      }
+      const codesHtml =
+        codeBadges.length > 0
+          ? codeBadges.join('')
+          : `<span class="chip chip-empty">${notSetLabel}</span>`
+
+      const socialItems = [
+        { icon: '📘', label: t('school.details.social.facebook', 'Facebook'), value: schoolConfig.facebook_url },
+        { icon: '📷', label: t('school.details.social.instagram', 'Instagram'), value: schoolConfig.instagram_url },
+        { icon: '🐦', label: t('school.details.social.twitter', 'Twitter / X'), value: schoolConfig.twitter_url },
+        { icon: '💼', label: t('school.details.social.linkedin', 'LinkedIn'), value: schoolConfig.linkedin_url },
+        { icon: '🎥', label: t('school.details.social.youtube', 'YouTube'), value: schoolConfig.youtube_url }
+      ]
+
+      const socialLinksHtml =
+        socialItems
+          .filter((item) => Boolean(item.value))
+          .map((item) => {
+            const safeUrl = escapeHtml(normalizeUrl(item.value))
+            const safeLabel = escapeHtml(item.label)
+            return `<a class="chip chip-interactive" href="${safeUrl}" target="_blank" rel="noreferrer">${item.icon} ${safeLabel}</a>`
+          })
+          .join('') || `<span class="chip chip-empty">${notSetLabel}</span>`
+
+      const directorNameRaw = schoolConfig.director_details?.full_name
+      const directorName = directorNameRaw ? escapeHtml(directorNameRaw) : ''
+      const directorEmail = schoolConfig.director_details?.email
+        ? escapeHtml(schoolConfig.director_details.email)
+        : ''
+      const directorHtml = directorName
+        ? `${directorName}${directorEmail ? `<span class="detail-sub">${directorEmail}</span>` : ''}`
+        : ''
+
+      const administrationMarkup = [
+        renderDetailRow({ label: t('school.details.director', 'School Director'), htmlContent: directorHtml }),
+        renderDetailRow({
+          label: t('school.details.capacity', 'Student Capacity'),
+          value: capacityDisplay
+        }),
+        renderDetailRow({ label: t('school.details.created', 'Created'), value: formatDate(schoolConfig.created_at) }),
+        renderDetailRow({
+          label: t('common.lastUpdated', 'Last Updated'),
+          value: formatDate(schoolConfig.updated_at)
+        })
+      ].join('')
+
+      const summaryCardsHtml = [
+        { label: t('school.details.created', 'Created'), value: createdDate },
+        { label: t('common.lastUpdated', 'Last Updated'), value: updatedDate },
+        {
+          label: t('school.details.currentAcademicYear', 'Current Academic Year'),
+          value: academicYearValue
+        },
+        { label: t('school.details.capacity', 'Student Capacity'), value: capacityValue }
+      ]
+        .map(
+          (card) => `
+          <div class="summary-card">
+            <div class="summary-value">${card.value}</div>
+            <div class="summary-label">${escapeHtml(card.label)}</div>
+          </div>
+        `
+        )
+        .join('')
+
+      const generatedOn = escapeHtml(new Date().toLocaleString())
+      const reportId = 'school-report-export'
+      const styles = `
+        #${reportId} {
+          width: 794px;
+          margin: 0 auto;
+          background: #eef2ff;
+          color: #0f172a;
+          font-family: ${isRTL ? "'Tajawal', 'Segoe UI', sans-serif" : "'Inter', 'Segoe UI', sans-serif"};
+        }
+        #${reportId} *, #${reportId} *::before, #${reportId} *::after {
+          box-sizing: border-box;
+        }
+        #${reportId}.rtl { direction: rtl; }
+        #${reportId}.ltr { direction: ltr; }
+        #${reportId} .page {
+          border-radius: 24px;
+          overflow: hidden;
+          background: #ffffff;
+          box-shadow: 0 24px 48px rgba(15, 23, 42, 0.12);
+        }
+        #${reportId} .header {
+          display: flex;
+          gap: 24px;
+          padding: 32px;
+          background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+          color: #ffffff;
+        }
+        #${reportId} .logo {
+          width: 96px;
+          height: 96px;
+          border-radius: 24px;
+          overflow: hidden;
+          border: 3px solid rgba(255, 255, 255, 0.32);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(255, 255, 255, 0.12);
+        }
+        #${reportId} .logo img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+        }
+        #${reportId} .placeholder-logo {
+          font-size: 36px;
+        }
+        #${reportId} .title-block h1 {
+          margin: 0;
+          font-size: 30px;
+          font-weight: 700;
+        }
+        #${reportId} .title-block .arabic-name {
+          margin: 6px 0 0;
+          font-size: 20px;
+          opacity: 0.9;
+        }
+        #${reportId} .meta {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          margin-top: 16px;
+        }
+        #${reportId} .meta-chip {
+          background: rgba(255, 255, 255, 0.18);
+          border-radius: 999px;
+          padding: 6px 12px;
+          font-size: 14px;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+        }
+        #${reportId} .summary-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+          gap: 16px;
+          padding: 28px 32px 12px;
+          background: linear-gradient(180deg, #eef2ff 0%, #ffffff 70%);
+        }
+        #${reportId} .summary-card {
+          background: #ffffff;
+          border-radius: 18px;
+          padding: 18px;
+          border: 1px solid #e5e7f1;
+          box-shadow: 0 12px 20px rgba(15, 23, 42, 0.08);
+        }
+        #${reportId} .summary-value {
+          font-size: 20px;
+          font-weight: 700;
+          color: #1e293b;
+        }
+        #${reportId} .summary-label {
+          margin-top: 6px;
+          font-size: 12px;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: #6b7280;
+        }
+        #${reportId} .section {
+          padding: 28px 32px;
+          border-top: 1px solid #eef1f8;
+        }
+        #${reportId} .section:first-of-type { border-top: none; }
+        #${reportId} .section-title {
+          margin: 0 0 18px;
+          font-size: 16px;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          color: #1f2a56;
+          text-transform: uppercase;
+        }
+        #${reportId} .detail-list {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+          gap: 16px;
+        }
+        #${reportId} .detail-row {
+          background: #f8fafc;
+          border-radius: 14px;
+          padding: 14px 16px;
+          border: 1px solid transparent;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+        #${reportId} .detail-row.is-empty {
+          opacity: 0.7;
+          border-color: #d7dce5;
+          border-style: dashed;
+        }
+        #${reportId} .detail-label {
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          color: #94a3b8;
+          font-weight: 600;
+        }
+        #${reportId} .detail-value {
+          font-size: 14px;
+          font-weight: 600;
+          color: #1f2937;
+        }
+        #${reportId} .detail-value a {
+          color: #2563eb;
+          text-decoration: none;
+        }
+        #${reportId} .detail-value a:hover {
+          text-decoration: underline;
+        }
+        #${reportId} .detail-sub {
+          display: block;
+          margin-top: 4px;
+          font-size: 12px;
+          font-weight: 500;
+          color: #64748b;
+        }
+        #${reportId} .chip-group {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+        #${reportId} .chip {
+          display: inline-flex;
+          align-items: center;
+          padding: 6px 14px;
+          border-radius: 999px;
+          background: #eef2ff;
+          color: #3730a3;
+          font-weight: 600;
+          font-size: 13px;
+          margin: 4px 8px 0 0;
+        }
+        #${reportId} .chip-blue {
+          background: #dbeafe;
+          color: #1d4ed8;
+        }
+        #${reportId} .chip-emerald {
+          background: #d1fae5;
+          color: #047857;
+        }
+        #${reportId} .chip-purple {
+          background: #ede9fe;
+          color: #6b21a8;
+        }
+        #${reportId} .chip-interactive {
+          background: #ffffff;
+          border: 1px solid #dbeafe;
+          color: #1d4ed8;
+        }
+        #${reportId} .chip-interactive:hover {
+          background: #eff6ff;
+        }
+        #${reportId} .chip-empty {
+          background: #f1f5f9;
+          color: #94a3b8;
+          border: 1px dashed #cbd5f5;
+        }
+        #${reportId} .footer {
+          padding: 24px 32px 32px;
+          background: #f4f6fb;
+          text-align: center;
+          color: #475569;
+          font-size: 12px;
+          border-top: 1px solid #e2e8f0;
+        }
+        #${reportId} .footer strong {
+          display: block;
+          margin-top: 6px;
+          color: #1f2937;
+        }
+      `
+
+      const reportHtml = `
+        <style>${styles}</style>
+        <div id="${reportId}" class="${isRTL ? 'rtl' : 'ltr'}" lang="${safeLang}" dir="${isRTL ? 'rtl' : 'ltr'}">
+          <div class="page">
+            <div class="header">
+              <div class="logo">
+                ${
+                  schoolConfig.logo_url
+                    ? `<img src="${escapeHtml(schoolConfig.logo_url)}" alt="${safeSchoolName}" crossorigin="anonymous" />`
+                    : '<span class="placeholder-logo">🏫</span>'
+                }
+              </div>
+              <div class="title-block">
+                <h1>${safeSchoolName}</h1>
+                ${arabicName ? `<p class="arabic-name">${arabicName}</p>` : ''}
+                <div class="meta">
+                  <span class="meta-chip">📍 ${headerLocation}</span>
+                  <span class="meta-chip">🗓️ ${escapeHtml(t('school.details.created', 'Created'))}: ${createdDate}</span>
+                </div>
+              </div>
+            </div>
+            <section class="summary-grid">
+              ${summaryCardsHtml}
+            </section>
+            <section class="section">
+              <h2 class="section-title">📞 ${escapeHtml(t('school.details.contact', 'Contact Information'))}</h2>
+              <div class="detail-list">
+                ${contactDetailsMarkup}
+              </div>
+            </section>
+            <section class="section">
+              <h2 class="section-title">📍 ${escapeHtml(t('school.details.location', 'Location Information'))}</h2>
+              <div class="detail-list">
+                ${renderDetailRow({ label: t('school.details.address', 'Address'), value: schoolConfig.address })}
+                ${renderDetailRow({
+                  label: t('school.details.cityRegion', 'City & Region'),
+                  htmlContent: locationHtml
+                })}
+              </div>
+            </section>
+            <section class="section">
+              <h2 class="section-title">🔢 ${escapeHtml(t('school.details.codes', 'Institution Codes'))}</h2>
+              <div class="chip-group">
+                ${codesHtml}
+              </div>
+            </section>
+            <section class="section">
+              <h2 class="section-title">👥 ${escapeHtml(t('school.details.administration', 'Administration'))}</h2>
+              <div class="detail-list">
+                ${administrationMarkup}
+              </div>
+            </section>
+            <section class="section">
+              <h2 class="section-title">🌐 ${escapeHtml(t('school.details.social.label', 'Social Media'))}</h2>
+              <div class="chip-group">
+                ${socialLinksHtml}
+              </div>
+            </section>
+            <footer class="footer">
+              <div>${escapeHtml(t('school.details.exportFooter', 'School Details Report'))}</div>
+              <strong>Madrasti 2.0 · ${escapeHtml(t('school.details.managementSystem', 'School Management System'))}</strong>
+              <div>${escapeHtml(t('school.details.generatedOn', 'Generated on'))} ${generatedOn}</div>
+            </footer>
+          </div>
+        </div>
+      `
+
+      container = document.createElement('div')
+      container.style.position = 'fixed'
+      container.style.pointerEvents = 'none'
+      container.style.opacity = '0'
+      container.style.top = '-10000px'
+      container.style.left = '-10000px'
+      container.style.width = '794px'
+      container.innerHTML = reportHtml
+      document.body.appendChild(container)
+
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+
+      const reportElement = container.querySelector(`#${reportId}`)
+      if (!reportElement) {
+        throw new Error('Failed to generate export layout')
+      }
+
+      const images = Array.from(reportElement.querySelectorAll('img'))
+      await Promise.all(
+        images.map(
+          (img) =>
+            new Promise((resolve) => {
+              if (img.complete) {
+                resolve()
+              } else {
+                img.onload = () => resolve()
+                img.onerror = () => resolve()
+              }
+            })
+        )
+      )
+
+      if (document.fonts?.ready) {
+        await document.fonts.ready
+      }
+
+      const canvas = await html2canvas(reportElement, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+      })
+
+      const imgData = canvas.toDataURL('image/png')
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+      const pdfWidth = pdf.internal.pageSize.getWidth()
+      const pdfHeight = pdf.internal.pageSize.getHeight()
+      const widthRatio = pdfWidth / canvas.width
+      const heightRatio = pdfHeight / canvas.height
+      const ratio = Math.min(widthRatio, heightRatio)
+      const renderWidth = canvas.width * ratio
+      const renderHeight = canvas.height * ratio
+      const marginX = (pdfWidth - renderWidth) / 2
+      const marginY = (pdfHeight - renderHeight) / 2
+
+      pdf.addImage(imgData, 'PNG', marginX, marginY, renderWidth, renderHeight)
+      const fileName = `school-details-${slugify(schoolConfig.name || 'school')}.pdf`
+      pdf.save(fileName)
+    } catch (error) {
+      console.error('Error generating school details PDF:', error)
+      window.alert(t('admin.exportError', 'Failed to export school details. Please try again.'))
+    } finally {
+      if (container && container.parentNode) {
+        container.parentNode.removeChild(container)
+      }
+      setIsExporting(false)
+    }
   }
+
 
   // Format date helper
   const formatDate = (dateString) => {
@@ -145,15 +690,53 @@ const SchoolDetailsPage = () => {
 
   // Example actions for the page header
   const pageActions = [
-    <Button key="export" variant="outline" size="sm" onClick={handleExport}>
-      <Download className="h-4 w-4 mr-2" />
-      {t('admin.export', 'Export')}
+    <Button key="export" variant="outline" size="sm" onClick={handleExport} disabled={!schoolConfig || isExporting}>
+      <Download className={`h-4 w-4 mr-2 ${isExporting ? 'animate-spin' : ''}`} />
+      {isExporting ? t('common.downloading', 'Downloading...') : t('admin.export', 'Export')}
     </Button>,
     <Button key="edit" size="sm" onClick={handleEdit}>
       <Edit className="h-4 w-4 mr-2" />
       {t('common.edit', 'Edit')}
     </Button>
   ]
+
+  const socialLinks = [
+    {
+      key: 'facebook',
+      label: t('school.details.social.facebook', 'Facebook'),
+      url: schoolConfig?.facebook_url,
+      icon: Facebook,
+      className: 'border-blue-200 text-blue-600 hover:bg-blue-50'
+    },
+    {
+      key: 'instagram',
+      label: t('school.details.social.instagram', 'Instagram'),
+      url: schoolConfig?.instagram_url,
+      icon: Instagram,
+      className: 'border-pink-200 text-pink-600 hover:bg-pink-50'
+    },
+    {
+      key: 'twitter',
+      label: t('school.details.social.twitter', 'Twitter / X'),
+      url: schoolConfig?.twitter_url,
+      icon: Twitter,
+      className: 'border-sky-200 text-sky-600 hover:bg-sky-50'
+    },
+    {
+      key: 'linkedin',
+      label: t('school.details.social.linkedin', 'LinkedIn'),
+      url: schoolConfig?.linkedin_url,
+      icon: Linkedin,
+      className: 'border-blue-200 text-blue-700 hover:bg-blue-50'
+    },
+    {
+      key: 'youtube',
+      label: t('school.details.social.youtube', 'YouTube'),
+      url: schoolConfig?.youtube_url,
+      icon: Youtube,
+      className: 'border-red-200 text-red-600 hover:bg-red-50'
+    }
+  ].filter((link) => Boolean(link.url))
 
   return (
     <AdminPageLayout
@@ -274,6 +857,36 @@ const SchoolDetailsPage = () => {
                           {schoolConfig.phone}
                         </motion.p>
                       </div>
+
+                      {schoolConfig.fix_phone && (
+                        <div className="group">
+                          <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                            <PhoneCall className="h-4 w-4 group-hover:text-blue-500 transition-colors" />
+                            {t('school.details.fixPhone', 'Fixed Phone')}
+                          </label>
+                          <motion.p
+                            className="font-semibold text-lg group-hover:text-blue-600 transition-colors"
+                            whileHover={{ scale: 1.05 }}
+                          >
+                            {schoolConfig.fix_phone}
+                          </motion.p>
+                        </div>
+                      )}
+
+                      {schoolConfig.whatsapp_num && (
+                        <div className="group">
+                          <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                            <MessageCircle className="h-4 w-4 group-hover:text-green-500 transition-colors" />
+                            {t('school.details.whatsapp', 'WhatsApp')}
+                          </label>
+                          <motion.p
+                            className="font-semibold text-lg group-hover:text-green-600 transition-colors"
+                            whileHover={{ scale: 1.05 }}
+                          >
+                            {schoolConfig.whatsapp_num}
+                          </motion.p>
+                        </div>
+                      )}
                       
                       <div className="group">
                         <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -306,6 +919,35 @@ const SchoolDetailsPage = () => {
                           </motion.a>
                         </div>
                       )}
+
+                      <div className="space-y-3">
+                        <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                          <Share2 className="h-4 w-4 text-indigo-500" />
+                        {t('school.details.social.label', 'Social Media')}
+                        </label>
+                        {socialLinks.length > 0 ? (
+                          <div className="flex flex-wrap gap-3">
+                            {socialLinks.map(({ key, icon: Icon, label, url, className }) => (
+                              <motion.a
+                                key={key}
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors bg-white/80 backdrop-blur-sm shadow-sm ${className}`}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                              >
+                                <Icon className="h-4 w-4" />
+                                <span>{label}</span>
+                              </motion.a>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">
+                            {t('school.details.social.empty', 'No social media profiles added yet. Click Edit to add links.')}
+                          </p>
+                        )}
+                      </div>
                     </motion.div>
 
                     <motion.div 
@@ -383,8 +1025,11 @@ const SchoolDetailsPage = () => {
                           {t('school.details.director', 'School Director')}
                         </label>
                         <p className="text-sm text-gray-800">
-                          {schoolConfig.director?.full_name || t('misc.notSet', 'Not Set')}
+                          {schoolConfig.director_details?.full_name || t('misc.notSet', 'Not Set')}
                         </p>
+                        {schoolConfig.director_details?.email && (
+                          <p className="text-xs text-gray-500">{schoolConfig.director_details.email}</p>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-muted-foreground">
@@ -392,6 +1037,31 @@ const SchoolDetailsPage = () => {
                         </label>
                         <p className="text-sm text-gray-600">{formatDate(schoolConfig.updated_at)}</p>
                       </div>
+                      {(schoolConfig.school_code || schoolConfig.pattent || schoolConfig.rc_code) && (
+                        <div className="md:col-span-2 space-y-2">
+                          <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                            <Hash className="h-4 w-4 text-indigo-500" />
+                            {t('school.details.codes', 'Institution Codes')}
+                          </label>
+                          <div className="flex flex-wrap gap-2">
+                            {schoolConfig.school_code && (
+                              <Badge variant="outline" className="border-blue-200 text-blue-700">
+                                {t('school.details.schoolCode', 'School Code')}: {schoolConfig.school_code}
+                              </Badge>
+                            )}
+                            {schoolConfig.pattent && (
+                              <Badge variant="outline" className="border-emerald-200 text-emerald-700">
+                                {t('school.details.pattent', 'Pattent')}: {schoolConfig.pattent}
+                              </Badge>
+                            )}
+                            {schoolConfig.rc_code && (
+                              <Badge variant="outline" className="border-purple-200 text-purple-700">
+                                {t('school.details.rcCode', 'RC Code')}: {schoolConfig.rc_code}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </motion.div>
                 </CardContent>

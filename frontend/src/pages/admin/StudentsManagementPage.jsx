@@ -394,7 +394,11 @@ const StudentsManagementPage = () => {
                     </TableRow>
                   ) : enrollments.length > 0 ? (
                     enrollments.map(({ id, student, student_number, school_class_name, is_active, enrollment_date }) => (
-                      <TableRow key={id}>
+                      <TableRow
+                        key={id}
+                        className="cursor-pointer hover:bg-muted/50 transition-colors"
+                        onClick={() => handleViewStudent(student.id)}
+                      >
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Avatar className="h-9 w-9">
@@ -414,7 +418,7 @@ const StudentsManagementPage = () => {
                           </Badge>
                         </TableCell>
                         <TableCell className="hidden lg:table-cell">{formatDate(enrollment_date)}</TableCell>
-                        <TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" className="h-8 w-8 p-0">
@@ -423,14 +427,11 @@ const StudentsManagementPage = () => {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleViewStudent(student.id)}>
-                                <Eye className="mr-2 h-4 w-4" /><span>{t('action.view')}</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleEditStudent(student.id)}>
+                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEditStudent(student.id); }}>
                                 <Edit className="mr-2 h-4 w-4" /><span>{t('action.edit')}</span>
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => handleDeleteStudent(student.id)} className="text-red-600">
+                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDeleteStudent(student.id); }} className="text-red-600">
                                 <Trash2 className="mr-2 h-4 w-4" /><span>{t('action.delete')}</span>
                               </DropdownMenuItem>
                             </DropdownMenuContent>

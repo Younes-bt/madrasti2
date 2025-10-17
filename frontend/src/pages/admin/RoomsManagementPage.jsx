@@ -2,297 +2,299 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { motion, useInView, useMotionValue, useSpring, animate } from 'framer-motion';
-import { Plus, Search, Filter, Building, MapPin, Users, MoreVertical, Edit, Trash2, Eye, CheckCircle, XCircle, Home, TrendingUp, Sparkles, Images } from 'lucide-react';
+import {
+  Plus,
+  Search,
+  Filter,
+  Building,
+  MapPin,
+  Users,
+  MoreVertical,
+  Edit,
+  Trash2,
+  Eye,
+  Images,
+  Home,
+  Sparkles,
+  X
+} from 'lucide-react';
 import AdminPageLayout from '../../components/admin/layout/AdminPageLayout';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Badge } from '../../components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Card, CardContent } from '../../components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
   DropdownMenuSeparator,
+  DropdownMenuTrigger
 } from '../../components/ui/dropdown-menu';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
+  SelectValue
 } from '../../components/ui/select';
 import { apiMethods } from '../../services/api';
 import { toast } from 'sonner';
 
-const AnimatedCounter = ({ from = 0, to, duration = 2, className = "" }) => {
-  const ref = useRef()
-  const motionValue = useMotionValue(from)
-  const springValue = useSpring(motionValue, { duration: duration * 1000 })
-  const isInView = useInView(ref, { once: true, margin: "-50px" })
-  const [displayValue, setDisplayValue] = useState(from)
+const AnimatedCounter = ({ from = 0, to, duration = 2, className = '' }) => {
+  const ref = useRef(null);
+  const motionValue = useMotionValue(from);
+  const springValue = useSpring(motionValue, { duration: duration * 1000 });
+  const isInView = useInView(ref, { once: true, margin: '-50px' });
+  const [displayValue, setDisplayValue] = useState(from);
 
   useEffect(() => {
     if (isInView && to !== undefined) {
-      animate(motionValue, to, { duration: duration })
+      animate(motionValue, to, { duration });
     }
-  }, [motionValue, isInView, to, duration])
+  }, [isInView, motionValue, to, duration]);
 
   useEffect(() => {
-    const unsubscribe = springValue.on("change", (latest) => {
-      setDisplayValue(Math.round(latest))
-    })
-    return unsubscribe
-  }, [springValue])
+    const unsubscribe = springValue.on('change', (latest) => {
+      setDisplayValue(Math.round(latest));
+    });
+    return unsubscribe;
+  }, [springValue]);
 
   return (
     <span ref={ref} className={className}>
       {displayValue.toLocaleString()}
     </span>
-  )
-}
+  );
+};
 
-const GlowingCard = ({ children, className = "", glowColor = "blue" }) => (
+const StatCard = ({ icon: Icon, label, value, description, iconColor, iconBg }) => (
   <motion.div
-    initial={{ opacity: 0, y: 20 }}
+    initial={{ opacity: 0, y: 16 }}
     animate={{ opacity: 1, y: 0 }}
-    whileHover={{ y: -5, transition: { duration: 0.2 } }}
-    className={`relative group ${className}`}
+    whileHover={{ y: -4 }}
+    transition={{ duration: 0.3 }}
   >
-    <div className={`absolute -inset-0.5 bg-gradient-to-r from-${glowColor}-500 to-purple-600 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200`}></div>
-    <div className="relative bg-card border rounded-xl backdrop-blur-sm">
-      {children}
-    </div>
-  </motion.div>
-)
-
-const StatCard = ({ icon: Icon, label, value, colorClass, description, glowColor }) => (
-  <GlowingCard glowColor={glowColor}>
-    <CardContent className="p-4 sm:p-6">
-      <div className="flex items-center space-x-3 sm:space-x-4">
-        <motion.div 
-          className={`p-2 sm:p-3 rounded-full bg-gradient-to-br from-${glowColor}-500 to-${glowColor}-600 text-white shadow-lg flex-shrink-0`}
-          whileHover={{ scale: 1.1, rotate: 5 }}
-          whileTap={{ scale: 0.95 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-        >
-          <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
-        </motion.div>
-        <div className="flex-1 space-y-1 min-w-0">
-          <p className="text-xs sm:text-sm text-muted-foreground truncate">{label}</p>
-          <div className={`text-lg sm:text-3xl font-bold ${colorClass}`}>
-            <AnimatedCounter to={value} />
+    <Card className="border-border/50 transition-all duration-300 hover:border-border hover:shadow-lg">
+      <CardContent className="p-6">
+        <div className="flex items-center gap-4">
+          <div className={`rounded-xl p-3 ${iconBg}`}>
+            <Icon className={`h-6 w-6 ${iconColor}`} />
           </div>
-          <p className="text-xs text-muted-foreground mt-1 truncate">{description}</p>
+          <div className="flex-1">
+            <p className="text-sm text-muted-foreground mb-1">{label}</p>
+            <div className="text-3xl font-bold text-foreground">
+              <AnimatedCounter to={value} />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">{description}</p>
+          </div>
         </div>
-      </div>
-    </CardContent>
-  </GlowingCard>
+      </CardContent>
+    </Card>
+  </motion.div>
 );
 
+const ROOM_TYPE_OPTIONS = [
+  'CLASSROOM',
+  'LAB',
+  'COMPUTER',
+  'LIBRARY',
+  'GYM',
+  'ART',
+  'MUSIC',
+  'OTHER'
+];
+
 const RoomsManagementPage = () => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const navigate = useNavigate();
+
   const [loading, setLoading] = useState(false);
   const [rooms, setRooms] = useState([]);
   const [filteredRooms, setFilteredRooms] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
-
-  const [stats, setStats] = useState({ 
-    total: 0, 
-    classrooms: 0, 
-    labs: 0, 
-    totalCapacity: 0 
+  const [stats, setStats] = useState({
+    total: 0,
+    classrooms: 0,
+    labs: 0,
+    totalCapacity: 0
   });
 
-  const fetchRooms = async () => {
-    setLoading(true);
-    try {
-      const response = await apiMethods.get('schools/rooms/');
-      let roomsData = response.results || (Array.isArray(response) ? response : response.data?.results || response.data || []);
-      
-      setRooms(roomsData);
-      setFilteredRooms(roomsData);
+  const recalcStats = (roomsData) => {
+    const classroomsCount = roomsData.filter(
+      (room) => room.room_type === 'CLASSROOM'
+    ).length;
+    const labsCount = roomsData.filter((room) =>
+      ['LAB', 'COMPUTER'].includes(room.room_type)
+    ).length;
+    const totalCapacity = roomsData.reduce(
+      (sum, room) => sum + (room.capacity || 0),
+      0
+    );
 
-      // Calculate statistics
-      const classroomsCount = roomsData.filter(room => room.room_type === 'CLASSROOM').length;
-      const labsCount = roomsData.filter(room => ['LAB', 'COMPUTER'].includes(room.room_type)).length;
-      const totalCapacity = roomsData.reduce((sum, room) => sum + (room.capacity || 0), 0);
-
-      setStats({
-        total: roomsData.length,
-        classrooms: classroomsCount,
-        labs: labsCount,
-        totalCapacity: totalCapacity
-      });
-
-    } catch (error) {
-      console.error('Failed to fetch rooms:', error);
-      toast.error(t('error.failedToLoadData'));
-    } finally {
-      setLoading(false);
-    }
+    setStats({
+      total: roomsData.length,
+      classrooms: classroomsCount,
+      labs: labsCount,
+      totalCapacity
+    });
   };
 
   useEffect(() => {
-    fetchRooms();
+    let isMounted = true;
+    const loadRooms = async () => {
+      setLoading(true);
+      try {
+        const response = await apiMethods.get('schools/rooms/');
+        const roomsData =
+          response.results ||
+          (Array.isArray(response)
+            ? response
+            : response.data?.results || response.data || []);
+
+        if (!isMounted) return;
+
+        setRooms(roomsData);
+        setFilteredRooms(roomsData);
+        recalcStats(roomsData);
+      } catch (error) {
+        console.error('Failed to fetch rooms:', error);
+        toast.error(t('error.failedToLoadData'));
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadRooms();
+    return () => {
+      isMounted = false;
+    };
   }, [t]);
 
   useEffect(() => {
-    let filtered = rooms;
-    
-    // Search filtering
+    let updated = [...rooms];
+
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
-      filtered = filtered.filter(room =>
-        room.name.toLowerCase().includes(query) ||
-        room.code.toLowerCase().includes(query) ||
-        room.room_type.toLowerCase().includes(query)
+      updated = updated.filter(
+        (room) =>
+          room.name.toLowerCase().includes(query) ||
+          room.code.toLowerCase().includes(query) ||
+          room.room_type.toLowerCase().includes(query)
       );
     }
-    
-    // Type filtering
-    if (typeFilter !== 'all') {
-      filtered = filtered.filter(room => room.room_type === typeFilter);
-    }
-    
-    setFilteredRooms(filtered);
-  }, [searchQuery, typeFilter, rooms]);
 
-  const handleViewRoom = (roomId) => navigate(`/admin/school-management/rooms/view/${roomId}`);
-  const handleEditRoom = (roomId) => navigate(`/admin/school-management/rooms/edit/${roomId}`);
+    if (typeFilter !== 'all') {
+      updated = updated.filter((room) => room.room_type === typeFilter);
+    }
+
+    setFilteredRooms(updated);
+  }, [rooms, searchQuery, typeFilter]);
+
+  const handleViewRoom = (roomId) =>
+    navigate(`/admin/school-management/rooms/view/${roomId}`);
+
+  const handleEditRoom = (roomId) =>
+    navigate(`/admin/school-management/rooms/edit/${roomId}`);
+
   const handleDeleteRoom = async (roomId) => {
-    if (window.confirm(t('rooms.confirmDelete'))) {
-      try {
-        await apiMethods.delete(`schools/rooms/${roomId}/`);
-        toast.success(t('rooms.deletedSuccessfully'));
-        fetchRooms(); // Refresh the list
-      } catch (error) {
-        console.error('Failed to delete room:', error);
-        toast.error(t('error.failedToDelete'));
-      }
+    if (!window.confirm(t('rooms.confirmDelete'))) return;
+    try {
+      await apiMethods.delete(`schools/rooms/${roomId}/`);
+      toast.success(t('rooms.deletedSuccessfully'));
+      setRooms((prev) => {
+        const updated = prev.filter((room) => room.id !== roomId);
+        recalcStats(updated);
+        return updated;
+      });
+    } catch (error) {
+      console.error('Failed to delete room:', error);
+      toast.error(t('error.failedToDelete'));
     }
   };
+
   const handleAddRoom = () => navigate('/admin/school-management/rooms/add');
 
-  // Get room type display name
   const getRoomTypeLabel = (roomType) => {
     const typeMap = {
-      'CLASSROOM': t('rooms.types.classroom'),
-      'LAB': t('rooms.types.lab'),
-      'LIBRARY': t('rooms.types.library'),
-      'GYM': t('rooms.types.gym'),
-      'COMPUTER': t('rooms.types.computer'),
-      'ART': t('rooms.types.art'),
-      'MUSIC': t('rooms.types.music'),
-      'OTHER': t('rooms.types.other'),
+      CLASSROOM: t('rooms.types.classroom'),
+      LAB: t('rooms.types.lab'),
+      LIBRARY: t('rooms.types.library'),
+      GYM: t('rooms.types.gym'),
+      COMPUTER: t('rooms.types.computer'),
+      ART: t('rooms.types.art'),
+      MUSIC: t('rooms.types.music'),
+      OTHER: t('rooms.types.other')
     };
     return typeMap[roomType] || roomType;
   };
 
-  // Get room type color
-  const getRoomTypeColor = (roomType) => {
-    const colorMap = {
-      'CLASSROOM': 'bg-blue-100 text-blue-800',
-      'LAB': 'bg-green-100 text-green-800',
-      'LIBRARY': 'bg-purple-100 text-purple-800',
-      'GYM': 'bg-red-100 text-red-800',
-      'COMPUTER': 'bg-yellow-100 text-yellow-800',
-      'ART': 'bg-pink-100 text-pink-800',
-      'MUSIC': 'bg-indigo-100 text-indigo-800',
-      'OTHER': 'bg-gray-100 text-gray-800',
-    };
-    return colorMap[roomType] || 'bg-gray-100 text-gray-800';
+  const clearFilters = () => {
+    setSearchQuery('');
+    setTypeFilter('all');
   };
 
-  // Room Card component with animations
   const RoomCard = ({ room, index }) => (
     <motion.div
+      key={room.id}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1, duration: 0.5 }}
-      whileHover={{ y: -8, scale: 1.02 }}
-      className="group"
+      transition={{ delay: index * 0.05, duration: 0.4 }}
     >
-      <GlowingCard glowColor="cyan" className="h-full">
-        <CardContent className="p-4 h-full flex flex-col">
-          <div className="flex items-start space-x-3 mb-4">
-            <motion.div 
-              className="flex-shrink-0 relative"
-              whileHover={{ scale: 1.1 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              {room.featured_image ? (
-                <div className="h-12 w-12 rounded-full overflow-hidden shadow-lg">
-                  <img
-                    src={room.featured_image.url}
-                    alt={room.featured_image.alt_text || room.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+      <Card className="h-full border-border/50 transition-all duration-300 hover:border-border hover:shadow-lg">
+        <CardContent className="flex h-full flex-col p-6 space-y-4">
+          <div className="flex items-start gap-4">
+            <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-xl border border-border/50 bg-muted">
+              {room.featured_image?.url ? (
+                <img
+                  src={room.featured_image.url}
+                  alt={room.featured_image.alt_text || room.name}
+                  className="h-full w-full object-cover"
+                />
               ) : (
-                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg">
-                  <Building className="h-6 w-6 text-white" />
+                <div className="flex h-full w-full items-center justify-center">
+                  <Building className="h-6 w-6 text-muted-foreground" />
                 </div>
               )}
-            </motion.div>
-            
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center space-x-2 mb-1">
-                <h3 className="text-lg font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <h3 className="truncate text-lg font-semibold text-foreground">
                   {room.name}
                 </h3>
-                <Badge variant="secondary" className={`text-xs ${getRoomTypeColor(room.room_type)}`}>
+                <Badge className="border-none bg-primary/10 text-primary-700 dark:bg-primary/20 dark:text-primary-300">
                   {getRoomTypeLabel(room.room_type)}
                 </Badge>
               </div>
-              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+              <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
                 <MapPin className="h-4 w-4" />
                 <span>{room.code}</span>
-              </div>
-              <div className="flex items-center space-x-4 text-sm text-muted-foreground mt-1">
-                <div className="flex items-center space-x-1">
-                  <Users className="h-4 w-4" />
-                  <span>{t('rooms.capacity')}: {room.capacity}</span>
-                </div>
-                {room.image_count > 0 && (
-                  <div className="flex items-center space-x-1">
-                    <Images className="h-4 w-4" />
-                    <span>{room.image_count}</span>
-                  </div>
-                )}
-              </div>
+              </p>
             </div>
-
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-muted"
+                  className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
                 >
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem 
-                  onClick={() => handleViewRoom(room.id)}
-                  className="cursor-pointer"
-                >
+                <DropdownMenuItem onClick={() => handleViewRoom(room.id)}>
                   <Eye className="mr-2 h-4 w-4" />
                   {t('action.view')}
                 </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => handleEditRoom(room.id)}
-                  className="cursor-pointer"
-                >
+                <DropdownMenuItem onClick={() => handleEditRoom(room.id)}>
                   <Edit className="mr-2 h-4 w-4" />
                   {t('action.edit')}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={() => handleDeleteRoom(room.id)}
-                  className="cursor-pointer text-destructive focus:text-destructive"
+                  className="text-destructive focus:text-destructive"
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
                   {t('action.delete')}
@@ -301,34 +303,50 @@ const RoomsManagementPage = () => {
             </DropdownMenu>
           </div>
 
-          <div className="mt-auto pt-4 border-t border-muted">
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-muted-foreground">
-                {t('rooms.roomCode')}: {room.code}
+          <div className="grid grid-cols-1 gap-3 text-sm text-muted-foreground sm:grid-cols-2">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              <span>
+                {t('rooms.capacity')}:&nbsp;
+                <span className="font-medium text-foreground">
+                  {room.capacity || 0}
+                </span>
               </span>
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleViewRoom(room.id)}
-                  className="text-xs px-2 py-1 h-auto hover:bg-primary hover:text-primary-foreground transition-colors"
-                >
-                  {t('action.details')}
-                </Button>
-              </motion.div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Images className="h-4 w-4" />
+              <span>
+                {t('rooms.images', { defaultValue: 'Images' })}:&nbsp;
+                <span className="font-medium text-foreground">
+                  {room.image_count || 0}
+                </span>
+              </span>
             </div>
           </div>
+
+          <div className="mt-auto flex items-center justify-between pt-4">
+            <span className="text-xs text-muted-foreground">
+              {t('rooms.roomCode')}: {room.code}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleViewRoom(room.id)}
+              className="h-8 gap-2"
+            >
+              <Eye className="h-4 w-4" />
+              {t('action.details')}
+            </Button>
+          </div>
         </CardContent>
-      </GlowingCard>
+      </Card>
     </motion.div>
   );
 
   const actions = [
-    <Button key="add-room" onClick={handleAddRoom} className="bg-primary text-primary-foreground gap-2 shadow-md hover:bg-primary/90">
-      <Plus className="h-4 w-4" />{t('rooms.addRoom')}
+    <Button key="add-room" onClick={handleAddRoom} className="gap-2">
+      <Plus className="h-4 w-4" />
+      {t('rooms.addRoom')}
     </Button>
   ];
 
@@ -338,7 +356,7 @@ const RoomsManagementPage = () => {
         title={t('rooms.title')}
         subtitle={t('rooms.subtitle')}
         actions={actions}
-        loading={loading}
+        loading
       />
     );
   }
@@ -349,103 +367,147 @@ const RoomsManagementPage = () => {
       subtitle={t('rooms.subtitle')}
       actions={actions}
     >
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6 mb-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           icon={Building}
           label={t('rooms.totalRooms')}
           value={stats.total}
-          colorClass="text-blue-600"
           description={t('rooms.allRooms')}
-          glowColor="blue"
+          iconColor="text-blue-600 dark:text-blue-400"
+          iconBg="bg-blue-100 dark:bg-blue-900/40"
         />
         <StatCard
           icon={Home}
           label={t('rooms.classrooms')}
           value={stats.classrooms}
-          colorClass="text-green-600"
           description={t('rooms.classroomCount')}
-          glowColor="green"
+          iconColor="text-green-600 dark:text-green-400"
+          iconBg="bg-green-100 dark:bg-green-900/40"
         />
         <StatCard
           icon={Sparkles}
           label={t('rooms.labs')}
           value={stats.labs}
-          colorClass="text-purple-600"
           description={t('rooms.labCount')}
-          glowColor="purple"
+          iconColor="text-purple-600 dark:text-purple-400"
+          iconBg="bg-purple-100 dark:bg-purple-900/40"
         />
         <StatCard
           icon={Users}
           label={t('rooms.totalCapacity')}
           value={stats.totalCapacity}
-          colorClass="text-orange-600"
           description={t('rooms.totalSeats')}
-          glowColor="orange"
+          iconColor="text-orange-600 dark:text-orange-400"
+          iconBg="bg-orange-100 dark:bg-orange-900/40"
         />
       </div>
 
-      {/* Search and Filter Section */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder={t('rooms.searchPlaceholder')}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-        <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="w-full sm:w-48">
-            <Filter className="w-4 h-4 mr-2" />
-            <SelectValue placeholder={t('rooms.filterByType')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t('rooms.allTypes')}</SelectItem>
-            <SelectItem value="CLASSROOM">{t('rooms.types.classroom')}</SelectItem>
-            <SelectItem value="LAB">{t('rooms.types.lab')}</SelectItem>
-            <SelectItem value="COMPUTER">{t('rooms.types.computer')}</SelectItem>
-            <SelectItem value="LIBRARY">{t('rooms.types.library')}</SelectItem>
-            <SelectItem value="GYM">{t('rooms.types.gym')}</SelectItem>
-            <SelectItem value="ART">{t('rooms.types.art')}</SelectItem>
-            <SelectItem value="MUSIC">{t('rooms.types.music')}</SelectItem>
-            <SelectItem value="OTHER">{t('rooms.types.other')}</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <Card className="mt-6 border-border/50">
+        <CardContent className="p-4 md:p-6">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-1 flex-col gap-4 lg:flex-row lg:items-center">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder={t('rooms.searchPlaceholder')}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                  <SelectTrigger className="h-9 w-full border-border/50 lg:w-56">
+                    <Filter className="mr-2 h-4 w-4 text-muted-foreground" />
+                    <SelectValue placeholder={t('rooms.filterByType')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t('rooms.allTypes')}</SelectItem>
+                    {ROOM_TYPE_OPTIONS.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {getRoomTypeLabel(type)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="text-sm text-muted-foreground whitespace-nowrap">
+                {filteredRooms.length}{' '}
+                {t('common.results', { defaultValue: 'results' })}
+              </div>
+            </div>
 
-      {/* Rooms Grid */}
-      {filteredRooms.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center py-12"
-        >
-          <Building className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium text-foreground mb-2">
-            {searchQuery || typeFilter !== 'all' ? t('rooms.noRoomsFound') : t('rooms.noRoomsYet')}
-          </h3>
-          <p className="text-muted-foreground mb-6">
-            {searchQuery || typeFilter !== 'all' 
-              ? t('rooms.tryDifferentSearch')
-              : t('rooms.addFirstRoom')
-            }
-          </p>
-          {!searchQuery && typeFilter === 'all' && (
-            <Button onClick={handleAddRoom} className="gap-2">
-              <Plus className="h-4 w-4" />
-              {t('rooms.addRoom')}
-            </Button>
-          )}
-        </motion.div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6">
-          {filteredRooms.map((room, index) => (
-            <RoomCard key={room.id} room={room} index={index} />
-          ))}
-        </div>
-      )}
+            {(searchQuery || typeFilter !== 'all') && (
+              <div className="flex flex-wrap items-center gap-2">
+                {searchQuery && (
+                  <Badge
+                    variant="secondary"
+                    className="gap-1 px-2 py-1"
+                    onClick={() => setSearchQuery('')}
+                  >
+                    <Search className="h-3 w-3" />
+                    {searchQuery}
+                    <X className="ml-1 h-3 w-3" />
+                  </Badge>
+                )}
+                {typeFilter !== 'all' && (
+                  <Badge
+                    variant="secondary"
+                    className="gap-1 px-2 py-1"
+                    onClick={() => setTypeFilter('all')}
+                  >
+                    <Building className="h-3 w-3" />
+                    {getRoomTypeLabel(typeFilter)}
+                    <X className="ml-1 h-3 w-3" />
+                  </Badge>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  onClick={clearFilters}
+                >
+                  {t('common.reset')}
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="mt-6">
+        {filteredRooms.length > 0 ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            {filteredRooms.map((room, index) => (
+              <RoomCard key={room.id} room={room} index={index} />
+            ))}
+          </div>
+        ) : (
+          <Card className="border-dashed border-2 border-border/60">
+            <CardContent className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+              <div className="rounded-full bg-muted p-6">
+                <Building className="h-12 w-12 text-muted-foreground" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-semibold text-foreground">
+                  {t('rooms.noRoomsFound')}
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-sm">
+                  {searchQuery || typeFilter !== 'all'
+                    ? t('rooms.tryDifferentSearch')
+                    : t('rooms.addFirstRoom')}
+                </p>
+              </div>
+              {(!searchQuery && typeFilter === 'all' && rooms.length === 0) && (
+                <Button onClick={handleAddRoom} className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  {t('rooms.addRoom')}
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </AdminPageLayout>
   );
 };

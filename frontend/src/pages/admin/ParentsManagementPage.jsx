@@ -1,97 +1,79 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { motion, useInView, useMotionValue, useSpring, animate } from 'framer-motion';
-import { 
-  Plus, 
-  Search, 
-  Filter, 
-  Users, 
-  Mail, 
-  Phone, 
-  MoreVertical, 
-  Eye, 
-  Edit, 
+import { motion } from 'framer-motion';
+import {
+  Plus,
+  Search,
+  MoreVertical,
+  Edit,
   Trash2,
+  Users,
   CheckCircle,
   XCircle,
   UserPlus,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  FileWarning
 } from 'lucide-react';
 import AdminPageLayout from '../../components/admin/layout/AdminPageLayout';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
-import { Card, CardContent } from '../../components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '../../components/ui/dropdown-menu';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
+import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
 import { apiMethods } from '../../services/api';
 import { toast } from 'sonner';
 
-const AnimatedCounter = ({ from = 0, to, duration = 2, className = "" }) => {
-  const ref = useRef()
-  const motionValue = useMotionValue(from)
-  const springValue = useSpring(motionValue, { duration: duration * 1000 })
-  const isInView = useInView(ref, { once: true, margin: "-50px" })
-  const [displayValue, setDisplayValue] = useState(from)
+const getLanguageCode = (language) => (language || 'en').split('-')[0];
 
-  useEffect(() => {
-    if (isInView && to !== undefined) {
-      animate(motionValue, to, { duration: duration })
-    }
-  }, [motionValue, isInView, to, duration])
+const getLocalizedName = (user, language) => {
+  if (!user) return '';
+  const lang = getLanguageCode(language);
+  const profile = user.profile || {};
 
-  useEffect(() => {
-    const unsubscribe = springValue.on("change", (latest) => {
-      setDisplayValue(Math.round(latest))
-    })
-    return unsubscribe
-  }, [springValue])
+  const fallback =
+    user.full_name ||
+    profile.full_name ||
+    `${user.first_name || profile.first_name || ''} ${user.last_name || profile.last_name || ''}`.trim() ||
+    user.username ||
+    '';
 
-  return (
-    <span ref={ref} className={className}>
-      {displayValue.toLocaleString()}
-    </span>
-  )
-}
+  const resolveByPrefix = (prefix) => {
+    const first = user[`${prefix}_first_name`] ?? profile[`${prefix}_first_name`];
+    const last = user[`${prefix}_last_name`] ?? profile[`${prefix}_last_name`];
+    const full = profile[`${prefix}_full_name`];
+    const combined = `${first || ''} ${last || ''}`.trim();
+    return (combined || full || '').trim();
+  };
 
-const GlowingCard = ({ children, className = "", glowColor = "blue" }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    whileHover={{ y: -5, transition: { duration: 0.2 } }}
-    className={`relative group ${className}`}
-  >
-    <div className={`absolute -inset-0.5 bg-gradient-to-r from-${glowColor}-500 to-purple-600 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200`}></div>
-    <div className="relative bg-card border rounded-xl backdrop-blur-sm">
-      {children}
-    </div>
-  </motion.div>
-)
+  if (lang === 'ar') {
+    const arabicName = resolveByPrefix('ar');
+    if (arabicName) return arabicName;
+  }
 
-const StatCard = ({ icon: Icon, label, value, colorClass, description, glowColor }) => (
-  <GlowingCard glowColor={glowColor}>
-    <CardContent className="p-4 sm:p-6">
-      <div className="flex items-center space-x-3 sm:space-x-4">
-        <motion.div 
-          className={`p-2 sm:p-3 rounded-full bg-gradient-to-br from-${glowColor}-500 to-${glowColor}-600 text-white shadow-lg flex-shrink-0`}
-          whileHover={{ scale: 1.1, rotate: 5 }}
-          whileTap={{ scale: 0.95 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-        >
-          <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
-        </motion.div>
-        <div className="flex-1 space-y-1 min-w-0">
-          <p className="text-xs sm:text-sm text-muted-foreground truncate">{label}</p>
-          <div className={`text-lg sm:text-3xl font-bold ${colorClass}`}>
-            <AnimatedCounter to={value} />
-          </div>
-          <p className="text-xs text-muted-foreground mt-1 truncate">{description}</p>
-        </div>
-      </div>
+  if (lang === 'fr') {
+    const frenchName = resolveByPrefix('fr');
+    if (frenchName) return frenchName;
+  }
+
+  return fallback.trim();
+};
+
+const StatCard = ({ icon: Icon, label, value, colorClass, description }) => (
+  <Card>
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <CardTitle className="text-sm font-medium">{label}</CardTitle>
+      <Icon className={`h-4 w-4 text-muted-foreground ${colorClass}`} />
+    </CardHeader>
+    <CardContent>
+      <div className={`text-2xl font-bold ${colorClass}`}>{value}</div>
+      <p className="text-xs text-muted-foreground">{description}</p>
     </CardContent>
-  </GlowingCard>
+  </Card>
 );
 
 const ParentsManagementPage = () => {
@@ -101,8 +83,7 @@ const ParentsManagementPage = () => {
   const [parents, setParents] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  
+
   const [pagination, setPagination] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -117,23 +98,40 @@ const ParentsManagementPage = () => {
     try {
       const params = new URLSearchParams();
       params.append('role', 'PARENT');
-      if (statusFilter !== 'all') params.append('is_active', statusFilter === 'active');
       if (debouncedSearchQuery) params.append('search', debouncedSearchQuery);
       if (currentPage) params.append('page', currentPage);
 
       const response = await apiMethods.get(`users/users/?${params.toString()}`);
-      
+
       if (response.results && Array.isArray(response.results)) {
-        setParents(response.results);
+        // Fetch children count for each parent
+        const parentsWithChildren = await Promise.all(
+          response.results.map(async (parent) => {
+            try {
+              const childrenResponse = await apiMethods.get(`users/users/${parent.id}/children/`);
+              const children = Array.isArray(childrenResponse.children) ? childrenResponse.children : [];
+
+              return {
+                ...parent,
+                children,
+                children_count: childrenResponse.total_children ?? children.length
+              };
+            } catch (error) {
+              // If fetching children fails, just set count to 0
+              return {
+                ...parent,
+                children: [],
+                children_count: 0
+              };
+            }
+          })
+        );
+
+        setParents(parentsWithChildren);
         setPagination({
           count: response.count,
           next: response.next,
           previous: response.previous
-        });
-        setStats({
-            total: response.count,
-            active: response.results.filter(p => p.is_active).length, // This is an approximation for the page
-            inactive: response.results.filter(p => !p.is_active).length // This is an approximation for the page
         });
       } else {
         setParents([]);
@@ -148,30 +146,55 @@ const ParentsManagementPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, debouncedSearchQuery, currentPage, t]);
+  }, [debouncedSearchQuery, currentPage, t]);
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const params = new URLSearchParams();
+      params.append('role', 'PARENT');
+      if (debouncedSearchQuery) params.append('search', debouncedSearchQuery);
+
+      const activeParams = new URLSearchParams(params);
+      activeParams.append('is_active', 'true');
+
+      const inactiveParams = new URLSearchParams(params);
+      inactiveParams.append('is_active', 'false');
+
+      const [totalResponse, activeResponse, inactiveResponse] = await Promise.all([
+        apiMethods.get(`users/users/?${params.toString()}&page=1`),
+        apiMethods.get(`users/users/?${activeParams.toString()}&page=1`),
+        apiMethods.get(`users/users/?${inactiveParams.toString()}&page=1`)
+      ]);
+
+      setStats({
+        total: totalResponse.count || 0,
+        active: activeResponse.count || 0,
+        inactive: inactiveResponse.count || 0
+      });
+    } catch (error) {
+      console.error('Failed to fetch stats:', error);
+      setStats({ total: 0, active: 0, inactive: 0 });
+    }
+  }, [debouncedSearchQuery]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery);
-      setCurrentPage(1); // Reset to first page on new search
-    }, 500); // 500ms debounce delay
+      setCurrentPage(1);
+    }, 500);
 
-    return () => {
-      clearTimeout(handler);
-    };
+    return () => clearTimeout(handler);
   }, [searchQuery]);
 
   useEffect(() => {
     fetchParents();
   }, [fetchParents]);
 
-  const getDisplayName = (parent) => {
-    const isArabic = i18n.language === 'ar';
-    if (isArabic && (parent.ar_first_name || parent.ar_last_name)) {
-      return `${parent.ar_first_name || ''} ${parent.ar_last_name || ''}`.trim();
-    }
-    return parent.full_name || `${parent.first_name || ''} ${parent.last_name || ''}`.trim();
-  };
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
+
+  const getDisplayName = (parent) => getLocalizedName(parent, i18n.language);
 
   const handleViewParent = (parentId) => navigate(`/admin/school-management/parents/view/${parentId}`);
   const handleEditParent = (parentId) => navigate(`/admin/school-management/parents/edit/${parentId}`);
@@ -180,297 +203,234 @@ const ParentsManagementPage = () => {
 
   const formatDate = (dateString) => {
     if (!dateString) return '—';
-    return new Date(dateString).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    return new Date(dateString).toLocaleDateString(i18n.language, { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
-  const ParentCard = ({ parent, index }) => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1, duration: 0.5 }}
-      whileHover={{ y: -8, scale: 1.02 }}
-      className="group"
-    >
-      <GlowingCard glowColor="indigo" className="h-full">
-        <CardContent className="p-4 h-full flex flex-col">
-          <div className="flex items-start space-x-3 mb-4">
-            <motion.div 
-              className="flex-shrink-0 relative"
-              whileHover={{ scale: 1.1 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              <div className="h-12 w-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center overflow-hidden shadow-lg">
-                {parent.profile_picture_url ? (
-                  <img src={parent.profile_picture_url} alt={parent.full_name} className="h-full w-full object-cover" />
-                ) : (
-                  <span className="text-xl font-bold text-white">
-                    {(parent.first_name?.[0] || '') + (parent.last_name?.[0] || '')}
-                  </span>
-                )}
-              </div>
-              <div className="absolute -bottom-1 -right-1">
-                <motion.div
-                  className={`w-4 h-4 rounded-full border-2 border-white ${parent.is_active ? 'bg-green-500' : 'bg-gray-400'}`}
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ repeat: Infinity, duration: 2 }}
-                />
-              </div>
-            </motion.div>
-            
-            <div className="flex-1 min-w-0">
-              <motion.h3 
-                className="font-bold text-base text-card-foreground leading-tight truncate group-hover:text-indigo-600 transition-colors"
-                whileHover={{ scale: 1.05 }}
-              >
-                {getDisplayName(parent)}
-              </motion.h3>
-              <p className="text-xs text-muted-foreground">Parent</p>
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: index * 0.1 + 0.3 }}
-              >
-                <Badge
-                  className={`mt-2 text-xs transition-colors ${parent.is_active 
-                    ? 'bg-green-100 text-green-800 hover:bg-green-200 border border-green-300' 
-                    : 'bg-gray-100 text-gray-800 hover:bg-gray-200 border border-gray-300'
-                  }`}
-                >
-                  {parent.is_active ? t('status.active') : t('status.inactive')}
-                </Badge>
-              </motion.div>
-            </div>
+  const PaginationControls = () => {
+    if (!pagination || pagination.count <= 20) return null;
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                  <Button variant="ghost" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </motion.div>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={() => handleViewParent(parent.id)} className="cursor-pointer">
-                  <Eye className="mr-2 h-4 w-4" /><span>{t('action.view')}</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleEditParent(parent.id)} className="cursor-pointer">
-                  <Edit className="mr-2 h-4 w-4" /><span>{t('action.edit')}</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  onClick={() => handleDeleteParent(parent.id)} 
-                  className="text-red-600 focus:text-red-500 focus:bg-red-500/10 cursor-pointer"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" /><span>{t('action.delete')}</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+    const totalPages = Math.ceil(pagination.count / 20);
+
+    return (
+      <div className="flex items-center justify-between px-2 mt-4">
+        <div className="text-sm text-muted-foreground">
+          {t('common.total_rows', { count: pagination.count })}
+        </div>
+        <div className="flex items-center space-x-6 lg:space-x-8">
+          <div className="flex items-center space-x-2">
+            <p className="text-sm font-medium">{t('common.page')}</p>
+            <Select
+              value={currentPage.toString()}
+              onValueChange={(value) => setCurrentPage(Number(value))}
+            >
+              <SelectTrigger className="h-8 w-[70px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: totalPages }, (_, i) => (
+                  <SelectItem key={i + 1} value={(i + 1).toString()}>
+                    {i + 1}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground">
+              {t('common.of')} {totalPages}
+            </p>
           </div>
-
-          <div className="mt-auto space-y-3 pt-3 border-t border-border/50">
-            <motion.div 
-              className="flex items-center text-muted-foreground hover:text-indigo-600 transition-colors cursor-pointer"
-              whileHover={{ x: 5 }}
-            >
-              <Mail className="h-3.5 w-3.5 mr-2 flex-shrink-0" />
-              <span className="text-xs truncate">{parent.email}</span>
-            </motion.div>
-            <motion.div 
-              className="flex items-center text-muted-foreground hover:text-indigo-600 transition-colors cursor-pointer"
-              whileHover={{ x: 5 }}
-            >
-              <Phone className="h-3.5 w-3.5 mr-2 flex-shrink-0" />
-              <span className="text-xs">{parent.phone || '—'}</span>
-            </motion.div>
-            <div className="flex items-center justify-between text-xs pt-2 border-t border-border/30">
-              <span className="text-muted-foreground">Joined:</span>
-              <span className="font-medium text-foreground">{formatDate(parent.created_at)}</span>
-            </div>
+          <div className="flex items-center justify-center text-sm font-medium">
+            {t('common.page_of', { currentPage, totalPages })}
           </div>
-        </CardContent>
-      </GlowingCard>
-    </motion.div>
-  );
-
-  const PaginationControls = () => (
-    <div className="flex items-center justify-center space-x-4 mt-8">
-      <Button
-        variant="outline"
-        onClick={() => setCurrentPage(prev => prev - 1)}
-        disabled={!pagination?.previous}
-      >
-        <ChevronLeft className="h-4 w-4 mr-2" />
-        {t('common.previous')}
-      </Button>
-      <span className="text-sm text-muted-foreground">
-        {t('common.page')} {currentPage} {t('common.of')} {pagination ? Math.ceil(pagination.count / 20) : 1}
-      </span>
-      <Button
-        variant="outline"
-        onClick={() => setCurrentPage(prev => prev + 1)}
-        disabled={!pagination?.next}
-      >
-        {t('common.next')}
-        <ChevronRight className="h-4 w-4 ml-2" />
-      </Button>
-    </div>
-  );
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              className="h-8 w-8 p-0"
+              onClick={() => setCurrentPage(prev => prev - 1)}
+              disabled={!pagination?.previous}
+            >
+              <span className="sr-only">{t('common.previous')}</span>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              className="h-8 w-8 p-0"
+              onClick={() => setCurrentPage(prev => prev + 1)}
+              disabled={!pagination?.next}
+            >
+              <span className="sr-only">{t('common.next')}</span>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
-    <div className="bg-background text-foreground min-h-screen">
-      <AdminPageLayout
-        title={t('admin.parentsManagement.title')}
-        subtitle={t('admin.parentsManagement.subtitle')}
-        actions={[
-          <Button key="add-parent" onClick={handleAddParent} className="bg-primary text-primary-foreground gap-2 shadow-md hover:bg-primary/90">
-            <Plus className="h-4 w-4" />{t('action.addParent')}
-          </Button>
-        ]}
-        loading={loading}
+    <AdminPageLayout
+      title={t('admin.parentsManagement.title')}
+      subtitle={t('admin.parentsManagement.subtitle')}
+      actions={[
+        <Button key="add-parent" onClick={handleAddParent} className="gap-2">
+          <Plus className="h-4 w-4" />{t('action.addParent')}
+        </Button>
+      ]}
+      loading={loading}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="space-y-6"
       >
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6 }}
-          className="space-y-8"
-        >
-          {/* Hero Statistics */}
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-          >
-            <StatCard 
-              icon={Users} 
-              label={t('admin.parentsManagement.stats.totalParents')} 
-              value={stats.total} 
-              colorClass="text-indigo-600" 
-              description={t('admin.parentsManagement.stats.totalParentsDescription')}
-              glowColor="indigo"
-            />
-            <StatCard 
-              icon={CheckCircle} 
-              label={t('admin.parentsManagement.stats.activeParents')} 
-              value={stats.active} 
-              colorClass="text-green-600" 
-              description={t('admin.parentsManagement.stats.activeParentsDescription')}
-              glowColor="green"
-            />
-            <StatCard 
-              icon={XCircle} 
-              label={t('admin.parentsManagement.stats.inactiveParents')} 
-              value={stats.inactive} 
-              colorClass="text-red-600" 
-              description={t('admin.parentsManagement.stats.inactiveParentsDescription')}
-              glowColor="red"
-            />
-          </motion.div>
+        {/* Statistics Section */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <StatCard
+            icon={Users}
+            label={t('admin.parentsManagement.stats.totalParents')}
+            value={stats.total}
+            colorClass="text-blue-500"
+            description={t('admin.parentsManagement.stats.totalParentsDescription')}
+          />
+          <StatCard
+            icon={CheckCircle}
+            label={t('admin.parentsManagement.stats.activeParents')}
+            value={stats.active}
+            colorClass="text-green-500"
+            description={t('admin.parentsManagement.stats.activeParentsDescription')}
+          />
+          <StatCard
+            icon={XCircle}
+            label={t('admin.parentsManagement.stats.inactiveParents')}
+            value={stats.inactive}
+            colorClass="text-red-500"
+            description={t('admin.parentsManagement.stats.inactiveParentsDescription')}
+          />
+        </div>
 
-          {/* Search and Filter Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <GlowingCard glowColor="blue" className="p-1">
-              <div className="flex flex-col md:flex-row items-center gap-4">
-                <div className="relative flex-grow w-full md:w-auto">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                  <motion.div whileFocus={{ scale: 1.02 }}>
-                    <Input 
-                      placeholder={t('admin.parentsManagement.searchPlaceholder')} 
-                      value={searchQuery} 
-                      onChange={(e) => setSearchQuery(e.target.value)} 
-                      className="pl-10 h-12 rounded-lg border-0 bg-gray-50 focus:bg-white transition-colors shadow-inner" 
-                    />
-                  </motion.div>
-                </div>
-                <div className="flex items-center gap-4 w-full md:w-auto">
-                  <motion.div whileHover={{ scale: 1.02 }}>
-                    <Select value={statusFilter} onValueChange={v => { setStatusFilter(v); setCurrentPage(1); }}>
-                      <SelectTrigger className="w-full md:w-[180px] h-12 rounded-lg border-0 bg-gray-50 shadow-inner">
-                        <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <SelectValue placeholder={t('common.status')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">{t('common.allStatus')}</SelectItem>
-                        <SelectItem value="active">{t('status.active')}</SelectItem>
-                        <SelectItem value="inactive">{t('status.inactive')}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </motion.div>
-                </div>
+        {/* Search and Table Section */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex flex-col sm:flex-row items-center gap-4 mb-4">
+              <div className="relative w-full sm:max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder={t('admin.parentsManagement.searchPlaceholder')}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
               </div>
-            </GlowingCard>
-          </motion.div>
+            </div>
 
-          {/* Parents Grid */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-          >
-            {parents.length > 0 ? (
-              <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
-                  {parents.map((parent, index) => 
-                    <ParentCard key={parent.id} parent={parent} index={index} />
-                  )}
-                </div>
-                <PaginationControls />
-              </>
-            ) : (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.8 }}
-                className="text-center py-20 flex flex-col items-center"
-              >
-                <GlowingCard glowColor="gray" className="p-2">
-                  <motion.div
-                    animate={{ 
-                      rotate: [0, 10, -10, 0],
-                      scale: [1, 1.1, 1]
-                    }}
-                    transition={{ 
-                      repeat: Infinity, 
-                      duration: 4,
-                      ease: "easeInOut"
-                    }}
-                  >
-                    <Users className="h-20 w-20 text-muted-foreground/50 mb-4 mx-auto" />
-                  </motion.div>
-                  <h3 className="text-xl font-semibold text-foreground mb-2">
-                    {t('admin.parentsManagement.noParentsFound')}
-                  </h3>
-                  <p className="text-muted-foreground max-w-sm mb-6">
-                    {searchQuery || statusFilter !== 'all' 
-                      ? t('admin.parentsManagement.noParentsMatchingFilters') 
-                      : t('admin.parentsManagement.noParentsYet')
-                    }
-                  </p>
-                  {(!searchQuery && statusFilter === 'all' && parents.length === 0 && !loading) && (
-                    <motion.div
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <Button 
-                        onClick={handleAddParent} 
-                        className="mt-6 gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white shadow-lg"
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t('common.name')}</TableHead>
+                    <TableHead className="hidden md:table-cell">{t('common.phone')}</TableHead>
+                    <TableHead className="hidden lg:table-cell">{t('parent.childrenNames')}</TableHead>
+                    <TableHead>{t('common.status')}</TableHead>
+                    <TableHead className="hidden xl:table-cell">{t('common.joinedDate')}</TableHead>
+                    <TableHead><span className="sr-only">{t('common.actions')}</span></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="h-24 text-center">
+                        {t('common.loading')}
+                      </TableCell>
+                    </TableRow>
+                  ) : parents.length > 0 ? (
+                    parents.map((parent) => (
+                      <TableRow
+                        key={parent.id}
+                        className="cursor-pointer hover:bg-muted/50 transition-colors"
+                        onClick={() => handleViewParent(parent.id)}
                       >
-                        <UserPlus className="h-4 w-4" />
-                        {t('action.addFirstParent')}
-                      </Button>
-                    </motion.div>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-9 w-9">
+                              <AvatarImage src={parent.profile_picture_url} alt={getDisplayName(parent)} />
+                              <AvatarFallback>
+                                {(parent.first_name?.[0] || '') + (parent.last_name?.[0] || '')}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="font-medium">{getDisplayName(parent)}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">{parent.phone || '-'}</TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          {parent.children?.length ? (
+                            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                              <Users className="h-3 w-3" />
+                              <span>
+                                {parent.children
+                                  .map((child) => getLocalizedName(child, i18n.language))
+                                  .filter(Boolean)
+                                  .join(', ') || '-'}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={parent.is_active ? 'default' : 'outline'} className={parent.is_active ? 'bg-green-100 text-green-800' : ''}>
+                            {parent.is_active ? t('status.active') : t('status.inactive')}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="hidden xl:table-cell">{formatDate(parent.created_at)}</TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">{t('action.openMenu')}</span>
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEditParent(parent.id); }}>
+                                <Edit className="mr-2 h-4 w-4" /><span>{t('action.edit')}</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDeleteParent(parent.id); }} className="text-red-600">
+                                <Trash2 className="mr-2 h-4 w-4" /><span>{t('action.delete')}</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} className="h-48">
+                        <div className="flex flex-col items-center justify-center space-y-4">
+                          <FileWarning className="h-12 w-12 text-muted-foreground" />
+                          <h3 className="text-lg font-semibold">{t('admin.parentsManagement.noParentsFound')}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {searchQuery
+                              ? t('admin.parentsManagement.noParentsMatchingFilters')
+                              : t('admin.parentsManagement.noParentsYet')
+                            }
+                          </p>
+                          <Button size="sm" onClick={handleAddParent}>
+                            <UserPlus className="mr-2 h-4 w-4" />
+                            {t('action.addParent')}
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
                   )}
-                </GlowingCard>
-              </motion.div>
-            )}
-          </motion.div>
-        </motion.div>
-      </AdminPageLayout>
-    </div>
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+        <PaginationControls />
+      </motion.div>
+    </AdminPageLayout>
   );
 };
 

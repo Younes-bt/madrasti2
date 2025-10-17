@@ -52,6 +52,7 @@ import AdminDashboard from './pages/dashboard/AdminDashboard'
 
 // Import admin pages
 import SchoolDetailsPage from './pages/admin/SchoolDetailsPage'
+import UpdateSchoolDetailsPage from './pages/admin/UpdateSchoolDetailsPage'
 import StaffManagementPage from './pages/admin/StaffManagementPage'
 import AddStaffPage from './pages/admin/AddStaffPage'
 import EditStaffPage from './pages/admin/EditStaffPage'
@@ -77,6 +78,13 @@ import AcademicYearsPage from './pages/admin/AcademicYearsPage'
 import AddAcademicYearPage from './pages/admin/AddAcademicYearPage'
 import EditAcademicYearPage from './pages/admin/EditAcademicYearPage'
 import ViewAcademicYearPage from './pages/admin/ViewAcademicYearPage'
+import VehiclesManagementPage from './pages/admin/VehiclesManagementPage'
+import ViewVehiclePage from './pages/admin/ViewVehiclePage'
+import ViewVehicleMaintenanceRecordPage from './pages/admin/ViewVehicleMaintenanceRecordPage'
+import ViewVehicleGasoilRecordPage from './pages/admin/ViewVehicleGasoilRecordPage'
+import AddVehicleGasoilRecordPage from './pages/admin/AddVehicleGasoilRecordPage'
+import AddVehicleMaintenanceRecordPage from './pages/admin/AddVehicleMaintenanceRecordPage'
+import AddVehiclePage from './pages/admin/AddVehiclePage'
 import EducationalLevelsPage from './pages/admin/EducationalLevelsPage'
 import AddEducationalLevelPage from './pages/admin/AddEducationalLevelPage'
 import EditEducationalLevelPage from './pages/admin/EditEducationalLevelPage'
@@ -526,6 +534,14 @@ const AppRoutes = () => {
         } 
       />
       <Route 
+        path="/admin/school-management/school-details/edit" 
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <UpdateSchoolDetailsPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
         path="/admin/school-management/staff" 
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
@@ -697,9 +713,57 @@ const AppRoutes = () => {
         path="/admin/school-management/vehicles" 
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
-            <div>Vehicles Management Page - Coming Soon</div>
+            <VehiclesManagementPage />
           </ProtectedRoute>
         } 
+      />
+      <Route
+        path="/admin/school-management/vehicles/view/:vehicleId"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <ViewVehiclePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/school-management/vehicles/:vehicleId/maintenance/add"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <AddVehicleMaintenanceRecordPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/school-management/vehicles/:vehicleId/gasoil/add"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <AddVehicleGasoilRecordPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/school-management/vehicles/:vehicleId/maintenance/:recordId"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <ViewVehicleMaintenanceRecordPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/school-management/vehicles/:vehicleId/gasoil/:refuelId"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <ViewVehicleGasoilRecordPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/school-management/vehicles/add"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <AddVehiclePage />
+          </ProtectedRoute>
+        }
       />
       <Route 
         path="/admin/school-management/equipment" 

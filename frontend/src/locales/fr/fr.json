@@ -25,6 +25,7 @@
     "phone": "Téléphone",
     "status": "Statut",
     "joinedDate": "Date d'inscription",
+    "enrollmentDate": "Date d'inscription",
     "lastLogin": "Dernière connexion",
     "actions": "Actions",
     "searchAndFilter": "Recherche et Filtre",
@@ -67,7 +68,10 @@
     "subjects": "Matières",
     "subject": "Matière",
     "classes": "Classes",
-    "allSubjects": "Toutes les Matières"
+    "allSubjects": "Toutes les Matières",
+    "results": "résultats",
+    "popupBlocked": "Veuillez autoriser les fenêtres contextuelles pour exporter ce rapport.",
+    "downloading": "Téléchargement..."
   },
   "error": {
     "failedToLoadData": "Échec du chargement des données. Veuillez réessayer.",
@@ -309,7 +313,15 @@
     "teachableGradesInfo": "Sélectionnez tous les niveaux que cet enseignant est qualifié pour enseigner.",
     "teachers": "Enseignants",
     "myClasses": "Mes classes",
-    "pendingGrading": "En attente de notation"
+    "pendingGrading": "En attente de notation",
+    "students": "Élèves",
+    "subjects": "Matières",
+    "weeklyHours": "Heures Hebdomadaires",
+    "subjectsTaught": "Matières Enseignées",
+    "totalClasses": "Total de Classes",
+    "totalStudents": "Total d'Élèves",
+    "totalWeeklyHours": "Total d'Heures Hebdomadaires",
+    "noClassesAssigned": "Aucune classe assignée pour le moment"
   },
   "student": {
     "dashboard": {
@@ -460,6 +472,8 @@
     "profilePicture": "Photo de Profil",
     "position": "Poste",
     "selectPosition": "Selectionner un poste",
+    "filterByPosition": "Filtrer par Poste",
+    "allPositions": "Tous les Postes",
     "department": "Département",
     "hireDate": "Date d'Embauche",
     "salary": "Salaire",
@@ -512,6 +526,7 @@
       "SECURITY": "Agent de securite",
       "MAINTENANCE": "Equipe de maintenance",
       "SUPPORT": "Personnel de soutien",
+      "DRIVER": "Chauffeur",
       "OTHER": "Autre",
       "UNKNOWN": "Personnel"
     }
@@ -1132,7 +1147,9 @@
         "inactiveParents": "Parents Inactifs",
         "inactiveParentsDescription": "Parents inactifs ou suspendus"
       }
-    }
+    },
+    "print": "Imprimer",
+    "exportError": "Échec de l'exportation des détails de l'établissement. Veuillez réessayer."
   },
   "parent": {
     "parents": "Parents",
@@ -1410,7 +1427,14 @@
       "fileTooLarge": "Fichier trop volumineux. Taille maximum : {{maxSize}}Mo",
       "tooManyFiles": "Trop de fichiers. Maximum : {{maxFiles}}",
       "validationFailed": "Échec de validation du fichier"
-    }
+    },
+    "vehicleImages": "Images du véhicule",
+    "addImagesToVehicle": "Ajouter des images à {{vehicle}}",
+    "failedToLoadVehicleImages": "Échec du chargement des images du véhicule",
+    "imagesAddedToVehicle": "{{count}} image(s) ajoutée(s) à {{vehicle}}",
+    "imageRemovedFromVehicle": "Image retirée du véhicule",
+    "failedToDeleteVehicleImage": "Impossible de supprimer l'image du véhicule",
+    "failedToUpdateVehicleFeatured": "Impossible de mettre à jour l'image mise en avant"
   },
   "academicYears": {
     "title": "Années Académiques",
@@ -2334,13 +2358,260 @@
   "adminStudentView": {
     "rewardsTitle": "Rewards & Points",
     "rewardsDescription": "Track how this student earns and spends rewards."
+  },
+  "school": {
+    "details": {
+      "subtitle": "Gérez les informations et paramètres de base de votre établissement",
+      "created": "Créé le",
+      "info": "Informations de l'établissement",
+      "contact": "Informations de contact",
+      "location": "Informations de localisation",
+      "cityRegion": "Ville et région",
+      "administration": "Administration",
+      "phone": "Numéro de téléphone",
+      "fixPhone": "Téléphone fixe",
+      "whatsapp": "WhatsApp",
+      "email": "Adresse e-mail",
+      "website": "Site web",
+      "address": "Adresse",
+      "students": "Élèves",
+      "capacity": "Capacité d'accueil",
+      "codes": "Codes de l'établissement",
+      "schoolCode": "Code établissement",
+      "pattent": "Numéro de patente",
+      "rcCode": "Code RC",
+      "social": {
+        "label": "Réseaux sociaux",
+        "empty": "Aucun profil de réseau social ajouté pour le moment. Cliquez sur Modifier pour ajouter des liens.",
+        "facebook": "Facebook",
+        "instagram": "Instagram",
+        "linkedin": "LinkedIn",
+        "twitter": "Twitter / X",
+        "youtube": "YouTube"
+      },
+      "academicYear": "Année scolaire",
+      "currentAcademicYear": "Année scolaire en cours",
+      "director": "Directeur de l'établissement",
+      "exportFooter": "Rapport des détails de l'établissement",
+      "generatedOn": "Généré le",
+      "managementSystem": "Système de gestion scolaire"
+    }
+  },
+  "vehicles": {
+    "title": "Gestion du parc de véhicules",
+    "subtitle": "Gérez les voitures, bus, conducteurs et l'historique de maintenance de l'établissement",
+    "searchPlaceholder": "Recherchez un véhicule par nom, modèle, immatriculation ou conducteur...",
+    "page": {
+      "addTitle": "Ajouter un véhicule",
+      "addSubtitle": "Enregistrez un nouveau véhicule dans le parc de l'établissement.",
+      "formTitle": "Informations sur le véhicule",
+      "formSubtitle": "Renseignez les données du véhicule, assignez un conducteur et configurez le suivi de maintenance.",
+      "backToList": "Retour aux véhicules",
+      "cancel": "Annuler",
+      "submit": "Enregistrer le véhicule",
+      "saving": "Enregistrement du véhicule...",
+      "viewTitle": "Détails du véhicule",
+      "viewSubtitle": "Consultez les informations du véhicule, le conducteur assigné et l'historique de maintenance.",
+      "imagesSectionTitle": "Images du véhicule",
+      "imagesSectionSubtitle": "Optionnel : téléchargez des photos pour présenter ce véhicule.",
+      "selectImages": "Sélectionner des images",
+      "imagesSelected": "{{count}} image(s) sélectionnée(s)",
+      "noImagesSelected": "Aucune image sélectionnée pour le moment",
+      "uploadingImages": "Téléversement des images..."
+    },
+    "types": {
+      "bus": "Autobus",
+      "minibus": "Minibus",
+      "van": "Fourgon",
+      "car": "Voiture",
+      "other": "Autre"
+    },
+    "fields": {
+      "name": "Nom du véhicule",
+      "model": "Modèle",
+      "type": "Type de véhicule",
+      "plateNumber": "Immatriculation",
+      "driver": "Conducteur assigné",
+      "capacity": "Capacité passagers",
+      "manufactureYear": "Année de fabrication",
+      "color": "Couleur",
+      "lastOilChange": "Dernière vidange",
+      "lastService": "Dernière maintenance",
+      "insuranceExpiry": "Expiration de l'assurance",
+      "notes": "Notes",
+      "status": "Statut"
+    },
+    "placeholders": {
+      "name": "Ex. : Ligne du matin A",
+      "model": "Ex. : Mercedes Sprinter 516",
+      "type": "Sélectionnez un type de véhicule",
+      "plateNumber": "Ex. : AB-12345",
+      "driver": "Sélectionnez un conducteur",
+      "noDriver": "Aucun conducteur assigné",
+      "capacity": "Saisissez le nombre de places",
+      "manufactureYear": "Saisissez l'année de fabrication",
+      "color": "Saisissez la couleur du véhicule",
+      "notes": "Ajoutez des remarques sur le véhicule...",
+      "statusHint": "Utilisez l'interrupteur pour indiquer si le véhicule est actif"
+    },
+    "validation": {
+      "required": "{{field}} est obligatoire.",
+      "nonNegative": "{{field}} doit être supérieur ou égal à zéro.",
+      "yearRange": "{{field}} doit être compris entre {{start}} et {{end}}.",
+      "invalidDate": "Veuillez saisir une date valide pour {{field}}.",
+      "generic": "Veuillez vérifier les champs signalés puis réessayer."
+    },
+    "status": {
+      "active": "Actif",
+      "inactive": "Inactif"
+    },
+    "dialogs": {
+      "addVehicle": "Ajouter un véhicule",
+      "addVehicleHint": "Enregistrez une nouvelle voiture ou un nouveau bus dans votre parc.",
+      "editVehicle": "Modifier le véhicule",
+      "editVehicleHint": "Mettez à jour les informations du véhicule et l'affectation du conducteur.",
+      "maintenanceTitle": "Historique de maintenance · {{vehicle}}",
+      "maintenanceHint": "Suivez les vidanges, réparations et interventions sur ce véhicule."
+    },
+    "actions": {
+      "addVehicle": "Ajouter un véhicule",
+      "editVehicle": "Modifier le véhicule",
+      "manageMaintenance": "Historique de maintenance",
+      "deleteVehicle": "Supprimer le véhicule",
+      "viewVehicle": "Voir le véhicule"
+    },
+    "toast": {
+      "loadDriversFailed": "Échec du chargement de la liste des conducteurs.",
+      "loadFailed": "Échec du chargement des données des véhicules.",
+      "createSuccess": "Véhicule ajouté avec succès.",
+      "updateSuccess": "Véhicule mis à jour avec succès.",
+      "saveFailed": "Impossible d'enregistrer le véhicule. Veuillez réessayer.",
+      "deleteSuccess": "Véhicule supprimé avec succès.",
+      "deleteFailed": "Échec de la suppression du véhicule.",
+      "loadMaintenanceFailed": "Échec du chargement des historiques de maintenance.",
+      "loadGasoilFailed": "Échec du chargement des pleins de gasoil.",
+      "createMaintenanceSuccess": "Historique de maintenance ajouté avec succès.",
+      "updateMaintenanceSuccess": "Historique de maintenance mis à jour avec succès.",
+      "saveMaintenanceFailed": "Impossible d'enregistrer l'historique de maintenance.",
+      "deleteMaintenanceSuccess": "Historique de maintenance supprimé avec succès.",
+      "deleteMaintenanceFailed": "Échec de la suppression de l'historique de maintenance.",
+      "createGasoilSuccess": "Plein de gasoil enregistré avec succès.",
+      "saveGasoilFailed": "Impossible d'enregistrer le plein de gasoil.",
+      "gasoilAttachmentsUploadSuccess": "{{count}} pièce(s) jointe(s) téléchargée(s) avec succès.",
+      "gasoilAttachmentsUploadFailed": "Échec du téléchargement des pièces jointes du plein.",
+      "maintenanceAttachmentsUploadSuccess": "{{count}} pièce(s) jointe(s) téléchargée(s) avec succès.",
+      "maintenanceAttachmentsUploadFailed": "Échec du téléchargement des pièces jointes de maintenance.",
+      "imagesUploadSuccess": "{{count}} image(s) téléversée(s) avec succès.",
+      "imagesUploadFailed": "Échec du téléversement des images du véhicule."
+    },
+    "confirm": {
+      "deleteVehicle": "Êtes-vous sûr de vouloir supprimer {{vehicle}} ?",
+      "deleteMaintenance": "Supprimer l'intervention du {{date}} ?"
+    },
+    "stats": {
+      "totalVehicles": "Total des véhicules",
+      "totalHint": "Tous les véhicules enregistrés",
+      "activeVehicles": "Véhicules actifs",
+      "activeHint": "{{count}} véhicule(s) actuellement actif(s)",
+      "assignedDrivers": "Conducteurs assignés",
+      "assignedHint": "Véhicules avec un conducteur attitré",
+      "maintenanceDue": "Alertes de maintenance",
+      "maintenanceHint": "Véhicules nécessitant une intervention prochaine"
+    },
+    "filters": {
+      "byType": "Filtrer par type de véhicule",
+      "allTypes": "Tous les types",
+      "byStatus": "Filtrer par statut",
+      "allStatuses": "Tous les statuts"
+    },
+    "emptyState": {
+      "title": "Aucun véhicule enregistré pour le moment",
+      "subtitle": "Ajoutez votre première voiture ou votre premier bus pour suivre les lignes, les conducteurs et la maintenance."
+    },
+    "table": {
+      "vehicle": "Véhicule",
+      "driver": "Conducteur",
+      "type": "Type",
+      "lastOil": "Dernière vidange",
+      "lastService": "Dernière maintenance",
+      "status": "Statut",
+      "plateNumber": "Immat. : {{plate}}",
+      "unassigned": "Non assigné",
+      "notRecorded": "Non renseigné",
+      "oilDue": "Vidange à prévoir",
+      "serviceDue": "Maintenance à prévoir"
+    },
+    "maintenance": {
+      "serviceDate": "Date de l'intervention",
+      "serviceType": "Type d'intervention",
+      "serviceLocation": "Lieu",
+      "mileage": "Kilométrage",
+      "cost": "Coût",
+      "description": "Description",
+      "serviceTypePlaceholder": "Ex. : Vidange, Réparation des freins",
+      "serviceLocationPlaceholder": "Ex. : Garage municipal, Sur site",
+      "mileagePlaceholder": "Saisissez le kilométrage lors de l'intervention",
+      "costPlaceholder": "Saisissez le coût de l'intervention",
+      "descriptionPlaceholder": "Décrivez l'intervention réalisée",
+      "addRecord": "Ajouter un enregistrement",
+      "updateRecord": "Mettre à jour",
+      "savingRecord": "Enregistrement...",
+      "historyTitle": "Historique de maintenance",
+      "records": "enregistrement(s)",
+        "loadingRecords": "Chargement des historiques...",
+        "noRecords": "Aucun historique de maintenance pour le moment",
+        "attachments": "Pièces jointes",
+        "attachmentsTitle": "Pièces jointes de maintenance",
+        "attachmentsDescription": "Ajoutez des photos des reçus, pièces remplacées ou documents de service.",
+        "attachmentsAdd": "Ajouter des pièces jointes",
+        "attachmentsSelected": "{{count}} pièce(s) jointe(s) sélectionnée(s)",
+        "noAttachments": "Aucune pièce jointe pour le moment",
+        "uploadingAttachments": "Téléchargement des pièces jointes...",
+        "attachmentsInvalidType": "Seuls les fichiers image sont acceptés pour les pièces jointes de maintenance.",
+        "attachmentsTooMany": "Vous pouvez ajouter jusqu'à {{max}} images par intervention.",
+        "detailTitle": "Détails de l'intervention",
+        "detailSubtitle": "Consultez l'historique complet pour {{vehicle}}.",
+        "detailSubtitleFallback": "Affichez tous les détails de cette intervention.",
+        "backToVehicle": "Retour au véhicule",
+        "noDescription": "Aucune note supplémentaire n'a été fournie pour cette intervention."
+      },
+      "gasoil": {
+        "sectionTitle": "Historique de carburant",
+        "sectionDescription": "Suivez les pleins de gasoil et les dépenses associés à ce véhicule.",
+        "addRecord": "Ajouter un plein",
+        "records": "enregistrement(s)",
+        "loadingRecords": "Chargement des pleins de gasoil...",
+        "noRecords": "Aucun plein de gasoil pour le moment",
+        "refuelDate": "Date du plein",
+        "liters": "Litres",
+        "amount": "Montant",
+        "station": "Station",
+        "receiptNumber": "Numéro de reçu",
+        "notes": "Notes",
+        "litersPlaceholder": "Saisissez les litres ajoutés",
+        "amountPlaceholder": "Saisissez le montant payé",
+        "stationPlaceholder": "Ex. : Station du centre-ville",
+        "receiptNumberPlaceholder": "Numéro de reçu ou référence (optionnel)",
+        "notesPlaceholder": "Ajoutez des notes sur ce plein...",
+        "detailSubtitle": "Enregistrez un nouveau plein de gasoil pour {{vehicle}}.",
+        "detailSubtitleFallback": "Enregistrez un nouveau plein de gasoil.",
+        "attachmentsTitle": "Pièces jointes du plein",
+        "attachmentsDescription": "Ajoutez les reçus, les relevés de pompe ou d'autres photos pertinentes.",
+        "attachmentsAdd": "Ajouter des pièces jointes",
+        "attachmentsSelected": "{{count}} pièce(s) jointe(s) sélectionnée(s)",
+        "noAttachments": "Aucune pièce jointe pour le moment",
+        "uploadingAttachments": "Téléversement des pièces jointes...",
+        "attachmentsInvalidType": "Seuls les fichiers image sont acceptés pour les pièces jointes de carburant.",
+        "attachmentsTooMany": "Vous pouvez ajouter jusqu'à {{max}} images par plein.",
+        "savingRecord": "Enregistrement..."
+      },
+    "sections": {
+      "generalInfo": "Informations générales",
+      "maintenance": "Suivi de maintenance"
+    },
+    "messages": {
+      "notFound": "Véhicule introuvable",
+      "notFoundDescription": "Le véhicule demandé est introuvable."
+    }
   }
 }
-
-
-
-
-
-
-
-

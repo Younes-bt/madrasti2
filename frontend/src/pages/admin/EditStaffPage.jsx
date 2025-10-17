@@ -173,39 +173,44 @@ const EditStaffPage = () => {
     setLoading(true);
 
     try {
-      // Prepare form data for multipart/form-data if profile picture is uploaded
-      const formDataToSend = new FormData();
-      
-      // User data
-      formDataToSend.append('first_name', formData.first_name);
-      formDataToSend.append('last_name', formData.last_name);
-      
-      // Profile data
-      formDataToSend.append('ar_first_name', formData.ar_first_name || '');
-      formDataToSend.append('ar_last_name', formData.ar_last_name || '');
-      formDataToSend.append('position', formData.position || '');
-      formDataToSend.append('phone', formData.phone || '');
-      formDataToSend.append('date_of_birth', formData.date_of_birth || '');
-      formDataToSend.append('address', formData.address || '');
-      formDataToSend.append('bio', formData.bio || '');
-      formDataToSend.append('emergency_contact_name', formData.emergency_contact_name || '');
-      formDataToSend.append('emergency_contact_phone', formData.emergency_contact_phone || '');
-      formDataToSend.append('department', formData.department || '');
-      formDataToSend.append('hire_date', formData.hire_date || '');
-      formDataToSend.append('salary', formData.salary || '');
-      formDataToSend.append('linkedin_url', formData.linkedin_url || '');
-      formDataToSend.append('twitter_url', formData.twitter_url || '');
-      
-      // Add profile picture if uploaded
-      if (profilePictureFile) {
-        formDataToSend.append('profile_picture', profilePictureFile);
-      }
+      // Send primary profile data as JSON to avoid multipart parsing issues
+      const staffPayload = {
+        first_name: formData.first_name.trim(),
+        last_name: formData.last_name.trim(),
+        ar_first_name: formData.ar_first_name.trim(),
+        ar_last_name: formData.ar_last_name.trim(),
+        position: formData.position || '',
+        phone: formData.phone.trim() || '',
+        date_of_birth: formData.date_of_birth || null,
+        address: formData.address.trim() || '',
+        bio: formData.bio.trim() || '',
+        emergency_contact_name: formData.emergency_contact_name.trim() || '',
+        emergency_contact_phone: formData.emergency_contact_phone.trim() || '',
+        department: formData.department.trim() || '',
+        hire_date: formData.hire_date || null,
+        salary: formData.salary ? parseFloat(formData.salary) : null,
+        linkedin_url: formData.linkedin_url.trim() || '',
+        twitter_url: formData.twitter_url.trim() || ''
+      };
 
-      await apiMethods.patch(`users/users/${staffId}/`, formDataToSend, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      await apiMethods.patch(`users/users/${staffId}/`, staffPayload);
+
+      // Upload profile picture separately when provided
+      if (profilePictureFile) {
+        try {
+          const imageFormData = new FormData();
+          imageFormData.append('profile_picture', profilePictureFile);
+
+          await apiMethods.patch(`users/users/${staffId}/`, imageFormData);
+        } catch (imageError) {
+          console.warn('Profile picture upload failed:', imageError);
+          toast.warning(
+            t('error.profilePictureUploadFailed', {
+              defaultValue: 'Profile picture upload failed. You can try again later.'
+            })
+          );
+        }
+      }
 
       toast.success(t('staff.updateSuccess', { 
         name: `${formData.first_name} ${formData.last_name}`

@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.contenttypes.models import ContentType
+from media.serializers import MediaRelationMinimalSerializer
 from .models import (
     School,
     EducationalLevel,
@@ -7,15 +8,67 @@ from .models import (
     Track,
     SchoolClass,
     Room,
+    Vehicle,
+    VehicleMaintenanceRecord,
+    GasoilRecord,
     Subject,
     SubjectGrade,
     AcademicYear
 )
 
 class SchoolSerializer(serializers.ModelSerializer):
+    logo_url = serializers.SerializerMethodField()
+    director_details = serializers.SerializerMethodField()
+
     class Meta:
         model = School
-        fields = '__all__'
+        fields = (
+            'id',
+            'name',
+            'name_arabic',
+            'name_french',
+            'phone',
+            'fix_phone',
+            'whatsapp_num',
+            'email',
+            'website',
+            'facebook_url',
+            'instagram_url',
+            'twitter_url',
+            'linkedin_url',
+            'youtube_url',
+            'school_code',
+            'pattent',
+            'rc_code',
+            'logo',
+            'logo_url',
+            'address',
+            'city',
+            'region',
+            'postal_code',
+            'current_academic_year',
+            'director',
+            'director_details',
+            'created_at',
+            'updated_at',
+        )
+        read_only_fields = ('logo_url', 'director_details', 'created_at', 'updated_at')
+
+    def get_logo_url(self, obj):
+        """Return an accessible URL for the uploaded logo."""
+        return obj.logo_url
+
+    def get_director_details(self, obj):
+        """Return minimal director information for easier frontend rendering."""
+        if obj.director:
+            profile = getattr(obj.director, 'profile', None)
+            full_name = getattr(profile, 'full_name', None) if profile else None
+            return {
+                'id': obj.director.id,
+                'email': obj.director.email,
+                'full_name': full_name or obj.director.get_full_name() or obj.director.email,
+            }
+        return None
 
 class AcademicYearSerializer(serializers.ModelSerializer):
     class Meta:
@@ -56,6 +109,143 @@ class RoomSerializer(serializers.ModelSerializer):
                 'title': featured_image.title
             }
         return None
+
+class VehicleMaintenanceRecordSerializer(serializers.ModelSerializer):
+    attachments = MediaRelationMinimalSerializer(source='get_attachments', many=True, read_only=True)
+    attachments_count = serializers.IntegerField(read_only=True)
+    content_type = serializers.SerializerMethodField()
+
+    class Meta:
+        model = VehicleMaintenanceRecord
+        fields = (
+            'id',
+            'vehicle',
+            'service_date',
+            'service_type',
+            'description',
+            'service_location',
+            'mileage',
+            'cost',
+            'attachments',
+            'attachments_count',
+            'content_type',
+            'created_at',
+            'updated_at',
+        )
+        read_only_fields = ('id', 'created_at', 'updated_at', 'attachments', 'attachments_count', 'content_type')
+        extra_kwargs = {
+            'vehicle': {'read_only': True},
+        }
+
+    def get_content_type(self, obj):
+        return ContentType.objects.get_for_model(obj).id
+
+class GasoilRecordSerializer(serializers.ModelSerializer):
+    attachments = MediaRelationMinimalSerializer(source='get_attachments', many=True, read_only=True)
+    attachments_count = serializers.IntegerField(read_only=True)
+    content_type = serializers.SerializerMethodField()
+
+    class Meta:
+        model = GasoilRecord
+        fields = (
+            'id',
+            'vehicle',
+            'refuel_date',
+            'liters',
+            'amount',
+            'fuel_station',
+            'receipt_number',
+            'notes',
+            'attachments',
+            'attachments_count',
+            'content_type',
+            'created_at',
+            'updated_at',
+        )
+        read_only_fields = ('id', 'created_at', 'updated_at', 'attachments', 'attachments_count', 'content_type')
+        extra_kwargs = {
+            'vehicle': {'read_only': True},
+        }
+
+    def get_content_type(self, obj):
+        return ContentType.objects.get_for_model(obj).id
+
+class VehicleSerializer(serializers.ModelSerializer):
+    driver_details = serializers.SerializerMethodField()
+    maintenance_records = VehicleMaintenanceRecordSerializer(many=True, read_only=True)
+    gasoil_records = GasoilRecordSerializer(many=True, read_only=True)
+    image_count = serializers.SerializerMethodField()
+    featured_image = serializers.SerializerMethodField()
+    content_type = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Vehicle
+        fields = (
+            'id',
+            'school',
+            'name',
+            'vehicle_type',
+            'model',
+            'plate_number',
+            'driver',
+            'driver_details',
+            'capacity',
+            'color',
+            'manufacture_year',
+            'last_oil_change_date',
+            'last_service_date',
+            'insurance_expiry_date',
+            'notes',
+            'is_active',
+            'created_at',
+            'updated_at',
+            'image_count',
+            'featured_image',
+            'content_type',
+            'maintenance_records',
+            'gasoil_records',
+        )
+        read_only_fields = (
+            'created_at',
+            'updated_at',
+            'driver_details',
+            'maintenance_records',
+            'gasoil_records',
+            'image_count',
+            'featured_image',
+            'content_type',
+            'school',
+        )
+
+    def get_driver_details(self, obj):
+        """Return minimal driver information"""
+        if not obj.driver:
+            return None
+        profile = getattr(obj.driver, 'profile', None)
+        return {
+            'id': obj.driver.id,
+            'email': obj.driver.email,
+            'full_name': getattr(profile, 'full_name', None) or obj.driver.get_full_name() or obj.driver.email,
+            'phone': getattr(profile, 'phone_number', ''),
+        }
+
+    def get_image_count(self, obj):
+        return obj.get_image_count()
+
+    def get_featured_image(self, obj):
+        featured_image = obj.get_featured_image()
+        if featured_image:
+            return {
+                'id': str(featured_image.id),
+                'url': featured_image.url,
+                'secure_url': featured_image.secure_url or featured_image.url,
+                'alt_text': featured_image.alt_text,
+                'title': featured_image.title
+            }
+        return None
+
+    def get_content_type(self, obj):
+        return ContentType.objects.get_for_model(obj).id
 
 class TrackSerializer(serializers.ModelSerializer):
     # Include grade details

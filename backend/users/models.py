@@ -125,6 +125,7 @@ class Profile(models.Model):
         SECURITY = 'SECURITY', _('Security Officer')
         MAINTENANCE = 'MAINTENANCE', _('Maintenance Staff')
         SUPPORT = 'SUPPORT', _('Support Staff')
+        DRIVER = 'DRIVER', _('Driver')
         OTHER = 'OTHER', _('Other')
 
     POSITION_LABELS = {
@@ -182,6 +183,11 @@ class Profile(models.Model):
             'en': 'Support Staff',
             'fr': 'Personnel de soutien',
             'ar': 'طاقم الدعم'
+        },
+        Position.DRIVER: {
+            'en': 'Driver',
+            'fr': 'Chauffeur',
+            'ar': 'سائق'
         },
         Position.OTHER: {
             'en': 'Other',

@@ -4,7 +4,8 @@ from rest_framework_nested import routers
 from .views import (
     MediaFileViewSet,
     MediaRelationViewSet,
-    RoomMediaViewSet
+    RoomMediaViewSet,
+    VehicleMediaViewSet
 )
 
 # Create the main router

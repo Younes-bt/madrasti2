@@ -189,6 +189,21 @@ class UsersService {
    * @param {Object} params - Query parameters
    * @returns {Promise<Object>} Users with specified role
    */
+  /**
+   * Get available drivers (profile position DRIVER)
+   * @param {Object} params - Optional query params
+   * @returns {Promise<Array>} List of drivers
+   */
+  async getAvailableDrivers(params = {}) {
+    try {
+      const response = await apiMethods.get('users/users/available-drivers/', { params });
+      return response;
+    } catch (error) {
+      console.error('Get available drivers failed:', error);
+      throw error;
+    }
+  }
+
   async getUsersByRole(role, params = {}) {
     try {
       const response = await apiMethods.get('users/', {

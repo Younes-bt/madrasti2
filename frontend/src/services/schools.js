@@ -605,6 +605,220 @@ class SchoolsService {
     }
   }
 
+  // ==================== VEHICLES ====================
+
+  /**
+   * Get Vehicles
+   * @param {Object} params - Query parameters
+   * @returns {Promise<Array>} Vehicles list
+   */
+  async getVehicles(params = {}) {
+    try {
+      const response = await apiMethods.get('schools/vehicles/', { params });
+      return response.results || response;
+    } catch (error) {
+      console.error('Get vehicles failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get Vehicle by ID
+   * @param {number} vehicleId - Vehicle ID
+   * @returns {Promise<Object>} Vehicle data
+   */
+  async getVehicle(vehicleId) {
+    try {
+      const response = await apiMethods.get(`schools/vehicles/${vehicleId}/`);
+      return response;
+    } catch (error) {
+      console.error('Get vehicle failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create Vehicle
+   * @param {Object} vehicleData - Vehicle data
+   * @returns {Promise<Object>} Created vehicle
+   */
+  async createVehicle(vehicleData) {
+    try {
+      const response = await apiMethods.post('schools/vehicles/', vehicleData);
+      return response;
+    } catch (error) {
+      console.error('Create vehicle failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update Vehicle
+   * @param {number} vehicleId - Vehicle ID
+   * @param {Object} vehicleData - Vehicle data
+   * @returns {Promise<Object>} Updated vehicle
+   */
+  async updateVehicle(vehicleId, vehicleData) {
+    try {
+      const response = await apiMethods.put(`schools/vehicles/${vehicleId}/`, vehicleData);
+      return response;
+    } catch (error) {
+      console.error('Update vehicle failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete Vehicle
+   * @param {number} vehicleId - Vehicle ID
+   * @returns {Promise<Object>} Deletion response
+   */
+  async deleteVehicle(vehicleId) {
+    try {
+      const response = await apiMethods.delete(`schools/vehicles/${vehicleId}/`);
+      return response;
+    } catch (error) {
+      console.error('Delete vehicle failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get maintenance records for a vehicle
+   * @param {number} vehicleId - Vehicle ID
+   * @returns {Promise<Array>} Maintenance records
+   */
+  async getVehicleMaintenanceRecords(vehicleId) {
+    try {
+      const response = await apiMethods.get(`schools/vehicles/${vehicleId}/maintenance-records/`);
+      return response.results || response;
+    } catch (error) {
+      console.error('Get vehicle maintenance records failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get a single maintenance record for a vehicle
+   * @param {number} vehicleId - Vehicle ID
+   * @param {number} recordId - Maintenance record ID
+   * @returns {Promise<Object>} Maintenance record data
+   */
+  async getVehicleMaintenanceRecord(vehicleId, recordId) {
+    try {
+      const response = await apiMethods.get(
+        `schools/vehicles/${vehicleId}/maintenance-records/${recordId}/`
+      );
+      return response;
+    } catch (error) {
+      console.error('Get vehicle maintenance record failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create maintenance record for a vehicle
+   * @param {number} vehicleId - Vehicle ID
+   * @param {Object} recordData - Maintenance record data
+   * @returns {Promise<Object>} Created record
+   */
+  async createVehicleMaintenanceRecord(vehicleId, recordData) {
+    try {
+      const response = await apiMethods.post(
+        `schools/vehicles/${vehicleId}/maintenance-records/`,
+        recordData
+      );
+      return response;
+    } catch (error) {
+      console.error('Create vehicle maintenance record failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get gasoil records for a vehicle
+   * @param {number} vehicleId
+   * @returns {Promise<Array>}
+   */
+  async getVehicleGasoilRecords(vehicleId) {
+    try {
+      const response = await apiMethods.get(`schools/vehicles/${vehicleId}/gasoil-records/`);
+      return response.results || response;
+    } catch (error) {
+      console.error('Get vehicle gasoil records failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get a single gasoil record for a vehicle
+   */
+  async getVehicleGasoilRecord(vehicleId, recordId) {
+    try {
+      const response = await apiMethods.get(
+        `schools/vehicles/${vehicleId}/gasoil-records/${recordId}/`
+      );
+      return response;
+    } catch (error) {
+      console.error('Get vehicle gasoil record failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create gasoil record
+   */
+  async createVehicleGasoilRecord(vehicleId, recordData) {
+    try {
+      const response = await apiMethods.post(
+        `schools/vehicles/${vehicleId}/gasoil-records/`,
+        recordData
+      );
+      return response;
+    } catch (error) {
+      console.error('Create vehicle gasoil record failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update maintenance record for a vehicle
+   * @param {number} vehicleId - Vehicle ID
+   * @param {number} recordId - Maintenance record ID
+   * @param {Object} recordData - Maintenance record data
+   * @returns {Promise<Object>} Updated record
+   */
+  async updateVehicleMaintenanceRecord(vehicleId, recordId, recordData) {
+    try {
+      const response = await apiMethods.put(
+        `schools/vehicles/${vehicleId}/maintenance-records/${recordId}/`,
+        recordData
+      );
+      return response;
+    } catch (error) {
+      console.error('Update vehicle maintenance record failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete maintenance record for a vehicle
+   * @param {number} vehicleId - Vehicle ID
+   * @param {number} recordId - Maintenance record ID
+   * @returns {Promise<Object>} Deletion response
+   */
+  async deleteVehicleMaintenanceRecord(vehicleId, recordId) {
+    try {
+      const response = await apiMethods.delete(
+        `schools/vehicles/${vehicleId}/maintenance-records/${recordId}/`
+      );
+      return response;
+    } catch (error) {
+      console.error('Delete vehicle maintenance record failed:', error);
+      throw error;
+    }
+  }
+
   // ==================== HELPER METHODS ====================
 
   /**

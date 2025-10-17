@@ -10,6 +10,7 @@ export const STAFF_POSITION_OPTIONS = [
   { value: 'SECURITY', translationKey: 'staff.positions.SECURITY' },
   { value: 'MAINTENANCE', translationKey: 'staff.positions.MAINTENANCE' },
   { value: 'SUPPORT', translationKey: 'staff.positions.SUPPORT' },
+  { value: 'DRIVER', translationKey: 'staff.positions.DRIVER' },
   { value: 'OTHER', translationKey: 'staff.positions.OTHER' }
 ]
 
@@ -45,6 +46,7 @@ const FALLBACK_LABELS = {
     SECURITY: 'Security Officer',
     MAINTENANCE: 'Maintenance Staff',
     SUPPORT: 'Support Staff',
+    DRIVER: 'Driver',
     OTHER: 'Other',
     UNKNOWN: 'Staff'
   },
@@ -60,6 +62,7 @@ const FALLBACK_LABELS = {
     SECURITY: 'Agent de sécurité',
     MAINTENANCE: 'Équipe de maintenance',
     SUPPORT: 'Personnel de soutien',
+    DRIVER: 'Chauffeur',
     OTHER: 'Autre',
     UNKNOWN: 'Personnel'
   },
@@ -75,6 +78,7 @@ const FALLBACK_LABELS = {
     SECURITY: 'مسؤول أمن',
     MAINTENANCE: 'فريق الصيانة',
     SUPPORT: 'طاقم الدعم',
+    DRIVER: 'سائق',
     OTHER: 'أخرى',
     UNKNOWN: 'موظف'
   }

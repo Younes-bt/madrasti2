@@ -90,6 +90,8 @@ export const API_ENDPOINTS = {
   CLASSES: 'schools/classes/',
   SUBJECTS: 'schools/subjects/',
   ROOMS: 'schools/rooms/',
+  VEHICLES: 'schools/vehicles/',
+  VEHICLE_MAINTENANCE: 'schools/vehicles/{vehicleId}/maintenance-records/',
 
   // Homework
   ASSIGNMENTS: 'homework/assignments/',

@@ -1,20 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
-import { 
-  Edit, 
-  User, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Calendar, 
-  FileText, 
-  Camera, 
+import {
+  Edit,
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  FileText,
   Users,
-  Clock,
   Shield,
-  Briefcase,
-  Building
+  Loader2
 } from 'lucide-react';
 import AdminPageLayout from '../../components/admin/layout/AdminPageLayout';
 import { Button } from '../../components/ui/button';
@@ -23,22 +20,79 @@ import { Badge } from '../../components/ui/badge';
 import { apiMethods } from '../../services/api';
 import { toast } from 'sonner';
 
+const getLanguageCode = (language) => (language || 'en').split('-')[0];
+
+const normalizeResponse = (response) => {
+  if (!response) return null;
+  return response.data ? response.data : response;
+};
+
+const getLocalizedName = (user, language) => {
+  if (!user) return '';
+  const lang = getLanguageCode(language);
+  const profile = user.profile || {};
+
+  const fallback =
+    user.full_name ||
+    profile.full_name ||
+    `${user.first_name || profile.first_name || ''} ${user.last_name || profile.last_name || ''}`.trim() ||
+    user.username ||
+    '';
+
+  const resolveByPrefix = (prefix) => {
+    const first = user[`${prefix}_first_name`] ?? profile[`${prefix}_first_name`];
+    const last = user[`${prefix}_last_name`] ?? profile[`${prefix}_last_name`];
+    const full = profile[`${prefix}_full_name`];
+    const combined = `${first || ''} ${last || ''}`.trim();
+    return (combined || full || '').trim();
+  };
+
+  if (lang === 'ar') {
+    const arabicName = resolveByPrefix('ar');
+    if (arabicName) return arabicName;
+  }
+
+  if (lang === 'fr') {
+    const frenchName = resolveByPrefix('fr');
+    if (frenchName) return frenchName;
+  }
+
+  return fallback.trim();
+};
+
+const formatDate = (dateString) => {
+  if (!dateString) return '-';
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return '-';
+  return date.toLocaleDateString();
+};
+
 const ViewParentPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { parentId } = useParams();
   const [loading, setLoading] = useState(true);
   const [parentData, setParentData] = useState(null);
+  const [children, setChildren] = useState([]);
 
-  // Fetch parent data
   const fetchParentData = async () => {
+    if (!parentId) return;
     setLoading(true);
     try {
-      const response = await apiMethods.get(`users/users/${parentId}/`);
-      
-      let data = response.data || response;
-      setParentData(data);
-      
+      const [parentResponse, childrenResponse] = await Promise.all([
+        apiMethods.get(`users/users/${parentId}/`),
+        apiMethods.get(`users/users/${parentId}/children/`).catch(() => null)
+      ]);
+
+      const parent = normalizeResponse(parentResponse);
+      const childrenPayload = normalizeResponse(childrenResponse) || {};
+      const childrenList = Array.isArray(childrenPayload.children) ? childrenPayload.children : [];
+
+      setParentData({
+        ...parent,
+        children_count: childrenPayload?.total_children ?? childrenList.length
+      });
+      setChildren(childrenList);
     } catch (error) {
       console.error('Failed to fetch parent data:', error);
       toast.error(t('error.failedToLoadParentData'));
@@ -49,53 +103,28 @@ const ViewParentPage = () => {
   };
 
   useEffect(() => {
-    if (parentId) {
-      fetchParentData();
-    }
+    fetchParentData();
   }, [parentId]);
 
   const handleEdit = () => {
     navigate(`/admin/school-management/parents/edit/${parentId}`);
   };
 
-  const getStatusBadge = (isActive) => {
-    return (
-      <Badge 
-        variant={isActive ? 'default' : 'secondary'}
-        className={isActive ? 'bg-green-100 text-green-800 hover:bg-green-100' : 'bg-red-100 text-red-800 hover:bg-red-100'}
-      >
-        {isActive ? t('status.active') : t('status.inactive')}
-      </Badge>
-    );
+  const handleViewChild = (childId) => {
+    if (!childId) return;
+    navigate(`/admin/school-management/students/view/${childId}`);
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString();
+  const getProfileValue = (field) => {
+    if (!parentData) return '';
+    if (parentData[field] !== undefined && parentData[field] !== null && parentData[field] !== '') {
+      return parentData[field];
+    }
+    if (parentData.profile && parentData.profile[field] !== undefined && parentData.profile[field] !== null) {
+      return parentData.profile[field];
+    }
+    return '';
   };
-
-  const InfoItem = ({ icon, label, value, isLink = false, linkUrl = null }) => (
-    <div className="flex items-start space-x-3 p-3">
-      <div className="flex-shrink-0 mt-1">
-        {icon}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-900">{label}</p>
-        {isLink && value && linkUrl ? (
-          <a 
-            href={linkUrl} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="text-sm text-blue-600 hover:text-blue-800 hover:underline break-all"
-          >
-            {value}
-          </a>
-        ) : (
-          <p className="text-sm text-gray-600 break-words">{value || '-'}</p>
-        )}
-      </div>
-    </div>
-  );
 
   const actions = [
     <Button
@@ -120,7 +149,7 @@ const ViewParentPage = () => {
       >
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
             <p className="text-muted-foreground">{t('common.loadingData')}</p>
           </div>
         </div>
@@ -138,16 +167,45 @@ const ViewParentPage = () => {
       >
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <p className="text-muted-foreground">{t('error.parentNotFound')}</p>
+            <p className="text-muted-foreground">{t('error.failedToLoadParentData')}</p>
           </div>
         </div>
       </AdminPageLayout>
     );
   }
 
+  const displayName = getLocalizedName(parentData, i18n.language);
+  const arabicName = getLocalizedName(parentData, 'ar');
+  const childrenCount = parentData.children_count ?? children.length ?? 0;
+  const shouldShowArabicSecondary =
+    arabicName && arabicName !== displayName && getLanguageCode(i18n.language) !== 'ar';
+
+  const InfoItem = ({ icon, label, value, isLink = false, linkUrl = null }) => (
+    <div className="flex items-start gap-3 p-3">
+      <div className="mt-1 text-muted-foreground">
+        {icon}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-foreground">{label}</p>
+        {isLink && value && linkUrl ? (
+          <a
+            href={linkUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-primary hover:underline break-all"
+          >
+            {value}
+          </a>
+        ) : (
+          <p className="text-sm text-muted-foreground break-words">{value || '-'}</p>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <AdminPageLayout
-      title={`${parentData.first_name} ${parentData.last_name}`}
+      title={displayName || t('parent.viewParent')}
       subtitle={t('parent.viewParentDescription')}
       showBackButton={true}
       backButtonPath="/admin/school-management/parents"
@@ -155,187 +213,190 @@ const ViewParentPage = () => {
     >
       <div className="max-w-6xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
+
           {/* Profile Summary - Left Column */}
           <div className="lg:col-span-1 space-y-6">
-            
+
             {/* Profile Picture & Basic Info */}
-            <Card>
+            <Card className="border-border/50">
               <CardContent className="pt-6">
                 <div className="text-center">
                   <div className="relative inline-block">
                     {parentData.profile_picture_url ? (
                       <img
                         src={parentData.profile_picture_url}
-                        alt={`${parentData.first_name} ${parentData.last_name}`}
-                        className="h-32 w-32 rounded-full object-cover border-4 border-gray-200 mx-auto"
+                        alt={displayName}
+                        className="h-32 w-32 rounded-full object-cover border-4 border-border mx-auto"
                       />
                     ) : (
-                      <div className="h-32 w-32 rounded-full bg-gray-200 flex items-center justify-center mx-auto">
-                        <Users className="h-12 w-12 text-gray-400" />
+                      <div className="h-32 w-32 rounded-full bg-muted flex items-center justify-center mx-auto border-4 border-border">
+                        <User className="h-12 w-12 text-muted-foreground" />
                       </div>
                     )}
                   </div>
-                  
-                  <h3 className="mt-4 text-xl font-semibold text-gray-900">
-                    {parentData.first_name} {parentData.last_name}
+
+                  <h3 className="mt-4 text-xl font-semibold text-foreground">
+                    {displayName || t('parent.viewParent')}
                   </h3>
-                  
-                  {(parentData.ar_first_name || parentData.ar_last_name) && (
-                    <p className="text-sm text-gray-600 mt-1" dir="rtl">
-                      {parentData.ar_first_name} {parentData.ar_last_name}
+
+                  {shouldShowArabicSecondary && (
+                    <p className="text-sm text-muted-foreground mt-1" dir="rtl">
+                      {arabicName}
                     </p>
                   )}
-                  
-                  <div className="mt-2 flex items-center justify-center space-x-2">
-                    {getStatusBadge(parentData.is_active)}
+
+                  <div className="mt-3 flex items-center justify-center gap-2 flex-wrap">
+                    <Badge variant={parentData.is_active ? 'default' : 'secondary'}>
+                      {parentData.is_active ? t('status.active') : t('status.inactive')}
+                    </Badge>
+                    <Badge variant="outline" className="gap-1">
+                      <Users className="h-3 w-3" />
+                      {t('parent.children')}: {childrenCount}
+                    </Badge>
                   </div>
-                  
-                  {parentData.occupation && (
-                    <div className="mt-2">
-                      <Badge variant="secondary" className="text-sm">
-                        {parentData.occupation}
-                      </Badge>
-                    </div>
-                  )}
                 </div>
               </CardContent>
             </Card>
 
-            {/* Quick Stats */}
-            <Card>
+            {/* Account Information */}
+            <Card className="border-border/50">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5" />
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Shield className="h-5 w-5 text-primary" />
                   {t('parent.accountInfo')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">{t('common.role')}</span>
-                  <Badge variant="secondary">{t(`roles.${parentData.role?.toLowerCase()}`)}</Badge>
+                  <span className="text-sm text-muted-foreground">{t('common.role')}</span>
+                  <Badge variant="outline">
+                    {t(`roles.${parentData.role?.toLowerCase()}`)}
+                  </Badge>
                 </div>
-                
+
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">{t('common.joinedDate')}</span>
-                  <span className="text-sm text-gray-900">{formatDate(parentData.created_at)}</span>
+                  <span className="text-sm text-muted-foreground">{t('common.joinedDate')}</span>
+                  <span className="text-sm text-foreground">{formatDate(parentData.created_at)}</span>
                 </div>
-                
+
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">{t('common.lastLogin')}</span>
-                  <span className="text-sm text-gray-900">{formatDate(parentData.last_login)}</span>
+                  <span className="text-sm text-muted-foreground">{t('common.lastLogin')}</span>
+                  <span className="text-sm text-foreground">{formatDate(parentData.last_login)}</span>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Children Summary */}
+            <Card className="border-border/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Users className="h-5 w-5 text-primary" />
+                  {t('parent.childrenNames')}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {children.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {children.map((child) => {
+                      const name = getLocalizedName(child, i18n.language);
+                      const childId = child?.id;
+                      return (
+                        <Badge
+                          key={childId || name}
+                          variant="secondary"
+                          className={`text-sm ${childId ? 'cursor-pointer hover:bg-secondary/80 transition-colors' : 'opacity-60 cursor-default'}`}
+                          onClick={() => childId && handleViewChild(childId)}
+                        >
+                          {name || t('parent.children')}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">{t('common.noData')}</p>
+                )}
               </CardContent>
             </Card>
           </div>
 
           {/* Detailed Information - Right Columns */}
           <div className="lg:col-span-2 space-y-6">
-            
+
             {/* Contact Information */}
-            <Card>
+            <Card className="border-border/50">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Mail className="h-5 w-5" />
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Mail className="h-5 w-5 text-primary" />
                   {t('parent.contactInformation')}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="divide-y divide-gray-100">
+              <CardContent className="divide-y divide-border/50">
                 <InfoItem
-                  icon={<Mail className="h-4 w-4 text-gray-400" />}
+                  icon={<Mail className="h-4 w-4" />}
                   label={t('common.email')}
                   value={parentData.email}
                   isLink={true}
                   linkUrl={`mailto:${parentData.email}`}
                 />
-                
-                <InfoItem
-                  icon={<Phone className="h-4 w-4 text-gray-400" />}
-                  label={t('common.phone')}
-                  value={parentData.phone}
-                  isLink={parentData.phone}
-                  linkUrl={`tel:${parentData.phone}`}
-                />
-                
-                <InfoItem
-                  icon={<MapPin className="h-4 w-4 text-gray-400" />}
-                  label={t('common.address')}
-                  value={parentData.address}
-                />
-                
-                <InfoItem
-                  icon={<Calendar className="h-4 w-4 text-gray-400" />}
-                  label={t('common.dateOfBirth')}
-                  value={formatDate(parentData.date_of_birth)}
-                />
-              </CardContent>
-            </Card>
 
-            {/* Parent Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  {t('parent.parentInformation')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="divide-y divide-gray-100">
                 <InfoItem
-                  icon={<Users className="h-4 w-4 text-gray-400" />}
-                  label={t('parent.childrenNames')}
-                  value={parentData.children_names}
+                  icon={<Phone className="h-4 w-4" />}
+                  label={t('common.phone')}
+                  value={getProfileValue('phone')}
+                  isLink={Boolean(getProfileValue('phone'))}
+                  linkUrl={`tel:${getProfileValue('phone')}`}
                 />
-                
+
                 <InfoItem
-                  icon={<Briefcase className="h-4 w-4 text-gray-400" />}
-                  label={t('parent.occupation')}
-                  value={parentData.occupation}
+                  icon={<MapPin className="h-4 w-4" />}
+                  label={t('common.address')}
+                  value={getProfileValue('address')}
                 />
-                
+
                 <InfoItem
-                  icon={<Building className="h-4 w-4 text-gray-400" />}
-                  label={t('parent.workplace')}
-                  value={parentData.workplace}
+                  icon={<Calendar className="h-4 w-4" />}
+                  label={t('common.dateOfBirth')}
+                  value={formatDate(getProfileValue('date_of_birth'))}
                 />
               </CardContent>
             </Card>
 
             {/* Emergency Contact */}
-            <Card>
+            <Card className="border-border/50">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Phone className="h-5 w-5" />
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Phone className="h-5 w-5 text-primary" />
                   {t('parent.emergencyContact')}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="divide-y divide-gray-100">
+              <CardContent className="divide-y divide-border/50">
                 <InfoItem
-                  icon={<User className="h-4 w-4 text-gray-400" />}
+                  icon={<User className="h-4 w-4" />}
                   label={t('parent.emergencyContactName')}
-                  value={parentData.emergency_contact_name}
+                  value={getProfileValue('emergency_contact_name')}
                 />
-                
+
                 <InfoItem
-                  icon={<Phone className="h-4 w-4 text-gray-400" />}
+                  icon={<Phone className="h-4 w-4" />}
                   label={t('parent.emergencyContactPhone')}
-                  value={parentData.emergency_contact_phone}
-                  isLink={parentData.emergency_contact_phone}
-                  linkUrl={`tel:${parentData.emergency_contact_phone}`}
+                  value={getProfileValue('emergency_contact_phone')}
+                  isLink={Boolean(getProfileValue('emergency_contact_phone'))}
+                  linkUrl={`tel:${getProfileValue('emergency_contact_phone')}`}
                 />
               </CardContent>
             </Card>
 
             {/* Additional Notes */}
             {parentData.bio && (
-              <Card>
+              <Card className="border-border/50">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <FileText className="h-5 w-5 text-primary" />
                     {t('parent.notes')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
                     {parentData.bio}
                   </p>
                 </CardContent>
