@@ -31,6 +31,11 @@ const ProtectedRoute = ({
     return <Navigate to={redirectTo} state={{ from: location }} replace />
   }
 
+  // If user must change password on first login, force redirect to first-login page
+  if (requireAuth && user?.force_password_change && location.pathname !== '/first-login') {
+    return <Navigate to="/first-login" replace />
+  }
+
   // Check role-based access if roles are specified
   if (requiredRoles.length > 0 && user) {
     const hasRequiredRole = requiredRoles.includes(user.role)

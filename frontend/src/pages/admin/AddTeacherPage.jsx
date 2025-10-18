@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { Save, X, User, Mail, Phone, MapPin, Calendar, FileText, BookOpen, GraduationCap } from 'lucide-react';
+import { Save, X, User, Mail, Phone, MapPin, Calendar, FileText, BookOpen, GraduationCap, Briefcase } from 'lucide-react';
 import AdminPageLayout from '../../components/admin/layout/AdminPageLayout';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -26,6 +26,7 @@ const AddTeacherPage = () => {
     teachable_grades: [],
     phone: '',
     date_of_birth: '',
+    hire_date: '',
     address: '',
     bio: '',
     emergency_contact_name: '',
@@ -196,6 +197,7 @@ const AddTeacherPage = () => {
         ...(formData.teachable_grades && formData.teachable_grades.length > 0 && { teachable_grades: formData.teachable_grades }),
         ...(formData.phone && { phone: formData.phone }),
         ...(formData.date_of_birth && { date_of_birth: formData.date_of_birth }),
+        ...(formData.hire_date && { hire_date: formData.hire_date }),
         ...(formData.address && { address: formData.address }),
         ...(formData.bio && { bio: formData.bio }),
         ...(formData.emergency_contact_name && { emergency_contact_name: formData.emergency_contact_name }),
@@ -295,7 +297,7 @@ const AddTeacherPage = () => {
       <div className="max-w-4xl mx-auto">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Information */}
-          <Card>
+          <Card className="border-border/50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <User className="h-5 w-5" />
@@ -313,11 +315,11 @@ const AddTeacherPage = () => {
                   value={formData.first_name}
                   onChange={(e) => handleInputChange('first_name', e.target.value)}
                   placeholder={t('teacher.placeholders.firstName')}
-                  className={errors.first_name ? 'border-red-500' : ''}
+                  className={errors.first_name ? 'border-destructive' : ''}
                   disabled={loading}
                 />
                 {errors.first_name && (
-                  <p className="text-sm text-red-600">{errors.first_name}</p>
+                  <p className="text-sm text-destructive">{errors.first_name}</p>
                 )}
               </div>
 
@@ -331,11 +333,11 @@ const AddTeacherPage = () => {
                   value={formData.last_name}
                   onChange={(e) => handleInputChange('last_name', e.target.value)}
                   placeholder={t('teacher.placeholders.lastName')}
-                  className={errors.last_name ? 'border-red-500' : ''}
+                  className={errors.last_name ? 'border-destructive' : ''}
                   disabled={loading}
                 />
                 {errors.last_name && (
-                  <p className="text-sm text-red-600">{errors.last_name}</p>
+                  <p className="text-sm text-destructive">{errors.last_name}</p>
                 )}
               </div>
 
@@ -349,12 +351,12 @@ const AddTeacherPage = () => {
                   value={formData.ar_first_name}
                   onChange={(e) => handleInputChange('ar_first_name', e.target.value)}
                   placeholder={t('teacher.placeholders.arabicFirstName')}
-                  className={errors.ar_first_name ? 'border-red-500' : ''}
+                  className={errors.ar_first_name ? 'border-destructive' : ''}
                   disabled={loading}
                   dir="rtl"
                 />
                 {errors.ar_first_name && (
-                  <p className="text-sm text-red-600">{errors.ar_first_name}</p>
+                  <p className="text-sm text-destructive">{errors.ar_first_name}</p>
                 )}
               </div>
 
@@ -368,12 +370,12 @@ const AddTeacherPage = () => {
                   value={formData.ar_last_name}
                   onChange={(e) => handleInputChange('ar_last_name', e.target.value)}
                   placeholder={t('teacher.placeholders.arabicLastName')}
-                  className={errors.ar_last_name ? 'border-red-500' : ''}
+                  className={errors.ar_last_name ? 'border-destructive' : ''}
                   disabled={loading}
                   dir="rtl"
                 />
                 {errors.ar_last_name && (
-                  <p className="text-sm text-red-600">{errors.ar_last_name}</p>
+                  <p className="text-sm text-destructive">{errors.ar_last_name}</p>
                 )}
               </div>
 
@@ -388,7 +390,7 @@ const AddTeacherPage = () => {
                     onValueChange={(value) => handleInputChange('school_subject', value)}
                     disabled={loading || loadingSubjects}
                   >
-                    <SelectTrigger className={`pl-9 ${errors.school_subject ? 'border-red-500' : ''}`}>
+                    <SelectTrigger className={`pl-9 ${errors.school_subject ? 'border-destructive' : ''}`}>
                       <SelectValue placeholder={loadingSubjects ? t('common.loading') : t('teacher.placeholders.selectSubject')} />
                     </SelectTrigger>
                     <SelectContent>
@@ -412,9 +414,9 @@ const AddTeacherPage = () => {
                   </Select>
                 </div>
                 {errors.school_subject && (
-                  <p className="text-sm text-red-600">{errors.school_subject}</p>
+                  <p className="text-sm text-destructive">{errors.school_subject}</p>
                 )}
-                <p className="text-xs text-gray-500">{t('teacher.subjectSelectionInfo')}</p>
+                <p className="text-xs text-muted-foreground">{t('teacher.subjectSelectionInfo')}</p>
               </div>
 
               <div className="space-y-2 md:col-span-2">
@@ -423,10 +425,10 @@ const AddTeacherPage = () => {
                 </Label>
                 <div className="relative">
                   <GraduationCap className="absolute left-3 top-3 h-4 w-4 text-muted-foreground z-10" />
-                  <div className="border rounded-md p-3 pl-10 bg-white min-h-[80px] max-h-[120px] overflow-y-auto">
+                  <div className="border border-border/50 rounded-md p-3 pl-10 bg-muted/50 min-h-[80px] max-h-[120px] overflow-y-auto">
                     {loadingGrades ? (
                       <div className="flex items-center justify-center py-4">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
                         <span className="ml-2 text-sm text-muted-foreground">{t('common.loading')}</span>
                       </div>
                     ) : grades && grades.length > 0 ? (
@@ -441,7 +443,7 @@ const AddTeacherPage = () => {
                             />
                             <Label
                               htmlFor={`grade-${grade.id}`}
-                              className="text-sm font-normal cursor-pointer"
+                              className="text-sm font-normal cursor-pointer text-foreground"
                             >
                               {getLocalizedGradeName(grade)}
                             </Label>
@@ -455,7 +457,7 @@ const AddTeacherPage = () => {
                     )}
                   </div>
                 </div>
-                <p className="text-xs text-gray-500">{t('teacher.teachableGradesInfo')}</p>
+                <p className="text-xs text-muted-foreground">{t('teacher.teachableGradesInfo')}</p>
               </div>
 
               <div className="space-y-2">
@@ -466,15 +468,15 @@ const AddTeacherPage = () => {
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     type="email"
-                    value={formData.last_name ? 
-                      `${formData.last_name.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '')}@${schoolName.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '')}-teachers.com` 
+                    value={formData.last_name ?
+                      `${formData.last_name.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '')}@${schoolName.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '')}-teachers.com`
                       : ''}
-                    className="pl-9 bg-gray-50"
+                    className="pl-9 bg-muted/50"
                     disabled
                     placeholder={t('teacher.emailWillBeGenerated')}
                   />
                 </div>
-                <p className="text-xs text-gray-500">{t('teacher.emailGeneratedInfo')}</p>
+                <p className="text-xs text-muted-foreground">{t('teacher.emailGeneratedInfo')}</p>
               </div>
 
               <div className="space-y-2">
@@ -489,12 +491,12 @@ const AddTeacherPage = () => {
                     value={formData.phone}
                     onChange={(e) => handleInputChange('phone', e.target.value)}
                     placeholder={t('teacher.placeholders.phone')}
-                    className={`pl-9 ${errors.phone ? 'border-red-500' : ''}`}
+                    className={`pl-9 ${errors.phone ? 'border-destructive' : ''}`}
                     disabled={loading}
                   />
                 </div>
                 {errors.phone && (
-                  <p className="text-sm text-red-600">{errors.phone}</p>
+                  <p className="text-sm text-destructive">{errors.phone}</p>
                 )}
               </div>
 
@@ -509,19 +511,19 @@ const AddTeacherPage = () => {
                     type="date"
                     value={formData.date_of_birth}
                     onChange={(e) => handleInputChange('date_of_birth', e.target.value)}
-                    className={`pl-9 ${errors.date_of_birth ? 'border-red-500' : ''}`}
+                    className={`pl-9 ${errors.date_of_birth ? 'border-destructive' : ''}`}
                     disabled={loading}
                   />
                 </div>
                 {errors.date_of_birth && (
-                  <p className="text-sm text-red-600">{errors.date_of_birth}</p>
+                  <p className="text-sm text-destructive">{errors.date_of_birth}</p>
                 )}
               </div>
             </CardContent>
           </Card>
 
           {/* Account Information */}
-          <Card>
+          <Card className="border-border/50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <span className="text-xl">🔒</span>
@@ -529,27 +531,59 @@ const AddTeacherPage = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <h4 className="font-medium text-blue-900 mb-2">{t('teacher.accountDetails')}</h4>
-                <div className="space-y-2 text-sm text-blue-800">
+              <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">{t('teacher.accountDetails')}</h4>
+                <div className="space-y-2 text-sm text-blue-800 dark:text-blue-200">
                   <div className="flex items-center justify-between">
                     <span>{t('common.role')}:</span>
                     <span className="font-medium">{t('roles.teacher')}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span>{t('auth.defaultPassword')}:</span>
-                    <span className="font-mono bg-white px-2 py-1 rounded border">defaultStrongPassword25</span>
+                    <span className="font-mono bg-background px-2 py-1 rounded border border-border">defaultStrongPassword25</span>
                   </div>
                 </div>
-                <p className="text-xs text-blue-600 mt-3">
+                <p className="text-xs text-blue-600 dark:text-blue-400 mt-3">
                   {t('teacher.passwordChangeInfo')}
                 </p>
               </div>
             </CardContent>
           </Card>
 
+          {/* Professional Information */}
+          <Card className="border-border/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Briefcase className="h-5 w-5" />
+                {t('teacher.professionalInformation')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <Label htmlFor="hire_date">
+                  {t('teacher.hireDate')}
+                </Label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="hire_date"
+                    type="date"
+                    value={formData.hire_date}
+                    onChange={(e) => handleInputChange('hire_date', e.target.value)}
+                    className={`pl-9 ${errors.hire_date ? 'border-destructive' : ''}`}
+                    disabled={loading}
+                  />
+                </div>
+                {errors.hire_date && (
+                  <p className="text-sm text-destructive">{errors.hire_date}</p>
+                )}
+                <p className="text-xs text-muted-foreground">{t('teacher.hireDateInfo')}</p>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Additional Information */}
-          <Card>
+          <Card className="border-border/50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />

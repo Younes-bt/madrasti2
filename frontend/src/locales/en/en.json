@@ -113,7 +113,13 @@
   },
   "error": {
     "failedToLoadProfile": "Failed to load profile data",
-    "failedToSaveProfile": "Failed to save profile"
+    "failedToSaveProfile": "Failed to save profile",
+    "invalidImageFile": "Please select a valid image file",
+    "imageTooLarge": "Image size should be less than 5MB",
+    "firstNameRequired": "First name is required",
+    "lastNameRequired": "Last name is required",
+    "invalidPhoneNumber": "Invalid phone number format",
+    "pleaseFixErrors": "Please fix the errors before saving"
   },
   "lessons": {
     "title": "Title",
@@ -138,6 +144,7 @@
     "searchPlaceholder": "Search lessons by title, description...",
     "allLevels": "All Levels",
     "allGrades": "All Grades",
+    "allTracks": "All Tracks",
     "allSubjects": "All Subjects",
     "allCycles": "All Cycles",
     "allDifficulties": "All Difficulties",
@@ -221,6 +228,7 @@
     "edit": "Edit",
     "delete": "Delete",
     "search": "Search",
+    "changePhoto": "Change Photo",
     "addStaff": "Add Staff Member",
     "addFirstStaff": "Add First Staff Member",
     "addNewStaff": "Add new staff member",
@@ -280,6 +288,7 @@
     "emailCannotBeChanged": "Email cannot be changed",
     "emailChangeInfo": "Email address cannot be modified after account creation",
     "passwordChangeInfo": "Teacher will be required to change password on first login",
+    "hireDateInfo": "Optional. Can be set to a future date for pre-registered teachers.",
     "emergencyContactName": "Emergency Contact Name",
     "emergencyContactPhone": "Emergency Contact Phone",
     "uploadPhoto": "Upload Photo",
@@ -584,13 +593,51 @@
     "loginError": "Login failed",
     "invalidCredentials": "Invalid email or password",
     "loginDescription": "Enter your credentials to access your account",
+    "firstLoginTitle": "Welcome to Your Journey!",
+    "firstLoginDescription": "This is your first login. Let's secure your account and set up your profile to get started.",
+    "firstLoginWhySecurity": "Default passwords are insecure. Protect your account with a strong password.",
+    "firstLoginWhatDo": "Add your personal information to personalize your experience.",
+    "firstLoginAfter": "Once completed, you'll be redirected to your dashboard.",
+    "securityFirst": "Security First",
+    "completeProfile": "Complete Your Profile",
+    "getStarted": "Get Started",
+    "setupProgress": "Setup Progress",
+    "passwordChanged": "Password Changed",
+    "profileCompleted": "Profile Completed",
+    "passwordRequired": "Create a strong, secure password",
+    "updatePassword": "Update Password",
+    "completeStepsToContinue": "Complete both steps to continue",
     "placeholders": {
       "email": "Enter your email address",
       "password": "Enter your password",
       "currentPassword": "Enter your current password",
       "newPassword": "Enter your new password",
       "confirmPassword": "Confirm your new password"
-    }
+    },
+    "changePasswordTitle": "Change Password",
+    "completeProfileTitle": "Complete Your Profile"
+  },
+  "profile": {
+    "completeProfile": "Complete Your Profile",
+    "profileDescription": "Add your personal information",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "arFirstName": "Arabic First Name",
+    "arLastName": "Arabic Last Name",
+    "phone": "Phone",
+    "address": "Address",
+    "department": "Department",
+    "linkedin": "LinkedIn URL",
+    "twitter": "Twitter URL",
+    "hireDate": "Hire Date",
+    "salary": "Salary",
+    "bio": "Bio",
+    "emergencyContactName": "Emergency Contact Name",
+    "emergencyContactPhone": "Emergency Contact Phone",
+    "position": "Position",
+    "positionPlaceholder": "e.g., TEACHER, DRIVER",
+    "schoolSubject": "School Subject",
+    "profilePicture": "Profile Picture"
   },
   "teacherSidebar": {
     "dashboard": "Teacher Dashboard",
@@ -598,6 +645,7 @@
       "title": "My Teaching Profile",
       "tooltip": "Manage your teaching profile and assignments",
       "overview": "Profile Overview",
+      "editProfile": "Edit Profile",
       "myClasses": "My Classes",
       "mySubjects": "My Subjects",
       "mySchedule": "My Schedule",
@@ -1034,6 +1082,13 @@
     "activeTimetables": "Active Timetables",
     "inactiveTimetables": "Inactive Timetables",
     "totalSessions": "Total Sessions",
+    "confirmDelete": "Are you sure you want to delete this timetable?",
+    "deleteSuccess": "Timetable deleted successfully",
+    "deleteError": "Failed to delete timetable",
+    "duplicateSuccess": "Timetable duplicated successfully",
+    "duplicateError": "Failed to duplicate timetable",
+    "statusUpdateSuccess": "Status updated successfully",
+    "statusUpdateError": "Failed to update status",
     "timetablesList": "Timetables List",
     "sessions": "sessions",
     "perWeek": "per week",
@@ -1061,13 +1116,6 @@
     "createError": "Failed to create timetable",
     "updateSuccess": "Timetable updated successfully",
     "updateError": "Failed to update timetable",
-    "deleteSuccess": "Timetable deleted successfully",
-    "deleteError": "Failed to delete timetable",
-    "duplicateSuccess": "Timetable duplicated successfully",
-    "duplicateError": "Failed to duplicate timetable",
-    "statusUpdateSuccess": "Status updated successfully",
-    "statusUpdateError": "Failed to update status",
-    "confirmDelete": "Are you sure you want to delete this timetable?",
     "changesReset": "All changes have been reset",
     "validation": {
       "classRequired": "Class is required",
@@ -1595,6 +1643,14 @@
       "art": "Art Room",
       "music": "Music Room",
       "other": "Other"
+    },
+    "equipmentSection": {
+      "title": "Assigned Equipment",
+      "subtitle": "Items currently assigned to this room.",
+      "manage": "Manage Equipment",
+      "view": "View Details",
+      "empty": "No equipment assigned to this room yet.",
+      "loading": "Loading equipment..."
     }
   },
   "vehicles": {
@@ -2217,7 +2273,26 @@
   "pages": {
     "teacherProfile": {
       "subtitle": "View and update your teaching profile information"
+    },
+    "editProfile": {
+      "subtitle": "Update your personal and professional information"
     }
+  },
+  "placeholder": {
+    "firstName": "Enter first name",
+    "lastName": "Enter last name",
+    "arabicFirstName": "أدخل الاسم الأول",
+    "arabicLastName": "أدخل اسم العائلة",
+    "phone": "+212 6XX-XXXXXX",
+    "address": "Enter your address",
+    "bio": "Tell us about yourself...",
+    "emergencyContactName": "Contact person name",
+    "emergencyContactPhone": "+212 6XX-XXXXXX"
+  },
+  "hint": {
+    "profilePictureFormat": "JPG, PNG or GIF. Max size 5MB",
+    "emailCannotBeChanged": "Email cannot be changed",
+    "emergencyContact": "Emergency contact information is used in case of urgent situations"
   },
   "teacherMyClasses": {
     "title": "My Classes",
@@ -2267,7 +2342,8 @@
     "personalInformation": "Personal Information",
     "contactInformation": "Contact Information",
     "emergencyContact": "Emergency Contact",
-    "professionalInformation": "Professional Information"
+    "professionalInformation": "Professional Information",
+    "profilePicture": "Profile Picture"
   },
   "success": {
     "profileUpdated": "Profile updated successfully"
@@ -2736,6 +2812,84 @@
       "exportFooter": "School Details Report",
       "generatedOn": "Generated on",
       "managementSystem": "School Management System"
+    }
+  },
+  "equipment": {
+    "title": "Equipment Management",
+    "subtitle": "Track and organize assets for each room.",
+    "actions": {
+      "add": "Add Equipment",
+      "edit": "Edit Equipment"
+    },
+    "stats": {
+      "totalItems": "Total Items",
+      "activeItems": "Active Items",
+      "totalQuantity": "Total Quantity"
+    },
+    "filters": {
+      "searchPlaceholder": "Search equipment by name, description, or room...",
+      "allRooms": "All Rooms",
+      "allStatus": "All Statuses",
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "table": {
+      "room": "Room",
+      "quantity": "Quantity",
+      "updated": "Last Updated"
+    },
+    "form": {
+      "name": "Equipment Name",
+      "room": "Assigned Room",
+      "quantity": "Quantity",
+      "description": "Description",
+      "status": "Equipment Status",
+      "createDescription": "Provide the basic information for this equipment item.",
+      "updateDescription": "Update the equipment details and assignment.",
+      "images": "Equipment Images",
+      "imagesHelper": "Upload up to {{max}} photos (JPG, PNG, or WebP).",
+      "selectImages": "Select Images",
+      "imagesSelected": "{{count}} image(s) selected",
+      "imagesEmpty": "No images selected yet.",
+      "uploading": "Uploading images..."
+    },
+    "messages": {
+      "created": "Equipment added successfully.",
+      "updated": "Equipment updated successfully.",
+      "deleted": "Equipment removed successfully.",
+      "loadError": "Unable to load equipment. Please try again.",
+      "formError": "Please provide a name and select a room.",
+      "deleteConfirmDescription": "Delete \"{{name}}\" from your equipment inventory?",
+      "imagesUploadSuccess": "{{count}} image(s) uploaded successfully.",
+      "imagesUploadFailed": "Unable to upload images. Please try again.",
+      "imagesLimitReached": "You can upload up to {{max}} images for an equipment item.",
+      "imagesLimited": "Only the first {{max}} images were added."
+    },
+    "empty": {
+      "title": "No equipment found",
+      "description": "Try adjusting your search or filters to find specific equipment items.",
+      "action": "Add equipment to keep track of classroom resources."
+    },
+    "view": {
+      "title": "Equipment Details",
+      "subtitle": "Review quantities, assignments, and supporting media for this equipment item.",
+      "details": "Item Information",
+      "status": "Status",
+      "createdAt": "Created On",
+      "updatedAt": "Last Updated",
+      "loadFailed": "Unable to load equipment details. Returning to list..."
+    },
+    "media": {
+      "title": "Equipment Images",
+      "addImages": "Add Images",
+      "uploadTitle": "Upload images for {{name}}",
+      "uploadSuccess": "{{count}} image(s) added to {{name}}.",
+      "uploadFailed": "Image upload failed. Please try again.",
+      "deleteSuccess": "Image removed from equipment.",
+      "deleteFailed": "Could not delete the selected image.",
+      "featuredFailed": "Unable to update featured image.",
+      "loadFailed": "Could not load equipment images.",
+      "empty": "No images uploaded yet. Add images to showcase this equipment."
     }
   }
 }

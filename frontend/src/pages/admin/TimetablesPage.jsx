@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
-  Calendar, Plus, Eye, Edit, Trash2, Copy, Filter, Search, Clock, Users, BookOpen, CheckCircle, XCircle, MoreVertical
+import {
+  Calendar, Plus, Eye, Edit, Trash2, Copy, Filter, Search, Clock, Users, BookOpen, CheckCircle, XCircle, MoreVertical, X
 } from 'lucide-react';
 import AdminPageLayout from '../../components/admin/layout/AdminPageLayout';
 import { Button } from '../../components/ui/button';
@@ -128,9 +128,9 @@ const TimetablesPage = () => {
   const ActionButtons = () => (
     <Button
       onClick={() => navigate('/admin/timetables/add')}
-      className="bg-primary text-primary-foreground hover:bg-primary/90"
+      className="gap-2"
     >
-      <Plus className="h-4 w-4 mr-2" />
+      <Plus className="h-4 w-4" />
       {t('timetables.addTimetable')}
     </Button>
   );
@@ -167,47 +167,129 @@ const TimetablesPage = () => {
 
 const FilterControls = ({ filters, handleFilterChange, classes, academicYears }) => {
   const { t } = useTranslation();
+
+  const hasActiveFilters = filters.search || filters.class !== 'all' || filters.academicYear !== 'all' || filters.status !== 'all';
+
+  const clearAllFilters = () => {
+    handleFilterChange('search', '');
+    handleFilterChange('class', 'all');
+    handleFilterChange('academicYear', 'all');
+    handleFilterChange('status', 'all');
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-          <Filter className="h-5 w-5 text-primary" />
-          {t('common.filters')}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <Card className="border-border/50">
+      <CardContent className="p-6">
+        <div className="space-y-4">
+          {/* Search Bar */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
               placeholder={t('timetables.searchPlaceholder')}
               value={filters.search}
               onChange={(e) => handleFilterChange('search', e.target.value)}
-              className="pl-10"
+              className="pl-10 h-11 bg-muted/50 border-0 focus-visible:ring-1"
             />
           </div>
-          <Select value={filters.class} onValueChange={(value) => handleFilterChange('class', value)}>
-            <SelectTrigger><SelectValue placeholder={t('common.allClasses')} /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('common.allClasses')}</SelectItem>
-              {classes.map((cls) => <SelectItem key={cls.id} value={cls.id.toString()}>{cls.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Select value={filters.academicYear} onValueChange={(value) => handleFilterChange('academicYear', value)}>
-            <SelectTrigger><SelectValue placeholder={t('common.allAcademicYears')} /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('common.allAcademicYears')}</SelectItem>
-              {academicYears.map((year) => <SelectItem key={year.id} value={year.id.toString()}>{year.year} {year.is_current ? `(${t('common.current')})` : ''}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
-            <SelectTrigger><SelectValue placeholder={t('common.allStatuses')} /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('common.allStatuses')}</SelectItem>
-              <SelectItem value="active">{t('common.active')}</SelectItem>
-              <SelectItem value="inactive">{t('common.inactive')}</SelectItem>
-            </SelectContent>
-          </Select>
+
+          {/* Filter Row */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <Filter className="h-4 w-4" />
+              <span>{t('common.filters')}:</span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 flex-1">
+              {/* Class Filter */}
+              <Select value={filters.class} onValueChange={(value) => handleFilterChange('class', value)}>
+                <SelectTrigger className="h-9 w-[180px] border-border/50">
+                  <SelectValue placeholder={t('common.allClasses')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('common.allClasses')}</SelectItem>
+                  {classes.map((cls) => <SelectItem key={cls.id} value={cls.id.toString()}>{cls.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+
+              {/* Academic Year Filter */}
+              <Select value={filters.academicYear} onValueChange={(value) => handleFilterChange('academicYear', value)}>
+                <SelectTrigger className="h-9 w-[180px] border-border/50">
+                  <SelectValue placeholder={t('common.allAcademicYears')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('common.allAcademicYears')}</SelectItem>
+                  {academicYears.map((year) => <SelectItem key={year.id} value={year.id.toString()}>{year.year} {year.is_current ? `(${t('common.current')})` : ''}</SelectItem>)}
+                </SelectContent>
+              </Select>
+
+              {/* Status Filter */}
+              <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
+                <SelectTrigger className="h-9 w-[140px] border-border/50">
+                  <SelectValue placeholder={t('common.allStatuses')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('common.allStatuses')}</SelectItem>
+                  <SelectItem value="active">{t('common.active')}</SelectItem>
+                  <SelectItem value="inactive">{t('common.inactive')}</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Active Filter Badges */}
+              {hasActiveFilters && (
+                <>
+                  {filters.search && (
+                    <Badge
+                      variant="secondary"
+                      className="gap-1 px-2 py-1 cursor-pointer hover:bg-secondary/80"
+                      onClick={() => handleFilterChange('search', '')}
+                    >
+                      <Search className="h-3 w-3" />
+                      {filters.search}
+                      <X className="h-3 w-3 ml-1" />
+                    </Badge>
+                  )}
+                  {filters.class !== 'all' && (
+                    <Badge
+                      variant="secondary"
+                      className="gap-1 px-2 py-1 cursor-pointer hover:bg-secondary/80"
+                      onClick={() => handleFilterChange('class', 'all')}
+                    >
+                      {classes.find(c => c.id.toString() === filters.class)?.name || 'Class'}
+                      <X className="h-3 w-3 ml-1" />
+                    </Badge>
+                  )}
+                  {filters.academicYear !== 'all' && (
+                    <Badge
+                      variant="secondary"
+                      className="gap-1 px-2 py-1 cursor-pointer hover:bg-secondary/80"
+                      onClick={() => handleFilterChange('academicYear', 'all')}
+                    >
+                      {academicYears.find(y => y.id.toString() === filters.academicYear)?.year || 'Year'}
+                      <X className="h-3 w-3 ml-1" />
+                    </Badge>
+                  )}
+                  {filters.status !== 'all' && (
+                    <Badge
+                      variant="secondary"
+                      className="gap-1 px-2 py-1 cursor-pointer hover:bg-secondary/80"
+                      onClick={() => handleFilterChange('status', 'all')}
+                    >
+                      {t(`common.${filters.status}`)}
+                      <X className="h-3 w-3 ml-1" />
+                    </Badge>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearAllFilters}
+                    className="h-7 px-2 text-xs"
+                  >
+                    {t('common.reset')}
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -224,24 +306,60 @@ const StatisticsCards = ({ timetables }) => {
   }), [timetables]);
 
   const statItems = [
-    { title: t('timetables.totalTimetables'), value: stats.total, icon: Calendar, color: 'text-blue-500' },
-    { title: t('timetables.activeTimetables'), value: stats.active, icon: CheckCircle, color: 'text-green-500' },
-    { title: t('timetables.inactiveTimetables'), value: stats.inactive, icon: XCircle, color: 'text-gray-500' },
-    { title: t('timetables.totalSessions'), value: stats.sessions, icon: Clock, color: 'text-purple-500' }
+    {
+      title: t('timetables.totalTimetables'),
+      value: stats.total,
+      icon: Calendar,
+      iconColor: 'text-blue-600 dark:text-blue-400',
+      iconBg: 'bg-blue-100 dark:bg-blue-900/40'
+    },
+    {
+      title: t('timetables.activeTimetables'),
+      value: stats.active,
+      icon: CheckCircle,
+      iconColor: 'text-green-600 dark:text-green-400',
+      iconBg: 'bg-green-100 dark:bg-green-900/40'
+    },
+    {
+      title: t('timetables.inactiveTimetables'),
+      value: stats.inactive,
+      icon: XCircle,
+      iconColor: 'text-gray-600 dark:text-gray-400',
+      iconBg: 'bg-gray-100 dark:bg-gray-900/40'
+    },
+    {
+      title: t('timetables.totalSessions'),
+      value: stats.sessions,
+      icon: Clock,
+      iconColor: 'text-purple-600 dark:text-purple-400',
+      iconBg: 'bg-purple-100 dark:bg-purple-900/40'
+    }
   ];
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {statItems.map(item => (
-        <Card key={item.title}>
-          <CardContent className="p-6 flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">{item.title}</p>
-              <p className={`text-2xl font-bold ${item.color.replace('text-', 'text-')}`}>{item.value}</p>
-            </div>
-            <item.icon className={`h-8 w-8 ${item.color}`} />
-          </CardContent>
-        </Card>
+        <motion.div
+          key={item.title}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          whileHover={{ y: -4 }}
+          transition={{ duration: 0.3 }}
+        >
+          <Card className="border-border/50 hover:border-border transition-all duration-300 hover:shadow-lg">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className={`p-3 rounded-xl ${item.iconBg}`}>
+                  <item.icon className={`h-6 w-6 ${item.iconColor}`} />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground mb-1">{item.title}</p>
+                  <p className="text-3xl font-bold text-foreground">{item.value}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
       ))}
     </div>
   );
@@ -253,24 +371,31 @@ const TimetablesList = ({ timetables, onDelete, onDuplicate, onToggleStatus }) =
 
   if (timetables.length === 0) {
     return (
-      <div className="text-center py-16">
-        <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-        <h3 className="text-xl font-semibold mb-2">{t('timetables.noTimetables')}</h3>
-        <p className="text-muted-foreground mb-6">{t('timetables.noTimetablesDescription')}</p>
-        <Button onClick={() => navigate('/admin/timetables/add')}>
-          <Plus className="h-4 w-4 mr-2" />
-          {t('timetables.createFirst')}
-        </Button>
-      </div>
+      <Card className="border-dashed border-2 border-border/60">
+        <CardContent className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+          <div className="rounded-full bg-muted p-6">
+            <Calendar className="h-12 w-12 text-muted-foreground" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-xl font-semibold text-foreground">{t('timetables.noTimetables')}</h3>
+            <p className="text-sm text-muted-foreground max-w-sm">{t('timetables.noTimetablesDescription')}</p>
+          </div>
+          <Button onClick={() => navigate('/admin/timetables/add')} className="gap-2">
+            <Plus className="h-4 w-4" />
+            {t('timetables.createFirst')}
+          </Button>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-      {timetables.map((timetable) => (
-        <TimetableCard 
-          key={timetable.id} 
-          timetable={timetable} 
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      {timetables.map((timetable, index) => (
+        <TimetableCard
+          key={timetable.id}
+          index={index}
+          timetable={timetable}
           onDelete={onDelete}
           onDuplicate={onDuplicate}
           onToggleStatus={onToggleStatus}
@@ -280,91 +405,142 @@ const TimetablesList = ({ timetables, onDelete, onDuplicate, onToggleStatus }) =
   );
 };
 
-const TimetableCard = ({ timetable, onDelete, onDuplicate, onToggleStatus }) => {
+const TimetableCard = ({ timetable, index, onDelete, onDuplicate, onToggleStatus }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const statusConfig = timetable.is_active 
-    ? { icon: CheckCircle, color: 'bg-green-100 text-green-800', label: t('common.active') }
-    : { icon: XCircle, color: 'bg-gray-100 text-gray-800', label: t('common.inactive') };
+  const statusConfig = timetable.is_active
+    ? { icon: CheckCircle, label: t('common.active') }
+    : { icon: XCircle, label: t('common.inactive') };
   const StatusIcon = statusConfig.icon;
 
   const sessionsCount = timetable.sessions?.length || 0;
-  const totalWeeklyHours = useMemo(() => 
+  const totalWeeklyHours = useMemo(() =>
     timetable.sessions?.reduce((sum, session) => {
       const start = new Date(`1970-01-01T${session.start_time}`);
       const end = new Date(`1970-01-01T${session.end_time}`);
       return sum + (end - start) / (1000 * 60 * 60);
-    }, 0) || 0, 
+    }, 0) || 0,
   [timetable.sessions]);
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="bg-card border rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-300 flex flex-col"
+      transition={{ duration: 0.3, delay: index * 0.05 }}
+      className="group"
     >
-      <div className="p-6 flex-grow">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
-            <h3 className="font-bold text-xl text-primary mb-1">{timetable.school_class_name}</h3>
-            <p className="text-sm text-muted-foreground">{timetable.academic_year_name}</p>
+      <Card
+        className="h-full border-border/50 hover:border-border transition-all duration-300 hover:shadow-lg cursor-pointer flex flex-col"
+        onClick={() => navigate(`/admin/timetables/view/${timetable.id}`)}
+      >
+        <CardContent className="p-5 flex-grow">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-base text-foreground mb-1 truncate">{timetable.school_class_name}</h3>
+              <p className="text-sm text-muted-foreground truncate">{timetable.academic_year_name}</p>
+            </div>
+            <Badge variant={timetable.is_active ? 'default' : 'secondary'} className="flex items-center gap-1 ml-2">
+              <StatusIcon className="h-3 w-3" />
+              {statusConfig.label}
+            </Badge>
           </div>
-          <Badge className={`${statusConfig.color} flex items-center gap-1`}>
-            <StatusIcon className="h-3 w-3" />
-            {statusConfig.label}
-          </Badge>
-        </div>
-        
-        <div className="space-y-3 text-sm text-muted-foreground">
-          <div className="flex items-center gap-2"><Clock className="h-4 w-4" /><span>{sessionsCount} {t('timetables.sessions')}</span></div>
-          <div className="flex items-center gap-2"><BookOpen className="h-4 w-4" /><span>{totalWeeklyHours.toFixed(1)}h {t('timetables.perWeek')}</span></div>
-          <div className="flex items-center gap-2"><Users className="h-4 w-4" /><span>{t('common.createdBy')}: {timetable.created_by_name}</span></div>
-        </div>
-      </div>
 
-      <div className="border-t p-4 bg-muted/50 flex items-center justify-between">
-        <div className="text-xs text-muted-foreground">
-          {t('common.updated')}: {new Date(timetable.updated_at).toLocaleDateString()}
+          <div className="space-y-2.5 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <Clock className="h-3.5 w-3.5 flex-shrink-0" />
+              <span>{sessionsCount} {t('timetables.sessions')}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <BookOpen className="h-3.5 w-3.5 flex-shrink-0" />
+              <span>{totalWeeklyHours.toFixed(1)}h {t('timetables.perWeek')}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Users className="h-3.5 w-3.5 flex-shrink-0" />
+              <span className="truncate">{t('common.createdBy')}: {timetable.created_by_name}</span>
+            </div>
+          </div>
+        </CardContent>
+
+        <div className="border-t border-border/50 p-4 bg-muted/30 flex items-center justify-between">
+          <div className="text-xs text-muted-foreground">
+            {t('common.updated')}: {new Date(timetable.updated_at).toLocaleDateString()}
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/admin/timetables/edit/${timetable.id}`);
+                }}
+                className="cursor-pointer"
+              >
+                <Edit className="mr-2 h-4 w-4" />{t('common.edit')}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDuplicate(timetable);
+                }}
+                className="cursor-pointer"
+              >
+                <Copy className="mr-2 h-4 w-4" />{t('common.duplicate')}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleStatus(timetable);
+                }}
+                className="cursor-pointer"
+              >
+                {timetable.is_active ? <XCircle className="mr-2 h-4 w-4" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+                {timetable.is_active ? t('common.deactivate') : t('common.activate')}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(timetable.id);
+                }}
+                className="cursor-pointer text-destructive focus:text-destructive"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />{t('common.delete')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <MoreVertical className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => navigate(`/admin/timetables/view/${timetable.id}`)}><Eye className="mr-2 h-4 w-4" />{t('common.view')}</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate(`/admin/timetables/edit/${timetable.id}`)}><Edit className="mr-2 h-4 w-4" />{t('common.edit')}</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onDuplicate(timetable)}><Copy className="mr-2 h-4 w-4" />{t('common.duplicate')}</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onToggleStatus(timetable)}>
-              {timetable.is_active ? <XCircle className="mr-2 h-4 w-4" /> : <CheckCircle className="mr-2 h-4 w-4" />}
-              {timetable.is_active ? t('common.deactivate') : t('common.activate')}
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => onDelete(timetable.id)} className="text-red-600 focus:text-red-600 focus:bg-red-50">
-              <Trash2 className="mr-2 h-4 w-4" />{t('common.delete')}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+      </Card>
     </motion.div>
   );
 };
 
 const TimetableListSkeleton = () => (
-  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
     {[...Array(6)].map((_, i) => (
-      <Card key={i}>
-        <CardHeader>
-          <Skeleton className="h-6 w-3/4" />
-          <Skeleton className="h-4 w-1/2" />
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-2/3" />
+      <Card key={i} className="border-border/50">
+        <CardContent className="p-6 space-y-3">
+          <div className="flex items-start justify-between">
+            <div className="space-y-2 flex-1">
+              <Skeleton className="h-5 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+            </div>
+            <Skeleton className="h-6 w-16" />
+          </div>
+          <div className="space-y-2.5 pt-2">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-2/3" />
+          </div>
         </CardContent>
       </Card>
     ))}

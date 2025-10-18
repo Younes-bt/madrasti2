@@ -139,10 +139,8 @@ const EditStaffPage = () => {
       newErrors.date_of_birth = t('validation.dateOfBirthInvalid');
     }
 
-    // Hire date validation (if provided)
-    if (formData.hire_date && new Date(formData.hire_date) > new Date()) {
-      newErrors.hire_date = t('validation.hireDateInvalid');
-    }
+    // Note: Hire date can be in the future (for pre-registered staff)
+    // No validation needed for hire_date
 
     // Salary validation (if provided)
     if (formData.salary && (isNaN(formData.salary) || parseFloat(formData.salary) < 0)) {

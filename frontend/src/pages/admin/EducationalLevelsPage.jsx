@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { motion, useInView, useMotionValue, useSpring, animate } from 'framer-motion';
-import { Plus, Search, Filter, GraduationCap, Users, MoreVertical, Edit, Trash2, Eye, BookOpen, TrendingUp, Sparkles, Star, Layers, Target } from 'lucide-react';
+import { Plus, Search, Filter, GraduationCap, Users, MoreVertical, Edit, Trash2, Eye, BookOpen, Star, Layers, Target, X } from 'lucide-react';
 import AdminPageLayout from '../../components/admin/layout/AdminPageLayout';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -52,42 +52,30 @@ const AnimatedCounter = ({ from = 0, to, duration = 2, className = "" }) => {
   )
 }
 
-const GlowingCard = ({ children, className = "", glowColor = "blue" }) => (
+const StatCard = ({ icon: Icon, label, value, description, iconColor, iconBg }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
-    whileHover={{ y: -5, transition: { duration: 0.2 } }}
-    className={`relative group ${className}`}
+    whileHover={{ y: -4 }}
+    transition={{ duration: 0.3 }}
   >
-    <div className={`absolute -inset-0.5 bg-gradient-to-r from-${glowColor}-500 to-purple-600 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200`}></div>
-    <div className="relative bg-card border rounded-xl backdrop-blur-sm">
-      {children}
-    </div>
-  </motion.div>
-)
-
-const StatCard = ({ icon: Icon, label, value, colorClass, description, glowColor }) => (
-  <GlowingCard glowColor={glowColor}>
-    <CardContent className="p-4 sm:p-6">
-      <div className="flex items-center space-x-3 sm:space-x-4">
-        <motion.div 
-          className={`p-2 sm:p-3 rounded-full bg-gradient-to-br from-${glowColor}-500 to-${glowColor}-600 text-white shadow-lg flex-shrink-0`}
-          whileHover={{ scale: 1.1, rotate: 5 }}
-          whileTap={{ scale: 0.95 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-        >
-          <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
-        </motion.div>
-        <div className="flex-1 space-y-1 min-w-0">
-          <p className="text-xs sm:text-sm text-muted-foreground truncate">{label}</p>
-          <div className={`text-lg sm:text-3xl font-bold ${colorClass}`}>
-            <AnimatedCounter to={value} />
+    <Card className="border-border/50 hover:border-border transition-all duration-300 hover:shadow-lg">
+      <CardContent className="p-6">
+        <div className="flex items-center gap-4">
+          <div className={`p-3 rounded-xl ${iconBg}`}>
+            <Icon className={`h-6 w-6 ${iconColor}`} />
           </div>
-          <p className="text-xs text-muted-foreground mt-1 truncate">{description}</p>
+          <div className="flex-1">
+            <p className="text-sm text-muted-foreground mb-1">{label}</p>
+            <div className="text-3xl font-bold text-foreground">
+              <AnimatedCounter to={value} />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">{description}</p>
+          </div>
         </div>
-      </div>
-    </CardContent>
-  </GlowingCard>
+      </CardContent>
+    </Card>
+  </motion.div>
 );
 
 const EducationalLevelsPage = () => {
@@ -193,15 +181,10 @@ const EducationalLevelsPage = () => {
     return typeMap[levelType] || levelType;
   };
 
-  // Get level color
-  const getLevelColor = (levelType) => {
-    const colorMap = {
-      'PRESCHOOL': 'bg-pink-100 text-pink-800',
-      'PRIMARY': 'bg-blue-100 text-blue-800',
-      'LOWER_SECONDARY': 'bg-green-100 text-green-800',
-      'UPPER_SECONDARY': 'bg-purple-100 text-purple-800',
-    };
-    return colorMap[levelType] || 'bg-gray-100 text-gray-800';
+  // Get level color (now dark/light friendly)
+  const getLevelVariant = (levelType) => {
+    // We'll use variant="secondary" for all and style with custom classes
+    return 'secondary';
   };
 
   // Get level icon
@@ -218,54 +201,56 @@ const EducationalLevelsPage = () => {
   // Educational Level Card component with animations
   const LevelCard = ({ level, index }) => {
     const LevelIcon = getLevelIcon(level.level);
-    
+
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.1, duration: 0.5 }}
-        whileHover={{ y: -8, scale: 1.02 }}
+        transition={{ delay: index * 0.05, duration: 0.3 }}
         className="group"
       >
-        <GlowingCard glowColor="emerald" className="h-full">
-          <CardContent className="p-4 h-full flex flex-col">
-            <div className="flex items-start space-x-3 mb-4">
-              <motion.div 
+        <Card
+          className="h-full border-border/50 hover:border-border transition-all duration-300 hover:shadow-lg cursor-pointer"
+          onClick={() => handleViewLevel(level.id)}
+        >
+          <CardContent className="p-5 h-full flex flex-col">
+            <div className="flex items-start gap-3 mb-4">
+              <motion.div
                 className="flex-shrink-0 relative"
-                whileHover={{ scale: 1.1 }}
+                whileHover={{ scale: 1.05 }}
                 transition={{ type: "spring", stiffness: 300 }}
               >
-                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-lg">
-                  <LevelIcon className="h-6 w-6 text-white" />
+                <div className="h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center overflow-hidden ring-2 ring-emerald-500/20">
+                  <LevelIcon className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
                 </div>
               </motion.div>
-              
+
               <div className="flex-1 min-w-0">
-                <div className="flex items-center space-x-2 mb-1">
-                  <h3 className="text-lg font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <h3 className="text-base font-semibold text-foreground leading-tight">
                     {level.name}
                   </h3>
-                  <Badge variant="secondary" className={`text-xs ${getLevelColor(level.level)}`}>
+                  <Badge variant="secondary" className="text-xs">
                     {getLevelTypeLabel(level.level)}
                   </Badge>
                 </div>
-                <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                  <div className="flex items-center space-x-1">
-                    <Users className="h-4 w-4" />
+                <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1 flex-wrap">
+                  <div className="flex items-center gap-1">
+                    <Users className="h-3.5 w-3.5" />
                     <span>{level.grades_count || 0} {t('educationalLevels.grades')}</span>
                   </div>
-                  <div className="flex items-center space-x-1">
-                    <Layers className="h-4 w-4" />
+                  <div className="flex items-center gap-1">
+                    <Layers className="h-3.5 w-3.5" />
                     <span>{t('educationalLevels.order')}: {level.order}</span>
                   </div>
                 </div>
                 {level.name_arabic && (
-                  <p className="text-sm text-muted-foreground mt-1 truncate" dir="rtl">
+                  <p className="text-xs text-muted-foreground mt-1 truncate" dir="rtl">
                     {level.name_arabic}
                   </p>
                 )}
                 {level.name_french && (
-                  <p className="text-sm text-muted-foreground mt-1 truncate">
+                  <p className="text-xs text-muted-foreground mt-1 truncate">
                     {level.name_french}
                   </p>
                 )}
@@ -275,29 +260,30 @@ const EducationalLevelsPage = () => {
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
-                    className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-muted"
+                    size="icon"
+                    className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => e.stopPropagation()}
                   >
                     <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem 
-                    onClick={() => handleViewLevel(level.id)}
-                    className="cursor-pointer"
-                  >
-                    <Eye className="mr-2 h-4 w-4" />
-                    {t('action.view')}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    onClick={() => handleEditLevel(level.id)}
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditLevel(level.id);
+                    }}
                     className="cursor-pointer"
                   >
                     <Edit className="mr-2 h-4 w-4" />
                     {t('action.edit')}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem 
-                    onClick={() => handleDeleteLevel(level.id)}
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteLevel(level.id);
+                    }}
                     className="cursor-pointer text-destructive focus:text-destructive"
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
@@ -307,35 +293,35 @@ const EducationalLevelsPage = () => {
               </DropdownMenu>
             </div>
 
-            <div className="mt-auto pt-4 border-t border-muted">
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-muted-foreground">
+            <div className="mt-auto space-y-2.5 pt-3 border-t border-border/50">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">
                   {t('educationalLevels.educationalLevel')}
                 </span>
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleViewLevel(level.id);
+                  }}
+                  className="h-8 gap-2"
                 >
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleViewLevel(level.id)}
-                    className="text-xs px-2 py-1 h-auto hover:bg-primary hover:text-primary-foreground transition-colors"
-                  >
-                    {t('action.details')}
-                  </Button>
-                </motion.div>
+                  <Eye className="h-4 w-4" />
+                  {t('action.details')}
+                </Button>
               </div>
             </div>
           </CardContent>
-        </GlowingCard>
+        </Card>
       </motion.div>
     );
   };
 
   const actions = [
-    <Button key="add-level" onClick={handleAddLevel} className="bg-primary text-primary-foreground gap-2 shadow-md hover:bg-primary/90">
-      <Plus className="h-4 w-4" />{t('educationalLevels.addEducationalLevel')}
+    <Button key="add-level" onClick={handleAddLevel} className="gap-2">
+      <Plus className="h-4 w-4" />
+      {t('educationalLevels.addEducationalLevel')}
     </Button>
   ];
 
@@ -362,88 +348,149 @@ const EducationalLevelsPage = () => {
           icon={Layers}
           label={t('educationalLevels.totalLevels')}
           value={stats.total}
-          colorClass="text-blue-600"
           description={t('educationalLevels.allLevels')}
-          glowColor="blue"
+          iconColor="text-blue-600 dark:text-blue-400"
+          iconBg="bg-blue-100 dark:bg-blue-900/40"
         />
         <StatCard
           icon={BookOpen}
           label={t('educationalLevels.totalGrades')}
           value={stats.totalGrades}
-          colorClass="text-green-600"
           description={t('educationalLevels.gradesAcrossLevels')}
-          glowColor="green"
+          iconColor="text-green-600 dark:text-green-400"
+          iconBg="bg-green-100 dark:bg-green-900/40"
         />
         <StatCard
           icon={Target}
           label={t('educationalLevels.preschoolLevels')}
           value={stats.preschool}
-          colorClass="text-pink-600"
           description={t('educationalLevels.earlyEducation')}
-          glowColor="pink"
+          iconColor="text-pink-600 dark:text-pink-400"
+          iconBg="bg-pink-100 dark:bg-pink-900/40"
         />
         <StatCard
           icon={GraduationCap}
           label={t('educationalLevels.secondaryLevels')}
           value={stats.lowerSecondary + stats.upperSecondary}
-          colorClass="text-purple-600"
           description={t('educationalLevels.secondaryEducation')}
-          glowColor="purple"
+          iconColor="text-purple-600 dark:text-purple-400"
+          iconBg="bg-purple-100 dark:bg-purple-900/40"
         />
       </div>
 
       {/* Search and Filter Section */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder={t('educationalLevels.searchPlaceholder')}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-        <Select value={levelFilter} onValueChange={setLevelFilter}>
-          <SelectTrigger className="w-full sm:w-48">
-            <Filter className="w-4 h-4 mr-2" />
-            <SelectValue placeholder={t('educationalLevels.filterByType')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t('educationalLevels.allLevels')}</SelectItem>
-            <SelectItem value="PRESCHOOL">{t('educationalLevels.levelTypes.preschool')}</SelectItem>
-            <SelectItem value="PRIMARY">{t('educationalLevels.levelTypes.primary')}</SelectItem>
-            <SelectItem value="LOWER_SECONDARY">{t('educationalLevels.levelTypes.lowerSecondary')}</SelectItem>
-            <SelectItem value="UPPER_SECONDARY">{t('educationalLevels.levelTypes.upperSecondary')}</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <Card className="border-border/50 mb-6">
+        <CardContent className="p-6">
+          <div className="space-y-4">
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                placeholder={t('educationalLevels.searchPlaceholder')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 h-11 bg-muted/50 border-0 focus-visible:ring-1"
+              />
+            </div>
+
+            {/* Filter Row */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <Filter className="h-4 w-4" />
+                <span>{t('common.filters')}:</span>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 flex-1">
+                {/* Level Type Filter */}
+                <Select value={levelFilter} onValueChange={setLevelFilter}>
+                  <SelectTrigger className="h-9 w-[200px] border-border/50">
+                    <SelectValue placeholder={t('educationalLevels.filterByType')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t('educationalLevels.allLevels')}</SelectItem>
+                    <SelectItem value="PRESCHOOL">{t('educationalLevels.levelTypes.preschool')}</SelectItem>
+                    <SelectItem value="PRIMARY">{t('educationalLevels.levelTypes.primary')}</SelectItem>
+                    <SelectItem value="LOWER_SECONDARY">{t('educationalLevels.levelTypes.lowerSecondary')}</SelectItem>
+                    <SelectItem value="UPPER_SECONDARY">{t('educationalLevels.levelTypes.upperSecondary')}</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* Active Filter Badges */}
+                {(searchQuery || levelFilter !== 'all') && (
+                  <>
+                    {searchQuery && (
+                      <Badge
+                        variant="secondary"
+                        className="gap-1 px-2 py-1 cursor-pointer hover:bg-secondary/80"
+                        onClick={() => setSearchQuery('')}
+                      >
+                        <Search className="h-3 w-3" />
+                        {searchQuery}
+                        <X className="h-3 w-3 ml-1" />
+                      </Badge>
+                    )}
+                    {levelFilter !== 'all' && (
+                      <Badge
+                        variant="secondary"
+                        className="gap-1 px-2 py-1 cursor-pointer hover:bg-secondary/80"
+                        onClick={() => setLevelFilter('all')}
+                      >
+                        {getLevelTypeLabel(levelFilter)}
+                        <X className="h-3 w-3 ml-1" />
+                      </Badge>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSearchQuery('');
+                        setLevelFilter('all');
+                      }}
+                      className="h-7 px-2 text-xs"
+                    >
+                      {t('common.reset')}
+                    </Button>
+                  </>
+                )}
+              </div>
+
+              {/* Results Count */}
+              <div className="text-sm text-muted-foreground whitespace-nowrap">
+                {filteredLevels.length} {t('common.results') || 'results'}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Educational Levels Grid */}
       {filteredLevels.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center py-12"
-        >
-          <Layers className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium text-foreground mb-2">
-            {searchQuery || levelFilter !== 'all' ? t('educationalLevels.noLevelsFound') : t('educationalLevels.noLevelsYet')}
-          </h3>
-          <p className="text-muted-foreground mb-6">
-            {searchQuery || levelFilter !== 'all' 
-              ? t('educationalLevels.tryDifferentSearch')
-              : t('educationalLevels.addFirstLevel')
-            }
-          </p>
-          {!searchQuery && levelFilter === 'all' && (
-            <Button onClick={handleAddLevel} className="gap-2">
-              <Plus className="h-4 w-4" />
-              {t('educationalLevels.addEducationalLevel')}
-            </Button>
-          )}
-        </motion.div>
+        <Card className="border-dashed border-2 border-border/60">
+          <CardContent className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+            <div className="rounded-full bg-muted p-6">
+              <Layers className="h-12 w-12 text-muted-foreground" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xl font-semibold text-foreground">
+                {searchQuery || levelFilter !== 'all' ? t('educationalLevels.noLevelsFound') : t('educationalLevels.noLevelsYet')}
+              </h3>
+              <p className="text-sm text-muted-foreground max-w-sm">
+                {searchQuery || levelFilter !== 'all'
+                  ? t('educationalLevels.tryDifferentSearch')
+                  : t('educationalLevels.addFirstLevel')
+                }
+              </p>
+            </div>
+            {(!searchQuery && levelFilter === 'all' && educationalLevels.length === 0) && (
+              <Button onClick={handleAddLevel} className="gap-2">
+                <Plus className="h-4 w-4" />
+                {t('educationalLevels.addEducationalLevel')}
+              </Button>
+            )}
+          </CardContent>
+        </Card>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
           {filteredLevels.map((level, index) => (
             <LevelCard key={level.id} level={level} index={index} />
           ))}

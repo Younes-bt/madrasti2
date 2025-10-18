@@ -91,8 +91,8 @@ const LoginForm = ({ onSuccess = () => {} }) => {
       const result = await login(formData)
       if (result.success) {
         if (result.force_password_change) {
-          // Show password change modal instead of navigating
-          setShowPasswordChangeModal(true)
+          // Redirect to first-login page for mandatory password change and profile update
+          navigate('/first-login', { replace: true })
         } else {
           onSuccess()
         }

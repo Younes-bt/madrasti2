@@ -266,6 +266,29 @@ class RoomMediaViewSet(viewsets.ReadOnlyModelViewSet):
             relation_type__in=['ROOM_GALLERY', 'ROOM_FEATURED']
         ).order_by('order', 'created_at')
 
+class EquipmentMediaViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Specialized viewset for equipment media.
+    GET /api/equipment/{equipment_id}/media/
+    """
+
+    serializer_class = MediaRelationMinimalSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        equipment_id = self.kwargs.get('equipment_pk')  # From nested route
+        if not equipment_id:
+            return MediaRelation.objects.none()
+
+        from schools.models import Equipment
+        content_type = ContentType.objects.get_for_model(Equipment)
+
+        return MediaRelation.objects.filter(
+            content_type=content_type,
+            object_id=equipment_id,
+            relation_type__in=['EQUIPMENT_GALLERY', 'EQUIPMENT_FEATURED']
+        ).order_by('order', 'created_at')
+
 
 class VehicleMediaViewSet(viewsets.ReadOnlyModelViewSet):
     """

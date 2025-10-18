@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { motion, useInView, useMotionValue, useSpring, animate } from 'framer-motion';
-import { Plus, Search, Filter, Calendar, Clock, Users, MoreVertical, Edit, Trash2, Eye, CheckCircle, XCircle, GraduationCap, TrendingUp, Sparkles, Star } from 'lucide-react';
+import { Plus, Search, Filter, Calendar, Clock, MoreVertical, Edit, Trash2, Eye, GraduationCap, TrendingUp, Star, X } from 'lucide-react';
 import AdminPageLayout from '../../components/admin/layout/AdminPageLayout';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -52,42 +52,30 @@ const AnimatedCounter = ({ from = 0, to, duration = 2, className = "" }) => {
   )
 }
 
-const GlowingCard = ({ children, className = "", glowColor = "blue" }) => (
+const StatCard = ({ icon: Icon, label, value, description, iconColor, iconBg }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
-    whileHover={{ y: -5, transition: { duration: 0.2 } }}
-    className={`relative group ${className}`}
+    whileHover={{ y: -4 }}
+    transition={{ duration: 0.3 }}
   >
-    <div className={`absolute -inset-0.5 bg-gradient-to-r from-${glowColor}-500 to-purple-600 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200`}></div>
-    <div className="relative bg-card border rounded-xl backdrop-blur-sm">
-      {children}
-    </div>
-  </motion.div>
-)
-
-const StatCard = ({ icon: Icon, label, value, colorClass, description, glowColor }) => (
-  <GlowingCard glowColor={glowColor}>
-    <CardContent className="p-4 sm:p-6">
-      <div className="flex items-center space-x-3 sm:space-x-4">
-        <motion.div 
-          className={`p-2 sm:p-3 rounded-full bg-gradient-to-br from-${glowColor}-500 to-${glowColor}-600 text-white shadow-lg flex-shrink-0`}
-          whileHover={{ scale: 1.1, rotate: 5 }}
-          whileTap={{ scale: 0.95 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-        >
-          <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
-        </motion.div>
-        <div className="flex-1 space-y-1 min-w-0">
-          <p className="text-xs sm:text-sm text-muted-foreground truncate">{label}</p>
-          <div className={`text-lg sm:text-3xl font-bold ${colorClass}`}>
-            <AnimatedCounter to={value} />
+    <Card className="border-border/50 hover:border-border transition-all duration-300 hover:shadow-lg">
+      <CardContent className="p-6">
+        <div className="flex items-center gap-4">
+          <div className={`p-3 rounded-xl ${iconBg}`}>
+            <Icon className={`h-6 w-6 ${iconColor}`} />
           </div>
-          <p className="text-xs text-muted-foreground mt-1 truncate">{description}</p>
+          <div className="flex-1">
+            <p className="text-sm text-muted-foreground mb-1">{label}</p>
+            <div className="text-3xl font-bold text-foreground">
+              <AnimatedCounter to={value} />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">{description}</p>
+          </div>
         </div>
-      </div>
-    </CardContent>
-  </GlowingCard>
+      </CardContent>
+    </Card>
+  </motion.div>
 );
 
 const AcademicYearsPage = () => {
@@ -201,16 +189,6 @@ const AcademicYearsPage = () => {
     return statusMap[status] || status;
   };
 
-  // Get status color
-  const getStatusColor = (status) => {
-    const colorMap = {
-      'current': 'bg-green-100 text-green-800',
-      'upcoming': 'bg-blue-100 text-blue-800',
-      'past': 'bg-gray-100 text-gray-800',
-    };
-    return colorMap[status] || 'bg-gray-100 text-gray-800';
-  };
-
   // Calculate duration in days
   const calculateDuration = (startDate, endDate) => {
     const start = new Date(startDate);
@@ -223,55 +201,59 @@ const AcademicYearsPage = () => {
   const YearCard = ({ year, index }) => {
     const status = getYearStatus(year);
     const duration = calculateDuration(year.start_date, year.end_date);
-    
+
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.1, duration: 0.5 }}
-        whileHover={{ y: -8, scale: 1.02 }}
+        transition={{ delay: index * 0.05, duration: 0.3 }}
         className="group"
       >
-        <GlowingCard glowColor="violet" className="h-full">
-          <CardContent className="p-4 h-full flex flex-col">
-            <div className="flex items-start space-x-3 mb-4">
-              <motion.div 
+        <Card
+          className="h-full border-border/50 hover:border-border transition-all duration-300 hover:shadow-lg cursor-pointer"
+          onClick={() => handleViewYear(year.id)}
+        >
+          <CardContent className="p-5 h-full flex flex-col">
+            <div className="flex items-start gap-3 mb-4">
+              <motion.div
                 className="flex-shrink-0 relative"
-                whileHover={{ scale: 1.1 }}
+                whileHover={{ scale: 1.05 }}
                 transition={{ type: "spring", stiffness: 300 }}
               >
-                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg">
+                <div className={`h-12 w-12 rounded-full flex items-center justify-center overflow-hidden ring-2 ${
+                  year.is_current
+                    ? 'bg-yellow-100 dark:bg-yellow-900/40 ring-yellow-500/20'
+                    : 'bg-primary/10 ring-primary/20'
+                }`}>
                   {year.is_current ? (
-                    <Star className="h-6 w-6 text-white" />
+                    <Star className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
                   ) : (
-                    <Calendar className="h-6 w-6 text-white" />
+                    <Calendar className="h-6 w-6 text-primary" />
                   )}
                 </div>
               </motion.div>
-              
+
               <div className="flex-1 min-w-0">
-                <div className="flex items-center space-x-2 mb-1">
-                  <h3 className="text-lg font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <h3 className="text-base font-semibold text-foreground leading-tight">
                     {year.year}
                   </h3>
-                  <Badge variant="secondary" className={`text-xs ${getStatusColor(status)}`}>
+                  <Badge variant={status === 'current' ? 'default' : 'secondary'} className="text-xs">
                     {getStatusLabel(status)}
                   </Badge>
                   {year.is_current && (
-                    <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">
+                    <Badge variant="secondary" className="text-xs bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300">
                       {t('academicYears.currentYear')}
                     </Badge>
                   )}
                 </div>
-                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4" />
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                  <Clock className="h-3.5 w-3.5" />
                   <span>{new Date(year.start_date).toLocaleDateString()} - {new Date(year.end_date).toLocaleDateString()}</span>
                 </div>
-                <div className="flex items-center space-x-4 text-sm text-muted-foreground mt-1">
-                  <div className="flex items-center space-x-1">
-                    <Calendar className="h-4 w-4" />
-                    <span>{t('academicYears.duration')}: {duration} {t('academicYears.durationInDays')}</span>
-                  </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                  <Calendar className="h-3.5 w-3.5" />
+                  <span>{t('academicYears.duration')}: {duration} {t('academicYears.durationInDays')}</span>
                 </div>
               </div>
 
@@ -279,29 +261,30 @@ const AcademicYearsPage = () => {
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
-                    className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-muted"
+                    size="icon"
+                    className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => e.stopPropagation()}
                   >
                     <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem 
-                    onClick={() => handleViewYear(year.id)}
-                    className="cursor-pointer"
-                  >
-                    <Eye className="mr-2 h-4 w-4" />
-                    {t('action.view')}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    onClick={() => handleEditYear(year.id)}
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditYear(year.id);
+                    }}
                     className="cursor-pointer"
                   >
                     <Edit className="mr-2 h-4 w-4" />
                     {t('action.edit')}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem 
-                    onClick={() => handleDeleteYear(year.id)}
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteYear(year.id);
+                    }}
                     className="cursor-pointer text-destructive focus:text-destructive"
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
@@ -311,35 +294,35 @@ const AcademicYearsPage = () => {
               </DropdownMenu>
             </div>
 
-            <div className="mt-auto pt-4 border-t border-muted">
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-muted-foreground">
+            <div className="mt-auto space-y-2.5 pt-3 border-t border-border/50">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">
                   {t('academicYears.academicPeriod')}
                 </span>
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleViewYear(year.id);
+                  }}
+                  className="h-8 gap-2"
                 >
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleViewYear(year.id)}
-                    className="text-xs px-2 py-1 h-auto hover:bg-primary hover:text-primary-foreground transition-colors"
-                  >
-                    {t('action.details')}
-                  </Button>
-                </motion.div>
+                  <Eye className="h-4 w-4" />
+                  {t('action.details')}
+                </Button>
               </div>
             </div>
           </CardContent>
-        </GlowingCard>
+        </Card>
       </motion.div>
     );
   };
 
   const actions = [
-    <Button key="add-year" onClick={handleAddYear} className="bg-primary text-primary-foreground gap-2 shadow-md hover:bg-primary/90">
-      <Plus className="h-4 w-4" />{t('academicYears.addAcademicYear')}
+    <Button key="add-year" onClick={handleAddYear} className="gap-2">
+      <Plus className="h-4 w-4" />
+      {t('academicYears.addAcademicYear')}
     </Button>
   ];
 
@@ -366,87 +349,148 @@ const AcademicYearsPage = () => {
           icon={Calendar}
           label={t('academicYears.totalYears')}
           value={stats.total}
-          colorClass="text-blue-600"
           description={t('academicYears.allYears')}
-          glowColor="blue"
+          iconColor="text-blue-600 dark:text-blue-400"
+          iconBg="bg-blue-100 dark:bg-blue-900/40"
         />
         <StatCard
           icon={Star}
           label={t('academicYears.currentYear')}
           value={stats.current}
-          colorClass="text-green-600"
           description={t('academicYears.current')}
-          glowColor="green"
+          iconColor="text-green-600 dark:text-green-400"
+          iconBg="bg-green-100 dark:bg-green-900/40"
         />
         <StatCard
           icon={TrendingUp}
           label={t('academicYears.upcomingYears')}
           value={stats.upcoming}
-          colorClass="text-purple-600"
           description={t('academicYears.upcoming')}
-          glowColor="purple"
+          iconColor="text-purple-600 dark:text-purple-400"
+          iconBg="bg-purple-100 dark:bg-purple-900/40"
         />
         <StatCard
           icon={GraduationCap}
           label={t('academicYears.pastYears')}
           value={stats.past}
-          colorClass="text-orange-600"
           description={t('academicYears.past')}
-          glowColor="orange"
+          iconColor="text-orange-600 dark:text-orange-400"
+          iconBg="bg-orange-100 dark:bg-orange-900/40"
         />
       </div>
 
       {/* Search and Filter Section */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder={t('academicYears.searchPlaceholder')}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-48">
-            <Filter className="w-4 h-4 mr-2" />
-            <SelectValue placeholder={t('academicYears.filterByStatus')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t('academicYears.allYears')}</SelectItem>
-            <SelectItem value="current">{t('academicYears.current')}</SelectItem>
-            <SelectItem value="upcoming">{t('academicYears.upcoming')}</SelectItem>
-            <SelectItem value="past">{t('academicYears.past')}</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <Card className="border-border/50 mb-6">
+        <CardContent className="p-6">
+          <div className="space-y-4">
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                placeholder={t('academicYears.searchPlaceholder')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 h-11 bg-muted/50 border-0 focus-visible:ring-1"
+              />
+            </div>
+
+            {/* Filter Row */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <Filter className="h-4 w-4" />
+                <span>{t('common.filters')}:</span>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 flex-1">
+                {/* Status Filter */}
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="h-9 w-[180px] border-border/50">
+                    <SelectValue placeholder={t('academicYears.filterByStatus')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t('academicYears.allYears')}</SelectItem>
+                    <SelectItem value="current">{t('academicYears.current')}</SelectItem>
+                    <SelectItem value="upcoming">{t('academicYears.upcoming')}</SelectItem>
+                    <SelectItem value="past">{t('academicYears.past')}</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* Active Filter Badges */}
+                {(searchQuery || statusFilter !== 'all') && (
+                  <>
+                    {searchQuery && (
+                      <Badge
+                        variant="secondary"
+                        className="gap-1 px-2 py-1 cursor-pointer hover:bg-secondary/80"
+                        onClick={() => setSearchQuery('')}
+                      >
+                        <Search className="h-3 w-3" />
+                        {searchQuery}
+                        <X className="h-3 w-3 ml-1" />
+                      </Badge>
+                    )}
+                    {statusFilter !== 'all' && (
+                      <Badge
+                        variant="secondary"
+                        className="gap-1 px-2 py-1 cursor-pointer hover:bg-secondary/80"
+                        onClick={() => setStatusFilter('all')}
+                      >
+                        {t(`academicYears.${statusFilter}`)}
+                        <X className="h-3 w-3 ml-1" />
+                      </Badge>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSearchQuery('');
+                        setStatusFilter('all');
+                      }}
+                      className="h-7 px-2 text-xs"
+                    >
+                      {t('common.reset')}
+                    </Button>
+                  </>
+                )}
+              </div>
+
+              {/* Results Count */}
+              <div className="text-sm text-muted-foreground whitespace-nowrap">
+                {filteredYears.length} {t('common.results') || 'results'}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Academic Years Grid */}
       {filteredYears.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center py-12"
-        >
-          <Calendar className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium text-foreground mb-2">
-            {searchQuery || statusFilter !== 'all' ? t('academicYears.noYearsFound') : t('academicYears.noYearsYet')}
-          </h3>
-          <p className="text-muted-foreground mb-6">
-            {searchQuery || statusFilter !== 'all' 
-              ? t('academicYears.tryDifferentSearch')
-              : t('academicYears.addFirstYear')
-            }
-          </p>
-          {!searchQuery && statusFilter === 'all' && (
-            <Button onClick={handleAddYear} className="gap-2">
-              <Plus className="h-4 w-4" />
-              {t('academicYears.addAcademicYear')}
-            </Button>
-          )}
-        </motion.div>
+        <Card className="border-dashed border-2 border-border/60">
+          <CardContent className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+            <div className="rounded-full bg-muted p-6">
+              <Calendar className="h-12 w-12 text-muted-foreground" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xl font-semibold text-foreground">
+                {searchQuery || statusFilter !== 'all' ? t('academicYears.noYearsFound') : t('academicYears.noYearsYet')}
+              </h3>
+              <p className="text-sm text-muted-foreground max-w-sm">
+                {searchQuery || statusFilter !== 'all'
+                  ? t('academicYears.tryDifferentSearch')
+                  : t('academicYears.addFirstYear')
+                }
+              </p>
+            </div>
+            {(!searchQuery && statusFilter === 'all' && academicYears.length === 0) && (
+              <Button onClick={handleAddYear} className="gap-2">
+                <Plus className="h-4 w-4" />
+                {t('academicYears.addAcademicYear')}
+              </Button>
+            )}
+          </CardContent>
+        </Card>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
           {filteredYears.map((year, index) => (
             <YearCard key={year.id} year={year} index={index} />
           ))}

@@ -10,6 +10,7 @@ from .models import (
     Track,
     SchoolClass,
     Room,
+    Equipment,
     Vehicle,
     VehicleMaintenanceRecord,
     GasoilRecord,
@@ -128,11 +129,27 @@ class SchoolClassAdmin(admin.ModelAdmin):
     # The 'name' field is auto-generated, so we don't need it in the form
     exclude = ('name',)
 
+class EquipmentInline(admin.TabularInline):
+    """Inline to manage equipment items within a room."""
+    model = Equipment
+    extra = 0
+    fields = ('name', 'quantity', 'is_active')
+
 @admin.register(Room)
 class RoomAdmin(admin.ModelAdmin):
     list_display = ('name', 'code', 'room_type', 'capacity')
     list_filter = ('room_type',)
     search_fields = ('name', 'code')
+    inlines = [EquipmentInline]
+
+@admin.register(Equipment)
+class EquipmentAdmin(admin.ModelAdmin):
+    list_display = ('name', 'room', 'quantity', 'is_active', 'updated_at')
+    list_filter = ('is_active', 'room__room_type')
+    search_fields = ('name', 'room__name', 'description')
+    autocomplete_fields = ['room']
+    list_editable = ('quantity', 'is_active')
+    readonly_fields = ('created_at', 'updated_at')
 
 class VehicleMaintenanceInline(admin.TabularInline):
     """Display latest maintenance records within the vehicle admin page."""

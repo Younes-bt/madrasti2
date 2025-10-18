@@ -605,6 +605,84 @@ class SchoolsService {
     }
   }
 
+  // ==================== EQUIPMENT ====================
+
+  /**
+   * Get Equipment items
+   * @param {Object} params - Query parameters
+   * @returns {Promise<Array>} Equipment list
+   */
+  async getEquipment(params = {}) {
+    try {
+      const response = await apiMethods.get('schools/equipment/', { params });
+      return response.results || response;
+    } catch (error) {
+      console.error('Get equipment failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get Equipment item by ID
+   * @param {number} equipmentId - Equipment ID
+   * @returns {Promise<Object>} Equipment data
+   */
+  async getEquipmentById(equipmentId) {
+    try {
+      const response = await apiMethods.get(`schools/equipment/${equipmentId}/`);
+      return response;
+    } catch (error) {
+      console.error('Get equipment item failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create Equipment item
+   * @param {Object} equipmentData - Equipment payload
+   * @returns {Promise<Object>} Created equipment
+   */
+  async createEquipment(equipmentData) {
+    try {
+      const response = await apiMethods.post('schools/equipment/', equipmentData);
+      return response;
+    } catch (error) {
+      console.error('Create equipment failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update Equipment item
+   * @param {number} equipmentId - Equipment ID
+   * @param {Object} equipmentData - Equipment payload
+   * @returns {Promise<Object>} Updated equipment
+   */
+  async updateEquipment(equipmentId, equipmentData) {
+    try {
+      const response = await apiMethods.put(`schools/equipment/${equipmentId}/`, equipmentData);
+      return response;
+    } catch (error) {
+      console.error('Update equipment failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete Equipment item
+   * @param {number} equipmentId - Equipment ID
+   * @returns {Promise<Object>} Deletion response
+   */
+  async deleteEquipment(equipmentId) {
+    try {
+      const response = await apiMethods.delete(`schools/equipment/${equipmentId}/`);
+      return response;
+    } catch (error) {
+      console.error('Delete equipment failed:', error);
+      throw error;
+    }
+  }
+
   // ==================== VEHICLES ====================
 
   /**

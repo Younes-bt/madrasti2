@@ -235,6 +235,53 @@ class Room(models.Model):
         """Get count of images associated with this room"""
         return self.get_images().count()
 
+class Equipment(models.Model):
+    """Represents an equipment item assigned to a room."""
+    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name='equipment_items')
+    name = models.CharField(max_length=120)
+    description = models.TextField(blank=True)
+    quantity = models.PositiveIntegerField(default=1)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['room__name', 'name']
+        unique_together = ('room', 'name')
+
+    def __str__(self):
+        return f"{self.name} ({self.room.name})"
+
+    def get_images(self):
+        """Get all images associated with this equipment item."""
+        from django.contrib.contenttypes.models import ContentType
+        from media.models import MediaRelation
+        content_type = ContentType.objects.get_for_model(self)
+        return MediaRelation.objects.filter(
+            content_type=content_type,
+            object_id=self.id,
+            relation_type__in=['EQUIPMENT_GALLERY', 'EQUIPMENT_FEATURED']
+        ).order_by('order', 'created_at')
+
+    def get_featured_image(self):
+        """Return the featured image for the equipment if present."""
+        featured_relations = self.get_images().filter(is_featured=True)
+        if featured_relations.exists():
+            return featured_relations.first().media_file
+        return None
+
+    def get_gallery_images(self):
+        """Return gallery images that are not marked as featured."""
+        return self.get_images().filter(relation_type='EQUIPMENT_GALLERY', is_featured=False)
+
+    def get_image_count(self):
+        """Return number of media relations associated with this equipment."""
+        return self.get_images().count()
+
+    @property
+    def image_count(self):
+        return self.get_image_count()
+
 class Vehicle(models.Model):
     """Represents a school-owned vehicle such as a car, bus, or van."""
 

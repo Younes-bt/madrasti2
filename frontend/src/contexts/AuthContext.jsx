@@ -413,15 +413,14 @@ export const AuthProvider = ({ children }) => {
       let errorMessage = 'Password change failed. Please try again.'
       if (error.response?.data?.error) {
         errorMessage = error.response.data.error
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message
       } else if (error.message) {
         errorMessage = error.message
       }
 
-      dispatch({
-        type: AUTH_ACTIONS.LOGIN_ERROR,
-        payload: errorMessage,
-      })
-      
+      dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: false })
+
       return { success: false, error: errorMessage }
     }
   }

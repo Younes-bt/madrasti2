@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import i18n from '../../lib/i18n';
 import { motion, useInView, useMotionValue, useSpring, animate } from 'framer-motion';
-import { Plus, Search, Filter, GitBranch, Users, MoreVertical, Edit, Trash2, Eye, BookOpen, TrendingUp, Sparkles, Star, Layers, Target, Hash } from 'lucide-react';
+import { Plus, Search, Filter, GitBranch, Users, MoreVertical, Edit, Trash2, Eye, BookOpen, Target, X } from 'lucide-react';
 import AdminPageLayout from '../../components/admin/layout/AdminPageLayout';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -53,42 +53,30 @@ const AnimatedCounter = ({ from = 0, to, duration = 2, className = "" }) => {
   )
 }
 
-const GlowingCard = ({ children, className = "", glowColor = "blue" }) => (
+const StatCard = ({ icon: Icon, label, value, description, iconColor, iconBg }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
-    whileHover={{ y: -5, transition: { duration: 0.2 } }}
-    className={`relative group ${className}`}
+    whileHover={{ y: -4 }}
+    transition={{ duration: 0.3 }}
   >
-    <div className={`absolute -inset-0.5 bg-gradient-to-r from-${glowColor}-500 to-purple-600 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200`}></div>
-    <div className="relative bg-card border rounded-xl backdrop-blur-sm">
-      {children}
-    </div>
-  </motion.div>
-)
-
-const StatCard = ({ icon: Icon, label, value, colorClass, description, glowColor }) => (
-  <GlowingCard glowColor={glowColor}>
-    <CardContent className="p-4 sm:p-6">
-      <div className="flex items-center space-x-3 sm:space-x-4">
-        <motion.div
-          className={`p-2 sm:p-3 rounded-full bg-gradient-to-br from-${glowColor}-500 to-${glowColor}-600 text-white shadow-lg flex-shrink-0`}
-          whileHover={{ scale: 1.1, rotate: 5 }}
-          whileTap={{ scale: 0.95 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-        >
-          <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
-        </motion.div>
-        <div className="flex-1 space-y-1 min-w-0">
-          <p className="text-xs sm:text-sm text-muted-foreground truncate">{label}</p>
-          <div className={`text-lg sm:text-3xl font-bold ${colorClass}`}>
-            <AnimatedCounter to={value} />
+    <Card className="border-border/50 hover:border-border transition-all duration-300 hover:shadow-lg">
+      <CardContent className="p-6">
+        <div className="flex items-center gap-4">
+          <div className={`p-3 rounded-xl ${iconBg}`}>
+            <Icon className={`h-6 w-6 ${iconColor}`} />
           </div>
-          <p className="text-xs text-muted-foreground mt-1 truncate">{description}</p>
+          <div className="flex-1">
+            <p className="text-sm text-muted-foreground mb-1">{label}</p>
+            <div className="text-3xl font-bold text-foreground">
+              <AnimatedCounter to={value} />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">{description}</p>
+          </div>
         </div>
-      </div>
-    </CardContent>
-  </GlowingCard>
+      </CardContent>
+    </Card>
+  </motion.div>
 );
 
 // Helper function to get localized grade name
@@ -265,174 +253,289 @@ const TracksPage = () => {
             icon={GitBranch}
             label={t('adminSidebar.tracks.totalTracks')}
             value={totalTracks}
-            colorClass="text-blue-600 dark:text-blue-400"
             description={t('adminSidebar.tracks.allTracksDescription')}
-            glowColor="blue"
+            iconColor="text-blue-600 dark:text-blue-400"
+            iconBg="bg-blue-100 dark:bg-blue-900/40"
           />
           <StatCard
             icon={Target}
             label={t('adminSidebar.tracks.activeTracks')}
             value={activeTracks}
-            colorClass="text-green-600 dark:text-green-400"
             description={t('adminSidebar.tracks.activeTracksDescription')}
-            glowColor="green"
+            iconColor="text-green-600 dark:text-green-400"
+            iconBg="bg-green-100 dark:bg-green-900/40"
           />
           <StatCard
             icon={Users}
             label={t('adminSidebar.tracks.totalClasses')}
             value={totalClasses}
-            colorClass="text-purple-600 dark:text-purple-400"
             description={t('adminSidebar.tracks.classesInTracks')}
-            glowColor="purple"
+            iconColor="text-purple-600 dark:text-purple-400"
+            iconBg="bg-purple-100 dark:bg-purple-900/40"
           />
         </div>
 
-        {/* Actions and Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder={t('adminSidebar.tracks.searchPlaceholder')}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 w-full sm:w-64"
-              />
+        {/* Search and Filter Section */}
+        <Card className="border-border/50">
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              {/* Search Bar */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                  placeholder={t('adminSidebar.tracks.searchPlaceholder')}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 h-11 bg-muted/50 border-0 focus-visible:ring-1"
+                />
+              </div>
+
+              {/* Filter Row */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                  <Filter className="h-4 w-4" />
+                  <span>{t('common.filters')}:</span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 flex-1">
+                  {/* Grade Filter */}
+                  <Select value={gradeFilter} onValueChange={setGradeFilter}>
+                    <SelectTrigger className="h-9 w-[180px] border-border/50">
+                      <SelectValue placeholder={t('adminSidebar.tracks.filterByGrade')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{t('common.all')}</SelectItem>
+                      {grades.map((grade) => (
+                        <SelectItem key={grade.id} value={grade.id.toString()}>
+                          {getLocalizedGradeName(grade)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {/* Status Filter */}
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="h-9 w-[140px] border-border/50">
+                      <SelectValue placeholder={t('common.status')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{t('common.all')}</SelectItem>
+                      <SelectItem value="active">{t('common.active')}</SelectItem>
+                      <SelectItem value="inactive">{t('common.inactive')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {/* Active Filter Badges */}
+                  {(searchQuery || gradeFilter !== 'all' || statusFilter !== 'all') && (
+                    <>
+                      {searchQuery && (
+                        <Badge
+                          variant="secondary"
+                          className="gap-1 px-2 py-1 cursor-pointer hover:bg-secondary/80"
+                          onClick={() => setSearchQuery('')}
+                        >
+                          <Search className="h-3 w-3" />
+                          {searchQuery}
+                          <X className="h-3 w-3 ml-1" />
+                        </Badge>
+                      )}
+                      {gradeFilter !== 'all' && (
+                        <Badge
+                          variant="secondary"
+                          className="gap-1 px-2 py-1 cursor-pointer hover:bg-secondary/80"
+                          onClick={() => setGradeFilter('all')}
+                        >
+                          {grades.find(g => g.id.toString() === gradeFilter)?.name || 'Grade'}
+                          <X className="h-3 w-3 ml-1" />
+                        </Badge>
+                      )}
+                      {statusFilter !== 'all' && (
+                        <Badge
+                          variant="secondary"
+                          className="gap-1 px-2 py-1 cursor-pointer hover:bg-secondary/80"
+                          onClick={() => setStatusFilter('all')}
+                        >
+                          {t(`common.${statusFilter}`)}
+                          <X className="h-3 w-3 ml-1" />
+                        </Badge>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSearchQuery('');
+                          setGradeFilter('all');
+                          setStatusFilter('all');
+                        }}
+                        className="h-7 px-2 text-xs"
+                      >
+                        {t('common.reset')}
+                      </Button>
+                    </>
+                  )}
+                </div>
+
+                {/* Results Count */}
+                <div className="text-sm text-muted-foreground whitespace-nowrap">
+                  {filteredTracks.length} {t('common.results') || 'results'}
+                </div>
+              </div>
             </div>
+          </CardContent>
+        </Card>
 
-            <Select value={gradeFilter} onValueChange={setGradeFilter}>
-              <SelectTrigger className="w-full sm:w-40">
-                <SelectValue placeholder={t('adminSidebar.tracks.filterByGrade')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('common.all')}</SelectItem>
-                {grades.map((grade) => (
-                  <SelectItem key={grade.id} value={grade.id.toString()}>
-                    {getLocalizedGradeName(grade)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-40">
-                <SelectValue placeholder={t('common.status')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('common.all')}</SelectItem>
-                <SelectItem value="active">{t('common.active')}</SelectItem>
-                <SelectItem value="inactive">{t('common.inactive')}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
+        {/* Add Track Button */}
+        <div className="flex justify-end">
           <Button
             onClick={() => navigate('/admin/academic-management/tracks/add')}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 w-full sm:w-auto"
+            className="gap-2"
           >
-            <Plus className="mr-2 h-4 w-4" />
+            <Plus className="h-4 w-4" />
             {t('adminSidebar.tracks.addTrack')}
           </Button>
         </div>
 
         {/* Tracks Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {loading ? (
-            Array.from({ length: 6 }).map((_, index) => (
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, index) => (
               <div key={index} className="animate-pulse">
-                <div className="bg-muted rounded-lg h-48"></div>
+                <Card className="border-border/50">
+                  <CardContent className="p-6 space-y-3">
+                    <div className="h-4 bg-muted rounded w-3/4"></div>
+                    <div className="h-3 bg-muted rounded w-1/2"></div>
+                    <div className="h-8 bg-muted rounded w-full"></div>
+                  </CardContent>
+                </Card>
               </div>
-            ))
-          ) : filteredTracks.length === 0 ? (
-            <div className="col-span-full text-center py-12">
-              <GitBranch className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium text-muted-foreground mb-2">
-                {t('adminSidebar.tracks.noTracksFound')}
-              </h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                {t('adminSidebar.tracks.noTracksDescription')}
-              </p>
-              <Button onClick={() => navigate('/admin/academic-management/tracks/add')}>
-                <Plus className="mr-2 h-4 w-4" />
-                {t('adminSidebar.tracks.addFirstTrack')}
-              </Button>
-            </div>
-          ) : (
-            filteredTracks.map((track) => (
-              <GlowingCard key={track.id} glowColor="blue">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1 flex-1">
-                      <CardTitle className="text-lg font-semibold line-clamp-1">
-                        {getLocalizedTrackName(track)}
-                      </CardTitle>
-                      <div className="flex items-center space-x-2">
-                        <Badge variant="outline" className="text-xs">
-                          {track.code}
-                        </Badge>
-                        <Badge variant={track.is_active ? "default" : "secondary"}>
-                          {track.is_active ? t('common.active') : t('common.inactive')}
-                        </Badge>
+            ))}
+          </div>
+        ) : filteredTracks.length === 0 ? (
+          <Card className="border-dashed border-2 border-border/60">
+            <CardContent className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+              <div className="rounded-full bg-muted p-6">
+                <GitBranch className="h-12 w-12 text-muted-foreground" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-semibold text-foreground">
+                  {t('adminSidebar.tracks.noTracksFound')}
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-sm">
+                  {t('adminSidebar.tracks.noTracksDescription')}
+                </p>
+              </div>
+              {(!searchQuery && gradeFilter === 'all' && statusFilter === 'all' && tracks.length === 0) && (
+                <Button onClick={() => navigate('/admin/academic-management/tracks/add')} className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  {t('adminSidebar.tracks.addFirstTrack')}
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredTracks.map((track, index) => (
+              <motion.div
+                key={track.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.05 }}
+                className="group"
+              >
+                <Card
+                  className="h-full border-border/50 hover:border-border transition-all duration-300 hover:shadow-lg cursor-pointer"
+                  onClick={() => navigate(`/admin/academic-management/tracks/${track.id}`)}
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-2 flex-1 min-w-0">
+                        <CardTitle className="text-base font-semibold text-foreground leading-tight line-clamp-1">
+                          {getLocalizedTrackName(track)}
+                        </CardTitle>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge variant="outline" className="text-xs">
+                            {track.code}
+                          </Badge>
+                          <Badge variant={track.is_active ? "default" : "secondary"} className="text-xs">
+                            {track.is_active ? t('common.active') : t('common.inactive')}
+                          </Badge>
+                        </div>
                       </div>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/admin/academic-management/tracks/${track.id}/edit`);
+                            }}
+                            className="cursor-pointer"
+                          >
+                            <Edit className="mr-2 h-4 w-4" />
+                            {t('common.edit')}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleTrackStatus(track);
+                            }}
+                            className="cursor-pointer"
+                          >
+                            <Target className="mr-2 h-4 w-4" />
+                            {track.is_active ? t('adminSidebar.tracks.deactivate') : t('adminSidebar.tracks.activate')}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(track.id);
+                            }}
+                            className="cursor-pointer text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            {t('common.delete')}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
+                  </CardHeader>
 
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => navigate(`/admin/academic-management/tracks/${track.id}`)}>
-                          <Eye className="mr-2 h-4 w-4" />
-                          {t('common.view')}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => navigate(`/admin/academic-management/tracks/${track.id}/edit`)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          {t('common.edit')}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => toggleTrackStatus(track)}>
-                          <Target className="mr-2 h-4 w-4" />
-                          {track.is_active ? t('adminSidebar.tracks.deactivate') : t('adminSidebar.tracks.activate')}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => handleDelete(track.id)}
-                          className="text-destructive"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          {t('common.delete')}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="space-y-2.5">
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <BookOpen className="mr-2 h-3.5 w-3.5 flex-shrink-0" />
+                        <span className="truncate">{getLocalizedTrackGradeName(track)}</span>
+                      </div>
 
-                <CardContent className="pt-0">
-                  <div className="space-y-3">
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <BookOpen className="mr-2 h-4 w-4" />
-                      <span>{getLocalizedTrackGradeName(track)}</span>
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <Users className="mr-2 h-3.5 w-3.5 flex-shrink-0" />
+                        <span>{track.classes_count || 0} {t('adminSidebar.tracks.classes')}</span>
+                      </div>
+
+                      {track.description && (
+                        <p className="text-xs text-muted-foreground line-clamp-2 pt-1">
+                          {i18n.language === 'ar' && track.description_arabic ? track.description_arabic :
+                           i18n.language === 'fr' && track.description_french ? track.description_french :
+                           track.description}
+                        </p>
+                      )}
                     </div>
-
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <Users className="mr-2 h-4 w-4" />
-                      <span>{track.classes_count || 0} {t('adminSidebar.tracks.classes')}</span>
-                    </div>
-
-                    {track.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {i18n.language === 'ar' && track.description_arabic ? track.description_arabic :
-                         i18n.language === 'fr' && track.description_french ? track.description_french :
-                         track.description}
-                      </p>
-                    )}
-                  </div>
-                </CardContent>
-              </GlowingCard>
-            ))
-          )}
-        </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
     </AdminPageLayout>
   );

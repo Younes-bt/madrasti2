@@ -37,7 +37,8 @@ import {
   CarFront,
   Monitor,
   Target,
-  Sparkles
+  Sparkles,
+  LogOut
 } from 'lucide-react'
 import { Badge } from '../ui/badge'
 import { useLanguage } from '../../hooks/useLanguage'
@@ -70,7 +71,7 @@ import {
 
 export function AppSidebar({ onNavigate, currentPath, ...props }) {
   const { t, currentLanguage } = useLanguage()
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
   const [openItems, setOpenItems] = useState({})
   const [studentWallet, setStudentWallet] = useState(null)
 
@@ -508,6 +509,16 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
     }
   }
 
+  const handleLogout = async () => {
+    try {
+      await logout()
+    } finally {
+      if (onNavigate) {
+        onNavigate('/login')
+      }
+    }
+  }
+
   const renderNavItem = (item) => {
     const hasChildren = item.items && item.items.length > 0
     const isOpen = openItems[item.key]
@@ -656,6 +667,15 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
               >
                 <Settings />
                 <span>{t('common.settings')}</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={handleLogout}
+                tooltip={t('common.logout', 'Logout')}
+              >
+                <LogOut />
+                <span>{t('common.logout', 'Logout')}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>

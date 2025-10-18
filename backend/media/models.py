@@ -116,6 +116,8 @@ class MediaRelation(models.Model):
     RELATION_TYPES = [
         ('ROOM_GALLERY', 'Room Gallery'),
         ('ROOM_FEATURED', 'Room Featured Image'),
+        ('EQUIPMENT_GALLERY', 'Equipment Gallery'),
+        ('EQUIPMENT_FEATURED', 'Equipment Featured Image'),
         ('VEHICLE_GALLERY', 'Vehicle Gallery'),
         ('VEHICLE_FEATURED', 'Vehicle Featured Image'),
         ('VEHICLE_MAINTENANCE_ATTACHMENT', 'Vehicle Maintenance Attachment'),

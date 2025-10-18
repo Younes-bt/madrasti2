@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { motion, useInView, useMotionValue, useSpring, animate } from 'framer-motion';
-import { Plus, Search, Filter, GraduationCap, Users, MoreVertical, Edit, Trash2, Eye, BookOpen, TrendingUp, Sparkles, Star, Layers, Target, Hash } from 'lucide-react';
+import { Plus, Search, Filter, GraduationCap, Users, MoreVertical, Edit, Trash2, Eye, TrendingUp, Sparkles, Layers, Target, Hash, X } from 'lucide-react';
 import AdminPageLayout from '../../components/admin/layout/AdminPageLayout';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -52,42 +52,30 @@ const AnimatedCounter = ({ from = 0, to, duration = 2, className = "" }) => {
   )
 }
 
-const GlowingCard = ({ children, className = "", glowColor = "blue" }) => (
+const StatCard = ({ icon: Icon, label, value, description, iconColor, iconBg }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
-    whileHover={{ y: -5, transition: { duration: 0.2 } }}
-    className={`relative group ${className}`}
+    whileHover={{ y: -4 }}
+    transition={{ duration: 0.3 }}
   >
-    <div className={`absolute -inset-0.5 bg-gradient-to-r from-${glowColor}-500 to-purple-600 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200`}></div>
-    <div className="relative bg-card border rounded-xl backdrop-blur-sm">
-      {children}
-    </div>
-  </motion.div>
-)
-
-const StatCard = ({ icon: Icon, label, value, colorClass, description, glowColor }) => (
-  <GlowingCard glowColor={glowColor}>
-    <CardContent className="p-4 sm:p-6">
-      <div className="flex items-center space-x-3 sm:space-x-4">
-        <motion.div 
-          className={`p-2 sm:p-3 rounded-full bg-gradient-to-br from-${glowColor}-500 to-${glowColor}-600 text-white shadow-lg flex-shrink-0`}
-          whileHover={{ scale: 1.1, rotate: 5 }}
-          whileTap={{ scale: 0.95 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-        >
-          <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
-        </motion.div>
-        <div className="flex-1 space-y-1 min-w-0">
-          <p className="text-xs sm:text-sm text-muted-foreground truncate">{label}</p>
-          <div className={`text-lg sm:text-3xl font-bold ${colorClass}`}>
-            <AnimatedCounter to={value} />
+    <Card className="border-border/50 hover:border-border transition-all duration-300 hover:shadow-lg">
+      <CardContent className="p-6">
+        <div className="flex items-center gap-4">
+          <div className={`p-3 rounded-xl ${iconBg}`}>
+            <Icon className={`h-6 w-6 ${iconColor}`} />
           </div>
-          <p className="text-xs text-muted-foreground mt-1 truncate">{description}</p>
+          <div className="flex-1">
+            <p className="text-sm text-muted-foreground mb-1">{label}</p>
+            <div className="text-3xl font-bold text-foreground">
+              <AnimatedCounter to={value} />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">{description}</p>
+          </div>
         </div>
-      </div>
-    </CardContent>
-  </GlowingCard>
+      </CardContent>
+    </Card>
+  </motion.div>
 );
 
 const GradesPage = () => {
@@ -216,9 +204,9 @@ const GradesPage = () => {
     <Button
       key="add-grade"
       onClick={() => navigate('/admin/academic-management/grades/add')}
-      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+      className="gap-2"
     >
-      <Plus className="h-4 w-4 mr-2" />
+      <Plus className="h-4 w-4" />
       {t('grades.addGrade')}
     </Button>
   ];
@@ -231,124 +219,189 @@ const GradesPage = () => {
     >
       <div className="space-y-6">
         {/* Statistics Cards */}
-        <motion.div 
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <StatCard
             icon={Target}
             label={t('grades.totalGrades')}
             value={stats.total}
-            colorClass="text-blue-600"
             description={t('grades.totalGradesDesc')}
-            glowColor="blue"
+            iconColor="text-blue-600 dark:text-blue-400"
+            iconBg="bg-blue-100 dark:bg-blue-900/40"
           />
           <StatCard
             icon={Users}
             label={t('grades.totalClasses')}
             value={stats.totalClasses}
-            colorClass="text-green-600"
             description={t('grades.totalClassesDesc')}
-            glowColor="green"
+            iconColor="text-green-600 dark:text-green-400"
+            iconBg="bg-green-100 dark:bg-green-900/40"
           />
           <StatCard
             icon={TrendingUp}
             label={t('grades.averagePassingGrade')}
             value={stats.averagePassingGrade}
-            colorClass="text-purple-600"
             description={t('grades.averagePassingGradeDesc')}
-            glowColor="purple"
+            iconColor="text-purple-600 dark:text-purple-400"
+            iconBg="bg-purple-100 dark:bg-purple-900/40"
           />
           <StatCard
             icon={Sparkles}
             label={t('grades.highestLevel')}
             value={stats.upperSecondaryGrades}
-            colorClass="text-orange-600"
             description={t('grades.upperSecondaryGrades')}
-            glowColor="orange"
+            iconColor="text-orange-600 dark:text-orange-400"
+            iconBg="bg-orange-100 dark:bg-orange-900/40"
           />
-        </motion.div>
+        </div>
 
         {/* Search and Filter Section */}
-        <motion.div
-          className="flex flex-col sm:flex-row gap-4 bg-card p-4 rounded-lg border shadow-sm"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder={t('grades.searchPlaceholder')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <Select value={levelFilter} onValueChange={setLevelFilter}>
-            <SelectTrigger className="w-full sm:w-[200px]">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder={t('grades.filterByLevel')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('grades.allLevels')}</SelectItem>
-              {educationalLevels.map((level) => (
-                <SelectItem key={level.id} value={level.id.toString()}>
-                  {i18n.language === 'ar' && level.name_arabic ? level.name_arabic :
-                   i18n.language === 'fr' && level.name_french ? level.name_french :
-                   level.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </motion.div>
+        <Card className="border-border/50">
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              {/* Search Bar */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                  placeholder={t('grades.searchPlaceholder')}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 h-11 bg-muted/50 border-0 focus-visible:ring-1"
+                />
+              </div>
 
-        {/* Grades Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {loading ? (
-            // Loading skeletons
-            Array(6).fill(0).map((_, i) => (
-              <div key={i} className="animate-pulse">
-                <div className="bg-card rounded-lg p-6 space-y-3 border shadow-sm">
-                  <div className="h-4 bg-muted rounded w-3/4"></div>
-                  <div className="h-3 bg-muted rounded w-1/2"></div>
-                  <div className="h-8 bg-muted rounded w-full"></div>
+              {/* Filter Row */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                  <Filter className="h-4 w-4" />
+                  <span>{t('common.filters')}:</span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 flex-1">
+                  {/* Level Filter */}
+                  <Select value={levelFilter} onValueChange={setLevelFilter}>
+                    <SelectTrigger className="h-9 w-[200px] border-border/50">
+                      <SelectValue placeholder={t('grades.filterByLevel')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{t('grades.allLevels')}</SelectItem>
+                      {educationalLevels.map((level) => (
+                        <SelectItem key={level.id} value={level.id.toString()}>
+                          {i18n.language === 'ar' && level.name_arabic ? level.name_arabic :
+                           i18n.language === 'fr' && level.name_french ? level.name_french :
+                           level.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {/* Active Filter Badges */}
+                  {(searchQuery || levelFilter !== 'all') && (
+                    <>
+                      {searchQuery && (
+                        <Badge
+                          variant="secondary"
+                          className="gap-1 px-2 py-1 cursor-pointer hover:bg-secondary/80"
+                          onClick={() => setSearchQuery('')}
+                        >
+                          <Search className="h-3 w-3" />
+                          {searchQuery}
+                          <X className="h-3 w-3 ml-1" />
+                        </Badge>
+                      )}
+                      {levelFilter !== 'all' && (
+                        <Badge
+                          variant="secondary"
+                          className="gap-1 px-2 py-1 cursor-pointer hover:bg-secondary/80"
+                          onClick={() => setLevelFilter('all')}
+                        >
+                          {educationalLevels.find(l => l.id.toString() === levelFilter)?.name || 'Level'}
+                          <X className="h-3 w-3 ml-1" />
+                        </Badge>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSearchQuery('');
+                          setLevelFilter('all');
+                        }}
+                        className="h-7 px-2 text-xs"
+                      >
+                        {t('common.reset')}
+                      </Button>
+                    </>
+                  )}
+                </div>
+
+                {/* Results Count */}
+                <div className="text-sm text-muted-foreground whitespace-nowrap">
+                  {filteredGrades.length} {t('common.results') || 'results'}
                 </div>
               </div>
-            ))
-          ) : filteredGrades.length === 0 ? (
-            <motion.div 
-              className="col-span-full text-center py-12"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-            >
-              <GraduationCap className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-              <p className="text-lg font-medium text-muted-foreground">
-                {searchQuery || levelFilter !== 'all' ? t('grades.noGradesFound') : t('grades.noGradesYet')}
-              </p>
-              <p className="text-sm text-muted-foreground mt-2">
-                {t('grades.addFirstGrade')}
-              </p>
-            </motion.div>
-          ) : (
-            filteredGrades.map((grade, index) => (
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Grades Grid */}
+        {loading ? (
+          // Loading skeletons
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array(6).fill(0).map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <Card className="border-border/50">
+                  <CardContent className="p-6 space-y-3">
+                    <div className="h-4 bg-muted rounded w-3/4"></div>
+                    <div className="h-3 bg-muted rounded w-1/2"></div>
+                    <div className="h-8 bg-muted rounded w-full"></div>
+                  </CardContent>
+                </Card>
+              </div>
+            ))}
+          </div>
+        ) : filteredGrades.length === 0 ? (
+          <Card className="border-dashed border-2 border-border/60">
+            <CardContent className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+              <div className="rounded-full bg-muted p-6">
+                <GraduationCap className="h-12 w-12 text-muted-foreground" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-semibold text-foreground">
+                  {searchQuery || levelFilter !== 'all' ? t('grades.noGradesFound') : t('grades.noGradesYet')}
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-sm">
+                  {t('grades.addFirstGrade')}
+                </p>
+              </div>
+              {(!searchQuery && levelFilter === 'all' && grades.length === 0) && (
+                <Button onClick={() => navigate('/admin/academic-management/grades/add')} className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  {t('grades.addGrade')}
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredGrades.map((grade, index) => (
               <motion.div
                 key={grade.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.1 }}
+                transition={{ duration: 0.3, delay: index * 0.05 }}
+                className="group"
               >
-                <GlowingCard glowColor="blue">
+                <Card
+                  className="h-full border-border/50 hover:border-border transition-all duration-300 hover:shadow-lg cursor-pointer"
+                  onClick={() => navigate(`/admin/academic-management/grades/${grade.id}`)}
+                >
                   <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1 flex-1">
-                        <CardTitle className="text-lg font-semibold text-foreground">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-2 flex-1 min-w-0">
+                        <CardTitle className="text-base font-semibold text-foreground leading-tight">
                           {getGradeDisplayName(grade)}
                         </CardTitle>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-xs bg-gray-100">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge variant="outline" className="text-xs">
                             #{grade.code || 'N/A'}
                           </Badge>
                           <Badge variant="outline" className="text-xs">
@@ -362,27 +415,33 @@ const GradesPage = () => {
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                        <DropdownMenuContent align="end" className="w-48">
                           <DropdownMenuItem
-                            onClick={() => navigate(`/admin/academic-management/grades/${grade.id}`)}
-                          >
-                            <Eye className="mr-2 h-4 w-4" />
-                            {t('common.view')}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => navigate(`/admin/academic-management/grades/${grade.id}/edit`)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/admin/academic-management/grades/${grade.id}/edit`);
+                            }}
+                            className="cursor-pointer"
                           >
                             <Edit className="mr-2 h-4 w-4" />
                             {t('common.edit')}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
-                            onClick={() => handleDeleteGrade(grade.id)}
-                            className="text-red-600"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteGrade(grade.id);
+                            }}
+                            className="cursor-pointer text-destructive focus:text-destructive"
                           >
                             <Trash2 className="mr-2 h-4 w-4" />
                             {t('common.delete')}
@@ -392,39 +451,39 @@ const GradesPage = () => {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-3">
+                    <div className="space-y-2.5">
                       {/* Passing Grade */}
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">{t('grades.passingGrade')}</span>
-                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">{t('grades.passingGrade')}</span>
+                        <Badge variant="outline" className="bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800">
                           {grade.passing_grade}/20
                         </Badge>
                       </div>
 
                       {/* Classes Count */}
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">{t('grades.classes')}</span>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">{t('grades.classes')}</span>
                         <div className="flex items-center gap-1">
-                          <Users className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-sm font-medium">{grade.classes_count || 0}</span>
+                          <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="font-medium text-foreground">{grade.classes_count || 0}</span>
                         </div>
                       </div>
 
                       {/* Educational Level Order */}
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">{t('grades.levelOrder')}</span>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">{t('grades.levelOrder')}</span>
                         <div className="flex items-center gap-1">
-                          <Layers className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-sm font-medium">{grade.educational_level_order}</span>
+                          <Layers className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="font-medium text-foreground">{grade.educational_level_order}</span>
                         </div>
                       </div>
                     </div>
                   </CardContent>
-                </GlowingCard>
+                </Card>
               </motion.div>
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </AdminPageLayout>
   );

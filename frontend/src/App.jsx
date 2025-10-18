@@ -7,6 +7,7 @@ import { AuthProvider } from './contexts/AuthContext'
 
 // Import page components
 import LoginPage from './pages/auth/LoginPage'
+import FirstLoginPage from './pages/auth/FirstLoginPage'
 import StudentDashboard from './pages/dashboard/StudentDashboard'
 import StudentProfileOverview from './pages/student/StudentProfileOverview'
 import StudentTimetablePage from './pages/student/StudentTimetablePage'
@@ -25,6 +26,7 @@ import StudentHomeworkFeedbackPage from './pages/student/StudentHomeworkFeedback
 import StudentSubmissionReviewPage from './pages/student/StudentSubmissionReviewPage'
 import TeacherDashboard from './pages/teacher/TeacherDashboard'
 import TeacherProfileOverviewPage from './pages/teacher/TeacherProfileOverviewPage'
+import EditTeacherProfilePage from './pages/teacher/EditTeacherProfilePage'
 import TeacherMyClassesPage from './pages/teacher/TeacherMyClassesPage'
 import TeacherMySchedulePage from './pages/teacher/TeacherMySchedulePage'
 import TeacherAttendancePage from './pages/teacher/TeacherAttendancePage'
@@ -74,6 +76,8 @@ import RoomsManagementPage from './pages/admin/RoomsManagementPage'
 import AddRoomPage from './pages/admin/AddRoomPage'
 import EditRoomPage from './pages/admin/EditRoomPage'
 import ViewRoomPage from './pages/admin/ViewRoomPage'
+import EquipmentManagementPage from './pages/admin/EquipmentManagementPage'
+import ViewEquipmentPage from './pages/admin/ViewEquipmentPage'
 import AcademicYearsPage from './pages/admin/AcademicYearsPage'
 import AddAcademicYearPage from './pages/admin/AddAcademicYearPage'
 import EditAcademicYearPage from './pages/admin/EditAcademicYearPage'
@@ -153,6 +157,14 @@ const AppRoutes = () => {
     <Routes>
       {/* Public routes */}
       <Route path="/login" element={<LoginPage />} />
+      <Route
+        path="/first-login"
+        element={
+          <ProtectedRoute requireAuth={true}>
+            <FirstLoginPage />
+          </ProtectedRoute>
+        }
+      />
       
       {/* Default redirect to role-based dashboard */}
       <Route path="/" element={<DashboardRedirect />} />
@@ -306,21 +318,29 @@ const AppRoutes = () => {
       />
 
       {/* Teacher Profile Routes */}
-      <Route 
-        path="/teacher/profile/overview" 
+      <Route
+        path="/teacher/profile/overview"
         element={
           <ProtectedRoute requiredRoles={['TEACHER']}>
             <TeacherProfileOverviewPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/teacher/profile/my-classes" 
+      <Route
+        path="/teacher/profile/edit"
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <EditTeacherProfilePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/profile/my-classes"
         element={
           <ProtectedRoute requiredRoles={['TEACHER']}>
             <TeacherMyClassesPage />
           </ProtectedRoute>
-        } 
+        }
       />
       <Route
         path="/teacher/profile/my-schedule"
@@ -682,6 +702,22 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <RoomsManagementPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/school-management/equipment" 
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <EquipmentManagementPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/school-management/equipment/view/:equipmentId" 
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <ViewEquipmentPage />
           </ProtectedRoute>
         } 
       />

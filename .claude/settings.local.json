@@ -4,7 +4,10 @@
       "Bash(python manage.py shell:*)",
       "Bash(npm run build)",
       "Bash(python manage.py makemigrations:*)",
-      "Bash(python manage.py migrate:*)"
+      "Bash(python manage.py migrate:*)",
+      "Bash(cat:*)",
+      "Bash(python:*)",
+      "Bash(del update_locale_keys.py)"
     ],
     "deny": [],
     "ask": []

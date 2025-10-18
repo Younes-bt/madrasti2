@@ -17,6 +17,7 @@ from .models import (
     Track,
     SchoolClass,
     Room,
+    Equipment,
     Vehicle,
     VehicleMaintenanceRecord,
     GasoilRecord,
@@ -30,6 +31,7 @@ from .serializers import (
     TrackSerializer,
     SchoolClassSerializer,
     RoomSerializer,
+    EquipmentSerializer,
     VehicleSerializer,
     VehicleMaintenanceRecordSerializer,
     GasoilRecordSerializer,
@@ -166,6 +168,25 @@ class RoomViewSet(viewsets.ModelViewSet):
     queryset = Room.objects.all()
     serializer_class = RoomSerializer
     # REMOVE this line: permission_classes = [permissions.IsAdminUser]
+
+    def get_permissions(self):
+        """Allow any authenticated user to list/view, but only admins to create/edit."""
+        if self.action in ['list', 'retrieve']:
+            self.permission_classes = [permissions.IsAuthenticated]
+        else:
+            self.permission_classes = [permissions.IsAdminUser]
+        return super().get_permissions()
+
+class EquipmentViewSet(viewsets.ModelViewSet):
+    """API endpoint for managing room equipment."""
+    serializer_class = EquipmentSerializer
+    queryset = Equipment.objects.select_related('room').all()
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['room', 'room__room_type', 'is_active']
+    search_fields = ['name', 'description', 'room__name']
+    ordering_fields = ['name', 'quantity', 'updated_at', 'room__name']
+    ordering = ['room__name', 'name']
+    pagination_class = None
 
     def get_permissions(self):
         """Allow any authenticated user to list/view, but only admins to create/edit."""

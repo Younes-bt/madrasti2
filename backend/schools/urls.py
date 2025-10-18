@@ -11,12 +11,19 @@ from .views import (
     TrackViewSet,
     SchoolClassViewSet,
     RoomViewSet,
+    EquipmentViewSet,
     VehicleViewSet,
     VehicleMaintenanceRecordViewSet,
     GasoilRecordViewSet,
     SubjectViewSet
 )
-from media.views import RoomMediaViewSet, VehicleMediaViewSet, VehicleMaintenanceMediaViewSet, VehicleGasoilMediaViewSet
+from media.views import (
+    RoomMediaViewSet,
+    EquipmentMediaViewSet,
+    VehicleMediaViewSet,
+    VehicleMaintenanceMediaViewSet,
+    VehicleGasoilMediaViewSet,
+)
 
 router = DefaultRouter()
 # The 'basename' is only needed if the queryset in the view is not standard.
@@ -28,12 +35,17 @@ router.register(r'grades', GradeViewSet)
 router.register(r'tracks', TrackViewSet)
 router.register(r'classes', SchoolClassViewSet)
 router.register(r'rooms', RoomViewSet)
+router.register(r'equipment', EquipmentViewSet)
 router.register(r'vehicles', VehicleViewSet)
 router.register(r'subjects', SubjectViewSet)
 
 # Create nested router for room media
 rooms_router = routers.NestedDefaultRouter(router, r'rooms', lookup='room')
 rooms_router.register(r'media', RoomMediaViewSet, basename='room-media')
+
+# Nested routes for equipment media
+equipment_router = routers.NestedDefaultRouter(router, r'equipment', lookup='equipment')
+equipment_router.register(r'media', EquipmentMediaViewSet, basename='equipment-media')
 
 # Nested routes for vehicle maintenance records
 vehicles_router = routers.NestedDefaultRouter(router, r'vehicles', lookup='vehicle')
@@ -52,6 +64,7 @@ gasoil_router.register(r'media', VehicleGasoilMediaViewSet, basename='vehicle-ga
 urlpatterns = [
     path('', include(router.urls)),
     path('', include(rooms_router.urls)),
+    path('', include(equipment_router.urls)),
     path('', include(vehicles_router.urls)),
     path('', include(maintenance_router.urls)),
     path('', include(gasoil_router.urls)),

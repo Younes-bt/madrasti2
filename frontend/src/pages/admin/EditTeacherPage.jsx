@@ -57,12 +57,23 @@ const EditTeacherPage = () => {
       let teacherData = response.data || response;
       
       // Set form data from user and profile
+      // Handle school_subject which can be either an ID or an object with an id property
+      let subjectId = '';
+      const subjectValue = teacherData.school_subject || teacherData.profile?.school_subject;
+      if (subjectValue) {
+        if (typeof subjectValue === 'object' && subjectValue.id) {
+          subjectId = subjectValue.id.toString();
+        } else if (typeof subjectValue === 'number' || typeof subjectValue === 'string') {
+          subjectId = subjectValue.toString();
+        }
+      }
+
       setFormData({
         first_name: teacherData.first_name || '',
         last_name: teacherData.last_name || '',
         ar_first_name: teacherData.ar_first_name || teacherData.profile?.ar_first_name || '',
         ar_last_name: teacherData.ar_last_name || teacherData.profile?.ar_last_name || '',
-        school_subject: teacherData.school_subject?.toString() || teacherData.profile?.school_subject?.toString() || 'none',
+        school_subject: subjectId,
         teachable_grades: teacherData.teachable_grades?.map(grade => grade.id) || teacherData.profile?.teachable_grades?.map(grade => grade.id) || [],
         phone: teacherData.phone || teacherData.profile?.phone || '',
         date_of_birth: teacherData.date_of_birth || teacherData.profile?.date_of_birth || '',
@@ -70,7 +81,6 @@ const EditTeacherPage = () => {
         bio: teacherData.bio || teacherData.profile?.bio || '',
         emergency_contact_name: teacherData.emergency_contact_name || teacherData.profile?.emergency_contact_name || '',
         emergency_contact_phone: teacherData.emergency_contact_phone || teacherData.profile?.emergency_contact_phone || '',
-        department: teacherData.department || teacherData.profile?.department || '',
         hire_date: teacherData.hire_date || teacherData.profile?.hire_date || '',
         salary: teacherData.salary || teacherData.profile?.salary || '',
         linkedin_url: teacherData.linkedin_url || teacherData.profile?.linkedin_url || '',
@@ -206,10 +216,8 @@ const EditTeacherPage = () => {
       newErrors.date_of_birth = t('validation.dateOfBirthInvalid');
     }
 
-    // Hire date validation (if provided)
-    if (formData.hire_date && new Date(formData.hire_date) > new Date()) {
-      newErrors.hire_date = t('validation.hireDateInvalid');
-    }
+    // Note: Hire date can be in the future (for pre-registered teachers)
+    // No validation needed for hire_date
 
     // Salary validation (if provided)
     if (formData.salary && (isNaN(formData.salary) || parseFloat(formData.salary) < 0)) {
@@ -250,7 +258,7 @@ const EditTeacherPage = () => {
       // Profile data
       formDataToSend.append('ar_first_name', formData.ar_first_name || '');
       formDataToSend.append('ar_last_name', formData.ar_last_name || '');
-      formDataToSend.append('school_subject', (formData.school_subject && formData.school_subject !== 'none') ? formData.school_subject : '');
+      formDataToSend.append('school_subject', formData.school_subject || '');
 
       // Handle teachable_grades array - append each grade ID individually
       if (formData.teachable_grades && formData.teachable_grades.length > 0) {
@@ -265,7 +273,6 @@ const EditTeacherPage = () => {
       formDataToSend.append('bio', formData.bio || '');
       formDataToSend.append('emergency_contact_name', formData.emergency_contact_name || '');
       formDataToSend.append('emergency_contact_phone', formData.emergency_contact_phone || '');
-      formDataToSend.append('department', formData.department || '');
       formDataToSend.append('hire_date', formData.hire_date || '');
       formDataToSend.append('salary', formData.salary || '');
       formDataToSend.append('linkedin_url', formData.linkedin_url || '');
@@ -383,7 +390,7 @@ const EditTeacherPage = () => {
       >
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
             <p className="text-muted-foreground">{t('common.loadingData')}</p>
           </div>
         </div>
@@ -403,7 +410,7 @@ const EditTeacherPage = () => {
       <div className="max-w-4xl mx-auto">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Information */}
-          <Card>
+          <Card className="border-border/50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <User className="h-5 w-5" />
@@ -421,11 +428,11 @@ const EditTeacherPage = () => {
                   value={formData.first_name}
                   onChange={(e) => handleInputChange('first_name', e.target.value)}
                   placeholder={t('teacher.placeholders.firstName')}
-                  className={errors.first_name ? 'border-red-500' : ''}
+                  className={errors.first_name ? 'border-destructive' : ''}
                   disabled={loading}
                 />
                 {errors.first_name && (
-                  <p className="text-sm text-red-600">{errors.first_name}</p>
+                  <p className="text-sm text-destructive">{errors.first_name}</p>
                 )}
               </div>
 
@@ -439,11 +446,11 @@ const EditTeacherPage = () => {
                   value={formData.last_name}
                   onChange={(e) => handleInputChange('last_name', e.target.value)}
                   placeholder={t('teacher.placeholders.lastName')}
-                  className={errors.last_name ? 'border-red-500' : ''}
+                  className={errors.last_name ? 'border-destructive' : ''}
                   disabled={loading}
                 />
                 {errors.last_name && (
-                  <p className="text-sm text-red-600">{errors.last_name}</p>
+                  <p className="text-sm text-destructive">{errors.last_name}</p>
                 )}
               </div>
 
@@ -457,12 +464,12 @@ const EditTeacherPage = () => {
                   value={formData.ar_first_name}
                   onChange={(e) => handleInputChange('ar_first_name', e.target.value)}
                   placeholder={t('teacher.placeholders.arabicFirstName')}
-                  className={errors.ar_first_name ? 'border-red-500' : ''}
+                  className={errors.ar_first_name ? 'border-destructive' : ''}
                   disabled={loading}
                   dir="rtl"
                 />
                 {errors.ar_first_name && (
-                  <p className="text-sm text-red-600">{errors.ar_first_name}</p>
+                  <p className="text-sm text-destructive">{errors.ar_first_name}</p>
                 )}
               </div>
 
@@ -476,12 +483,12 @@ const EditTeacherPage = () => {
                   value={formData.ar_last_name}
                   onChange={(e) => handleInputChange('ar_last_name', e.target.value)}
                   placeholder={t('teacher.placeholders.arabicLastName')}
-                  className={errors.ar_last_name ? 'border-red-500' : ''}
+                  className={errors.ar_last_name ? 'border-destructive' : ''}
                   disabled={loading}
                   dir="rtl"
                 />
                 {errors.ar_last_name && (
-                  <p className="text-sm text-red-600">{errors.ar_last_name}</p>
+                  <p className="text-sm text-destructive">{errors.ar_last_name}</p>
                 )}
               </div>
 
@@ -496,21 +503,16 @@ const EditTeacherPage = () => {
                     onValueChange={(value) => handleInputChange('school_subject', value)}
                     disabled={loading || loadingSubjects}
                   >
-                    <SelectTrigger className={`pl-9 ${errors.school_subject ? 'border-red-500' : ''}`}>
+                    <SelectTrigger className={`pl-9 ${errors.school_subject ? 'border-destructive' : ''}`}>
                       <SelectValue placeholder={loadingSubjects ? t('common.loading') : t('teacher.placeholders.selectSubject')} />
                     </SelectTrigger>
                     <SelectContent>
                       {subjects && subjects.length > 0 ? (
-                        <>
-                          <SelectItem value="none">
-                            {t('teacher.selectSubject')}
+                        subjects.map((subject) => (
+                          <SelectItem key={subject.id} value={subject.id.toString()}>
+                            {subject.name}
                           </SelectItem>
-                          {subjects.map((subject) => (
-                            <SelectItem key={subject.id} value={subject.id.toString()}>
-                              {subject.name}
-                            </SelectItem>
-                          ))}
-                        </>
+                        ))
                       ) : (
                         <SelectItem value="no-subjects" disabled>
                           {t('teacher.noSubjectsAvailable')}
@@ -520,9 +522,9 @@ const EditTeacherPage = () => {
                   </Select>
                 </div>
                 {errors.school_subject && (
-                  <p className="text-sm text-red-600">{errors.school_subject}</p>
+                  <p className="text-sm text-destructive">{errors.school_subject}</p>
                 )}
-                <p className="text-xs text-gray-500">{t('teacher.subjectSelectionInfo')}</p>
+                <p className="text-xs text-muted-foreground">{t('teacher.subjectSelectionInfo')}</p>
               </div>
 
               <div className="space-y-2 md:col-span-2">
@@ -531,10 +533,10 @@ const EditTeacherPage = () => {
                 </Label>
                 <div className="relative">
                   <GraduationCap className="absolute left-3 top-3 h-4 w-4 text-muted-foreground z-10" />
-                  <div className="border rounded-md p-3 pl-10 bg-white min-h-[80px] max-h-[120px] overflow-y-auto">
+                  <div className="border border-border/50 rounded-md p-3 pl-10 bg-muted/50 min-h-[80px] max-h-[120px] overflow-y-auto">
                     {loadingGrades ? (
                       <div className="flex items-center justify-center py-4">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
                         <span className="ml-2 text-sm text-muted-foreground">{t('common.loading')}</span>
                       </div>
                     ) : grades && grades.length > 0 ? (
@@ -549,7 +551,7 @@ const EditTeacherPage = () => {
                             />
                             <Label
                               htmlFor={`grade-${grade.id}`}
-                              className="text-sm font-normal cursor-pointer"
+                              className="text-sm font-normal cursor-pointer text-foreground"
                             >
                               {getLocalizedGradeName(grade)}
                             </Label>
@@ -563,7 +565,7 @@ const EditTeacherPage = () => {
                     )}
                   </div>
                 </div>
-                <p className="text-xs text-gray-500">{t('teacher.teachableGradesInfo')}</p>
+                <p className="text-xs text-muted-foreground">{t('teacher.teachableGradesInfo')}</p>
               </div>
 
               <div className="space-y-2">
@@ -575,12 +577,12 @@ const EditTeacherPage = () => {
                   <Input
                     type="email"
                     value={originalEmail}
-                    className="pl-9 bg-gray-50"
+                    className="pl-9 bg-muted/50"
                     disabled
                     placeholder={t('teacher.emailCannotBeChanged')}
                   />
                 </div>
-                <p className="text-xs text-gray-500">{t('teacher.emailChangeInfo')}</p>
+                <p className="text-xs text-muted-foreground">{t('teacher.emailChangeInfo')}</p>
               </div>
 
               <div className="space-y-2">
@@ -595,12 +597,12 @@ const EditTeacherPage = () => {
                     value={formData.phone}
                     onChange={(e) => handleInputChange('phone', e.target.value)}
                     placeholder={t('teacher.placeholders.phone')}
-                    className={`pl-9 ${errors.phone ? 'border-red-500' : ''}`}
+                    className={`pl-9 ${errors.phone ? 'border-destructive' : ''}`}
                     disabled={loading}
                   />
                 </div>
                 {errors.phone && (
-                  <p className="text-sm text-red-600">{errors.phone}</p>
+                  <p className="text-sm text-destructive">{errors.phone}</p>
                 )}
               </div>
 
@@ -615,19 +617,19 @@ const EditTeacherPage = () => {
                     type="date"
                     value={formData.date_of_birth}
                     onChange={(e) => handleInputChange('date_of_birth', e.target.value)}
-                    className={`pl-9 ${errors.date_of_birth ? 'border-red-500' : ''}`}
+                    className={`pl-9 ${errors.date_of_birth ? 'border-destructive' : ''}`}
                     disabled={loading}
                   />
                 </div>
                 {errors.date_of_birth && (
-                  <p className="text-sm text-red-600">{errors.date_of_birth}</p>
+                  <p className="text-sm text-destructive">{errors.date_of_birth}</p>
                 )}
               </div>
             </CardContent>
           </Card>
 
           {/* Profile Picture */}
-          <Card>
+          <Card className="border-border/50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Camera className="h-5 w-5" />
@@ -641,19 +643,19 @@ const EditTeacherPage = () => {
                     <img
                       src={profilePictureUrl}
                       alt="Profile"
-                      className="h-24 w-24 rounded-full object-cover border-2 border-gray-200"
+                      className="h-24 w-24 rounded-full object-cover border-2 border-border"
                     />
                   ) : (
-                    <div className="h-24 w-24 rounded-full bg-gray-200 flex items-center justify-center">
-                      <Camera className="h-8 w-8 text-gray-400" />
+                    <div className="h-24 w-24 rounded-full bg-muted flex items-center justify-center">
+                      <Camera className="h-8 w-8 text-muted-foreground" />
                     </div>
                   )}
                 </div>
                 <div>
                   <Label htmlFor="profile_picture" className="cursor-pointer">
-                    <div className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg border border-blue-200">
-                      <Camera className="h-4 w-4 text-blue-600" />
-                      <span className="text-blue-600 text-sm font-medium">
+                    <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-950/50 px-4 py-2 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <Camera className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      <span className="text-blue-600 dark:text-blue-400 text-sm font-medium">
                         {profilePictureUrl ? t('teacher.changePhoto') : t('teacher.uploadPhoto')}
                       </span>
                     </div>
@@ -666,7 +668,7 @@ const EditTeacherPage = () => {
                     disabled={loading}
                     className="hidden"
                   />
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-muted-foreground mt-2">
                     {t('teacher.photoRequirements')}
                   </p>
                 </div>
@@ -675,7 +677,7 @@ const EditTeacherPage = () => {
           </Card>
 
           {/* Professional Information */}
-          <Card>
+          <Card className="border-border/50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Briefcase className="h-5 w-5" />
@@ -683,20 +685,6 @@ const EditTeacherPage = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="department">
-                  {t('teacher.department')}
-                </Label>
-                <Input
-                  id="department"
-                  type="text"
-                  value={formData.department}
-                  onChange={(e) => handleInputChange('department', e.target.value)}
-                  placeholder={t('teacher.placeholders.department')}
-                  disabled={loading}
-                />
-              </div>
-
               <div className="space-y-2">
                 <Label htmlFor="hire_date">
                   {t('teacher.hireDate')}
@@ -708,12 +696,12 @@ const EditTeacherPage = () => {
                     type="date"
                     value={formData.hire_date}
                     onChange={(e) => handleInputChange('hire_date', e.target.value)}
-                    className={`pl-9 ${errors.hire_date ? 'border-red-500' : ''}`}
+                    className={`pl-9 ${errors.hire_date ? 'border-destructive' : ''}`}
                     disabled={loading}
                   />
                 </div>
                 {errors.hire_date && (
-                  <p className="text-sm text-red-600">{errors.hire_date}</p>
+                  <p className="text-sm text-destructive">{errors.hire_date}</p>
                 )}
               </div>
 
@@ -731,19 +719,19 @@ const EditTeacherPage = () => {
                     value={formData.salary}
                     onChange={(e) => handleInputChange('salary', e.target.value)}
                     placeholder={t('teacher.placeholders.salary')}
-                    className={`pl-9 ${errors.salary ? 'border-red-500' : ''}`}
+                    className={`pl-9 ${errors.salary ? 'border-destructive' : ''}`}
                     disabled={loading}
                   />
                 </div>
                 {errors.salary && (
-                  <p className="text-sm text-red-600">{errors.salary}</p>
+                  <p className="text-sm text-destructive">{errors.salary}</p>
                 )}
               </div>
             </CardContent>
           </Card>
 
           {/* Social Media Links */}
-          <Card>
+          <Card className="border-border/50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Globe className="h-5 w-5" />
@@ -763,12 +751,12 @@ const EditTeacherPage = () => {
                     value={formData.linkedin_url}
                     onChange={(e) => handleInputChange('linkedin_url', e.target.value)}
                     placeholder={t('teacher.placeholders.linkedinUrl')}
-                    className={`pl-9 ${errors.linkedin_url ? 'border-red-500' : ''}`}
+                    className={`pl-9 ${errors.linkedin_url ? 'border-destructive' : ''}`}
                     disabled={loading}
                   />
                 </div>
                 {errors.linkedin_url && (
-                  <p className="text-sm text-red-600">{errors.linkedin_url}</p>
+                  <p className="text-sm text-destructive">{errors.linkedin_url}</p>
                 )}
               </div>
 
@@ -784,19 +772,19 @@ const EditTeacherPage = () => {
                     value={formData.twitter_url}
                     onChange={(e) => handleInputChange('twitter_url', e.target.value)}
                     placeholder={t('teacher.placeholders.twitterUrl')}
-                    className={`pl-9 ${errors.twitter_url ? 'border-red-500' : ''}`}
+                    className={`pl-9 ${errors.twitter_url ? 'border-destructive' : ''}`}
                     disabled={loading}
                   />
                 </div>
                 {errors.twitter_url && (
-                  <p className="text-sm text-red-600">{errors.twitter_url}</p>
+                  <p className="text-sm text-destructive">{errors.twitter_url}</p>
                 )}
               </div>
             </CardContent>
           </Card>
 
           {/* Additional Information */}
-          <Card>
+          <Card className="border-border/50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />

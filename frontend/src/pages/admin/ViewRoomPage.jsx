@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-  Edit, Building, MapPin, Users, ArrowLeft, Calendar, Badge as BadgeIcon
+  Edit, Building, MapPin, Users, ArrowLeft, Calendar, Badge as BadgeIcon, Package, Plus, ArrowRight, Loader2
 } from 'lucide-react';
 import AdminPageLayout from '../../components/admin/layout/AdminPageLayout';
 import { Button } from '../../components/ui/button';
@@ -29,6 +29,8 @@ const ViewRoomPage = () => {
   const { roomId } = useParams();
   const [loading, setLoading] = useState(true);
   const [roomData, setRoomData] = useState(null);
+  const [equipmentLoading, setEquipmentLoading] = useState(false);
+  const [equipmentItems, setEquipmentItems] = useState([]);
 
   useEffect(() => {
     const fetchRoomData = async () => {
@@ -45,8 +47,29 @@ const ViewRoomPage = () => {
       }
     };
 
+    const fetchEquipmentData = async () => {
+      setEquipmentLoading(true);
+      try {
+        const response = await apiMethods.get('schools/equipment/', {
+          params: { room: roomId }
+        });
+        const equipmentList = Array.isArray(response)
+          ? response
+          : Array.isArray(response?.results)
+            ? response.results
+            : [];
+        setEquipmentItems(equipmentList);
+      } catch (error) {
+        console.error('Failed to fetch equipment for room:', error);
+        toast.error(t('equipment.messages.loadError'));
+      } finally {
+        setEquipmentLoading(false);
+      }
+    };
+
     if (roomId) {
       fetchRoomData();
+      fetchEquipmentData();
     }
   }, [roomId, navigate, t]);
 
@@ -86,6 +109,14 @@ const ViewRoomPage = () => {
 
   const handleBack = () => {
     navigate('/admin/school-management/rooms');
+  };
+
+  const handleViewEquipment = (equipmentId) => {
+    navigate(`/admin/school-management/equipment/view/${equipmentId}`);
+  };
+
+  const handleGoToEquipmentManagement = () => {
+    navigate('/admin/school-management/equipment');
   };
 
   const actions = [
@@ -259,6 +290,84 @@ const ViewRoomPage = () => {
                 </div>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Room Equipment Card */}
+        <Card className="mt-6">
+          <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                {t('rooms.equipmentSection.title')}
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                {t('rooms.equipmentSection.subtitle')}
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={handleGoToEquipmentManagement}
+            >
+              <Plus className="h-4 w-4" />
+              {t('rooms.equipmentSection.manage')}
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {equipmentLoading ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {t('rooms.equipmentSection.loading')}
+              </div>
+            ) : equipmentItems.length > 0 ? (
+              <div className="space-y-3">
+                {equipmentItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex flex-col gap-3 rounded-lg border border-border/60 bg-muted/40 p-4 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div>
+                      <h4 className="text-base font-semibold text-foreground">
+                        {item.name}
+                      </h4>
+                      {item.description && (
+                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                          {item.description}
+                        </p>
+                      )}
+                      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        <Badge variant="outline">
+                          {t('equipment.form.quantity')}: {item.quantity}
+                        </Badge>
+                        <Badge variant={item.is_active ? 'default' : 'secondary'}>
+                          {item.is_active ? t('common.active') : t('common.inactive')}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        className="gap-2"
+                        onClick={() => handleViewEquipment(item.id)}
+                      >
+                        <ArrowRight className="h-4 w-4" />
+                        {t('rooms.equipmentSection.view')}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center gap-3 py-10 text-center text-muted-foreground">
+                <Package className="h-10 w-10 opacity-40" />
+                <p>{t('rooms.equipmentSection.empty')}</p>
+                <Button variant="outline" onClick={handleGoToEquipmentManagement} className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  {t('rooms.equipmentSection.manage')}
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 

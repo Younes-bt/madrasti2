@@ -8,6 +8,7 @@ from .models import (
     Track,
     SchoolClass,
     Room,
+    Equipment,
     Vehicle,
     VehicleMaintenanceRecord,
     GasoilRecord,
@@ -107,6 +108,54 @@ class RoomSerializer(serializers.ModelSerializer):
                 'url': featured_image.secure_url or featured_image.url,
                 'alt_text': featured_image.alt_text,
                 'title': featured_image.title
+            }
+        return None
+
+class EquipmentSerializer(serializers.ModelSerializer):
+    room_name = serializers.CharField(source='room.name', read_only=True)
+    image_count = serializers.SerializerMethodField()
+    featured_image = serializers.SerializerMethodField()
+    content_type = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Equipment
+        fields = (
+            'id',
+            'name',
+            'description',
+            'room',
+            'room_name',
+            'quantity',
+            'is_active',
+            'image_count',
+            'featured_image',
+            'content_type',
+            'created_at',
+            'updated_at',
+        )
+        read_only_fields = (
+            'room_name',
+            'image_count',
+            'featured_image',
+            'content_type',
+            'created_at',
+            'updated_at',
+        )
+
+    def get_content_type(self, obj):
+        return ContentType.objects.get_for_model(obj).id
+
+    def get_image_count(self, obj):
+        return obj.get_image_count()
+
+    def get_featured_image(self, obj):
+        featured_image = obj.get_featured_image()
+        if featured_image:
+            return {
+                'id': str(featured_image.id),
+                'url': featured_image.secure_url or featured_image.url,
+                'alt_text': featured_image.alt_text,
+                'title': featured_image.title,
             }
         return None
 

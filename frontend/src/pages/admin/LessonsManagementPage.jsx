@@ -121,11 +121,10 @@ const LessonsManagementPage = () => {
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedLevel, setSelectedLevel] = useState('all');
   const [selectedGrade, setSelectedGrade] = useState('all');
+  const [selectedTrack, setSelectedTrack] = useState('all');
   const [selectedSubject, setSelectedSubject] = useState('all');
   const [selectedCycle, setSelectedCycle] = useState('all');
-  const [selectedDifficulty, setSelectedDifficulty] = useState('all');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedLesson, setSelectedLesson] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -134,7 +133,7 @@ const LessonsManagementPage = () => {
   // Options data
   const [subjects, setSubjects] = useState([]);
   const [grades, setGrades] = useState([]);
-  const [levels, setLevels] = useState([]);
+  const [tracks, setTracks] = useState([]);
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
@@ -145,8 +144,19 @@ const LessonsManagementPage = () => {
   // Load initial data
   useEffect(() => {
     loadData();
-    loadOptions();
-  }, [currentPage, searchTerm, selectedLevel, selectedGrade, selectedSubject, selectedCycle, selectedDifficulty]);
+    loadGrades();
+    loadSubjects();
+  }, [currentPage, searchTerm, selectedGrade, selectedTrack, selectedSubject, selectedCycle]);
+
+  // Load tracks when grade changes
+  useEffect(() => {
+    if (selectedGrade !== 'all') {
+      loadTracksForGrade(selectedGrade);
+    } else {
+      setTracks([]);
+      setSelectedTrack('all');
+    }
+  }, [selectedGrade]);
 
   const loadData = async () => {
     try {
@@ -155,9 +165,9 @@ const LessonsManagementPage = () => {
         page: currentPage,
         search: searchTerm || undefined,
         grade: selectedGrade !== 'all' ? selectedGrade : undefined,
+        tracks: selectedTrack !== 'all' ? selectedTrack : undefined,
         subject: selectedSubject !== 'all' ? selectedSubject : undefined,
         cycle: selectedCycle !== 'all' ? selectedCycle : undefined,
-        difficulty_level: selectedDifficulty !== 'all' ? selectedDifficulty : undefined,
       };
 
       const response = await lessonsService.getLessons(params);
@@ -184,19 +194,32 @@ const LessonsManagementPage = () => {
     }
   };
 
-  const loadOptions = async () => {
+  const loadGrades = async () => {
     try {
-      const [subjectsRes, gradesRes, levelsRes] = await Promise.all([
-        schoolsService.getSubjects(),
-        schoolsService.getGrades(),
-        schoolsService.getEducationalLevels()
-      ]);
-
-      setSubjects(subjectsRes.results || subjectsRes);
+      const gradesRes = await schoolsService.getGrades();
       setGrades(gradesRes.results || gradesRes);
-      setLevels(levelsRes.results || levelsRes);
     } catch (error) {
-      console.error('Error loading options:', error);
+      console.error('Error loading grades:', error);
+      toast.error(t('error.loadingData'));
+    }
+  };
+
+  const loadTracksForGrade = async (gradeId) => {
+    try {
+      const tracksRes = await schoolsService.getTracksForGrade(gradeId);
+      setTracks(tracksRes.results || tracksRes);
+    } catch (error) {
+      console.error('Error loading tracks:', error);
+      toast.error(t('error.loadingData'));
+    }
+  };
+
+  const loadSubjects = async () => {
+    try {
+      const subjectsRes = await schoolsService.getSubjects();
+      setSubjects(subjectsRes.results || subjectsRes);
+    } catch (error) {
+      console.error('Error loading subjects:', error);
       toast.error(t('error.loadingData'));
     }
   };
@@ -234,16 +257,6 @@ const LessonsManagementPage = () => {
     { value: 'first', label: t('lessons.firstCycle') },
     { value: 'second', label: t('lessons.secondCycle') }
   ];
-
-  const difficultyOptions = [
-    { value: 'easy', label: t('lessons.easy') },
-    { value: 'medium', label: t('lessons.medium') },
-    { value: 'hard', label: t('lessons.hard') }
-  ];
-
-  const filteredGrades = selectedLevel !== 'all'
-    ? grades.filter(grade => grade.educational_level === parseInt(selectedLevel))
-    : grades;
 
   return (
     <AdminPageLayout
@@ -305,32 +318,36 @@ const LessonsManagementPage = () => {
                 </div>
 
                 <div className="flex gap-2 flex-wrap">
-                  <Select value={selectedLevel} onValueChange={(value) => {
-                    setSelectedLevel(value);
-                    setSelectedGrade('all'); // Reset grade when level changes
+                  <Select value={selectedGrade} onValueChange={(value) => {
+                    setSelectedGrade(value);
+                    setSelectedTrack('all'); // Reset track when grade changes
                   }}>
-                    <SelectTrigger className="w-[140px]">
-                      <SelectValue placeholder={t('lessons.allLevels')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{t('lessons.allLevels')}</SelectItem>
-                      {levels.map((level) => (
-                        <SelectItem key={level.id} value={level.id.toString()}>
-                          {level.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={selectedGrade} onValueChange={setSelectedGrade}>
                     <SelectTrigger className="w-[140px]">
                       <SelectValue placeholder={t('lessons.allGrades')} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">{t('lessons.allGrades')}</SelectItem>
-                      {filteredGrades.map((grade) => (
+                      {grades.map((grade) => (
                         <SelectItem key={grade.id} value={grade.id.toString()}>
                           {grade.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select
+                    value={selectedTrack}
+                    onValueChange={setSelectedTrack}
+                    disabled={selectedGrade === 'all'}
+                  >
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue placeholder={t('lessons.allTracks')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{t('lessons.allTracks')}</SelectItem>
+                      {tracks.map((track) => (
+                        <SelectItem key={track.id} value={track.id.toString()}>
+                          {track.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -359,20 +376,6 @@ const LessonsManagementPage = () => {
                       {cycleOptions.map((cycle) => (
                         <SelectItem key={cycle.value} value={cycle.value}>
                           {cycle.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={selectedDifficulty} onValueChange={setSelectedDifficulty}>
-                    <SelectTrigger className="w-[140px]">
-                      <SelectValue placeholder={t('lessons.allDifficulties')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{t('lessons.allDifficulties')}</SelectItem>
-                      {difficultyOptions.map((difficulty) => (
-                        <SelectItem key={difficulty.value} value={difficulty.value}>
-                          {difficulty.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
