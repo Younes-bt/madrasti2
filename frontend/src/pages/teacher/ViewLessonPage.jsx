@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import i18n from '../../lib/i18n'
@@ -38,12 +38,14 @@ import {
   BarChart3,
   CheckSquare,
   Brain,
-  Plus
+  Plus,
+  Globe
 } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import lessonsService from '../../services/lessons'
 import { exerciseService } from '../../services/exercises'
 import { toast } from 'sonner'
+import LessonAvailabilityDialog from '../../components/lessons/LessonAvailabilityDialog'
 
 const getLocalizedLessonTitle = (lesson) => {
   const currentLanguage = i18n.language;
@@ -66,6 +68,10 @@ const ViewLessonPage = () => {
   const [lesson, setLesson] = useState(null)
   const [exercises, setExercises] = useState([])
   const [exercisesLoading, setExercisesLoading] = useState(false)
+  const [availabilityDialogOpen, setAvailabilityDialogOpen] = useState(false)
+  const [availability, setAvailability] = useState([])
+  const [availabilityLoading, setAvailabilityLoading] = useState(false)
+  const [availabilityError, setAvailabilityError] = useState(null)
 
   // Load lesson data
   useEffect(() => {
@@ -74,10 +80,11 @@ const ViewLessonPage = () => {
     }
   }, [id])
 
-  // Load exercises after lesson is loaded
+  // Load exercises and availability after lesson is loaded
   useEffect(() => {
     if (lesson?.id) {
       loadExercises()
+      loadAvailability()
     }
   }, [lesson?.id])
 
@@ -92,6 +99,30 @@ const ViewLessonPage = () => {
       navigate('/teacher/content/lessons')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadAvailability = async () => {
+    if (!id) return
+
+    try {
+      setAvailabilityLoading(true)
+      setAvailabilityError(null)
+
+      const response = await lessonsService.getLessonAvailability(id)
+      const records = Array.isArray(response)
+        ? response
+        : response?.results || response?.data || []
+
+      setAvailability(records)
+    } catch (error) {
+      console.error('Error loading lesson availability:', error)
+      setAvailability([])
+      setAvailabilityError(
+        t('lessons.availability.loadError') || 'Failed to load class availability.'
+      )
+    } finally {
+      setAvailabilityLoading(false)
     }
   }
 
@@ -172,11 +203,21 @@ const ViewLessonPage = () => {
   }
 
   const handleViewExercise = (exerciseId) => {
-    navigate(`/teacher/content/lessons/${id}/exercises/${exerciseId}`)
+    navigate(`/teacher/content/lesson-exercises/${exerciseId}`)
   }
 
   const handleEditExercise = (exerciseId) => {
-    navigate(`/teacher/content/lessons/${id}/exercises/${exerciseId}/edit`)
+    navigate(`/teacher/content/lesson-exercises/${exerciseId}/edit`)
+  }
+
+  const handleManageAvailability = () => {
+    setAvailabilityDialogOpen(true)
+  }
+
+  const handleAvailabilityUpdate = () => {
+    // Reload lesson data if needed
+    loadLesson()
+    loadAvailability()
   }
 
   const getDifficultyBadgeColor = (difficulty) => {
@@ -188,6 +229,13 @@ const ViewLessonPage = () => {
     }
     return colors[difficulty] || colors.beginner
   }
+
+  const publishedClasses = useMemo(
+    () => availability.filter((item) => item?.is_published),
+    [availability]
+  )
+  const totalClasses = availability.length
+  const unpublishedCount = Math.max(totalClasses - publishedClasses.length, 0)
 
   if (loading) {
     return (
@@ -619,6 +667,85 @@ const ViewLessonPage = () => {
               </CardContent>
             </Card>
 
+            {/* Lesson Availability */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Globe className="h-5 w-5" />
+                  {t('lessons.availability.title') || 'Class Availability'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  {t('lessons.availability.cardDescription') || 'Control which classes can access this lesson'}
+                </p>
+                <div className="rounded-lg border border-muted-foreground/20 bg-muted/40 dark:bg-muted/10 p-4 space-y-3">
+                  {availabilityLoading ? (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {t('common.loading') || 'Loading...'}
+                    </div>
+                  ) : availabilityError ? (
+                    <p className="text-sm text-destructive">
+                      {availabilityError}
+                    </p>
+                  ) : totalClasses === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      {t('lessons.availability.noClasses') || 'No classes found for this lesson yet.'}
+                    </p>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between text-sm font-semibold text-foreground">
+                        <span>{t('lessons.availability.published') || 'Published classes'}</span>
+                        <span className="text-green-600 dark:text-green-400">
+                          {publishedClasses.length}/{totalClasses}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>{t('lessons.availability.unpublished') || 'Unpublished'}</span>
+                        <span>{unpublishedCount}</span>
+                      </div>
+                      <div className="pt-1">
+                        {publishedClasses.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {publishedClasses.slice(0, 5).map((item) => (
+                              <Badge
+                                key={item.school_class}
+                                variant="secondary"
+                                className="bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-300"
+                              >
+                                {item.class_name || t('lessons.availability.unknownClass', 'Class')}
+                              </Badge>
+                            ))}
+                            {publishedClasses.length > 5 && (
+                              <Badge
+                                variant="secondary"
+                                className="bg-muted text-muted-foreground dark:bg-muted/30"
+                              >
+                                +{publishedClasses.length - 5}
+                              </Badge>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">
+                            {t('lessons.availability.noPublished') || 'No classes currently have access.'}
+                          </p>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+                <Button
+                  variant="default"
+                  className="w-full"
+                  onClick={handleManageAvailability}
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  {t('lessons.availability.manage') || 'Manage Availability'}
+                </Button>
+              </CardContent>
+            </Card>
+
             {/* Quick Actions */}
             <Card>
               <CardHeader>
@@ -656,6 +783,15 @@ const ViewLessonPage = () => {
           </div>
         </div>
         </div>
+
+      {/* Lesson Availability Dialog */}
+      <LessonAvailabilityDialog
+        lessonId={lesson?.id}
+        lessonTitle={getLocalizedLessonTitle(lesson)}
+        open={availabilityDialogOpen}
+        onOpenChange={setAvailabilityDialogOpen}
+        onUpdate={handleAvailabilityUpdate}
+      />
     </TeacherPageLayout>
   )
 }

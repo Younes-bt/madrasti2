@@ -109,7 +109,8 @@
     "classes": "Classes",
     "allSubjects": "All Subjects",
     "results": "results",
-    "popupBlocked": "Please allow pop-ups to export this report."
+    "popupBlocked": "Please allow pop-ups to export this report.",
+    "viewDetails": "View Details"
   },
   "error": {
     "failedToLoadProfile": "Failed to load profile data",
@@ -119,7 +120,9 @@
     "firstNameRequired": "First name is required",
     "lastNameRequired": "Last name is required",
     "invalidPhoneNumber": "Invalid phone number format",
-    "pleaseFixErrors": "Please fix the errors before saving"
+    "pleaseFixErrors": "Please fix the errors before saving",
+    "failedToLoadProgressData": "Failed to load progress data",
+    "noProgressData": "No progress data available"
   },
   "lessons": {
     "title": "Title",
@@ -190,6 +193,10 @@
     "requiredFields": "Please fill in all required fields",
     "loadError": "Failed to load lesson data",
     "viewLesson": "View Lesson",
+    "startExercise": "Start exercise",
+    "continueExercise": "Continue",
+    "exerciseCompleted": "Completed",
+    "comingSoon": "Coming soon",
     "loading": "Loading lesson...",
     "notFound": "Lesson Not Found",
     "notFoundDescription": "The lesson you're looking for could not be found or may have been deleted.",
@@ -209,7 +216,30 @@
     "academicInfo": "Academic Information",
     "personalInfo": "Personal Information",
     "parentInfo": "Parent Information",
-    "years": "years"
+    "years": "years",
+    "availability": {
+      "title": "Class Availability",
+      "description": "Control which classes can access this lesson",
+      "cardDescription": "Control which classes can access this lesson",
+      "manage": "Manage Availability",
+      "published": "Published",
+      "unpublished": "Unpublished",
+      "total": "Total Classes",
+      "publishAll": "Publish All",
+      "unpublishAll": "Unpublish All",
+      "unsavedChanges": "Unsaved Changes",
+      "toPublish": "to publish",
+      "toUnpublish": "to unpublish",
+      "saveSuccess": "Successfully updated: {{published}} published, {{unpublished}} unpublished",
+      "saveError": "Failed to save changes",
+      "loadError": "Failed to load availability data",
+      "noClasses": "No classes found"
+    },
+    "questionImage": "Question image",
+    "addImage": "Add image",
+    "changeImage": "Change image",
+    "removeImage": "Remove image",
+    "imagePreviewAlt": "Question image preview"
   },
   "calendar": {
     "monday": "Monday",
@@ -1054,6 +1084,47 @@
       "cancelled": "Cancelled"
     },
     "showingStudents": "Showing {{start}} to {{end}} of {{total}} students"
+  },
+  "progress": {
+    "learningProgress": "Learning Progress",
+    "studentProgress": "Student Progress",
+    "viewDetailedProgress": "View detailed progress report",
+    "comprehensiveProgressReport": "Comprehensive Progress Report",
+    "completion": "Completion",
+    "avgScore": "Average Score",
+    "averageScore": "Average Score",
+    "overallCompletion": "Overall Completion",
+    "accuracy": "Accuracy",
+    "totalExercises": "Total Exercises",
+    "lessons": "lessons",
+    "lessonsCompleted": "lessons completed",
+    "acrossAllLessons": "Across all lessons",
+    "correctAnswers": "Correct answers",
+    "subjects": "subjects",
+    "completed": "Completed",
+    "inProgress": "In Progress",
+    "notStarted": "Not Started",
+    "noProgressYet": "No Progress Data Yet",
+    "studentHasntStarted": "This student hasn't started any lessons yet.",
+    "clickToViewEmpty": "Click \"View Details\" to see the full progress dashboard",
+    "timeSpent": "Time Spent",
+    "minutes": "minutes",
+    "breakdownByStatus": "Breakdown by lesson status",
+    "rewardsAchievements": "Rewards & Achievements",
+    "earnedRewards": "Points, coins, and badges earned",
+    "totalPoints": "Total Points",
+    "totalCoins": "Total Coins",
+    "badgesEarned": "Badges Earned",
+    "lessonByLessonProgress": "Lesson-by-Lesson Progress",
+    "detailedBreakdown": "Detailed breakdown of each lesson",
+    "noLessonsYet": "No lessons tracked yet",
+    "score": "Score",
+    "exercises": "Exercises",
+    "status": {
+      "completed": "Completed",
+      "in_progress": "In Progress",
+      "not_started": "Not Started"
+    }
   },
   "timetables": {
     "timetables": "Timetables",
@@ -2748,7 +2819,11 @@
         "minutes": "minutes",
         "notRecorded": "Not recorded",
         "points": "points",
-        "coins": "coins"
+        "coins": "coins",
+        "notAnswered": "Not answered",
+        "notProvided": "Not provided",
+        "correctPosition": "Correct position",
+        "position": "Position"
       }
     },
     "achievements": {

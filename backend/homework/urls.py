@@ -35,12 +35,13 @@ router.register(r'submissions', views.SubmissionViewSet, basename='submissions')
 router.register(r'question-answers', views.QuestionAnswerViewSet, basename='question-answers')
 router.register(r'book-exercise-answers', views.BookExerciseAnswerViewSet, basename='book-exercise-answers')
 
+# Progress Tracking Routes
+router.register(r'lesson-progress', views.LessonProgressViewSet, basename='lesson-progress')
+
 # URL patterns
 urlpatterns = [
     path('', include(router.urls)),
+    # Progress report endpoints
+    path('progress/report/', views.StudentProgressReportView.as_view(), name='student-progress-report'),
+    path('progress/report/<int:student_id>/', views.StudentProgressReportView.as_view(), name='student-progress-report-detail'),
 ]
-
-# Optional: Add custom URL patterns here if needed
-# urlpatterns += [
-#     path('api/custom-endpoint/', views.CustomView.as_view(), name='custom-endpoint'),
-# ]

@@ -6,6 +6,7 @@ import {
   Plus,
   Search,
   MoreVertical,
+  Eye, // Added Eye icon for view action
   Edit,
   Trash2,
   Users,
@@ -14,7 +15,11 @@ import {
   UserPlus,
   ChevronLeft,
   ChevronRight,
-  FileWarning
+  FileWarning,
+  MailQuestion, // Added for message icon
+  MessageSquare, // Added for message icon
+  Send, // Added for send button icon
+  Loader2 // Added for loading state on send button
 } from 'lucide-react';
 import AdminPageLayout from '../../components/admin/layout/AdminPageLayout';
 import { Button } from '../../components/ui/button';
@@ -23,9 +28,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { Badge } from '../../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '../../components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
 import { apiMethods } from '../../services/api';
+import communicationService from '../../services/communication';
 import { toast } from 'sonner';
 
 const getLanguageCode = (language) => (language || 'en').split('-')[0];
@@ -92,6 +99,12 @@ const ParentsManagementPage = () => {
     active: 0,
     inactive: 0
   });
+
+  // Message Modal State
+  const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
+  const [selectedParentForMessage, setSelectedParentForMessage] = useState(null);
+  const [messageContent, setMessageContent] = useState('');
+  const [sendingMessage, setSendingMessage] = useState(false);
 
   const fetchParents = useCallback(async () => {
     setLoading(true);
@@ -200,6 +213,35 @@ const ParentsManagementPage = () => {
   const handleEditParent = (parentId) => navigate(`/admin/school-management/parents/edit/${parentId}`);
   const handleDeleteParent = (parentId) => toast.info(`${t('action.delete')} parent: ${parentId}`);
   const handleAddParent = () => navigate('/admin/school-management/parents/add');
+
+  const handleSendMessage = (parent) => {
+    setSelectedParentForMessage(parent);
+    setIsMessageModalOpen(true);
+    setMessageContent('');
+  };
+
+  const handleSendMessageSubmit = async () => {
+    if (!messageContent.trim() || !selectedParentForMessage) return;
+
+    setSendingMessage(true);
+    try {
+      const conversation = await communicationService.startDirectConversation(selectedParentForMessage.id);
+      await communicationService.sendMessage({
+        conversation: conversation.id,
+        content: messageContent.trim()
+      });
+
+      toast.success(t('Message sent successfully'));
+      setIsMessageModalOpen(false);
+      setMessageContent('');
+      setSelectedParentForMessage(null);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast.error(t('Failed to send message'));
+    } finally {
+      setSendingMessage(false);
+    }
+  };
 
   const formatDate = (dateString) => {
     if (!dateString) return '—';
@@ -394,6 +436,9 @@ const ParentsManagementPage = () => {
                               <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEditParent(parent.id); }}>
                                 <Edit className="mr-2 h-4 w-4" /><span>{t('action.edit')}</span>
                               </DropdownMenuItem>
+                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleSendMessage(parent); }}>
+                                <MessageSquare className="mr-2 h-4 w-4" /><span>{t('action.sendMessage') || 'Send Message'}</span>
+                              </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDeleteParent(parent.id); }} className="text-red-600">
                                 <Trash2 className="mr-2 h-4 w-4" /><span>{t('action.delete')}</span>
@@ -429,6 +474,47 @@ const ParentsManagementPage = () => {
           </CardContent>
         </Card>
         <PaginationControls />
+
+        {/* Send Message Modal */}
+        <Dialog open={isMessageModalOpen} onOpenChange={setIsMessageModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {t('Send Message to')} {selectedParentForMessage?.full_name}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">{t('Message')}</label>
+                <textarea
+                  value={messageContent}
+                  onChange={(e) => setMessageContent(e.target.value)}
+                  placeholder={t('Type your message...')}
+                  className="w-full min-h-[120px] p-3 border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+                  disabled={sendingMessage}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsMessageModalOpen(false)} disabled={sendingMessage}>
+                {t('Cancel')}
+              </Button>
+              <Button onClick={handleSendMessageSubmit} disabled={!messageContent.trim() || sendingMessage}>
+                {sendingMessage ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {t('Sending...')}
+                  </>
+                ) : (
+                  <>
+                    <Send className="mr-2 h-4 w-4" />
+                    {t('Send Message')}
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </motion.div>
     </AdminPageLayout>
   );

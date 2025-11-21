@@ -42,6 +42,7 @@ import {
   SelectValue,
 } from '../../components/ui/select'
 import { cn } from '../../lib/utils'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table'
 
 const LessonsPage = () => {
   const { t, isRTL, currentLanguage } = useLanguage()
@@ -470,7 +471,99 @@ const LessonsPage = () => {
         </Card>
       </div>
 
+      {/* Lessons Table */}
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="min-w-[220px]">{t('lessons.lesson')}</TableHead>
+                <TableHead>{t('lessons.subject')}</TableHead>
+                <TableHead>{t('lessons.grade')}</TableHead>
+                <TableHead>{t('lessons.cycle')}</TableHead>
+                <TableHead>{t('lessons.difficulty')}</TableHead>
+                <TableHead className="text-center">{t('lessons.resources')}</TableHead>
+                <TableHead className="text-center">{t('lessons.practiceExercises')}</TableHead>
+                <TableHead>{t('common.updated')}</TableHead>
+                <TableHead>{t('common.status')}</TableHead>
+                <TableHead className="w-[70px]"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {lessons.map((lesson) => (
+                <TableRow key={lesson.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <BookOpen className="h-4 w-4" />
+                      <button
+                        className="text-left font-medium hover:underline"
+                        onClick={() => handleViewLesson(lesson.id)}
+                      >
+                        {getLocalizedTitle(lesson)}
+                      </button>
+                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground line-clamp-1">{lesson.description}</div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="text-xs">
+                      {lesson.subject_details ? getLocalizedSubjectName(lesson.subject_details) : lesson.subject_name}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {lesson.grade_details ? getLocalizedGradeName(lesson.grade_details) : lesson.grade_name}
+                  </TableCell>
+                  <TableCell>{getCycleBadge(lesson.cycle)}</TableCell>
+                  <TableCell>{getDifficultyBadge(lesson.difficulty_level)}</TableCell>
+                  <TableCell className="text-center">{(lesson.resources?.length || 0)}</TableCell>
+                  <TableCell className="text-center">{lesson.exercise_count || 0}</TableCell>
+                  <TableCell>{new Date(lesson.updated_at).toLocaleDateString()}</TableCell>
+                  <TableCell>{getStatusBadge(lesson)}</TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleViewLesson(lesson.id)}>
+                          <Eye className="h-4 w-4 mr-2" />{t('common.view')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleEditLesson(lesson.id)}>
+                          <Edit className="h-4 w-4 mr-2" />{t('lessons.editLesson')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleManageExercises(lesson.id)}>
+                          <Target className="h-4 w-4 mr-2" />{t('lessons.manageExercises')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleCreateExercise(lesson.id)}>
+                          <Zap className="h-4 w-4 mr-2" />{t('lessons.createExercise')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleToggleStatus(lesson)}>
+                          {lesson.is_active ? (
+                            <>
+                              <Eye className="h-4 w-4 mr-2" />{t('common.deactivate')}
+                            </>
+                          ) : (
+                            <>
+                              <Play className="h-4 w-4 mr-2" />{t('common.activate')}
+                            </>
+                          )}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDeleteLesson(lesson.id)} className="text-red-600">
+                          <Trash2 className="h-4 w-4 mr-2" />{t('common.delete')}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
       {/* Lessons Grid */}
+      {false && (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {lessons.map((lesson) => (
           <Card key={lesson.id} className="hover:shadow-lg transition-shadow cursor-pointer">
@@ -618,6 +711,7 @@ const LessonsPage = () => {
           </Card>
         ))}
       </div>
+      )}
 
       {lessons.length === 0 && (
         <Card className="mt-6">

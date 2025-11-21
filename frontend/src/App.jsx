@@ -10,6 +10,7 @@ import LoginPage from './pages/auth/LoginPage'
 import FirstLoginPage from './pages/auth/FirstLoginPage'
 import StudentDashboard from './pages/dashboard/StudentDashboard'
 import StudentProfileOverview from './pages/student/StudentProfileOverview'
+import StudentProgressPageStudent from './pages/student/StudentProgressPage'
 import StudentTimetablePage from './pages/student/StudentTimetablePage'
 import StudentAttendanceReport from './pages/student/StudentAttendanceReport'
 import StudentProfileSettings from './pages/student/StudentProfileSettings'
@@ -32,6 +33,7 @@ import TeacherMySchedulePage from './pages/teacher/TeacherMySchedulePage'
 import TeacherAttendancePage from './pages/teacher/TeacherAttendancePage'
 import AttendanceHistoryPage from './pages/teacher/AttendanceHistoryPage'
 import TeacherViewStudentPage from './pages/teacher/ViewStudentPage'
+import StudentProgressPageTeacher from './pages/teacher/StudentProgressPage'
 import TeacherLessonsPage from './pages/teacher/LessonsPage'
 import AddLessonPage from './pages/teacher/AddLessonPage'
 import EditLessonPage from './pages/teacher/EditLessonPage'
@@ -67,6 +69,7 @@ import StudentsManagementPage from './pages/admin/StudentsManagementPage'
 import AddStudentPage from './pages/admin/AddStudentPage'
 import EditStudentPage from './pages/admin/EditStudentPage'
 import ViewStudentPage from './pages/admin/ViewStudentPage'
+import StudentProgressPageAdmin from './pages/admin/StudentProgressPage'
 import BulkImportStudentsPage from './pages/admin/BulkImportStudentsPage'
 import ParentsManagementPage from './pages/admin/ParentsManagementPage'
 import AddParentPage from './pages/admin/AddParentPage'
@@ -122,11 +125,22 @@ import AddExercisePage from './pages/admin/AddExercisePage'
 import EditExercisePage from './pages/admin/EditExercisePage'
 import ViewExercisePage from './pages/admin/ViewExercisePage'
 import AttendanceReportsPage from './pages/admin/AttendanceReportsPage'
+import FeeSetupPage from './pages/admin/finance/FeeSetupPage'
+import InvoicesPage from './pages/admin/finance/InvoicesPage'
+import InvoiceDetailsPage from './pages/admin/finance/InvoiceDetailsPage'
+import PaymentsPage from './pages/admin/finance/PaymentsPage'
 
 // Import feature pages
 import LessonsPage from './pages/lessons/LessonsPage'
 import AttendancePage from './pages/attendance/AttendancePage'
 import RewardsPage from './pages/rewards/RewardsPage'
+
+// Import Communication pages
+import MessagesPage from './pages/communication/MessagesPage'
+import AnnouncementsPage from './pages/communication/AnnouncementsPage'
+
+// Import Parent Finance pages
+import FinancialStatusPage from './pages/parent/finance/FinancialStatusPage'
 
 // Import auth components
 import ProtectedRoute from './components/auth/ProtectedRoute'
@@ -135,18 +149,18 @@ import { useAuth } from './hooks/useAuth'
 // Dashboard redirect component - redirects to appropriate dashboard based on user role
 const DashboardRedirect = () => {
   const { user } = useAuth()
-  
+
   if (!user) return <Navigate to="/login" replace />
-  
+
   const roleRoutes = {
     'ADMIN': '/admin',
     'TEACHER': '/teacher',
-    'STUDENT': '/student', 
+    'STUDENT': '/student',
     'PARENT': '/parent',
     'STAFF': '/admin', // Staff users go to admin dashboard
     'DRIVER': '/admin' // Driver users go to admin dashboard
   }
-  
+
   const redirectPath = roleRoutes[user.role] || '/student'
   return <Navigate to={redirectPath} replace />
 }
@@ -165,11 +179,11 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-      
+
       {/* Default redirect to role-based dashboard */}
       <Route path="/" element={<DashboardRedirect />} />
       <Route path="/dashboard" element={<DashboardRedirect />} />
-      
+
       {/* Role-based protected routes */}
       <Route
         path="/student"
@@ -186,6 +200,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute requiredRoles={['STUDENT']}>
             <StudentProfileOverview />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/progress"
+        element={
+          <ProtectedRoute requiredRoles={['STUDENT']}>
+            <StudentProgressPageStudent />
           </ProtectedRoute>
         }
       />
@@ -309,12 +331,12 @@ const AppRoutes = () => {
       />
 
       <Route
-        path="/teacher" 
+        path="/teacher"
         element={
           <ProtectedRoute requiredRoles={['TEACHER']}>
             <TeacherDashboard />
           </ProtectedRoute>
-        } 
+        }
       />
 
       {/* Teacher Profile Routes */}
@@ -374,31 +396,39 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/teacher/students/:studentId/progress"
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <StudentProgressPageTeacher />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Teacher Content Management Routes */}
-      <Route 
-        path="/teacher/content/lessons" 
+      <Route
+        path="/teacher/content/lessons"
         element={
           <ProtectedRoute requiredRoles={['TEACHER']}>
             <TeacherLessonsPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/teacher/content/lessons/add" 
+      <Route
+        path="/teacher/content/lessons/add"
         element={
           <ProtectedRoute requiredRoles={['TEACHER']}>
             <AddLessonPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/teacher/content/lessons/edit/:id" 
+      <Route
+        path="/teacher/content/lessons/edit/:id"
         element={
           <ProtectedRoute requiredRoles={['TEACHER']}>
             <EditLessonPage />
           </ProtectedRoute>
-        } 
+        }
       />
       <Route
         path="/teacher/content/lessons/view/:id"
@@ -468,7 +498,7 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-      
+
       <Route
         path="/teacher/assignments/homework"
         element={
@@ -527,231 +557,267 @@ const AppRoutes = () => {
       />
 
       <Route
-        path="/parent" 
+        path="/parent"
         element={
           <ProtectedRoute requiredRoles={['PARENT']}>
             <ParentDashboard />
           </ProtectedRoute>
-        } 
+        }
       />
-      
-      <Route 
-        path="/admin" 
+
+      {/* Parent Finance Routes */}
+      <Route
+        path="/parent/finance"
+        element={
+          <ProtectedRoute requiredRoles={['PARENT']}>
+            <FinancialStatusPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Communication Routes - Available to all authenticated users */}
+      <Route
+        path="/messages"
+        element={
+          <ProtectedRoute requireAuth={true}>
+            <MessagesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/announcements"
+        element={
+          <ProtectedRoute requireAuth={true}>
+            <AnnouncementsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF', 'DRIVER']}>
             <AdminDashboard />
           </ProtectedRoute>
-        } 
+        }
       />
 
       {/* Admin School Management Routes */}
-      <Route 
-        path="/admin/school-management/school-details" 
+      <Route
+        path="/admin/school-management/school-details"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <SchoolDetailsPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/school-management/school-details/edit" 
+      <Route
+        path="/admin/school-management/school-details/edit"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <UpdateSchoolDetailsPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/school-management/staff" 
+      <Route
+        path="/admin/school-management/staff"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <StaffManagementPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/school-management/staff/add" 
+      <Route
+        path="/admin/school-management/staff/add"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <AddStaffPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/school-management/staff/edit/:staffId" 
+      <Route
+        path="/admin/school-management/staff/edit/:staffId"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <EditStaffPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/school-management/staff/view/:staffId" 
+      <Route
+        path="/admin/school-management/staff/view/:staffId"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <ViewStaffPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/school-management/teachers" 
+      <Route
+        path="/admin/school-management/teachers"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <TeachersManagementPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/school-management/teachers/add" 
+      <Route
+        path="/admin/school-management/teachers/add"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <AddTeacherPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/school-management/teachers/edit/:teacherId" 
+      <Route
+        path="/admin/school-management/teachers/edit/:teacherId"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <EditTeacherPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/school-management/teachers/view/:teacherId" 
+      <Route
+        path="/admin/school-management/teachers/view/:teacherId"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <ViewTeacherPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/school-management/students" 
+      <Route
+        path="/admin/school-management/students"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <StudentsManagementPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/school-management/students/add" 
+      <Route
+        path="/admin/school-management/students/add"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <AddStudentPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/school-management/students/bulk-import" 
+      <Route
+        path="/admin/school-management/students/bulk-import"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <BulkImportStudentsPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/school-management/students/edit/:studentId" 
+      <Route
+        path="/admin/school-management/students/edit/:studentId"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <EditStudentPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/school-management/students/view/:studentId" 
+      <Route
+        path="/admin/school-management/students/view/:studentId"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <ViewStudentPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/school-management/parents" 
+      <Route
+        path="/admin/school-management/students/:studentId/progress"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <StudentProgressPageAdmin />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/school-management/parents"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <ParentsManagementPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/school-management/parents/add" 
+      <Route
+        path="/admin/school-management/parents/add"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <AddParentPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/school-management/parents/edit/:parentId" 
+      <Route
+        path="/admin/school-management/parents/edit/:parentId"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <EditParentPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/school-management/parents/view/:parentId" 
+      <Route
+        path="/admin/school-management/parents/view/:parentId"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <ViewParentPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/school-management/rooms" 
+      <Route
+        path="/admin/school-management/rooms"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <RoomsManagementPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/school-management/equipment" 
+      <Route
+        path="/admin/school-management/equipment"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <EquipmentManagementPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/school-management/equipment/view/:equipmentId" 
+      <Route
+        path="/admin/school-management/equipment/view/:equipmentId"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <ViewEquipmentPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/school-management/rooms/add" 
+      <Route
+        path="/admin/school-management/rooms/add"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <AddRoomPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/school-management/rooms/edit/:roomId" 
+      <Route
+        path="/admin/school-management/rooms/edit/:roomId"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <EditRoomPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/school-management/rooms/view/:roomId" 
+      <Route
+        path="/admin/school-management/rooms/view/:roomId"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <ViewRoomPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/school-management/vehicles" 
+      <Route
+        path="/admin/school-management/vehicles"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <VehiclesManagementPage />
           </ProtectedRoute>
-        } 
+        }
       />
       <Route
         path="/admin/school-management/vehicles/view/:vehicleId"
@@ -801,103 +867,103 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-      <Route 
-        path="/admin/school-management/equipment" 
+      <Route
+        path="/admin/school-management/equipment"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <div>Equipment Management Page - Coming Soon</div>
           </ProtectedRoute>
-        } 
+        }
       />
 
       {/* Admin Academic Management Routes */}
-      <Route 
-        path="/admin/academic-management/academic-years" 
+      <Route
+        path="/admin/academic-management/academic-years"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <AcademicYearsPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/academic-management/academic-years/add" 
+      <Route
+        path="/admin/academic-management/academic-years/add"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <AddAcademicYearPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/academic-management/academic-years/edit/:yearId" 
+      <Route
+        path="/admin/academic-management/academic-years/edit/:yearId"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <EditAcademicYearPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/academic-management/academic-years/view/:yearId" 
+      <Route
+        path="/admin/academic-management/academic-years/view/:yearId"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <ViewAcademicYearPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/academic-management/educational-levels" 
+      <Route
+        path="/admin/academic-management/educational-levels"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <EducationalLevelsPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/academic-management/educational-levels/add" 
+      <Route
+        path="/admin/academic-management/educational-levels/add"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <AddEducationalLevelPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/academic-management/educational-levels/edit/:levelId" 
+      <Route
+        path="/admin/academic-management/educational-levels/edit/:levelId"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <EditEducationalLevelPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/academic-management/educational-levels/view/:levelId" 
+      <Route
+        path="/admin/academic-management/educational-levels/view/:levelId"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <ViewEducationalLevelPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/academic-management/grades" 
+      <Route
+        path="/admin/academic-management/grades"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <GradesPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/academic-management/grades/add" 
+      <Route
+        path="/admin/academic-management/grades/add"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <AddGradePage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/academic-management/grades/:id" 
+      <Route
+        path="/admin/academic-management/grades/:id"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <ViewGradePage />
           </ProtectedRoute>
-        } 
+        }
       />
       <Route
         path="/admin/academic-management/grades/:id/edit"
@@ -947,101 +1013,101 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-      <Route 
-        path="/admin/academic-management/classes/add" 
+      <Route
+        path="/admin/academic-management/classes/add"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <AddClassPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/academic-management/classes/:id" 
+      <Route
+        path="/admin/academic-management/classes/:id"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <ViewClassPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/academic-management/classes/:id/edit" 
+      <Route
+        path="/admin/academic-management/classes/:id/edit"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <EditClassPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/academic-management/subjects" 
+      <Route
+        path="/admin/academic-management/subjects"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <SubjectsPage />
           </ProtectedRoute>
-        } 
+        }
       />
-       <Route 
-        path="/admin/academic-management/subjects/add" 
+      <Route
+        path="/admin/academic-management/subjects/add"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <AddSubjectPage />
           </ProtectedRoute>
-        } 
+        }
       />
-       <Route 
-        path="/admin/academic-management/subjects/:id" 
+      <Route
+        path="/admin/academic-management/subjects/:id"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <ViewSubjectPage />
           </ProtectedRoute>
-        } 
+        }
       />
-       <Route 
-        path="/admin/academic-management/subjects/:id/edit" 
+      <Route
+        path="/admin/academic-management/subjects/:id/edit"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <EditSubjectPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/timetables" 
+      <Route
+        path="/admin/timetables"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <TimetablesPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/timetables/add" 
+      <Route
+        path="/admin/timetables/add"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <AddTimetablePage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/timetables/view/:id" 
+      <Route
+        path="/admin/timetables/view/:id"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <ViewTimetablePage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/timetables/edit/:id" 
+      <Route
+        path="/admin/timetables/edit/:id"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <EditTimetablePage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/academic-management/timetables" 
+      <Route
+        path="/admin/academic-management/timetables"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <TimetablesPage />
           </ProtectedRoute>
-        } 
+        }
       />
 
       {/* Admin Education Management Routes */}
@@ -1122,147 +1188,181 @@ const AppRoutes = () => {
         }
       />
 
+      {/* Admin Finance Routes */}
       <Route
-        path="/admin/education-management/assignments" 
+        path="/admin/finance/setup"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <FeeSetupPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/finance/invoices"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <InvoicesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/finance/invoices/:id"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <InvoiceDetailsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/finance/payments"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <PaymentsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/education-management/assignments"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <div>Assignments Page - Coming Soon</div>
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/education-management/homework" 
+      < Route
+        path="/admin/education-management/homework"
         element={
-          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+          < ProtectedRoute requiredRoles={['ADMIN', 'STAFF']} >
             <div>Homework Page - Coming Soon</div>
-          </ProtectedRoute>
-        } 
+          </ProtectedRoute >
+        }
       />
-      <Route 
-        path="/admin/education-management/exams" 
+      < Route
+        path="/admin/education-management/exams"
         element={
-          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+          < ProtectedRoute requiredRoles={['ADMIN', 'STAFF']} >
             <div>Exams Page - Coming Soon</div>
-          </ProtectedRoute>
-        } 
+          </ProtectedRoute >
+        }
       />
-      <Route 
-        path="/admin/education-management/grading-system" 
+      < Route
+        path="/admin/education-management/grading-system"
         element={
-          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+          < ProtectedRoute requiredRoles={['ADMIN', 'STAFF']} >
             <div>Grading System Page - Coming Soon</div>
-          </ProtectedRoute>
-        } 
+          </ProtectedRoute >
+        }
       />
 
       {/* Admin Reports & Analytics Routes */}
-      <Route 
-        path="/admin/reports/attendance" 
+      <Route
+        path="/admin/reports/attendance"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <div>Attendance Reports Page - Coming Soon</div>
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/reports/academic-performance" 
+      <Route
+        path="/admin/reports/academic-performance"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <div>Academic Performance Reports Page - Coming Soon</div>
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/reports/financial" 
+      <Route
+        path="/admin/reports/financial"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <div>Financial Reports Page - Coming Soon</div>
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/reports/custom-builder" 
+      <Route
+        path="/admin/reports/custom-builder"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <div>Custom Report Builder Page - Coming Soon</div>
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/reports/comparative-analysis" 
+      <Route
+        path="/admin/reports/comparative-analysis"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <div>Comparative Analysis Page - Coming Soon</div>
           </ProtectedRoute>
-        } 
+        }
       />
 
       {/* Admin Communications Routes */}
-      <Route 
-        path="/admin/communications/announcements" 
+      <Route
+        path="/admin/communications/announcements"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <div>Announcements Page - Coming Soon</div>
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/communications/email-templates" 
+      <Route
+        path="/admin/communications/email-templates"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <div>Email Templates Page - Coming Soon</div>
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/communications/parent-notifications" 
+      <Route
+        path="/admin/communications/parent-notifications"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <div>Parent Notifications Page - Coming Soon</div>
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/communications/emergency-alerts" 
+      <Route
+        path="/admin/communications/emergency-alerts"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <div>Emergency Alerts Page - Coming Soon</div>
           </ProtectedRoute>
-        } 
+        }
       />
 
       {/* Admin System Settings Routes */}
-      <Route 
-        path="/admin/settings/general" 
+      <Route
+        path="/admin/settings/general"
         element={
           <ProtectedRoute requiredRoles={['ADMIN']}>
             <div>General Settings Page - Coming Soon</div>
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/settings/permissions" 
+      <Route
+        path="/admin/settings/permissions"
         element={
           <ProtectedRoute requiredRoles={['ADMIN']}>
             <div>User Permissions Page - Coming Soon</div>
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/settings/integrations" 
+      <Route
+        path="/admin/settings/integrations"
         element={
           <ProtectedRoute requiredRoles={['ADMIN']}>
             <div>Integration Settings Page - Coming Soon</div>
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/settings/backup-restore" 
+      <Route
+        path="/admin/settings/backup-restore"
         element={
           <ProtectedRoute requiredRoles={['ADMIN']}>
             <div>Backup & Restore Page - Coming Soon</div>
           </ProtectedRoute>
-        } 
+        }
       />
 
       {/* Feature pages - accessible to all authenticated users */}
@@ -1302,35 +1402,35 @@ const AppRoutes = () => {
       />
 
       <Route
-        path="/homework" 
+        path="/homework"
         element={
           <ProtectedRoute requiredRoles={['STUDENT', 'TEACHER', 'PARENT', 'ADMIN', 'STAFF']}>
             <HomeworkPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      
-      <Route 
-        path="/attendance" 
+
+      <Route
+        path="/attendance"
         element={
           <ProtectedRoute requiredRoles={['STUDENT', 'TEACHER', 'PARENT', 'ADMIN', 'STAFF', 'DRIVER']}>
             <AttendancePage />
           </ProtectedRoute>
-        } 
+        }
       />
-      
-      <Route 
-        path="/rewards" 
+
+      <Route
+        path="/rewards"
         element={
           <ProtectedRoute requiredRoles={['STUDENT', 'TEACHER', 'PARENT', 'ADMIN', 'STAFF']}>
             <RewardsPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      
+
       {/* Catch all - redirect to appropriate dashboard */}
       <Route path="*" element={<DashboardRedirect />} />
-    </Routes>
+    </Routes >
   )
 }
 

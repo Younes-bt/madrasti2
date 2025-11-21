@@ -65,7 +65,7 @@ class UsersService {
    */
   async getUsers(params = {}) {
     try {
-      const response = await apiMethods.get('users/', { params });
+      const response = await apiMethods.get('users/users/', { params });
       return response;
     } catch (error) {
       console.error('Get users failed:', error);
@@ -80,7 +80,7 @@ class UsersService {
    */
   async getUserById(userId) {
     try {
-      const response = await apiMethods.get(`users/${userId}/`);
+      const response = await apiMethods.get(`users/users/${userId}/`);
       return response;
     } catch (error) {
       console.error('Get user by ID failed:', error);
@@ -95,7 +95,7 @@ class UsersService {
    */
   async createUser(userData) {
     try {
-      const response = await apiMethods.post('users/', userData);
+      const response = await apiMethods.post('users/users/', userData);
       return response;
     } catch (error) {
       console.error('Create user failed:', error);
@@ -111,7 +111,7 @@ class UsersService {
    */
   async updateUser(userId, userData) {
     try {
-      const response = await apiMethods.put(`users/${userId}/`, userData);
+      const response = await apiMethods.put(`users/users/${userId}/`, userData);
       return response;
     } catch (error) {
       console.error('Update user failed:', error);
@@ -127,7 +127,7 @@ class UsersService {
    */
   async patchUser(userId, userData) {
     try {
-      const response = await apiMethods.patch(`users/${userId}/`, userData);
+      const response = await apiMethods.patch(`users/users/${userId}/`, userData);
       return response;
     } catch (error) {
       console.error('Patch user failed:', error);
@@ -142,7 +142,7 @@ class UsersService {
    */
   async deleteUser(userId) {
     try {
-      const response = await apiMethods.delete(`users/${userId}/`);
+      const response = await apiMethods.delete(`users/users/${userId}/`);
       return response;
     } catch (error) {
       console.error('Delete user failed:', error);
@@ -157,7 +157,7 @@ class UsersService {
    */
   async restoreUser(userId) {
     try {
-      const response = await apiMethods.post(`users/${userId}/restore/`);
+      const response = await apiMethods.post(`users/users/${userId}/restore/`);
       return response;
     } catch (error) {
       console.error('Restore user failed:', error);
@@ -206,7 +206,7 @@ class UsersService {
 
   async getUsersByRole(role, params = {}) {
     try {
-      const response = await apiMethods.get('users/', {
+      const response = await apiMethods.get('users/users/', {
         params: { ...params, role }
       });
       return response;
@@ -278,7 +278,7 @@ class UsersService {
    */
   async searchUsers(query, filters = {}) {
     try {
-      const response = await apiMethods.get('users/', {
+      const response = await apiMethods.get('users/users/', {
         params: { ...filters, search: query }
       });
       return response;
@@ -329,7 +329,7 @@ class UsersService {
    */
   async setUserActiveStatus(userId, isActive) {
     try {
-      const response = await apiMethods.patch(`users/${userId}/`, {
+      const response = await apiMethods.patch(`users/users/${userId}/`, {
         is_active: isActive
       });
       return response;
@@ -347,7 +347,7 @@ class UsersService {
    */
   async getUserActivityLog(userId, params = {}) {
     try {
-      const response = await apiMethods.get(`users/${userId}/activity/`, { params });
+      const response = await apiMethods.get(`users/users/${userId}/activity/`, { params });
       return response;
     } catch (error) {
       console.error('Get user activity log failed:', error);

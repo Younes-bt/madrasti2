@@ -17,6 +17,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../../components/ui/table'
 import { cn } from '../../lib/utils'
 import {
   Search,
@@ -24,6 +32,7 @@ import {
   GraduationCap,
   Calendar,
   Clock,
+  Lock,
   Filter,
   RefreshCw,
   FileText,
@@ -54,7 +63,6 @@ const StudentLessonsPage = () => {
     pageSize: PAGE_SIZE,
   })
   const [error, setError] = useState(null)
-  const [expandedLessonId, setExpandedLessonId] = useState(null)
   const [refreshToken, setRefreshToken] = useState(0)
 
   const isLoading = profileLoading || lessonsLoading
@@ -286,10 +294,6 @@ const StudentLessonsPage = () => {
     )
   }
 
-  const toggleLessonDetails = (lessonId) => {
-    setExpandedLessonId((current) => (current === lessonId ? null : lessonId))
-  }
-
   const handleRefresh = () => {
     setRefreshToken((prev) => prev + 1)
   }
@@ -417,7 +421,7 @@ const StudentLessonsPage = () => {
             </div>
           )}
 
-          {(!isLoading && lessons.length === 0) ? (
+          {!isLoading && lessons.length === 0 && (
             <Card>
               <CardContent className="pt-10 pb-10 text-center space-y-4">
                 <Layers className="h-10 w-10 mx-auto text-muted-foreground" />
@@ -429,170 +433,119 @@ const StudentLessonsPage = () => {
                 </p>
               </CardContent>
             </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {lessons.map((lesson) => (
-                <Card key={lesson.id} className="flex flex-col">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-start gap-2">
-                        <BookOpen className="h-5 w-5 text-primary" />
-                        <div>
-                          <CardTitle className="text-lg leading-tight">
-                            {getLocalizedLessonTitle(lesson)}
-                          </CardTitle>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {lesson.created_by_name && (
-                              <span>{t('lessons.createdBy', 'Created by')}: {lesson.created_by_name}</span>
-                            )}
-                          </p>
-                        </div>
-                      </div>
-                      <Badge variant="outline" className="text-xs">
-                        {getLocalizedSubjectName(lesson.subject_details)}
-                      </Badge>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2 mt-3">
-                      {getCycleBadge(lesson.cycle)}
-                      {getDifficultyBadge(lesson.difficulty_level)}
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="flex-1 flex flex-col gap-4">
-                    <p className="text-sm text-muted-foreground line-clamp-3">
-                      {lesson.description || t('lessons.noDescription', 'No description available for this lesson.')}
-                    </p>
-
-                    <div className="space-y-2 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-2">
-                        <GraduationCap className="h-4 w-4" />
-                        <span>
-                          {t('common.grade', 'Grade')}: {localizedGradeName || lesson.grade_name}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        <span>
-                          {t('common.updated', 'Updated')}{' '}
-                          {lesson.updated_at ? new Date(lesson.updated_at).toLocaleDateString() : t('common.notAvailable', 'N/A')}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
-                        <span>
-                          {t('lessons.order', 'Order')} #{lesson.order}
-                        </span>
-                      </div>
-                      {lesson.resources && lesson.resources.length > 0 && (
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4" />
-                          <span>
-                            {lesson.resources.length} {t('lessons.resources', 'Resources')}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex flex-col gap-2 pt-2 mt-auto sm:flex-row sm:gap-3">
-
-                      <Button
-
-                        size="sm"
-
-                        className="w-full sm:flex-1"
-
-                        onClick={() => navigate(`/student/lessons/${lesson.id}`)}
-
-                      >
-
-                        <BookOpen className="h-4 w-4 mr-2" />
-
-                        {t('lessons.viewLesson', 'View lesson')}
-
-                      </Button>
-
-                      <Button
-
-                        variant="outline"
-
-                        size="sm"
-
-                        className="w-full sm:flex-1"
-
-                        onClick={(event) => {
-
-                          event.stopPropagation()
-
-                          toggleLessonDetails(lesson.id)
-
-                        }}
-
-                      >
-
-                        {expandedLessonId === lesson.id
-
-                          ? t('common.hideDetails', 'Hide details')
-
-                          : t('common.quickPreview', 'Quick preview')}
-
-                      </Button>
-
-                    </div>
-
-                    {expandedLessonId === lesson.id && (
-                      <div className="mt-4 space-y-4 border rounded-md p-4 bg-muted/30">
-                        {lesson.objectives && (
-                          <div>
-                            <h4 className="text-sm font-semibold mb-2">
-                              {t('lessons.objectives', 'Learning objectives')}
-                            </h4>
-                            <p className="text-sm text-muted-foreground whitespace-pre-line">
-                              {lesson.objectives}
-                            </p>
-                          </div>
-                        )}
-                        {lesson.prerequisites && (
-                          <div>
-                            <h4 className="text-sm font-semibold mb-2">
-                              {t('lessons.prerequisites', 'Prerequisites')}
-                            </h4>
-                            <p className="text-sm text-muted-foreground whitespace-pre-line">
-                              {lesson.prerequisites}
-                            </p>
-                          </div>
-                        )}
-                        {lesson.resources && lesson.resources.length > 0 && (
-                          <div>
-                            <h4 className="text-sm font-semibold mb-2">
-                              {t('lessons.resources', 'Resources')}
-                            </h4>
-                            <ul className="space-y-2 text-sm">
-                              {lesson.resources.map((resource) => (
-                                <li key={resource.id} className="flex items-center justify-between gap-2">
-                                  <span className="truncate">
-                                    {resource.title || t('lessons.resourceUntitled', 'Untitled resource')}
-                                  </span>
-                                  {resource.file_url && (
-                                    <Button asChild variant="link" size="sm" className="px-0">
-                                      <a href={resource.file_url} target="_blank" rel="noopener noreferrer">
-                                        {t('common.open', 'Open')}
-                                      </a>
-                                    </Button>
-                                  )}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
           )}
-        </div>
+
+          {!isLoading && lessons.length > 0 && (
+            <Card className="mb-6">
+              <CardContent className="pt-6">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="min-w-[220px]">{t('lessons.lesson', 'Lesson')}</TableHead>
+                      <TableHead>{t('lessons.subject', 'Subject')}</TableHead>
+                      <TableHead>{t('common.grade', 'Grade')}</TableHead>
+                      <TableHead>{t('lessons.cycle', 'Cycle')}</TableHead>
+                      <TableHead>{t('lessons.difficulty', 'Difficulty')}</TableHead>
+                      <TableHead className="text-center">{t('lessons.resources', 'Resources')}</TableHead>
+                      <TableHead>{t('common.updated', 'Updated')}</TableHead>
+                      <TableHead className="w-[180px]">{t('common.actions', 'Actions')}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {lessons.map((lesson) => {
+                      const isLessonAvailable = Boolean(
+                        lesson?.is_available ??
+                        lesson?.is_published_for_student ??
+                        lesson?.is_published
+                      )
+
+                      const handleViewLesson = () => {
+                        if (!isLessonAvailable) return
+                        navigate(`/student/lessons/${lesson.id}`)
+                      }
+
+                      const handleToggleDetails = () => {
+                        if (!isLessonAvailable) return
+                        toggleLessonDetails(lesson.id)
+                      }
+
+                      return (
+                        <TableRow key={lesson.id} className={cn(!isLessonAvailable && 'opacity-70')}>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <BookOpen className="h-4 w-4 text-primary" />
+                              <button
+                                type="button"
+                                className={cn(
+                                  'font-medium hover:underline text-left',
+                                  !isLessonAvailable && 'text-muted-foreground cursor-not-allowed hover:no-underline'
+                                )}
+                                onClick={handleViewLesson}
+                                disabled={!isLessonAvailable}
+                                aria-disabled={!isLessonAvailable}
+                              >
+                                {getLocalizedLessonTitle(lesson)}
+                              </button>
+                            </div>
+                            <div className="mt-1 text-xs text-muted-foreground line-clamp-1">
+                              {lesson.description || t('lessons.noDescription', 'No description available for this lesson.')}
+                            </div>
+                            {!isLessonAvailable && (
+                              <div className="mt-2">
+                                <Badge
+                                  variant="outline"
+                                  className="inline-flex items-center gap-1 border-dashed bg-muted/50 text-muted-foreground"
+                                >
+                                  <Lock className="h-3.5 w-3.5" />
+                                  {t('lessons.comingSoon', 'Coming soon')}
+                                </Badge>
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">
+                              {getLocalizedSubjectName(lesson.subject_details)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{localizedGradeName || lesson.grade_name}</TableCell>
+                          <TableCell>{getCycleBadge(lesson.cycle)}</TableCell>
+                          <TableCell>{getDifficultyBadge(lesson.difficulty_level)}</TableCell>
+                          <TableCell className="text-center">{lesson.resources?.length || 0}</TableCell>
+                          <TableCell>{lesson.updated_at ? new Date(lesson.updated_at).toLocaleDateString() : t('common.notAvailable', 'N/A')}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                onClick={handleViewLesson}
+                                disabled={!isLessonAvailable}
+                                className={cn(
+                                  !isLessonAvailable && 'pointer-events-none bg-muted text-muted-foreground hover:bg-muted'
+                                )}
+                              >
+                                {isLessonAvailable ? (
+                                  <>
+                                    <BookOpen className="h-4 w-4 mr-2" />
+                                    {t('lessons.viewLesson', 'View lesson')}
+                                  </>
+                                ) : (
+                                  <>
+                                    <Clock className="h-4 w-4 mr-2" />
+                                    {t('lessons.comingSoon', 'Coming soon')}
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
+
+
 
         {/* Pagination */}
         {pagination.count > 0 && (
@@ -600,13 +553,9 @@ const StudentLessonsPage = () => {
             <CardContent className="pt-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="text-sm text-muted-foreground">
-                  {pagination.count > 0 ? (
-                    <span>
-                      {t('common.showing', 'Showing')} {startItem}-{endItem} {t('common.of', 'of')} {pagination.count} {t('lessons.lessons', 'lessons')}
-                    </span>
-                  ) : (
-                    <span>{t('lessons.noResults', 'No lessons to display')}</span>
-                  )}
+                  <span>
+                    {t('common.showing', 'Showing')} {startItem}-{endItem} {t('common.of', 'of')} {pagination.count} {t('lessons.lessons', 'lessons')}
+                  </span>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -635,17 +584,9 @@ const StudentLessonsPage = () => {
           </Card>
         )}
       </div>
+    </div>
     </DashboardLayout>
   )
 }
 
 export default StudentLessonsPage
-
-
-
-
-
-
-
-
-

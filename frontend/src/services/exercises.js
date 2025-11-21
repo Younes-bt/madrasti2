@@ -80,11 +80,12 @@ export const exerciseService = {
    */
   async createQuestion(questionData) {
     try {
-      const response = await api.post('/homework/questions/', questionData);
-      return { success: true, data: response.data };
+      const formData = this._buildQuestionFormData(questionData)
+      const response = await api.post('/homework/questions/', formData)
+      return { success: true, data: response.data }
     } catch (error) {
-      console.error('Error creating question:', error);
-      return { success: false, error: this._extractErrorMessage(error) };
+      console.error('Error creating question:', error)
+      return { success: false, error: this._extractErrorMessage(error) }
     }
   },
 
@@ -376,7 +377,8 @@ export const exerciseService = {
    */
   async updateQuestion(questionId, questionData) {
     try {
-      const response = await api.put(`/homework/questions/${questionId}/`, questionData)
+      const formData = this._buildQuestionFormData(questionData)
+      const response = await api.put(`/homework/questions/${questionId}/`, formData)
       return {
         success: true,
         data: response.data,
@@ -518,7 +520,7 @@ export const exerciseService = {
       title: exerciseData.title.trim(),
       title_arabic: exerciseData.title_arabic?.trim() || null,
       description: exerciseData.description?.trim() || '',
-      instructions: exerciseData.instructions?.trim() || null,
+      instructions: exerciseData.instructions?.trim() || '',
       lesson: exerciseData.lesson,
       exercise_format: exerciseData.exercise_format || 'mixed',
       difficulty_level: exerciseData.difficulty_level || 'beginner',
@@ -636,6 +638,36 @@ export const exerciseService = {
   getDifficultyConfig(difficultyLevel) {
     const levels = this.getDifficultyLevels()
     return levels.find(level => level.id === difficultyLevel) || levels[0]
+  },
+
+  _buildQuestionFormData(questionData = {}) {
+    const formData = new FormData()
+    Object.entries(questionData).forEach(([key, value]) => {
+      if (value === undefined || value === null) {
+        return
+      }
+
+      if (key === 'question_image') {
+        if (value instanceof File) {
+          formData.append(key, value)
+        }
+        return
+      }
+
+      if (['choices', 'blanks', 'ordering_items', 'matching_pairs'].includes(key)) {
+        formData.append(key, JSON.stringify(value))
+        return
+      }
+
+      if (typeof value === 'boolean') {
+        formData.append(key, value ? 'true' : 'false')
+        return
+      }
+
+      formData.append(key, value)
+    })
+
+    return formData
   }
 }
 

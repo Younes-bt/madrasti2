@@ -585,6 +585,63 @@ class LessonsService {
     }
   }
 
+  // ==================== LESSON AVAILABILITY ====================
+
+  /**
+   * Get Lesson Availability for All Classes
+   * @param {number} lessonId - Lesson ID
+   * @returns {Promise<Array>} Availability records for all classes
+   */
+  async getLessonAvailability(lessonId) {
+    try {
+      const response = await apiMethods.get(`lessons/lessons/${lessonId}/availability/`);
+      return response;
+    } catch (error) {
+      console.error('Get lesson availability failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Publish/Unpublish Lesson for a Single Class
+   * @param {number} lessonId - Lesson ID
+   * @param {number} classId - Class ID
+   * @param {boolean} isPublished - Whether to publish or unpublish
+   * @returns {Promise<Object>} Updated availability record
+   */
+  async publishLessonForClass(lessonId, classId, isPublished = true) {
+    try {
+      const response = await apiMethods.post(`lessons/lessons/${lessonId}/publish_for_class/`, {
+        class_id: classId,
+        is_published: isPublished
+      });
+      return response;
+    } catch (error) {
+      console.error('Publish lesson for class failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Bulk Publish/Unpublish Lesson for Multiple Classes
+   * @param {number} lessonId - Lesson ID
+   * @param {Array<number>} classIds - Array of class IDs
+   * @param {boolean} isPublished - Whether to publish or unpublish
+   * @returns {Promise<Object>} Bulk operation result
+   */
+  async bulkPublishLesson(lessonId, classIds, isPublished = true) {
+    try {
+      const response = await apiMethods.post(`lessons/lessons/${lessonId}/bulk_publish/`, {
+        class_ids: classIds,
+        is_published: isPublished
+      });
+      return response;
+    } catch (error) {
+      console.error('Bulk publish lesson failed:', error);
+      throw error;
+    }
+  }
+
   // ==================== UTILITY METHODS ====================
 
   /**

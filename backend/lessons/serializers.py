@@ -1,8 +1,8 @@
 # lessons/serializers.py
 
 from rest_framework import serializers
-from .models import Lesson, LessonResource, LessonTag, LessonTagging
-from schools.serializers import SubjectSerializer, GradeSerializer
+from .models import Lesson, LessonResource, LessonTag, LessonTagging, LessonAvailability
+from schools.serializers import SubjectSerializer, GradeSerializer, SchoolClassSerializer
 
 class LessonResourceSerializer(serializers.ModelSerializer):
     file_url = serializers.ReadOnlyField()
@@ -118,5 +118,125 @@ class LessonCreateUpdateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     "A lesson with this subject, grade, cycle, and order already exists."
                 )
-        
+
         return data
+
+# =====================================
+# LESSON AVAILABILITY SERIALIZERS
+# =====================================
+
+class LessonAvailabilitySerializer(serializers.ModelSerializer):
+    """Serializer for lesson availability per class"""
+    lesson_title = serializers.CharField(source='lesson.title', read_only=True)
+    lesson_title_arabic = serializers.CharField(source='lesson.title_arabic', read_only=True)
+    lesson_title_french = serializers.CharField(source='lesson.title_french', read_only=True)
+    class_name = serializers.CharField(source='school_class.name', read_only=True)
+    published_by_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = LessonAvailability
+        fields = [
+            'id', 'lesson', 'lesson_title', 'lesson_title_arabic', 'lesson_title_french',
+            'school_class', 'class_name', 'is_published', 'published_at',
+            'published_by', 'published_by_name', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['published_at', 'published_by', 'created_at', 'updated_at']
+
+    def get_published_by_name(self, obj):
+        return obj.published_by.get_full_name() if obj.published_by else None
+
+
+class LessonAvailabilityDetailSerializer(serializers.ModelSerializer):
+    """Detailed serializer with nested lesson and class info"""
+    lesson = LessonMinimalSerializer(read_only=True)
+    school_class = SchoolClassSerializer(read_only=True)
+    published_by_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = LessonAvailability
+        fields = [
+            'id', 'lesson', 'school_class', 'is_published',
+            'published_at', 'published_by', 'published_by_name',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['published_at', 'published_by', 'created_at', 'updated_at']
+
+    def get_published_by_name(self, obj):
+        return obj.published_by.get_full_name() if obj.published_by else None
+
+
+class BulkPublishSerializer(serializers.Serializer):
+    """Serializer for bulk publishing lessons to multiple classes"""
+    lesson_id = serializers.IntegerField()
+    class_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        allow_empty=False
+    )
+    is_published = serializers.BooleanField(default=True)
+
+    def validate_lesson_id(self, value):
+        try:
+            Lesson.objects.get(id=value)
+        except Lesson.DoesNotExist:
+            raise serializers.ValidationError("Lesson not found")
+        return value
+
+    def validate_class_ids(self, value):
+        from schools.models import SchoolClass
+        valid_ids = SchoolClass.objects.filter(id__in=value).values_list('id', flat=True)
+        invalid_ids = set(value) - set(valid_ids)
+        if invalid_ids:
+            raise serializers.ValidationError(f"Invalid class IDs: {invalid_ids}")
+        return value
+
+
+class LessonWithAvailabilitySerializer(LessonSerializer):
+    """Lesson serializer that includes availability info for student's class"""
+    is_available = serializers.SerializerMethodField()
+    is_published_for_student = serializers.SerializerMethodField()
+
+    class Meta(LessonSerializer.Meta):
+        fields = LessonSerializer.Meta.fields + ['is_available', 'is_published_for_student']
+
+    def get_is_available(self, obj):
+        """Check if lesson is available for the current user's class"""
+        request = self.context.get('request')
+        if not request or not hasattr(request, 'user'):
+            return False
+
+        user = request.user
+        if user.role != 'STUDENT':
+            return True  # Teachers/admin can see all
+
+        # Get student's class via active enrollment
+        from users.models import StudentEnrollment
+        enrollment = (
+            StudentEnrollment.objects
+            .select_related('school_class', 'academic_year')
+            .filter(student=user, is_active=True, academic_year__is_current=True)
+            .first()
+        )
+        if not enrollment:
+            enrollment = (
+                StudentEnrollment.objects
+                .select_related('school_class')
+                .filter(student=user, is_active=True)
+                .order_by('-created_at')
+                .first()
+            )
+        if not enrollment or not enrollment.school_class:
+            return False
+
+        student_class = enrollment.school_class
+
+        # Check if lesson is published for this class
+        availability = LessonAvailability.objects.filter(
+            lesson=obj,
+            school_class=student_class
+        ).first()
+
+        return availability.is_published if availability else False
+
+    def get_is_published_for_student(self, obj):
+        """Alias for is_available"""
+        return self.get_is_available(obj)

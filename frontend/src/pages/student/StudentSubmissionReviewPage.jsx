@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useRef, useLayoutEffect } from 'react'
+import { useEffect, useState, useMemo, useRef, useLayoutEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
@@ -26,7 +26,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { Button } from '../../components/ui/button'
 import { Badge } from '../../components/ui/badge'
 import { Alert, AlertDescription } from '../../components/ui/alert'
-import { Separator } from '../../components/ui/separator'
 
 import { useLanguage } from '../../hooks/useLanguage'
 import { homeworkService } from '../../services'
@@ -164,9 +163,9 @@ const renderBlankTokens = (question, blankMap, t) => {
 
         let styling = 'inline-flex h-8 min-w-[120px] items-center justify-center rounded-full border px-4 text-sm font-medium shadow-sm'
         if (status === 'correct') {
-          styling = cn(styling, 'border-green-300 bg-green-50 text-green-700')
+          styling = cn(styling, 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400')
         } else if (status === 'incorrect') {
-          styling = cn(styling, 'border-red-300 bg-red-50 text-red-700')
+          styling = cn(styling, 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400')
         } else {
           styling = cn(styling, 'border-border/60 bg-muted/40 text-muted-foreground')
         }
@@ -226,13 +225,13 @@ const renderOrderingList = (question, selections, t, { mode = 'student' } = {}) 
       {sortedRows.map(row => {
         let styling = 'flex items-center justify-between rounded-md border px-3 py-2 text-sm transition'
         if (mode === 'correct') {
-          styling = cn(styling, 'border-green-200 bg-green-50 text-green-700')
+          styling = cn(styling, 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400')
         } else if (row.selectedPosition === null || row.selectedPosition === undefined) {
           styling = cn(styling, 'border-border/60 bg-muted/40 text-muted-foreground')
         } else if (row.isCorrect) {
-          styling = cn(styling, 'border-green-300 bg-green-50 text-green-700')
+          styling = cn(styling, 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400')
         } else {
-          styling = cn(styling, 'border-red-300 bg-red-50 text-red-700')
+          styling = cn(styling, 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400')
         }
 
         const badgeValue = mode === 'correct'
@@ -326,8 +325,11 @@ const MatchingReview = ({ question, selections }) => {
     <div ref={containerRef} className="relative">
       <svg className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden="true">
         <defs>
-          <marker id={arrowId} markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
-            <path d="M0,0 L10,5 L0,10 z" fill="rgba(148, 163, 184, 0.8)" />
+          <marker id={`${arrowId}-correct`} markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="rgba(34, 197, 94, 0.8)" className="dark:fill-green-400" />
+          </marker>
+          <marker id={`${arrowId}-incorrect`} markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="rgba(239, 68, 68, 0.8)" className="dark:fill-red-400" />
           </marker>
         </defs>
         {lines.map(line => (
@@ -337,30 +339,32 @@ const MatchingReview = ({ question, selections }) => {
               y1={line.y1}
               x2={line.x2}
               y2={line.y2}
-              stroke={line.isCorrect ? 'rgba(34, 197, 94, 0.7)' : 'rgba(239, 68, 68, 0.7)'}
+              className={line.isCorrect ? 'stroke-green-600 dark:stroke-green-400' : 'stroke-red-600 dark:stroke-red-400'}
               strokeWidth="2.5"
-              markerEnd={`url(#${arrowId})`}
+              strokeOpacity="0.7"
+              markerEnd={`url(#${arrowId}-${line.isCorrect ? 'correct' : 'incorrect'})`}
             />
             <circle
               cx={line.x1}
               cy={line.y1}
               r="4"
-              fill={line.isCorrect ? 'rgba(34, 197, 94, 0.9)' : 'rgba(239, 68, 68, 0.9)'}
+              className={line.isCorrect ? 'fill-green-600 dark:fill-green-400' : 'fill-red-600 dark:fill-red-400'}
+              fillOpacity="0.9"
             />
           </g>
         ))}
       </svg>
 
-      <div className="relative z-10 grid grid-cols-2 gap-4">
+      <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-3">
           {(question.matching_pairs || []).map(pair => {
             const selection = selectionMap[pair.id]
             const status = selection ? (selection.is_correct ? 'correct' : 'incorrect') : 'empty'
             let styling = 'w-full rounded-full border px-4 py-3 text-left text-sm font-semibold tracking-wide'
             if (status === 'correct') {
-              styling = cn(styling, 'border-green-300 bg-green-50 text-green-700')
+              styling = cn(styling, 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400')
             } else if (status === 'incorrect') {
-              styling = cn(styling, 'border-red-300 bg-red-50 text-red-700')
+              styling = cn(styling, 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400')
             } else {
               styling = cn(styling, 'border-border/60 bg-muted/40 text-muted-foreground')
             }
@@ -388,9 +392,9 @@ const MatchingReview = ({ question, selections }) => {
             const status = rightStatusMap[option.id] || 'empty'
             let styling = 'w-full rounded-full border px-4 py-3 text-right text-sm font-semibold tracking-wide'
             if (status === 'correct') {
-              styling = cn(styling, 'border-green-300 bg-green-50 text-green-700')
+              styling = cn(styling, 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400')
             } else if (status === 'incorrect') {
-              styling = cn(styling, 'border-red-300 bg-red-50 text-red-700')
+              styling = cn(styling, 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400')
             } else {
               styling = cn(styling, 'border-border/60 bg-muted/40 text-muted-foreground')
             }
@@ -466,24 +470,24 @@ const StudentSubmissionReviewPage = () => {
     switch (status) {
       case 'auto_graded':
       case 'manually_graded':
-        return 'bg-green-100 text-green-800'
+        return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-800'
       case 'submitted':
-        return 'bg-blue-100 text-blue-800'
+        return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800'
       case 'late':
-        return 'bg-orange-100 text-orange-800'
+        return 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 border-orange-200 dark:border-orange-800'
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300 border-gray-200 dark:border-gray-700'
     }
   }
 
   const getScoreColor = (score, maxScore) => {
-    if (!score || !maxScore) return 'text-gray-500'
+    if (!score || !maxScore) return 'text-muted-foreground'
     const percentage = (parseFloat(score) / parseFloat(maxScore)) * 100
-    if (percentage >= 90) return 'text-green-600'
-    if (percentage >= 80) return 'text-blue-600'
-    if (percentage >= 70) return 'text-yellow-600'
-    if (percentage >= 60) return 'text-orange-600'
-    return 'text-red-600'
+    if (percentage >= 90) return 'text-green-600 dark:text-green-400'
+    if (percentage >= 80) return 'text-blue-600 dark:text-blue-400'
+    if (percentage >= 70) return 'text-yellow-600 dark:text-yellow-400'
+    if (percentage >= 60) return 'text-orange-600 dark:text-orange-400'
+    return 'text-red-600 dark:text-red-400'
   }
 
   const isGraded = (submission) => {
@@ -557,10 +561,10 @@ const StudentSubmissionReviewPage = () => {
         <CardContent className="space-y-4">
           {/* Your Answer */}
           <div>
-            <h4 className="text-sm font-semibold mb-2 text-blue-900">{t('studentSidebar.homework.submissionReview.yourAnswer')}</h4>
-            <div className="bg-blue-50 rounded-lg p-3 space-y-3">
+            <h4 className="text-sm font-semibold mb-2 text-blue-600 dark:text-blue-400">{t('studentSidebar.homework.submissionReview.yourAnswer')}</h4>
+            <div className="bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/50 rounded-lg p-4 space-y-3">
               {answer.text_answer && (
-                <p className="text-sm whitespace-pre-wrap">{answer.text_answer}</p>
+                <p className="text-sm whitespace-pre-wrap text-foreground">{answer.text_answer}</p>
               )}
 
               {hasChoices && (
@@ -569,10 +573,10 @@ const StudentSubmissionReviewPage = () => {
                     <div
                       key={choice.id}
                       className={cn(
-                        'text-sm p-2 rounded flex items-center gap-2',
+                        'text-sm p-3 rounded-md flex items-center gap-2 transition-colors',
                         choice.is_correct
-                          ? 'bg-green-100 text-green-800 border border-green-300'
-                          : 'bg-red-100 text-red-800 border border-red-300'
+                          ? 'bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800'
+                          : 'bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800'
                       )}
                     >
                       {choice.is_correct ? (
@@ -595,7 +599,7 @@ const StudentSubmissionReviewPage = () => {
               )}
 
               {questionType === 'matching' && (
-                <div className="rounded-lg bg-white/60 p-4">
+                <div className="rounded-lg bg-background/60 dark:bg-background/30 p-4 border border-border">
                   <MatchingReview question={question} selections={matchingSelections} />
                 </div>
               )}
@@ -607,14 +611,14 @@ const StudentSubmissionReviewPage = () => {
             if (['qcm_single', 'qcm_multiple', 'true_false'].includes(questionType) && question.choices && question.choices.length > 0) {
               return (
                 <div>
-                  <h4 className="text-sm font-semibold mb-2 text-green-900">{t('studentSidebar.homework.submissionReview.correctAnswer')}</h4>
-                  <div className="bg-green-50 rounded-lg p-3 space-y-1">
+                  <h4 className="text-sm font-semibold mb-2 text-green-600 dark:text-green-400">{t('studentSidebar.homework.submissionReview.correctAnswer')}</h4>
+                  <div className="bg-green-50/50 dark:bg-green-950/20 border border-green-100 dark:border-green-900/50 rounded-lg p-4 space-y-2">
                     {question.choices
                       .filter(choice => choice.is_correct)
                       .map(choice => (
                         <div
                           key={choice.id}
-                          className="text-sm text-green-800 flex items-center gap-2"
+                          className="text-sm text-green-700 dark:text-green-400 flex items-center gap-2"
                         >
                           <CheckCircle className="h-4 w-4 flex-shrink-0" />
                           <span>{choice.choice_text}</span>
@@ -628,8 +632,8 @@ const StudentSubmissionReviewPage = () => {
             if (questionType === 'fill_blank' && blankCorrectMap) {
               return (
                 <div>
-                  <h4 className="text-sm font-semibold mb-2 text-green-900">{t('studentSidebar.homework.submissionReview.correctAnswer')}</h4>
-                  <div className="bg-green-50 rounded-lg p-3">
+                  <h4 className="text-sm font-semibold mb-2 text-green-600 dark:text-green-400">{t('studentSidebar.homework.submissionReview.correctAnswer')}</h4>
+                  <div className="bg-green-50/50 dark:bg-green-950/20 border border-green-100 dark:border-green-900/50 rounded-lg p-4">
                     {renderBlankTokens(question, blankCorrectMap, t)}
                   </div>
                 </div>
@@ -644,8 +648,8 @@ const StudentSubmissionReviewPage = () => {
               }))
               return (
                 <div>
-                  <h4 className="text-sm font-semibold mb-2 text-green-900">{t('studentSidebar.homework.submissionReview.correctAnswer')}</h4>
-                  <div className="bg-green-50 rounded-lg p-3">
+                  <h4 className="text-sm font-semibold mb-2 text-green-600 dark:text-green-400">{t('studentSidebar.homework.submissionReview.correctAnswer')}</h4>
+                  <div className="bg-green-50/50 dark:bg-green-950/20 border border-green-100 dark:border-green-900/50 rounded-lg p-4">
                     {renderOrderingList(question, correctSelections, t, { mode: 'correct' })}
                   </div>
                 </div>
@@ -655,10 +659,10 @@ const StudentSubmissionReviewPage = () => {
             if (questionType === 'matching') {
               return (
                 <div>
-                  <h4 className="text-sm font-semibold mb-2 text-green-900">{t('studentSidebar.homework.submissionReview.correctAnswer')}</h4>
-                  <div className="bg-green-50 rounded-lg p-3 space-y-2">
+                  <h4 className="text-sm font-semibold mb-2 text-green-600 dark:text-green-400">{t('studentSidebar.homework.submissionReview.correctAnswer')}</h4>
+                  <div className="bg-green-50/50 dark:bg-green-950/20 border border-green-100 dark:border-green-900/50 rounded-lg p-4 space-y-2">
                     {(question.matching_pairs || []).map(pair => (
-                      <div key={pair.id} className="flex items-center gap-2 text-sm text-green-800">
+                      <div key={pair.id} className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400">
                         <CheckCircle className="h-4 w-4 flex-shrink-0" />
                         <span>{pair.left_text} {'->'} {pair.right_text}</span>
                       </div>
@@ -673,12 +677,12 @@ const StudentSubmissionReviewPage = () => {
 
           {/* Teacher Feedback */}
           {hasTeacherFeedback && (
-            <Alert className="bg-purple-50 border-purple-200">
-              <MessageSquare className="h-4 w-4 text-purple-600" />
+            <Alert className="bg-purple-50/50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-900/50">
+              <MessageSquare className="h-4 w-4 text-purple-600 dark:text-purple-400" />
               <AlertDescription>
                 <div className="text-sm">
-                  <p className="font-semibold text-purple-900 mb-1">{t('studentSidebar.homework.submissionReview.teacherFeedback')}</p>
-                  <p className="text-purple-800">{answer.teacher_feedback}</p>
+                  <p className="font-semibold text-purple-900 dark:text-purple-300 mb-1">{t('studentSidebar.homework.submissionReview.teacherFeedback')}</p>
+                  <p className="text-purple-800 dark:text-purple-400">{answer.teacher_feedback}</p>
                 </div>
               </AlertDescription>
             </Alert>
@@ -686,9 +690,9 @@ const StudentSubmissionReviewPage = () => {
 
           {/* Explanation */}
           {question.explanation && isGraded(submission) && (
-            <Alert className="bg-amber-50 border-amber-200">
-              <AlertCircle className="h-4 w-4 text-amber-600" />
-              <AlertDescription className="text-sm text-amber-800">
+            <Alert className="bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/50">
+              <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              <AlertDescription className="text-sm text-amber-800 dark:text-amber-300">
                 <p className="font-semibold mb-1">{t('studentSidebar.homework.submissionReview.explanation')}</p>
                 <p>{question.explanation}</p>
               </AlertDescription>
@@ -741,7 +745,7 @@ const StudentSubmissionReviewPage = () => {
     >
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <Button
             variant="ghost"
             onClick={() => navigate(ROUTES.STUDENT_HOMEWORK.COMPLETED)}
@@ -751,7 +755,7 @@ const StudentSubmissionReviewPage = () => {
           </Button>
           <Badge
             variant={graded ? 'default' : 'secondary'}
-            className={cn(graded ? getStatusColor(submission.status) : '')}
+            className={cn('border', graded ? getStatusColor(submission.status) : '')}
           >
             {graded ? t('studentSidebar.homework.submissionReview.graded') : t('studentSidebar.homework.submissionReview.awaitingGrading')}
           </Badge>
@@ -774,38 +778,38 @@ const StudentSubmissionReviewPage = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="flex items-start gap-3">
-                <Calendar className="h-5 w-5 text-blue-500 mt-0.5" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/50">
+                <Calendar className="h-5 w-5 text-blue-500 dark:text-blue-400 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="text-sm font-medium">{t('studentSidebar.homework.submissionReview.submitted')}</p>
+                  <p className="text-sm font-medium text-foreground">{t('studentSidebar.homework.submissionReview.submitted')}</p>
                   <p className="text-sm text-muted-foreground">
                     {formatDate(submission.submitted_at)}
                   </p>
                 </div>
               </div>
-              <div className="flex items-start gap-3">
-                <Clock className="h-5 w-5 text-amber-500 mt-0.5" />
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/50">
+                <Clock className="h-5 w-5 text-amber-500 dark:text-amber-400 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="text-sm font-medium">{t('studentSidebar.homework.submissionReview.timeTaken')}</p>
+                  <p className="text-sm font-medium text-foreground">{t('studentSidebar.homework.submissionReview.timeTaken')}</p>
                   <p className="text-sm text-muted-foreground">
                     {submission.time_taken ? `${submission.time_taken} ${t('studentSidebar.homework.submissionReview.minutes')}` : t('studentSidebar.homework.submissionReview.notRecorded')}
                   </p>
                 </div>
               </div>
-              <div className="flex items-start gap-3">
-                <Target className="h-5 w-5 text-purple-500 mt-0.5" />
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-purple-50/50 dark:bg-purple-950/20 border border-purple-100 dark:border-purple-900/50">
+                <Target className="h-5 w-5 text-purple-500 dark:text-purple-400 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="text-sm font-medium">{t('studentSidebar.homework.submissionReview.attempt')}</p>
+                  <p className="text-sm font-medium text-foreground">{t('studentSidebar.homework.submissionReview.attempt')}</p>
                   <p className="text-sm text-muted-foreground">
                     #{submission.attempt_number}
                   </p>
                 </div>
               </div>
-              <div className="flex items-start gap-3">
-                <TrendingUp className="h-5 w-5 text-green-500 mt-0.5" />
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-green-50/50 dark:bg-green-950/20 border border-green-100 dark:border-green-900/50">
+                <TrendingUp className="h-5 w-5 text-green-500 dark:text-green-400 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="text-sm font-medium">{t('common.status')}</p>
+                  <p className="text-sm font-medium text-foreground">{t('common.status')}</p>
                   <p className="text-sm text-muted-foreground capitalize">
                     {submission.is_late ? t('studentSidebar.homework.submissionReview.lateSubmission') : t('studentSidebar.homework.submissionReview.onTime')}
                   </p>
@@ -817,61 +821,61 @@ const StudentSubmissionReviewPage = () => {
 
         {/* Grading Status */}
         {!graded ? (
-          <Alert className="bg-blue-50 border-blue-200">
-            <Clock className="h-4 w-4 text-blue-600" />
+          <Alert className="bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900/50">
+            <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             <AlertDescription>
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="font-semibold text-blue-900 mb-1">{t('studentSidebar.homework.submissionReview.notGradedYet')}</p>
-                  <p className="text-sm text-blue-800">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex-1">
+                  <p className="font-semibold text-blue-900 dark:text-blue-300 mb-1">{t('studentSidebar.homework.submissionReview.notGradedYet')}</p>
+                  <p className="text-sm text-blue-800 dark:text-blue-400">
                     {t('studentSidebar.homework.submissionReview.notGradedMessage')}
                   </p>
                 </div>
-                <Loader2 className="h-6 w-6 text-blue-600 animate-spin flex-shrink-0" />
+                <Loader2 className="h-6 w-6 text-blue-600 dark:text-blue-400 animate-spin flex-shrink-0" />
               </div>
             </AlertDescription>
           </Alert>
         ) : (
           <>
             {/* Score Summary */}
-            <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
+            <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-green-200 dark:border-green-900/50">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Trophy className="h-5 w-5 text-green-600" />
+                <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-400">
+                  <Trophy className="h-5 w-5" />
                   {t('studentSidebar.homework.submissionReview.yourScore')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div className="text-center p-4 bg-white/50 rounded-lg">
-                    <div className="text-sm font-medium text-gray-700 mb-1">{t('studentSidebar.homework.submissionReview.totalScore')}</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="text-center p-4 bg-white/60 dark:bg-white/5 rounded-lg border border-green-100 dark:border-green-900/30 backdrop-blur-sm">
+                    <div className="text-sm font-medium text-foreground mb-1">{t('studentSidebar.homework.submissionReview.totalScore')}</div>
                     <div className={cn('text-3xl font-bold', getScoreColor(submission.total_score, homework.total_points))}>
                       {submission.total_score || 0}
                     </div>
-                    <div className="text-xs text-gray-600">{t('studentSidebar.homework.submissionReview.outOf')} {homework.total_points}</div>
+                    <div className="text-xs text-muted-foreground">{t('studentSidebar.homework.submissionReview.outOf')} {homework.total_points}</div>
                   </div>
-                  <div className="text-center p-4 bg-white/50 rounded-lg">
-                    <div className="text-sm font-medium text-gray-700 mb-1">{t('studentSidebar.homework.submissionReview.percentage')}</div>
+                  <div className="text-center p-4 bg-white/60 dark:bg-white/5 rounded-lg border border-green-100 dark:border-green-900/30 backdrop-blur-sm">
+                    <div className="text-sm font-medium text-foreground mb-1">{t('studentSidebar.homework.submissionReview.percentage')}</div>
                     <div className={cn('text-3xl font-bold', getScoreColor(scorePercentage, 100))}>
                       {scorePercentage.toFixed(0)}%
                     </div>
-                    <div className="text-xs text-gray-600">{t('studentSidebar.homework.submissionReview.performance')}</div>
+                    <div className="text-xs text-muted-foreground">{t('studentSidebar.homework.submissionReview.performance')}</div>
                   </div>
-                  <div className="text-center p-4 bg-amber-100 rounded-lg">
-                    <div className="text-sm font-medium text-amber-900 mb-1">{t('studentSidebar.homework.submissionReview.pointsEarned')}</div>
-                    <div className="text-3xl font-bold text-amber-700 flex items-center justify-center gap-1">
+                  <div className="text-center p-4 bg-amber-100/60 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-900/50">
+                    <div className="text-sm font-medium text-amber-900 dark:text-amber-300 mb-1">{t('studentSidebar.homework.submissionReview.pointsEarned')}</div>
+                    <div className="text-3xl font-bold text-amber-700 dark:text-amber-400 flex items-center justify-center gap-1">
                       <Coins className="h-6 w-6" />
                       {submission.points_earned || 0}
                     </div>
-                    <div className="text-xs text-amber-700">{t('studentSidebar.homework.submissionReview.rewardPoints')}</div>
+                    <div className="text-xs text-amber-700 dark:text-amber-500">{t('studentSidebar.homework.submissionReview.rewardPoints')}</div>
                   </div>
-                  <div className="text-center p-4 bg-yellow-100 rounded-lg">
-                    <div className="text-sm font-medium text-yellow-900 mb-1">{t('studentSidebar.homework.submissionReview.coinsEarned')}</div>
-                    <div className="text-3xl font-bold text-yellow-700 flex items-center justify-center gap-1">
+                  <div className="text-center p-4 bg-yellow-100/60 dark:bg-yellow-950/30 rounded-lg border border-yellow-200 dark:border-yellow-900/50">
+                    <div className="text-sm font-medium text-yellow-900 dark:text-yellow-300 mb-1">{t('studentSidebar.homework.submissionReview.coinsEarned')}</div>
+                    <div className="text-3xl font-bold text-yellow-700 dark:text-yellow-400 flex items-center justify-center gap-1">
                       <Star className="h-6 w-6" />
                       {submission.coins_earned || 0}
                     </div>
-                    <div className="text-xs text-yellow-700">{t('studentSidebar.homework.submissionReview.rewardCoins')}</div>
+                    <div className="text-xs text-yellow-700 dark:text-yellow-500">{t('studentSidebar.homework.submissionReview.rewardCoins')}</div>
                   </div>
                 </div>
               </CardContent>
@@ -881,19 +885,19 @@ const StudentSubmissionReviewPage = () => {
             {submission.teacher_feedback && submission.teacher_feedback.trim() !== '' && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="h-5 w-5 text-purple-600" />
+                  <CardTitle className="flex items-center gap-2 text-purple-600 dark:text-purple-400">
+                    <User className="h-5 w-5" />
                     {t('studentSidebar.homework.submissionReview.teacherOverallFeedback')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-                    <p className="text-sm leading-relaxed text-purple-900 whitespace-pre-wrap">
+                  <div className="bg-purple-50/50 dark:bg-purple-950/20 rounded-lg p-4 border border-purple-200 dark:border-purple-900/50">
+                    <p className="text-sm leading-relaxed text-purple-900 dark:text-purple-300 whitespace-pre-wrap">
                       {submission.teacher_feedback}
                     </p>
                   </div>
                   {submission.graded_by && (
-                    <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                       <User className="h-4 w-4" />
                       <span>
                         {t('studentSidebar.homework.submissionReview.gradedBy')} {submission.graded_by.full_name || `${submission.graded_by.first_name} ${submission.graded_by.last_name}`}
@@ -942,29 +946,29 @@ const StudentSubmissionReviewPage = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-                  <CheckCircle className="h-8 w-8 text-green-600" />
+                <div className="flex items-center gap-3 p-4 bg-green-50/50 dark:bg-green-950/20 rounded-lg border border-green-100 dark:border-green-900/50">
+                  <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400 flex-shrink-0" />
                   <div>
-                    <p className="text-sm font-medium text-green-900">{t('studentSidebar.homework.submissionReview.correctAnswers')}</p>
-                    <p className="text-2xl font-bold text-green-700">
+                    <p className="text-sm font-medium text-green-900 dark:text-green-300">{t('studentSidebar.homework.submissionReview.correctAnswers')}</p>
+                    <p className="text-2xl font-bold text-green-700 dark:text-green-400">
                       {submission.answers?.filter(a => a.is_correct === true).length || 0}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 p-3 bg-red-50 rounded-lg">
-                  <XCircle className="h-8 w-8 text-red-600" />
+                <div className="flex items-center gap-3 p-4 bg-red-50/50 dark:bg-red-950/20 rounded-lg border border-red-100 dark:border-red-900/50">
+                  <XCircle className="h-8 w-8 text-red-600 dark:text-red-400 flex-shrink-0" />
                   <div>
-                    <p className="text-sm font-medium text-red-900">{t('studentSidebar.homework.submissionReview.incorrectAnswers')}</p>
-                    <p className="text-2xl font-bold text-red-700">
+                    <p className="text-sm font-medium text-red-900 dark:text-red-300">{t('studentSidebar.homework.submissionReview.incorrectAnswers')}</p>
+                    <p className="text-2xl font-bold text-red-700 dark:text-red-400">
                       {submission.answers?.filter(a => a.is_correct === false).length || 0}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-                  <Award className="h-8 w-8 text-blue-600" />
+                <div className="flex items-center gap-3 p-4 bg-blue-50/50 dark:bg-blue-950/20 rounded-lg border border-blue-100 dark:border-blue-900/50">
+                  <Award className="h-8 w-8 text-blue-600 dark:text-blue-400 flex-shrink-0" />
                   <div>
-                    <p className="text-sm font-medium text-blue-900">{t('studentSidebar.homework.submissionReview.totalRewards')}</p>
-                    <p className="text-xl font-bold text-blue-700">
+                    <p className="text-sm font-medium text-blue-900 dark:text-blue-300">{t('studentSidebar.homework.submissionReview.totalRewards')}</p>
+                    <p className="text-lg lg:text-xl font-bold text-blue-700 dark:text-blue-400">
                       {submission.points_earned || 0} {t('studentSidebar.homework.submissionReview.pts')} • {submission.coins_earned || 0} {t('studentSidebar.homework.submissionReview.coins')}
                     </p>
                   </div>
@@ -975,10 +979,11 @@ const StudentSubmissionReviewPage = () => {
         )}
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <Button
             variant="outline"
             onClick={() => navigate(ROUTES.STUDENT_HOMEWORK.COMPLETED)}
+            className="w-full sm:w-auto"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             {t('studentSidebar.homework.submissionReview.backToHomework')}
@@ -987,6 +992,7 @@ const StudentSubmissionReviewPage = () => {
             <Button
               variant="default"
               onClick={() => navigate(ROUTES.STUDENT_REWARDS)}
+              className="w-full sm:w-auto"
             >
               <Trophy className="mr-2 h-4 w-4" />
               {t('studentSidebar.homework.submissionReview.viewMyRewards')}

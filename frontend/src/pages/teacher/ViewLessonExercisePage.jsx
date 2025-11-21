@@ -120,6 +120,52 @@ const ViewLessonExercisePage = () => {
     }
   }
 
+  const getQuestionImageSource = (question) => {
+    const absoluteUrl = typeof question?.question_image_url === 'string' ? question.question_image_url : null
+    const isAbsolute = (value) => typeof value === 'string' && /^https?:\/\//i.test(value)
+
+    const resolveImageValue = (value) => {
+      if (!value) return null
+      if (typeof value === 'string') {
+        if (isAbsolute(value)) return value
+        if (absoluteUrl) return absoluteUrl
+        return value
+      }
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          const resolved = resolveImageValue(item)
+          if (resolved) return resolved
+        }
+        return null
+      }
+      if (typeof value === 'object') {
+        const nested =
+          value.secure_url ||
+          value.url ||
+          value.path ||
+          value.src ||
+          null
+        if (nested) {
+          return isAbsolute(nested) ? nested : (absoluteUrl || nested)
+        }
+      }
+      return null
+    }
+
+    const candidates = [
+      question?.question_image_url,
+      question?.question_image,
+      question?.image_url,
+      question?.image
+    ]
+
+    for (const candidate of candidates) {
+      const resolved = resolveImageValue(candidate)
+      if (resolved) return resolved
+    }
+    return null
+  }
+
   const formatDateTime = (dateTime) => {
     if (!dateTime) return t('exercises.noLimit')
     return new Date(dateTime).toLocaleString()
@@ -287,10 +333,10 @@ const ViewLessonExercisePage = () => {
                       <Badge variant="outline" className="mt-2 mb-3">{t(`exercises.questionTypes.${question.question_type}`)}</Badge>
 
                       {/* Display question image if available */}
-                      {question.question_image && (
+                      {getQuestionImageSource(question) && (
                         <div className="mt-3 mb-3">
                           <img
-                            src={question.question_image}
+                            src={getQuestionImageSource(question)}
                             alt={`Question ${index + 1} diagram`}
                             className="max-w-full h-auto rounded-md border border-muted/50 shadow-sm"
                             style={{ maxHeight: '400px' }}

@@ -7,7 +7,13 @@
       "Bash(python manage.py migrate:*)",
       "Bash(cat:*)",
       "Bash(python:*)",
-      "Bash(del update_locale_keys.py)"
+      "Bash(del update_locale_keys.py)",
+      "Bash(sed -n '1018,1035p' \"frontend/src/locales/en/en.json\")",
+      "Read(//d//**)",
+      "Bash(sed -n '1057,1065p' \"frontend/src/locales/en/en.json\")",
+      "Bash(git log --all --oneline --grep=\"lesson\" --grep=\"enable\" --grep=\"disable\" --grep=\"availability\" -i -20)",
+      "Read(//c/Users/younes/Desktop/**)",
+      "Bash(npm run dev)"
     ],
     "deny": [],
     "ask": []

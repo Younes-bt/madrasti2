@@ -1029,3 +1029,198 @@ class ExerciseAnswerFile(models.Model):
 
     def __str__(self):
         return f"{self.filename} - {self.exercise_answer}"
+
+# =====================================
+# LESSON PROGRESS TRACKING MODELS
+# =====================================
+
+class LessonProgress(models.Model):
+    """Track student progress for each lesson"""
+    student = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='lesson_progress',
+        limit_choices_to={'role': 'STUDENT'}
+    )
+    lesson = models.ForeignKey('lessons.Lesson', on_delete=models.CASCADE, related_name='student_progress')
+
+    # Progress status
+    STATUS_CHOICES = [
+        ('not_started', 'لم يبدأ - Non commencé'),
+        ('in_progress', 'قيد التقدم - En cours'),
+        ('completed', 'مكتمل - Complété'),
+    ]
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='not_started')
+
+    # Exercise completion tracking
+    exercises_completed = models.PositiveIntegerField(default=0, help_text="Number of exercises completed")
+    exercises_total = models.PositiveIntegerField(default=0, help_text="Total exercises in this lesson")
+    completion_percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=0.00,
+        help_text="Percentage of exercises completed"
+    )
+
+    # Score tracking
+    average_score = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Average score across all completed exercises"
+    )
+    total_points_earned = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        default=0.00,
+        help_text="Total points earned from all exercises"
+    )
+    total_points_possible = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        default=0.00,
+        help_text="Total possible points from completed exercises"
+    )
+
+    # Accuracy tracking
+    total_questions_answered = models.PositiveIntegerField(default=0)
+    total_questions_correct = models.PositiveIntegerField(default=0)
+    accuracy_percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=0.00,
+        help_text="Percentage of correct answers"
+    )
+
+    # Time tracking
+    total_time_spent = models.PositiveIntegerField(
+        default=0,
+        help_text="Total time spent in minutes"
+    )
+
+    # Timestamps
+    first_viewed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When student first viewed the lesson page"
+    )
+    started_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When student started first exercise"
+    )
+    completed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When student completed all exercises"
+    )
+    last_accessed = models.DateTimeField(auto_now=True)
+
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ['student', 'lesson']
+        ordering = ['-last_accessed', '-created_at']
+        verbose_name = "Lesson Progress"
+        verbose_name_plural = "Lesson Progress Records"
+        indexes = [
+            models.Index(fields=['student', 'status']),
+            models.Index(fields=['lesson', 'status']),
+        ]
+
+    def __str__(self):
+        return f"{self.student.get_full_name()} - {self.lesson.title} ({self.completion_percentage}%)"
+
+    def update_progress(self):
+        """Recalculate all progress metrics based on exercise submissions"""
+        from django.db.models import Avg, Sum, Count
+
+        # Get all exercise submissions for this student and lesson
+        submissions = ExerciseSubmission.objects.filter(
+            student=self.student,
+            exercise__lesson=self.lesson,
+            status__in=['completed', 'auto_graded', 'reviewed']
+        ).order_by('-created_at')
+
+        # Get total exercises in lesson
+        from homework.models import Exercise
+        total_exercises = Exercise.objects.filter(
+            lesson=self.lesson,
+            is_published=True,
+            is_active=True
+        ).count()
+
+        # Update exercises count
+        self.exercises_total = total_exercises
+        self.exercises_completed = submissions.values('exercise').distinct().count()
+
+        # Calculate completion percentage
+        if self.exercises_total > 0:
+            self.completion_percentage = (self.exercises_completed / self.exercises_total) * 100
+        else:
+            self.completion_percentage = 0
+
+        # Calculate scores - use best attempt for each exercise
+        best_submissions = []
+        for exercise_id in submissions.values_list('exercise_id', flat=True).distinct():
+            exercise_submissions = submissions.filter(exercise_id=exercise_id)
+            latest_completed = exercise_submissions.filter(status__in=['completed', 'reviewed']).order_by('-created_at').first()
+            best = latest_completed or exercise_submissions.order_by('-total_score', '-created_at').first()
+            if best:
+                best_submissions.append(best)
+
+        if best_submissions:
+            # Average score
+            total_score = sum(s.total_score or 0 for s in best_submissions)
+            self.average_score = total_score / len(best_submissions) if best_submissions else 0
+
+            # Total points
+            self.total_points_earned = sum(s.total_score or 0 for s in best_submissions)
+            self.total_points_possible = sum(s.exercise.total_points for s in best_submissions)
+
+            # Accuracy
+            self.total_questions_answered = sum(s.questions_answered for s in best_submissions)
+            self.total_questions_correct = sum(s.questions_correct for s in best_submissions)
+            if self.total_questions_answered > 0:
+                self.accuracy_percentage = (self.total_questions_correct / self.total_questions_answered) * 100
+
+            # Time spent
+            self.total_time_spent = sum(s.time_taken or 0 for s in best_submissions)
+
+        # Update status
+        if self.exercises_completed == 0:
+            self.status = 'not_started'
+        elif self.exercises_completed < self.exercises_total:
+            self.status = 'in_progress'
+            if not self.started_at:
+                self.started_at = timezone.now()
+        else:
+            self.status = 'completed'
+            if not self.completed_at:
+                self.completed_at = timezone.now()
+
+        self.save()
+
+    @property
+    def is_completed(self):
+        """Check if lesson is fully completed"""
+        return self.status == 'completed'
+
+    @property
+    def next_exercise(self):
+        """Get the next uncompleted exercise"""
+        completed_exercises = ExerciseSubmission.objects.filter(
+            student=self.student,
+            exercise__lesson=self.lesson,
+            status__in=['completed', 'auto_graded', 'reviewed']
+        ).values_list('exercise_id', flat=True)
+
+        from homework.models import Exercise
+        return Exercise.objects.filter(
+            lesson=self.lesson,
+            is_published=True,
+            is_active=True
+        ).exclude(id__in=completed_exercises).order_by('order').first()

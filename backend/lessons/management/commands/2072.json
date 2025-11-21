@@ -1,0 +1,581 @@
+[
+  {
+    "lesson_info": {
+      "lesson_id": 2072
+    },
+    "exercise": {
+      "title": "Exercice 1 : Rotation d'un carré",
+      "title_arabic": "التمرين 1 : دوران مربع",
+      "description": "On considère un carré ABCD de centre O et r la rotation de centre O et d'angle π/2.",
+      "exercise_format": "qcm_only",
+      "difficulty_level": "easy",
+      "estimated_duration": 10,
+      "total_points": 2,
+      "auto_grade": true,
+      "show_results_immediately": true,
+      "allow_multiple_attempts": true,
+      "max_attempts": 3
+    },
+    "questions": [
+      {
+        "order": 1,
+        "question_type": "qcm_single",
+        "question_text": "Quelle est l'image du point A par la rotation r ?",
+        "question_text_arabic": "ما هي صورة النقطة A بالدوران r ؟",
+        "explanation": "Le centre de rotation est O, le centre du carré. Un quart de tour direct (angle π/2) envoie le sommet A sur le sommet B.",
+        "explanation_arabic": "مركز الدوران هو O، مركز المربع. ربع دورة مباشرة (زاوية π/2) تحول الرأس A إلى الرأس B.",
+        "points": 1.0,
+        "choices": [
+          {
+            "order": 1,
+            "choice_text": "A",
+            "choice_text_arabic": "A",
+            "is_correct": false
+          },
+          {
+            "order": 2,
+            "choice_text": "B",
+            "choice_text_arabic": "B",
+            "is_correct": true
+          },
+          {
+            "order": 3,
+            "choice_text": "C",
+            "choice_text_arabic": "C",
+            "is_correct": false
+          },
+          {
+            "order": 4,
+            "choice_text": "D",
+            "choice_text_arabic": "D",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 2,
+        "question_type": "qcm_single",
+        "question_text": "Soit A'B'C'D' l'image du carré ABCD par la rotation r. Quelle est la nature de ce quadrilatère ?",
+        "question_text_arabic": "ليكن A'B'C'D' صورة المربع ABCD بالدوران r. ما هي طبيعة هذا الرباعي؟",
+        "explanation": "La rotation est une isométrie. Elle conserve les longueurs, les angles et l'alignement. L'image d'un carré par une rotation est donc un carré de mêmes dimensions.",
+        "explanation_arabic": "الدوران هو تقايس. فهو يحافظ على الأطوال والزوايا والاستقامية. إذن، صورة مربع بدوران هي مربع له نفس الأبعاد.",
+        "points": 1.0,
+        "choices": [
+          {
+            "order": 1,
+            "choice_text": "Un losange",
+            "choice_text_arabic": "معين",
+            "is_correct": false
+          },
+          {
+            "order": 2,
+            "choice_text": "Un rectangle",
+            "choice_text_arabic": "مستطيل",
+            "is_correct": false
+          },
+          {
+            "order": 3,
+            "choice_text": "Un carré",
+            "choice_text_arabic": "مربع",
+            "is_correct": true
+          },
+          {
+            "order": 4,
+            "choice_text": "Un parallélogramme",
+            "choice_text_arabic": "متوازي أضلاع",
+            "is_correct": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "lesson_info": {
+      "lesson_id": 2072
+    },
+    "exercise": {
+      "title": "Exercice 2 : Rotation dans un triangle équilatéral",
+      "title_arabic": "التمرين 2 : دوران في مثلث متساوي الأضلاع",
+      "description": "Soit ABC un triangle équilatéral tel que l'angle orienté (AB, AC) mesure π/3. Soit r la rotation de centre A et d'angle π/3.",
+      "exercise_format": "qcm_only",
+      "difficulty_level": "easy",
+      "estimated_duration": 5,
+      "total_points": 1,
+      "auto_grade": true,
+      "show_results_immediately": true,
+      "allow_multiple_attempts": true,
+      "max_attempts": 3
+    },
+    "questions": [
+      {
+        "order": 1,
+        "question_type": "qcm_single",
+        "question_text": "Quelle est l'image du point B par la rotation r ?",
+        "question_text_arabic": "ما هي صورة النقطة B بالدوران r ؟",
+        "explanation": "Par définition de la rotation r de centre A et d'angle π/3, l'image de B est le point P tel que AP = AB et l'angle (AB, AP) = π/3. Comme le triangle ABC est équilatéral avec (AB, AC) = π/3, le point P est C.",
+        "explanation_arabic": "حسب تعريف الدوران r الذي مركزه A وزاويته π/3، فإن صورة B هي النقطة P بحيث AP = AB والزاوية (AB, AP) = π/3. بما أن المثلث ABC متساوي الأضلاع و (AB, AC) = π/3، فإن النقطة P هي C.",
+        "points": 1.0,
+        "choices": [
+          {
+            "order": 1,
+            "choice_text": "A",
+            "choice_text_arabic": "A",
+            "is_correct": false
+          },
+          {
+            "order": 2,
+            "choice_text": "B",
+            "choice_text_arabic": "B",
+            "is_correct": false
+          },
+          {
+            "order": 3,
+            "choice_text": "C",
+            "choice_text_arabic": "C",
+            "is_correct": true
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "lesson_info": {
+      "lesson_id": 2072
+    },
+    "exercise": {
+      "title": "Exercice 3 : Propriétés de la rotation",
+      "title_arabic": "التمرين 3 : خصائص الدوران",
+      "description": "Soit un carré ABCD de centre O, r la rotation de centre O et d'angle π/2. Soit M le milieu de [OC] et N le milieu de [OD].",
+      "exercise_format": "qcm_only",
+      "difficulty_level": "intermediate",
+      "estimated_duration": 10,
+      "total_points": 2,
+      "auto_grade": true,
+      "show_results_immediately": true,
+      "allow_multiple_attempts": true,
+      "max_attempts": 3
+    },
+    "questions": [
+      {
+        "order": 1,
+        "question_type": "true_false",
+        "question_text": "L'image du point M par la rotation r est le point N.",
+        "question_text_arabic": "صورة النقطة M بالدوران r هي النقطة N.",
+        "explanation": "Par la rotation r, l'image de C est D et l'image de O est O. La rotation conserve les milieux, donc l'image du milieu de [OC] (qui est M) est le milieu de l'image de [OC], c'est-à-dire le milieu de [OD] (qui est N).",
+        "explanation_arabic": "بالدوران r، صورة C هي D وصورة O هي O. الدوران يحافظ على المنتصفات، إذن صورة منتصف [OC] (وهي M) هي منتصف صورة [OC]، أي منتصف [OD] (وهي N).",
+        "points": 1.0,
+        "choices": [
+          {
+            "order": 1,
+            "choice_text": "Vrai",
+            "choice_text_arabic": "صحيح",
+            "is_correct": true
+          },
+          {
+            "order": 2,
+            "choice_text": "Faux",
+            "choice_text_arabic": "خطأ",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 2,
+        "question_type": "qcm_single",
+        "question_text": "Que peut-on dire des droites (BM) et (CN) ?",
+        "question_text_arabic": "ماذا يمكننا أن نقول عن المستقيمين (BM) و (CN) ؟",
+        "explanation": "L'image de B par r est C, et l'image de M par r est N. Donc, l'image de la droite (BM) est la droite (CN). L'angle entre une droite et son image par une rotation est égal à l'angle de la rotation, qui est ici π/2. Les droites sont donc perpendiculaires.",
+        "explanation_arabic": "صورة B بالدوران r هي C، وصورة M بالدوران r هي N. إذن، صورة المستقيم (BM) هي المستقيم (CN). الزاوية بين مستقيم وصورته بدوران تساوي زاوية الدوران، وهي هنا π/2. إذن المستقيمان متعامدان.",
+        "points": 1.0,
+        "choices": [
+          {
+            "order": 1,
+            "choice_text": "Elles sont parallèles",
+            "choice_text_arabic": "متوازيان",
+            "is_correct": false
+          },
+          {
+            "order": 2,
+            "choice_text": "Elles sont perpendiculaires",
+            "choice_text_arabic": "متعامدان",
+            "is_correct": true
+          },
+          {
+            "order": 3,
+            "choice_text": "Elles sont confondues",
+            "choice_text_arabic": "متطابقان",
+            "is_correct": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "lesson_info": {
+      "lesson_id": 2072
+    },
+    "exercise": {
+      "title": "Exercice 4 : Rotation et triangles équilatéraux",
+      "title_arabic": "التمرين 4 : الدوران والمثلثات متساوية الأضلاع",
+      "description": "On considère deux triangles AMN et AMP équilatéraux, avec (AM, AN) ≡ π/3 et (AM, AP) ≡ -π/3.",
+      "exercise_format": "qcm_only",
+      "difficulty_level": "intermediate",
+      "estimated_duration": 10,
+      "total_points": 2,
+      "auto_grade": true,
+      "show_results_immediately": true,
+      "allow_multiple_attempts": true,
+      "max_attempts": 3
+    },
+    "questions": [
+      {
+        "order": 1,
+        "question_type": "qcm_single",
+        "question_text": "Quelle rotation transforme M en N ?",
+        "question_text_arabic": "ما هو الدوران الذي يحول M إلى N ؟",
+        "explanation": "Puisque le triangle AMN est équilatéral, on a AM = AN. De plus, l'angle orienté (AM, AN) mesure π/3. Par définition, la rotation de centre A et d'angle π/3 transforme M en N.",
+        "explanation_arabic": "بما أن المثلث AMN متساوي الأضلاع، فإن AM = AN. بالإضافة إلى ذلك، الزاوية الموجهة (AM, AN) تساوي π/3. حسب التعريف، الدوران الذي مركزه A وزاويته π/3 يحول M إلى N.",
+        "points": 1.0,
+        "choices": [
+          {
+            "order": 1,
+            "choice_text": "Rotation de centre A et d'angle π/3",
+            "choice_text_arabic": "دوران مركزه A وزاويته π/3",
+            "is_correct": true
+          },
+          {
+            "order": 2,
+            "choice_text": "Rotation de centre M et d'angle π/3",
+            "choice_text_arabic": "دوران مركزه M وزاويته π/3",
+            "is_correct": false
+          },
+          {
+            "order": 3,
+            "choice_text": "Rotation de centre A et d'angle -π/3",
+            "choice_text_arabic": "دوران مركزه A وزاويته -π/3",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 2,
+        "question_type": "qcm_single",
+        "question_text": "Quelle rotation transforme M en P ?",
+        "question_text_arabic": "ما هو الدوران الذي يحول M إلى P ؟",
+        "explanation": "Puisque le triangle AMP est équilatéral, on a AM = AP. De plus, l'angle orienté (AM, AP) mesure -π/3. Par définition, la rotation de centre A et d'angle -π/3 transforme M en P.",
+        "explanation_arabic": "بما أن المثلث AMP متساوي الأضلاع، فإن AM = AP. بالإضافة إلى ذلك، الزاوية الموجهة (AM, AP) تساوي -π/3. حسب التعريف، الدوران الذي مركزه A وزاويته -π/3 يحول M إلى P.",
+        "points": 1.0,
+        "choices": [
+          {
+            "order": 1,
+            "choice_text": "Rotation de centre A et d'angle π/3",
+            "choice_text_arabic": "دوران مركزه A وزاويته π/3",
+            "is_correct": false
+          },
+          {
+            "order": 2,
+            "choice_text": "Rotation de centre P et d'angle π/3",
+            "choice_text_arabic": "دوران مركزه P وزاويته π/3",
+            "is_correct": false
+          },
+          {
+            "order": 3,
+            "choice_text": "Rotation de centre A et d'angle -π/3",
+            "choice_text_arabic": "دوران مركزه A وزاويته -π/3",
+            "is_correct": true
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "lesson_info": {
+      "lesson_id": 2072
+    },
+    "exercise": {
+      "title": "Exercice 5 : Construction par rotation",
+      "title_arabic": "التمرين 5 : إنشاء بالدوران",
+      "description": "Soit ABC un triangle équilatéral avec (AB, AC) ≡ π/3. Soit r la rotation de centre A et d'angle π/3. Si C' est l'image de C par r.",
+      "exercise_format": "qcm_only",
+      "difficulty_level": "intermediate",
+      "estimated_duration": 5,
+      "total_points": 1,
+      "auto_grade": true,
+      "show_results_immediately": true,
+      "allow_multiple_attempts": true,
+      "max_attempts": 3
+    },
+    "questions": [
+      {
+        "order": 1,
+        "question_type": "qcm_single",
+        "question_text": "Quelle est la nature du triangle ACC' ?",
+        "question_text_arabic": "ما هي طبيعة المثلث ACC' ؟",
+        "explanation": "Par définition de la rotation, puisque C' est l'image de C par la rotation r de centre A et d'angle π/3, on a AC = AC' et l'angle (AC, AC') = π/3. Un triangle ayant deux côtés de même longueur et l'angle entre eux mesurant π/3 est un triangle équilatéral.",
+        "explanation_arabic": "حسب تعريف الدوران، بما أن C' هي صورة C بالدوران r الذي مركزه A وزاويته π/3، فإن AC = AC' والزاوية (AC, AC') = π/3. المثلث الذي له ضلعان متساويان في الطول والزاوية بينهما تساوي π/3 هو مثلث متساوي الأضلاع.",
+        "points": 1.0,
+        "choices": [
+          {
+            "order": 1,
+            "choice_text": "Isocèle en A",
+            "choice_text_arabic": "متساوي الساقين في A",
+            "is_correct": false
+          },
+          {
+            "order": 2,
+            "choice_text": "Rectangle en C",
+            "choice_text_arabic": "قائم الزاوية في C",
+            "is_correct": false
+          },
+          {
+            "order": 3,
+            "choice_text": "Équilatéral",
+            "choice_text_arabic": "متساوي الأضلاع",
+            "is_correct": true
+          },
+          {
+            "order": 4,
+            "choice_text": "Quelconque",
+            "choice_text_arabic": "كيفي",
+            "is_correct": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "lesson_info": {
+      "lesson_id": 2072
+    },
+    "exercise": {
+      "title": "Exercice 6 : Triangle rectangle isocèle par rotation",
+      "title_arabic": "التمرين 6 : مثلث قائم الزاوية ومتساوي الساقين بالدوران",
+      "description": "Soit un carré ABCD de centre O, r la rotation de centre O et d'angle π/2. Soient M sur [AB] et N sur [BC] tels que AM = BN.",
+      "exercise_format": "qcm_only",
+      "difficulty_level": "hard",
+      "estimated_duration": 10,
+      "total_points": 2,
+      "auto_grade": true,
+      "show_results_immediately": true,
+      "allow_multiple_attempts": true,
+      "max_attempts": 3
+    },
+    "questions": [
+      {
+        "order": 1,
+        "question_type": "qcm_single",
+        "question_text": "Quelle est l'image du point M par la rotation r ?",
+        "question_text_arabic": "ما هي صورة النقطة M بالدوران r ؟",
+        "explanation": "La rotation r transforme A en B et B en C, donc le segment [AB] est transformé en segment [BC]. L'image de M, r(M), est donc sur [BC]. La rotation conserve les distances, donc la distance de r(M) à r(A)=B est la même que la distance de M à A. On a Br(M) = AM. Comme on nous donne AM = BN, on en déduit Br(M) = BN. Puisque r(M) et N sont tous les deux sur [BC], ils doivent être confondus.",
+        "explanation_arabic": "الدوران r يحول A إلى B و B إلى C، إذن القطعة [AB] تتحول إلى القطعة [BC]. صورة M، أي r(M)، تقع على [BC]. الدوران يحافظ على المسافات، إذن المسافة من r(M) إلى r(A)=B هي نفسها المسافة من M إلى A. لدينا Br(M) = AM. بما أنه معطى لدينا AM = BN، نستنتج أن Br(M) = BN. بما أن r(M) و N تقعان كلاهما على [BC]، فيجب أن تكونا متطابقتين.",
+        "points": 1.0,
+        "choices": [
+          {
+            "order": 1,
+            "choice_text": "M",
+            "choice_text_arabic": "M",
+            "is_correct": false
+          },
+          {
+            "order": 2,
+            "choice_text": "N",
+            "choice_text_arabic": "N",
+            "is_correct": true
+          },
+          {
+            "order": 3,
+            "choice_text": "C",
+            "choice_text_arabic": "C",
+            "is_correct": false
+          },
+          {
+            "order": 4,
+            "choice_text": "O",
+            "choice_text_arabic": "O",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 2,
+        "question_type": "qcm_single",
+        "question_text": "Quelle est la nature du triangle OMN ?",
+        "question_text_arabic": "ما هي طبيعة المثلث OMN ؟",
+        "explanation": "On a montré que r(M) = N. On sait aussi que r(O) = O. La rotation conserve les distances, donc OM = r(O)r(M) = ON. Le triangle OMN est donc isocèle en O. L'angle de la rotation est (OM, Or(M)) = (OM, ON) = π/2. Le triangle OMN est donc aussi rectangle en O.",
+        "explanation_arabic": "أثبتنا أن r(M) = N. ونعلم أيضاً أن r(O) = O. الدوران يحافظ على المسافات، إذن OM = r(O)r(M) = ON. المثلث OMN إذن متساوي الساقين في O. زاوية الدوران هي (OM, Or(M)) = (OM, ON) = π/2. المثلث OMN إذن قائم الزاوية أيضاً في O.",
+        "points": 1.0,
+        "choices": [
+          {
+            "order": 1,
+            "choice_text": "Équilatéral",
+            "choice_text_arabic": "متساوي الأضلاع",
+            "is_correct": false
+          },
+          {
+            "order": 2,
+            "choice_text": "Isocèle en M",
+            "choice_text_arabic": "متساوي الساقين في M",
+            "is_correct": false
+          },
+          {
+            "order": 3,
+            "choice_text": "Rectangle isocèle en O",
+            "choice_text_arabic": "قائم الزاوية ومتساوي الساقين في O",
+            "is_correct": true
+          },
+          {
+            "order": 4,
+            "choice_text": "Rectangle en N",
+            "choice_text_arabic": "قائم الزاوية في N",
+            "is_correct": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "lesson_info": {
+      "lesson_id": 2072
+    },
+    "exercise": {
+      "title": "Exercice 7 : Conservation des longueurs",
+      "title_arabic": "التمرين 7 : الحفاظ على الأطوال",
+      "description": "Soit un triangle ABC et une rotation r. Soient D=r(B) et E=r(C).",
+      "exercise_format": "qcm_only",
+      "difficulty_level": "easy",
+      "estimated_duration": 5,
+      "total_points": 1,
+      "auto_grade": true,
+      "show_results_immediately": true,
+      "allow_multiple_attempts": true,
+      "max_attempts": 3
+    },
+    "questions": [
+      {
+        "order": 1,
+        "question_type": "qcm_single",
+        "question_text": "Quelle est la relation entre les longueurs des segments [BC] et [DE] ?",
+        "question_text_arabic": "ما هي العلاقة بين طولي القطعتين [BC] و [DE] ؟",
+        "explanation": "Une des propriétés fondamentales de la rotation est qu'elle est une isométrie, ce qui signifie qu'elle conserve les distances. L'image du segment [BC] est le segment [DE]. Par conséquent, la longueur de [BC] est égale à la longueur de [DE].",
+        "explanation_arabic": "إحدى الخصائص الأساسية للدوران هي أنه تقايس، مما يعني أنه يحافظ على المسافات. صورة القطعة [BC] هي القطعة [DE]. وبالتالي، طول [BC] يساوي طول [DE].",
+        "points": 1.0,
+        "choices": [
+          {
+            "order": 1,
+            "choice_text": "BC > DE",
+            "choice_text_arabic": "BC > DE",
+            "is_correct": false
+          },
+          {
+            "order": 2,
+            "choice_text": "BC < DE",
+            "choice_text_arabic": "BC < DE",
+            "is_correct": false
+          },
+          {
+            "order": 3,
+            "choice_text": "BC = DE",
+            "choice_text_arabic": "BC = DE",
+            "is_correct": true
+          },
+          {
+            "order": 4,
+            "choice_text": "Il n'y a pas de relation",
+            "choice_text_arabic": "لا توجد علاقة",
+            "is_correct": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "lesson_info": {
+      "lesson_id": 2072
+    },
+    "exercise": {
+      "title": "Exercice 8 : Le carré dans le carré",
+      "title_arabic": "التمرين 8 : المربع داخل المربع",
+      "description": "Soit ABCD un carré de centre O. Sur les côtés, on place les points E, F, G, H respectivement sur [AB], [BC], [CD], [DA] tels que AE=BF=CG=DH. Soit r la rotation de centre O et d'angle π/2.",
+      "exercise_format": "qcm_only",
+      "difficulty_level": "hard",
+      "estimated_duration": 10,
+      "total_points": 2,
+      "auto_grade": true,
+      "show_results_immediately": true,
+      "allow_multiple_attempts": true,
+      "max_attempts": 3
+    },
+    "questions": [
+      {
+        "order": 1,
+        "question_type": "qcm_single",
+        "question_text": "Quelle est l'image de la suite de points (E, F, G, H) par la rotation r ?",
+        "question_text_arabic": "ما هي صورة سلسلة النقط (E, F, G, H) بالدوران r ؟",
+        "explanation": "On a montré dans un exercice précédent que r(E)=F. De la même manière, on peut montrer que r(F)=G (car r(B)=C, r(C)=D et BF=CG), que r(G)=H (car r(C)=D, r(D)=A et CG=DH) et que r(H)=E (car r(D)=A, r(A)=B et DH=AE).",
+        "explanation_arabic": "أثبتنا في تمرين سابق أن r(E)=F. بنفس الطريقة، يمكننا إثبات أن r(F)=G (لأن r(B)=C، r(C)=D و BF=CG)، وأن r(G)=H (لأن r(C)=D، r(D)=A و CG=DH) وأن r(H)=E (لأن r(D)=A، r(A)=B و DH=AE).",
+        "points": 1.0,
+        "choices": [
+          {
+            "order": 1,
+            "choice_text": "(F, G, H, E)",
+            "choice_text_arabic": "(F, G, H, E)",
+            "is_correct": true
+          },
+          {
+            "order": 2,
+            "choice_text": "(H, E, F, G)",
+            "choice_text_arabic": "(H, E, F, G)",
+            "is_correct": false
+          },
+          {
+            "order": 3,
+            "choice_text": "(E, F, G, H)",
+            "choice_text_arabic": "(E, F, G, H)",
+            "is_correct": false
+          },
+          {
+            "order": 4,
+            "choice_text": "(G, H, E, F)",
+            "choice_text_arabic": "(G, H, E, F)",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 2,
+        "question_type": "qcm_single",
+        "question_text": "Quelle est la nature du quadrilatère EFGH ?",
+        "question_text_arabic": "ما هي طبيعة الرباعي EFGH ؟",
+        "explanation": "Puisque r(E)=F et r(F)=G, la rotation transforme le segment [EF] en [FG]. La rotation conserve les longueurs, donc EF = FG. L'angle entre le segment [EF] et son image [FG] est égal à l'angle de rotation, π/2. Un quadrilatère dont les côtés sont égaux (par application successive de la rotation) et qui a un angle droit est un carré.",
+        "explanation_arabic": "بما أن r(E)=F و r(F)=G، فإن الدوران يحول القطعة [EF] إلى [FG]. الدوران يحافظ على الأطوال، إذن EF = FG. الزاوية بين القطعة [EF] وصورتها [FG] تساوي زاوية الدوران، π/2. الرباعي الذي أضلاعه متساوية (بتطبيق الدوران تباعاً) والذي له زاوية قائمة هو مربع.",
+        "points": 1.0,
+        "choices": [
+          {
+            "order": 1,
+            "choice_text": "Un losange",
+            "choice_text_arabic": "معين",
+            "is_correct": false
+          },
+          {
+            "order": 2,
+            "choice_text": "Un rectangle",
+            "choice_text_arabic": "مستطيل",
+            "is_correct": false
+          },
+          {
+            "order": 3,
+            "choice_text": "Un carré",
+            "choice_text_arabic": "مربع",
+            "is_correct": true
+          },
+          {
+            "order": 4,
+            "choice_text": "Un parallélogramme quelconque",
+            "choice_text_arabic": "متوازي أضلاع كيفي",
+            "is_correct": false
+          }
+        ]
+      }
+    ]
+  }
+]

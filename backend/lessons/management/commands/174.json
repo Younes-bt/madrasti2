@@ -1,0 +1,342 @@
+[
+  {
+    "lesson_info": {
+      "lesson_id": 174
+    },
+    "exercise": {
+      "title": "Exercice 1 : Mouvement rectiligne uniforme",
+      "title_arabic": "التمرين 1 : الحركة المستقيمة المنتظمة",
+      "description": "Étude du mouvement rectiligne uniforme d'un mobile",
+      "exercise_format": "qcm_only",
+      "difficulty_level": "easy",
+      "estimated_duration": 10,
+      "total_points": 2,
+      "auto_grade": true,
+      "show_results_immediately": true,
+      "allow_multiple_attempts": true,
+      "max_attempts": 3
+    },
+    "questions": [
+      {
+        "order": 1,
+        "question_type": "qcm_single",
+        "question_text": "Un mobile se déplace selon l'équation x = 0,4t + 0,2. Quelle est sa vitesse?",
+        "question_text_arabic": "يتنقل جسم صلب حسب المعادلة x = 0,4t + 0,2. ما هي سرعته؟",
+        "explanation": "L'équation du mouvement est de la forme x = vt + x₀, donc v = 0,4 m/s",
+        "explanation_arabic": "معادلة الحركة من الشكل x = vt + x₀، إذن v = 0,4 m/s",
+        "points": 1.0,
+        "choices": [
+          {
+            "order": 1,
+            "choice_text": "0,2 m/s",
+            "choice_text_arabic": "0,2 m/s",
+            "is_correct": false
+          },
+          {
+            "order": 2,
+            "choice_text": "0,4 m/s",
+            "choice_text_arabic": "0,4 m/s",
+            "is_correct": true
+          },
+          {
+            "order": 3,
+            "choice_text": "0,6 m/s",
+            "choice_text_arabic": "0,6 m/s",
+            "is_correct": false
+          },
+          {
+            "order": 4,
+            "choice_text": "0,8 m/s",
+            "choice_text_arabic": "0,8 m/s",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 2,
+        "question_type": "qcm_single",
+        "question_text": "À t = 0,25s, quelle est la position du mobile?",
+        "question_text_arabic": "ما هو موضع الجسم الصلب عند اللحظة t = 0,25s؟",
+        "explanation": "x = 0,4 × 0,25 + 0,2 = 0,1 + 0,2 = 0,3 m",
+        "explanation_arabic": "x = 0,4 × 0,25 + 0,2 = 0,1 + 0,2 = 0,3 m",
+        "points": 1.0,
+        "choices": [
+          {
+            "order": 1,
+            "choice_text": "0,2 m",
+            "choice_text_arabic": "0,2 m",
+            "is_correct": false
+          },
+          {
+            "order": 2,
+            "choice_text": "0,3 m",
+            "choice_text_arabic": "0,3 m",
+            "is_correct": true
+          },
+          {
+            "order": 3,
+            "choice_text": "0,4 m",
+            "choice_text_arabic": "0,4 m",
+            "is_correct": false
+          },
+          {
+            "order": 4,
+            "choice_text": "0,5 m",
+            "choice_text_arabic": "0,5 m",
+            "is_correct": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "lesson_info": {
+      "lesson_id": 174
+    },
+    "exercise": {
+      "title": "Exercice 2 : Rencontre de deux mobiles",
+      "title_arabic": "التمرين 2 : لقاء جسمين صلبين",
+      "description": "Étude de la rencontre de deux mobiles en mouvement rectiligne uniforme",
+      "exercise_format": "qcm_only",
+      "difficulty_level": "intermediate",
+      "estimated_duration": 15,
+      "total_points": 3,
+      "auto_grade": true,
+      "show_results_immediately": true,
+      "allow_multiple_attempts": true,
+      "max_attempts": 3
+    },
+    "questions": [
+      {
+        "order": 1,
+        "question_type": "qcm_single",
+        "question_text": "Deux mobiles M₁ et M₂ se déplacent sur un axe. M₁ part de x = -6m avec v = 2m/s, M₂ part de x = 12m avec v = -1m/s. À quel moment se rencontrent-ils?",
+        "question_text_arabic": "يتنقل جسمان صلبان M₁ و M₂ على مستقيم. ينطلق M₁ من x = -6m بسرعة v = 2m/s، وينطلق M₂ من x = 12m بسرعة v = -1m/s. متى يلتقيان؟",
+        "explanation": "Équations: x₁ = 2t - 6, x₂ = -t + 12. Rencontre quand x₁ = x₂: 2t - 6 = -t + 12 ⇒ 3t = 18 ⇒ t = 6s",
+        "explanation_arabic": "المعادلتان: x₁ = 2t - 6, x₂ = -t + 12. اللقاء عندما x₁ = x₂: 2t - 6 = -t + 12 ⇒ 3t = 18 ⇒ t = 6s",
+        "points": 1.0,
+        "choices": [
+          {
+            "order": 1,
+            "choice_text": "4 s",
+            "choice_text_arabic": "4 s",
+            "is_correct": false
+          },
+          {
+            "order": 2,
+            "choice_text": "6 s",
+            "choice_text_arabic": "6 s",
+            "is_correct": true
+          },
+          {
+            "order": 3,
+            "choice_text": "8 s",
+            "choice_text_arabic": "8 s",
+            "is_correct": false
+          },
+          {
+            "order": 4,
+            "choice_text": "10 s",
+            "choice_text_arabic": "10 s",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 2,
+        "question_type": "qcm_single",
+        "question_text": "Quelle est la position de rencontre?",
+        "question_text_arabic": "ما هو موضع اللقاء؟",
+        "explanation": "x = 2 × 6 - 6 = 12 - 6 = 6m, ou x = -6 + 12 = 6m",
+        "explanation_arabic": "x = 2 × 6 - 6 = 12 - 6 = 6m, أو x = -6 + 12 = 6m",
+        "points": 1.0,
+        "choices": [
+          {
+            "order": 1,
+            "choice_text": "4 m",
+            "choice_text_arabic": "4 m",
+            "is_correct": false
+          },
+          {
+            "order": 2,
+            "choice_text": "6 m",
+            "choice_text_arabic": "6 m",
+            "is_correct": true
+          },
+          {
+            "order": 3,
+            "choice_text": "8 m",
+            "choice_text_arabic": "8 m",
+            "is_correct": false
+          },
+          {
+            "order": 4,
+            "choice_text": "10 m",
+            "choice_text_arabic": "10 m",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 3,
+        "question_type": "qcm_single",
+        "question_text": "Quelle est la distance parcourue par M₁ jusqu'à la rencontre?",
+        "question_text_arabic": "ما هي المسافة المقطوعة من طرف M₁ حتى اللحظة؟",
+        "explanation": "Distance = |position finale - position initiale| = |6 - (-6)| = 12m",
+        "explanation_arabic": "المسافة = |الموضع النهائي - الموضع الابتدائي| = |6 - (-6)| = 12m",
+        "points": 1.0,
+        "choices": [
+          {
+            "order": 1,
+            "choice_text": "10 m",
+            "choice_text_arabic": "10 m",
+            "is_correct": false
+          },
+          {
+            "order": 2,
+            "choice_text": "12 m",
+            "choice_text_arabic": "12 m",
+            "is_correct": true
+          },
+          {
+            "order": 3,
+            "choice_text": "14 m",
+            "choice_text_arabic": "14 m",
+            "is_correct": false
+          },
+          {
+            "order": 4,
+            "choice_text": "16 m",
+            "choice_text_arabic": "16 m",
+            "is_correct": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "lesson_info": {
+      "lesson_id": 174
+    },
+    "exercise": {
+      "title": "Exercice 3 : Mouvement de deux véhicules",
+      "title_arabic": "التمرين 3 : حركة سيارة وحافلة",
+      "description": "Étude du mouvement de deux véhicules sur une route",
+      "exercise_format": "qcm_only",
+      "difficulty_level": "intermediate",
+      "estimated_duration": 15,
+      "total_points": 3,
+      "auto_grade": true,
+      "show_results_immediately": true,
+      "allow_multiple_attempts": true,
+      "max_attempts": 3
+    },
+    "questions": [
+      {
+        "order": 1,
+        "question_type": "qcm_single",
+        "question_text": "Une voiture (A) roule à 90 km/h. Une camionnette (B) roule à 72 km/h. La voiture dépasse la camionnette. Quelle est leur vitesse en m/s?",
+        "question_text_arabic": "تسير سيارة (A) بسرعة 90 km/h. وتسير حافلة (B) بسرعة 72 km/h. تتجاوز السيارة الحافلة. ما هي سرعتهما بوحدة m/s؟",
+        "explanation": "Conversion: 90 km/h = 90/3,6 = 25 m/s; 72 km/h = 72/3,6 = 20 m/s",
+        "explanation_arabic": "التحويل: 90 km/h = 90/3,6 = 25 m/s; 72 km/h = 72/3,6 = 20 m/s",
+        "points": 1.0,
+        "choices": [
+          {
+            "order": 1,
+            "choice_text": "A: 20 m/s, B: 25 m/s",
+            "choice_text_arabic": "A: 20 m/s, B: 25 m/s",
+            "is_correct": false
+          },
+          {
+            "order": 2,
+            "choice_text": "A: 25 m/s, B: 20 m/s",
+            "choice_text_arabic": "A: 25 m/s, B: 20 m/s",
+            "is_correct": true
+          },
+          {
+            "order": 3,
+            "choice_text": "A: 22,5 m/s, B: 18 m/s",
+            "choice_text_arabic": "A: 22,5 m/s, B: 18 m/s",
+            "is_correct": false
+          },
+          {
+            "order": 4,
+            "choice_text": "A: 30 m/s, B: 24 m/s",
+            "choice_text_arabic": "A: 30 m/s, B: 24 m/s",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 2,
+        "question_type": "qcm_single",
+        "question_text": "Si la voiture met 3 minutes pour rattraper la camionnette, quelle distance les sépare initialement?",
+        "question_text_arabic": "إذا استغرقت السيارة 3 دقائق لتلحق بالحافلة، ما هي المسافة الفاصلة بينهما في البداية؟",
+        "explanation": "t = 3 min = 180 s; distance = (vA - vB) × t = (25 - 20) × 180 = 5 × 180 = 900 m",
+        "explanation_arabic": "t = 3 دقائق = 180 s; المسافة = (vA - vB) × t = (25 - 20) × 180 = 5 × 180 = 900 m",
+        "points": 1.0,
+        "choices": [
+          {
+            "order": 1,
+            "choice_text": "750 m",
+            "choice_text_arabic": "750 m",
+            "is_correct": false
+          },
+          {
+            "order": 2,
+            "choice_text": "900 m",
+            "choice_text_arabic": "900 m",
+            "is_correct": true
+          },
+          {
+            "order": 3,
+            "choice_text": "1000 m",
+            "choice_text_arabic": "1000 m",
+            "is_correct": false
+          },
+          {
+            "order": 4,
+            "choice_text": "1200 m",
+            "choice_text_arabic": "1200 m",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 3,
+        "question_type": "qcm_single",
+        "question_text": "Quelle distance parcourt la voiture pendant ce temps?",
+        "question_text_arabic": "ما هي المسافة التي تقطعها السيارة خلال هذه المدة؟",
+        "explanation": "Distance = vA × t = 25 × 180 = 4500 m",
+        "explanation_arabic": "المسافة = vA × t = 25 × 180 = 4500 m",
+        "points": 1.0,
+        "choices": [
+          {
+            "order": 1,
+            "choice_text": "3600 m",
+            "choice_text_arabic": "3600 m",
+            "is_correct": false
+          },
+          {
+            "order": 2,
+            "choice_text": "4500 m",
+            "choice_text_arabic": "4500 m",
+            "is_correct": true
+          },
+          {
+            "order": 3,
+            "choice_text": "5000 m",
+            "choice_text_arabic": "5000 m",
+            "is_correct": false
+          },
+          {
+            "order": 4,
+            "choice_text": "5400 m",
+            "choice_text_arabic": "5400 m",
+            "is_correct": false
+          }
+        ]
+      }
+    ]
+  }
+]

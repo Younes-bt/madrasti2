@@ -45,6 +45,47 @@ const StudentExerciseEntryPage = () => {
 
   const lessonIdFromState = location.state?.lessonId || null
 
+  const getQuestionImageSource = (question) => {
+    const absoluteUrl = typeof question?.question_image_url === 'string' ? question.question_image_url : null
+    const isAbsolute = (value) => typeof value === 'string' && /^https?:\/\//i.test(value)
+
+    const resolveImageValue = (value) => {
+      if (!value) return null
+      if (typeof value === 'string') {
+        if (isAbsolute(value)) return value
+        if (absoluteUrl) return absoluteUrl
+        return value
+      }
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          const resolved = resolveImageValue(item)
+          if (resolved) return resolved
+        }
+        return null
+      }
+      if (typeof value === 'object') {
+        const nested = value.secure_url || value.url || value.path || value.src || null
+        if (nested) {
+          return isAbsolute(nested) ? nested : (absoluteUrl || nested)
+        }
+      }
+      return null
+    }
+
+    const candidates = [
+      question?.question_image_url,
+      question?.question_image,
+      question?.image_url,
+      question?.image
+    ]
+
+    for (const candidate of candidates) {
+      const resolved = resolveImageValue(candidate)
+      if (resolved) return resolved
+    }
+    return null
+  }
+
   useEffect(() => {
     const fetchExercise = async () => {
       if (!exerciseId) {
@@ -356,6 +397,8 @@ const renderChoices = (question) => {
       ? question.question_text_arabic
       : question.question_text
 
+    const questionImage = getQuestionImageSource(question)
+
     const hint = question.hint || question.hint_text
     const explanation = question.explanation || question.explanation_text
 
@@ -381,6 +424,16 @@ const renderChoices = (question) => {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {questionImage && (
+            <div className="rounded-lg border border-muted/40 bg-muted/20 overflow-hidden">
+              <img
+                src={questionImage}
+                alt={t('lessons.imagePreviewAlt', 'Question image preview')}
+                className="w-full h-auto max-h-80 object-contain bg-background"
+              />
+            </div>
+          )}
+
           {SUPPORTED_AUTO_TYPES.includes(question.question_type) && renderChoices(question)}
 
           {TEXT_TYPES.includes(question.question_type) && (

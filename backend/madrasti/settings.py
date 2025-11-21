@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'homework',
     'attendance',
     'media',
+    'finance',
+    'communication',
     
     # 3rd Party Apps
     'rest_framework',
@@ -85,6 +87,7 @@ WSGI_APPLICATION = 'madrasti.wsgi.application'
 
 # Database Configuration
 DB_NAME = os.getenv('DB_NAME')
+
 DB_USER = os.getenv('DB_USER')
 DB_PASSWORD = os.getenv('DB_PASSWORD')
 DB_HOST = os.getenv('DB_HOST', 'localhost')

@@ -30,6 +30,8 @@ import {
   HelpCircle,
   Trophy,
   CheckCircle,
+  PlayCircle,
+  RotateCcw,
   ChevronLeft,
   Layers
 } from 'lucide-react'
@@ -407,72 +409,88 @@ const StudentViewLessonPage = () => {
                       </div>
                     ) : exercises.length > 0 ? (
                       <div className="space-y-3">
-                        {exercises.map((exercise) => (
-                          <div key={exercise.id} className="border rounded-lg p-4">
-                            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                              <div className="space-y-2">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <h4 className="font-medium text-base">{exercise.title}</h4>
-                                  {exercise.difficulty_level && (
-                                    <Badge variant="outline" className="text-xs uppercase">
-                                      {exercise.difficulty_level}
-                                    </Badge>
+                        {exercises.map((exercise) => {
+                          const exerciseStatus = exerciseService.calculateExerciseStatus(exercise)
+                          const isExerciseCompleted = exerciseStatus === 'completed'
+                          const hasExerciseAttempts = exerciseStatus === 'in_progress'
+
+                          let buttonLabel = t('lessons.startExercise', 'Start exercise')
+                          let ButtonIcon = PlayCircle
+                          let buttonVariant = 'default'
+                          let buttonClassName = 'flex items-center gap-2'
+                          let buttonDisabled = false
+
+                          if (isExerciseCompleted) {
+                            buttonLabel = t('lessons.exerciseCompleted', 'Completed')
+                            ButtonIcon = CheckCircle
+                            buttonVariant = 'outline'
+                            buttonClassName += ' text-emerald-600 border-emerald-200 bg-emerald-50 dark:text-emerald-300 dark:border-emerald-500 dark:bg-emerald-900/20 cursor-default'
+                            buttonDisabled = true
+                          } else if (hasExerciseAttempts) {
+                            buttonLabel = t('lessons.continueExercise', 'Continue')
+                            ButtonIcon = RotateCcw
+                            buttonVariant = 'outline'
+                          }
+
+                          return (
+                            <div key={exercise.id} className="border rounded-lg p-4">
+                              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <h4 className="font-medium text-base">{exercise.title}</h4>
+                                    {exercise.difficulty_level && (
+                                      <Badge variant="outline" className="text-xs uppercase">
+                                        {exercise.difficulty_level}
+                                      </Badge>
+                                    )}
+                                    {exercise.is_published === false && (
+                                      <Badge variant="secondary" className="text-xs">
+                                        {t('common.draft', 'Draft')}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  {exercise.description && (
+                                    <p className="text-sm text-muted-foreground line-clamp-3">
+                                      {exercise.description}
+                                    </p>
                                   )}
-                                  {exercise.is_published === false && (
-                                    <Badge variant="secondary" className="text-xs">
-                                      {t('common.draft', 'Draft')}
-                                    </Badge>
-                                  )}
+                                  <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+                                    {(exercise.questions_count || (exercise.questions && exercise.questions.length)) && (
+                                      <span className="flex items-center gap-1">
+                                        <HelpCircle className="h-3 w-3" />
+                                        {(exercise.questions_count || (exercise.questions && exercise.questions.length) || 0)} {t('lessons.questions', 'questions')}
+                                      </span>
+                                    )}
+                                    {(exercise.total_points || exercise.total_score) && (
+                                      <span className="flex items-center gap-1">
+                                        <Trophy className="h-3 w-3" />
+                                        {(exercise.total_points || exercise.total_score)} {t('lessons.points', 'points')}
+                                      </span>
+                                    )}
+                                    {exercise.estimated_duration && (
+                                      <span className="flex items-center gap-1">
+                                        <Clock className="h-3 w-3" />
+                                        {exercise.estimated_duration} {t('lessons.minutes', 'min')}
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
-                                {exercise.description && (
-                                  <p className="text-sm text-muted-foreground line-clamp-3">
-                                    {exercise.description}
-                                  </p>
-                                )}
-                                <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
-                                  {(exercise.questions_count || (exercise.questions && exercise.questions.length)) && (
-                                    <span className="flex items-center gap-1">
-                                      <HelpCircle className="h-3 w-3" />
-                                      {(exercise.questions_count || (exercise.questions && exercise.questions.length) || 0)} {t('lessons.questions', 'questions')}
-                                    </span>
-                                  )}
-                                  {(exercise.total_points || exercise.total_score) && (
-                                    <span className="flex items-center gap-1">
-                                      <Trophy className="h-3 w-3" />
-                                      {(exercise.total_points || exercise.total_score)} {t('lessons.points', 'points')}
-                                    </span>
-                                  )}
-                                  {exercise.estimated_duration && (
-                                    <span className="flex items-center gap-1">
-                                      <Clock className="h-3 w-3" />
-                                      {exercise.estimated_duration} {t('lessons.minutes', 'min')}
-                                    </span>
-                                  )}
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant={buttonVariant}
+                                    onClick={buttonDisabled ? undefined : () => handleOpenExercise(exercise.id)}
+                                    disabled={buttonDisabled}
+                                    className={buttonClassName}
+                                  >
+                                    <ButtonIcon className="h-4 w-4" />
+                                    {buttonLabel}
+                                  </Button>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-2">
-
-                                <Button
-
-                                  size="sm"
-
-                                  onClick={() => handleOpenExercise(exercise.id)}
-
-                                  className="flex items-center gap-2"
-
-                                >
-
-                                  <CheckCircle className="h-4 w-4" />
-
-                                  {t('lessons.startExercise', 'Start exercise')}
-
-                                </Button>
-
-                              </div>
-
                             </div>
-                          </div>
-                        ))}
+                          )
+                        })}
                       </div>
                     ) : (
                       <div className="flex flex-col items-center justify-center py-10 text-center gap-3 text-muted-foreground">

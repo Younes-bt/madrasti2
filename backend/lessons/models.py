@@ -138,6 +138,39 @@ class LessonTagging(models.Model):
     """Many-to-many relationship between lessons and tags"""
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
     tag = models.ForeignKey(LessonTag, on_delete=models.CASCADE)
-    
+
     class Meta:
         unique_together = ['lesson', 'tag']
+
+class LessonAvailability(models.Model):
+    """Controls which classes can access which lessons - class-specific publishing"""
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='class_availability')
+    school_class = models.ForeignKey('schools.SchoolClass', on_delete=models.CASCADE, related_name='lesson_availability')
+
+    # Publishing control
+    is_published = models.BooleanField(
+        default=False,
+        help_text="Make this lesson visible and accessible to students in this class"
+    )
+    published_at = models.DateTimeField(null=True, blank=True)
+    published_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='published_lesson_availabilities'
+    )
+
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ['lesson', 'school_class']
+        ordering = ['lesson__order', 'school_class__name']
+        verbose_name = "Lesson Availability"
+        verbose_name_plural = "Lesson Availabilities"
+
+    def __str__(self):
+        status = "Published" if self.is_published else "Unpublished"
+        return f"{self.lesson.title} - {self.school_class.name} ({status})"

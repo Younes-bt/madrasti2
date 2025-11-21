@@ -165,7 +165,11 @@ const CreateLessonExercisePage = () => {
       question_type: 'qcm_single',
       points: '1.00',
       order: prev.length,
-      choices: [{ choice_text: '', is_correct: true }, { choice_text: '', is_correct: false }]
+      choices: [{ choice_text: '', is_correct: true }, { choice_text: '', is_correct: false }],
+      image_file: null,
+      image_preview: null,
+      existing_image_url: null,
+      remove_image: false
     }])
   }
 
@@ -215,6 +219,38 @@ const CreateLessonExercisePage = () => {
     setQuestions(newQuestions)
   }
 
+  const handleQuestionImageChange = (index, file) => {
+    if (!file) return
+    setQuestions(prev => prev.map((question, idx) => {
+      if (idx !== index) return question
+      if (question.image_preview) {
+        URL.revokeObjectURL(question.image_preview)
+      }
+      return {
+        ...question,
+        image_file: file,
+        image_preview: URL.createObjectURL(file),
+        remove_image: false
+      }
+    }))
+  }
+
+  const handleRemoveQuestionImage = (index) => {
+    setQuestions(prev => prev.map((question, idx) => {
+      if (idx !== index) return question
+      if (question.image_preview) {
+        URL.revokeObjectURL(question.image_preview)
+      }
+      return {
+        ...question,
+        image_file: null,
+        image_preview: null,
+        existing_image_url: null,
+        remove_image: false
+      }
+    }))
+  }
+
   const validateForm = () => {
     const newErrors = {}
     if (!formData.title.trim()) newErrors.title = 'Title is required'
@@ -246,7 +282,7 @@ const CreateLessonExercisePage = () => {
         title: formData.title.trim(),
         title_arabic: formData.title_arabic.trim() || null,
         description: formData.description.trim(),
-        instructions: formData.instructions.trim() || null,
+        instructions: formData.instructions.trim() || '',
         exercise_format: formData.exercise_format,
         difficulty_level: formData.difficulty_level,
         estimated_duration: formData.estimated_duration ? parseInt(formData.estimated_duration) : null,
@@ -286,12 +322,15 @@ const CreateLessonExercisePage = () => {
             exercise: newExerciseId,
             question_text: q.question_text,
             question_type: q.question_type,
-            points: q.points,
+            points: parseFloat(q.points || 0),
             order: index,
             choices: q.choices.map(c => ({
               choice_text: c.choice_text,
               is_correct: c.is_correct
             }))
+          }
+          if (q.image_file) {
+            questionPayload.question_image = q.image_file
           }
           return exerciseService.createQuestion(questionPayload)
         })
@@ -580,6 +619,50 @@ const CreateLessonExercisePage = () => {
                           onChange={(e) => handleQuestionChange(qIndex, 'points', e.target.value)}
                           min="0"
                         />
+                      </div>
+                    </div>
+                    <div className="space-y-2 pt-2">
+                      {(q.image_preview || q.existing_image_url) && (
+                        <div className="max-w-xs rounded-md border overflow-hidden">
+                          <img
+                            src={q.image_preview || q.existing_image_url}
+                            alt={t('lessons.imagePreviewAlt', 'Question image preview')}
+                            className="w-full h-32 object-cover"
+                          />
+                        </div>
+                      )}
+                      <input
+                        id={`question-image-${q.id ?? qIndex}`}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(event) => handleQuestionImageChange(qIndex, event.target.files?.[0] || null)}
+                      />
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => document.getElementById(`question-image-${q.id ?? qIndex}`)?.click()}
+                          className="flex items-center gap-2"
+                        >
+                          <ImageIcon className="h-4 w-4" />
+                          {q.image_preview || q.existing_image_url
+                            ? (t('lessons.changeImage', 'Change image'))
+                            : (t('lessons.addImage', 'Add image'))}
+                        </Button>
+                        {(q.image_preview || q.existing_image_url) && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveQuestionImage(qIndex)}
+                            className="flex items-center gap-2 text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            {t('lessons.removeImage', 'Remove image')}
+                          </Button>
+                        )}
                       </div>
                     </div>
                     {['qcm_single', 'qcm_multiple', 'true_false'].includes(q.question_type) && (

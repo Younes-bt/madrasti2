@@ -3,7 +3,9 @@
 from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from django.db.models import Q, Avg, Count
 from django.utils import timezone
@@ -34,7 +36,10 @@ from .models import (
     AnswerFillBlankSelection, AnswerOrderingSelection, AnswerMatchingSelection,
 
     # Exercise Submission Models
-    ExerciseSubmission, ExerciseAnswer, ExerciseAnswerFile
+    ExerciseSubmission, ExerciseAnswer, ExerciseAnswerFile,
+
+    # Progress Tracking Models
+    LessonProgress
 )
 
 from .serializers import (
@@ -647,6 +652,7 @@ class HomeworkViewSet(viewsets.ModelViewSet):
 class QuestionViewSet(viewsets.ModelViewSet):
     serializer_class = QuestionSerializer
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
     
     def get_queryset(self):
         queryset = Question.objects.all()
@@ -1140,20 +1146,232 @@ class QuestionAnswerViewSet(viewsets.ModelViewSet):
 class BookExerciseAnswerViewSet(viewsets.ModelViewSet):
     serializer_class = BookExerciseAnswerSerializer
     permission_classes = [IsAuthenticated]
-    
+
     def get_queryset(self):
         user = self.request.user
         queryset = BookExerciseAnswer.objects.all()
-        
+
         if user.role == 'STUDENT':
             queryset = queryset.filter(submission__student=user)
         elif user.role == 'TEACHER':
             queryset = queryset.filter(submission__homework__teacher=user)
         elif user.role in ['ADMIN', 'STAFF']:
             queryset = queryset.all()
-        
+
         submission_id = self.request.query_params.get('submission')
         if submission_id:
             queryset = queryset.filter(submission_id=submission_id)
-        
+
         return queryset
+
+# =====================================
+# LESSON PROGRESS TRACKING VIEWS
+# =====================================
+
+class LessonProgressViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet for viewing lesson progress"""
+    from .serializers import LessonProgressSerializer, LessonProgressDetailSerializer
+    serializer_class = LessonProgressSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = LessonProgress.objects.select_related('student', 'lesson').all()
+
+        # Students can only see their own progress
+        if user.role == 'STUDENT':
+            queryset = queryset.filter(student=user)
+
+        # Teachers can see progress for their students
+        elif user.role == 'TEACHER':
+            # Get classes taught by this teacher
+            from schools.models import SchoolClass
+            teacher_classes = SchoolClass.objects.filter(teachers=user)
+            queryset = queryset.filter(student__student_profile__school_class__in=teacher_classes)
+
+        # ADMIN/STAFF can see all
+
+        # Allow filtering by student, lesson, status
+        student_id = self.request.query_params.get('student')
+        lesson_id = self.request.query_params.get('lesson')
+        status_filter = self.request.query_params.get('status')
+
+        if student_id:
+            queryset = queryset.filter(student_id=student_id)
+        if lesson_id:
+            queryset = queryset.filter(lesson_id=lesson_id)
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+
+        return queryset
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            from .serializers import LessonProgressDetailSerializer
+            return LessonProgressDetailSerializer
+        from .serializers import LessonProgressSerializer
+        return LessonProgressSerializer
+
+    @action(detail=False, methods=['get'])
+    def my_progress(self, request):
+        """Get current student's progress across all lessons"""
+        if request.user.role != 'STUDENT':
+            return Response(
+                {"error": "This endpoint is only for students"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        progress_records = LessonProgress.objects.filter(student=request.user).select_related('lesson')
+
+        # Group by status
+        summary = {
+            'total_lessons': progress_records.count(),
+            'not_started': progress_records.filter(status='not_started').count(),
+            'in_progress': progress_records.filter(status='in_progress').count(),
+            'completed': progress_records.filter(status='completed').count(),
+            'overall_completion': 0,
+            'average_score': 0,
+            'total_time_spent': 0
+        }
+
+        if summary['total_lessons'] > 0:
+            summary['overall_completion'] = (summary['completed'] / summary['total_lessons']) * 100
+
+            # Calculate averages
+            completed_progress = progress_records.filter(status='completed')
+            if completed_progress.exists():
+                from django.db.models import Avg, Sum
+                stats = completed_progress.aggregate(
+                    avg_score=Avg('average_score'),
+                    total_time=Sum('total_time_spent')
+                )
+                summary['average_score'] = stats['avg_score'] or 0
+                summary['total_time_spent'] = stats['total_time'] or 0
+
+        serializer = self.get_serializer(progress_records, many=True)
+
+        return Response({
+            'summary': summary,
+            'progress': serializer.data
+        })
+
+
+class StudentProgressReportView(APIView):
+    """Generate detailed progress reports for students"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, student_id=None):
+        """Get progress report for a specific student or current user"""
+
+        # Determine which student to get report for
+        if student_id:
+            # Check permissions
+            if request.user.role == 'STUDENT' and request.user.id != student_id:
+                return Response(
+                    {"error": "You can only view your own progress"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+            try:
+                from django.contrib.auth import get_user_model
+                User = get_user_model()
+                student = User.objects.get(id=student_id, role='STUDENT')
+            except User.DoesNotExist:
+                return Response(
+                    {"error": "Student not found"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        else:
+            # Use current user (must be student)
+            if request.user.role != 'STUDENT':
+                return Response(
+                    {"error": "This endpoint is for students"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            student = request.user
+
+        # Calculate progress report
+        report = self._generate_progress_report(student)
+
+        from .serializers import StudentProgressReportSerializer
+        serializer = StudentProgressReportSerializer(data=report)
+        serializer.is_valid(raise_exception=True)
+
+        return Response(serializer.data)
+
+    def _generate_progress_report(self, student):
+        """Generate comprehensive progress report for a student"""
+        from django.db.models import Sum, Avg, Count, Q
+        from lessons.models import Lesson
+        from schools.models import Subject
+
+        # Get all lesson progress
+        lesson_progress = LessonProgress.objects.filter(student=student)
+
+        # Overall statistics
+        total_lessons = lesson_progress.count()
+        lessons_completed = lesson_progress.filter(status='completed').count()
+        lessons_in_progress = lesson_progress.filter(status='in_progress').count()
+        lessons_not_started = lesson_progress.filter(status='not_started').count()
+
+        # Calculate overall completion percentage
+        overall_completion = (lessons_completed / total_lessons * 100) if total_lessons > 0 else 0
+
+        # Performance statistics
+        completed_lessons = lesson_progress.filter(status='completed')
+        perf_stats = completed_lessons.aggregate(
+            avg_score=Avg('average_score'),
+            total_time=Sum('total_time_spent')
+        )
+
+        accuracy_stats = lesson_progress.aggregate(
+            total_correct=Sum('total_questions_correct'),
+            total_answered=Sum('total_questions_answered')
+        )
+
+        total_correct = accuracy_stats['total_correct'] or 0
+        total_answered = accuracy_stats['total_answered'] or 0
+        overall_accuracy = (total_correct / total_answered * 100) if total_answered else 0
+
+        # Reward statistics
+        wallet = StudentWallet.objects.filter(student=student).first()
+        badges_count = StudentBadge.objects.filter(student=student).count()
+
+        # Get student's class to determine subjects
+        student_class = getattr(student, 'student_profile', None)
+        student_class = student_class.school_class if student_class else None
+
+        # Count subjects (lessons' subjects)
+        total_subjects = lesson_progress.values('lesson__subject').distinct().count()
+
+        # Total exercises
+        total_exercises = lesson_progress.aggregate(total=Sum('exercises_total'))['total'] or 0
+
+        report = {
+            'student_id': student.id,
+            'student_name': student.get_full_name(),
+            'student_email': student.email,
+
+            # Overall statistics
+            'total_subjects': total_subjects,
+            'total_lessons': total_lessons,
+            'total_exercises': total_exercises,
+
+            # Completion statistics
+            'lessons_completed': lessons_completed,
+            'lessons_in_progress': lessons_in_progress,
+            'lessons_not_started': lessons_not_started,
+            'overall_completion_percentage': round(overall_completion, 2),
+
+            # Performance statistics
+            'overall_average_score': round(perf_stats['avg_score'] or 0, 2),
+            'overall_accuracy_percentage': round(overall_accuracy or 0, 2),
+            'total_time_spent': perf_stats['total_time'] or 0,
+
+            # Reward statistics
+            'total_points_earned': wallet.total_points if wallet else 0,
+            'total_coins_earned': wallet.total_coins if wallet else 0,
+            'badges_earned': badges_count,
+        }
+
+        return report

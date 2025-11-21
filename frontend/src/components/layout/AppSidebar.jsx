@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import {
   Home,
   Users,
@@ -38,49 +38,28 @@ import {
   Monitor,
   Target,
   Sparkles,
-  LogOut
+  LogOut,
+  DollarSign
 } from 'lucide-react'
-import { Badge } from '../ui/badge'
 import { useLanguage } from '../../hooks/useLanguage'
 import { useAuth } from '../../contexts/AuthContext'
 import { USER_ROLES, ROUTES } from '../../utils/constants'
 import { apiMethods } from '../../services/api'
-import ThemeToggle from '../shared/ThemeToggle'
-import LanguageSwitcher from '../shared/LanguageSwitcher'
+import { NavMain } from '../../components/nav-main'
+import { NavUser } from '../../components/nav-user'
+import { TeamSwitcher } from '../../components/team-switcher'
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
   SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
-  SidebarMenuBadge,
   SidebarRail,
 } from "../ui/sidebar"
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "../ui/collapsible"
 
 export function AppSidebar({ onNavigate, currentPath, ...props }) {
   const { t, currentLanguage } = useLanguage()
-  const { user, logout } = useAuth()
-  const [openItems, setOpenItems] = useState({})
+  const { user } = useAuth()
   const [studentWallet, setStudentWallet] = useState(null)
-
-  const toggleItem = (key) => {
-    setOpenItems(prev => ({
-      ...prev,
-      [key]: !prev[key]
-    }))
-  }
 
   // Load student wallet for STUDENT role to show total points in header
   useEffect(() => {
@@ -100,26 +79,8 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
     loadWallet()
   }, [user])
 
-  // Resolve localized full name
-  const getLocalizedFullName = () => {
-    if (!user) return ''
-    if (currentLanguage === 'ar') {
-      const arFirst = user.ar_first_name || user.profile?.ar_first_name
-      const arLast = user.ar_last_name || user.profile?.ar_last_name
-      if (arFirst || arLast) return `${arFirst || ''} ${arLast || ''}`.trim()
-    }
-    return (
-      user.full_name ||
-      `${user.first_name || ''} ${user.last_name || ''}`.trim() ||
-      user.email ||
-      ''
-    )
-  }
-
-  const avatarUrl = user?.profile_picture_url || user?.profile?.profile_picture_url || null
-
   // Navigation items configuration based on user roles
-  const getNavigationItems = () => {
+  const navigationItems = useMemo(() => {
     const userRole = user?.role
     const baseItems = [
       {
@@ -195,6 +156,18 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
             { key: 'comparative-analysis', label: t('adminSidebar.reportsAnalytics.comparativeAnalysis'), path: '/admin/reports/comparative-analysis' },
           ]
         },
+        // 💰 Finance Management
+        {
+          key: 'finance',
+          icon: DollarSign,
+          label: 'Finance',
+          tooltip: 'Manage fees, invoices, and payments',
+          items: [
+            { key: 'fee-setup', label: 'Fee Setup', path: '/admin/finance/setup' },
+            { key: 'invoices', label: 'Invoices', path: '/admin/finance/invoices' },
+            { key: 'payments', label: 'Payments', path: '/admin/finance/payments' },
+          ]
+        },
         // 📢 Communications & Notifications
         {
           key: 'communications',
@@ -202,7 +175,8 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
           label: t('adminSidebar.communications.title'),
           tooltip: t('adminSidebar.communications.tooltip'),
           items: [
-            { key: 'announcements', label: t('adminSidebar.communications.announcements'), path: '/admin/communications/announcements' },
+            { key: 'messages', label: 'Messages', path: '/messages' },
+            { key: 'announcements', label: 'Announcements', path: '/announcements' },
             { key: 'email-templates', label: t('adminSidebar.communications.emailTemplates'), path: '/admin/communications/email-templates' },
             { key: 'parent-notifications', label: t('adminSidebar.communications.parentNotifications'), path: '/admin/communications/parent-notifications' },
             { key: 'emergency-alerts', label: t('adminSidebar.communications.emergencyAlerts'), path: '/admin/communications/emergency-alerts' },
@@ -422,6 +396,13 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
           path: '/parent/children',
         },
         {
+          key: 'finance',
+          icon: DollarSign,
+          label: 'Financial Status',
+          tooltip: 'View invoices and payments',
+          path: '/parent/finance',
+        },
+        {
           key: 'attendance',
           icon: UserCheck,
           label: t('navigation.attendance'),
@@ -437,6 +418,16 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
           label: t('navigation.homework'),
           tooltip: t('navigation.homework'),
           path: ROUTES.HOMEWORK.LIST,
+        },
+        {
+          key: 'communication',
+          icon: MessageSquare,
+          label: 'Communication',
+          tooltip: 'Messages and announcements',
+          items: [
+            { key: 'messages', label: 'Messages', path: '/messages' },
+            { key: 'announcements', label: 'Announcements', path: '/announcements' },
+          ]
         },
         {
           key: 'notifications',
@@ -494,198 +485,50 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
       ]
     }
 
-    console.log('teacherSidebar.profile.title:', t('teacherSidebar.profile.title'));
     return [
       ...baseItems,
       ...(roleSpecificItems[userRole] || [])
     ]
-  }
+  }, [user, t])
 
-  const navigationItems = getNavigationItems()
+  // Transform items for NavMain
+  const navMainItems = useMemo(() => {
+    return navigationItems.map(item => ({
+      title: item.label,
+      url: item.path,
+      icon: item.icon,
+      isActive: item.key === 'dashboard',
+      items: item.items?.map(sub => ({
+        title: sub.label,
+        url: sub.path
+      }))
+    }))
+  }, [navigationItems])
 
-  const handleNavigation = (path) => {
-    if (onNavigate) {
-      onNavigate(path)
+  const teamData = [
+    {
+      name: user?.school_info?.name || "Madrasti",
+      logo: School,
+      plan: user?.role || "Admin"
     }
-  }
+  ]
 
-  const handleLogout = async () => {
-    try {
-      await logout()
-    } finally {
-      if (onNavigate) {
-        onNavigate('/login')
-      }
-    }
-  }
-
-  const renderNavItem = (item) => {
-    const hasChildren = item.items && item.items.length > 0
-    const isOpen = openItems[item.key]
-    const isActive = item.path === currentPath || 
-                    (hasChildren && item.items?.some(child => child.path === currentPath))
-    
-    if (hasChildren) {
-      return (
-        <Collapsible
-          key={item.key}
-          open={isOpen}
-          onOpenChange={() => toggleItem(item.key)}
-        >
-          <SidebarMenuItem>
-            <CollapsibleTrigger asChild>
-              <SidebarMenuButton
-                tooltip={item.tooltip}
-                isActive={isActive}
-                className="cursor-pointer"
-              >
-                {item.icon && <item.icon />}
-                <span>{item.label}</span>
-                <ChevronDown className={`ml-auto transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-              </SidebarMenuButton>
-            </CollapsibleTrigger>
-            {item.badge && (
-              <SidebarMenuBadge>
-                {item.badge > 9 ? '9+' : item.badge}
-              </SidebarMenuBadge>
-            )}
-            <CollapsibleContent>
-              <SidebarMenuSub>
-                {item.items.map((subItem) => (
-                  <SidebarMenuSubItem key={subItem.key}>
-                    <SidebarMenuSubButton
-                      isActive={subItem.path === currentPath}
-                      onClick={() => handleNavigation(subItem.path)}
-                      className="cursor-pointer hover:bg-blue-100 hover:text-black"
-                    >
-                      <span>{subItem.label}</span>
-                      {subItem.badge && (
-                        <Badge variant="secondary" className="ml-auto h-5 px-1.5 text-xs">
-                          {subItem.badge > 9 ? '9+' : subItem.badge}
-                        </Badge>
-                      )}
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
-                ))}
-              </SidebarMenuSub>
-            </CollapsibleContent>
-          </SidebarMenuItem>
-        </Collapsible>
-      )
-    }
-
-    return (
-      <SidebarMenuItem key={item.key}>
-        <SidebarMenuButton
-          tooltip={item.tooltip}
-          isActive={isActive}
-          onClick={() => item.path && handleNavigation(item.path)}
-        >
-          {item.icon && <item.icon />}
-          <span>{item.label}</span>
-        </SidebarMenuButton>
-        {item.badge && (
-          <SidebarMenuBadge>
-            {item.badge > 9 ? '9+' : item.badge}
-          </SidebarMenuBadge>
-        )}
-      </SidebarMenuItem>
-    )
-  }
-
-  const getRoleDisplayName = (role) => {
-    const roleNames = {
-      [USER_ROLES.ADMIN]: t('roles.admin'),
-      [USER_ROLES.TEACHER]: t('roles.teacher'),
-      [USER_ROLES.STUDENT]: t('roles.student'),
-      [USER_ROLES.PARENT]: t('roles.parent'),
-      [USER_ROLES.STAFF]: t('roles.staff'),
-      [USER_ROLES.DRIVER]: t('roles.driver'),
-    }
-    return roleNames[role] || role
+  const userData = {
+    name: user?.name || "User",
+    email: user?.email || "",
+    avatar: user?.avatar || ""
   }
 
   return (
     <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader className="border-b border-white/5 dark:border-white/10">
-        <div className="px-3 pt-5 pb-4">
-          <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-primary/20 via-primary/10 to-transparent text-sidebar-foreground shadow-sm">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.35),transparent_55%)] opacity-40" />
-            <div className="relative flex items-center gap-4 px-4 py-5">
-              <div className="relative">
-                <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-2 border-white/40 bg-primary/20 text-lg font-semibold text-white shadow-inner">
-                  {avatarUrl ? (
-                    <img src={avatarUrl} alt="profile" className="h-full w-full object-cover" />
-                  ) : (
-                    <span>{(user?.first_name?.[0] || user?.full_name?.[0] || '?').toUpperCase()}</span>
-                  )}
-                </div>
-              </div>
-              <div className="flex flex-1 flex-col text-left">
-                <span className="text-base font-semibold leading-tight">{getLocalizedFullName()}</span>
-                <span className="text-xs font-medium uppercase tracking-wide text-sidebar-foreground/70">
-                  {user?.role && getRoleDisplayName(user.role)}
-                </span>
-                {user?.role === USER_ROLES.STUDENT && (
-                  <span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-amber-300">
-                    <Sparkles className="h-3.5 w-3.5" />
-                    {t('rewards.points', 'Points')}: {studentWallet?.total_points ?? 0}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+      <SidebarHeader>
+        <TeamSwitcher teams={teamData} />
       </SidebarHeader>
-
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navigationItems.map(renderNavItem)}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        <NavMain items={navMainItems} label={t('sidebar.menu', 'Menu')} />
       </SidebarContent>
-
       <SidebarFooter>
-        <div className="px-3 py-2 space-y-3">
-          {/* Theme and Language Controls */}
-          <div className="flex items-center justify-between gap-2 pb-2 border-b border-white/5 dark:border-white/10">
-            <div className="flex items-center gap-2">
-              <ThemeToggle />
-              <LanguageSwitcher />
-            </div>
-          </div>
-
-          {/* Settings Link */}
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                onClick={() => handleNavigation('/profile')}
-                tooltip={t('common.settings')}
-              >
-                <Settings />
-                <span>{t('common.settings')}</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                onClick={handleLogout}
-                tooltip={t('common.logout', 'Logout')}
-              >
-                <LogOut />
-                <span>{t('common.logout', 'Logout')}</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-
-          {/* Version Info */}
-          <div className="text-center text-xs text-sidebar-foreground/70">
-            <p>Madrasti 2.0 v2.0.0</p>
-            <p>© 2025 OpiComTech</p>
-          </div>
-        </div>
+        <NavUser user={userData} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

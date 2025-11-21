@@ -33,7 +33,8 @@ import {
   Brain,
   PlayCircle,
   FileText,
-  Loader2
+  Loader2,
+  Image as ImageIcon
 } from 'lucide-react'
 import { cn } from '../../lib/utils'
 
@@ -48,6 +49,7 @@ const EditLessonExercisePage = () => {
   const [loading, setLoading] = useState(false)
   const [dataLoading, setDataLoading] = useState(true)
   const [questions, setQuestions] = useState([])
+  const [removedQuestionIds, setRemovedQuestionIds] = useState([])
 
   // Form state
   const [formData, setFormData] = useState({
@@ -153,7 +155,17 @@ const EditLessonExercisePage = () => {
         // Load exercise questions
         const questionsResult = await exerciseService.getExerciseQuestions(exerciseId)
         if (questionsResult.success) {
-          setQuestions(questionsResult.data || [])
+          const formattedQuestions = (questionsResult.data || []).map((q, index) => ({
+            ...q,
+            points: (q.points ?? '1.00').toString(),
+            choices: q.choices || [],
+            image_file: null,
+            image_preview: null,
+            existing_image_url: q.question_image || q.question_image_url || null,
+            remove_image: false
+          }))
+          setQuestions(formattedQuestions)
+          setRemovedQuestionIds([])
         }
       } else {
         console.error('Failed to load exercise:', exerciseResult)
@@ -184,11 +196,28 @@ const EditLessonExercisePage = () => {
       question_type: 'qcm_single',
       points: '1.00',
       order: prev.length,
-      choices: [{ choice_text: '', is_correct: true }, { choice_text: '', is_correct: false }]
+      choices: [{ choice_text: '', is_correct: true }, { choice_text: '', is_correct: false }],
+      image_file: null,
+      image_preview: null,
+      existing_image_url: null,
+      remove_image: false
     }])
   }
 
-  const removeQuestion = (index) => setQuestions(prev => prev.filter((_, i) => i !== index))
+  const removeQuestion = (index) => {
+    setQuestions(prev => {
+      const updated = [...prev]
+      const removed = updated[index]
+      if (removed?.image_preview) {
+        URL.revokeObjectURL(removed.image_preview)
+      }
+      updated.splice(index, 1)
+      if (removed?.id) {
+        setRemovedQuestionIds(prevIds => [...prevIds, removed.id])
+      }
+      return updated
+    })
+  }
 
   const handleQuestionChange = (index, field, value) => {
     const newQuestions = [...questions]
@@ -202,6 +231,38 @@ const EditLessonExercisePage = () => {
       }
     }
     setQuestions(newQuestions)
+  }
+
+  const handleQuestionImageChange = (index, file) => {
+    if (!file) return
+    setQuestions(prev => prev.map((question, idx) => {
+      if (idx !== index) return question
+      if (question.image_preview) {
+        URL.revokeObjectURL(question.image_preview)
+      }
+      return {
+        ...question,
+        image_file: file,
+        image_preview: URL.createObjectURL(file),
+        remove_image: false
+      }
+    }))
+  }
+
+  const handleRemoveQuestionImage = (index) => {
+    setQuestions(prev => prev.map((question, idx) => {
+      if (idx !== index) return question
+      if (question.image_preview) {
+        URL.revokeObjectURL(question.image_preview)
+      }
+      return {
+        ...question,
+        image_file: null,
+        image_preview: null,
+        existing_image_url: null,
+        remove_image: question.id ? true : false
+      }
+    }))
   }
 
   const addChoice = (qIndex) => {
@@ -261,10 +322,17 @@ const EditLessonExercisePage = () => {
 
     try {
       const exerciseData = {
+        lesson: lesson?.id
+          ? parseInt(lesson.id)
+          : exercise?.lesson
+            ? parseInt(exercise.lesson)
+            : formData.lesson
+              ? parseInt(formData.lesson)
+              : undefined,
         title: formData.title.trim(),
         title_arabic: formData.title_arabic.trim() || null,
         description: formData.description.trim(),
-        instructions: formData.instructions.trim() || null,
+        instructions: formData.instructions.trim() || '',
         exercise_format: formData.exercise_format,
         difficulty_level: formData.difficulty_level,
         estimated_duration: formData.estimated_duration ? parseInt(formData.estimated_duration) : null,
@@ -297,9 +365,47 @@ const EditLessonExercisePage = () => {
       const exerciseResult = await exerciseService.updateExercise(exerciseId, exerciseData)
 
       if (exerciseResult.success) {
-        // Update questions - this is simplified, ideally you'd do proper CRUD operations
-        await exerciseService.updateExerciseQuestions(exerciseId, questions)
+        const createPromises = []
+        const updatePromises = []
+        const exerciseIdentifier = exercise?.id ?? parseInt(exerciseId, 10)
 
+        questions.forEach((q, index) => {
+          const basePayload = {
+            question_text: q.question_text,
+            question_type: q.question_type,
+            points: parseFloat(q.points || 0),
+            order: index,
+            choices: Array.isArray(q.choices)
+              ? q.choices.map(choice => ({
+                  choice_text: choice.choice_text,
+                  is_correct: choice.is_correct
+                }))
+              : []
+          }
+
+          if (q.image_file) {
+            basePayload.question_image = q.image_file
+          }
+
+          if (q.remove_image) {
+            basePayload.remove_image = true
+          }
+
+          if (q.id) {
+            // Include exercise field for validation (backend will ignore it during update)
+            basePayload.exercise = exerciseIdentifier
+            updatePromises.push(exerciseService.updateQuestion(q.id, basePayload))
+          } else {
+            basePayload.exercise = exerciseIdentifier
+            createPromises.push(exerciseService.createQuestion(basePayload))
+          }
+        })
+
+        const deletePromises = removedQuestionIds.map((questionId) =>
+          exerciseService.deleteQuestion(questionId)
+        )
+
+        await Promise.all([...createPromises, ...updatePromises, ...deletePromises])
         toast.success('Exercise updated successfully!')
 
         // Navigate back to lesson exercises or exercise list
@@ -539,6 +645,50 @@ const EditLessonExercisePage = () => {
                           onChange={(e) => handleQuestionChange(qIndex, 'points', e.target.value)}
                           min="0"
                         />
+                      </div>
+                    </div>
+                    <div className="space-y-2 pt-2">
+                      {(q.image_preview || q.existing_image_url) && (
+                        <div className="max-w-xs rounded-md border overflow-hidden">
+                          <img
+                            src={q.image_preview || q.existing_image_url}
+                            alt={t('lessons.imagePreviewAlt', 'Question image preview')}
+                            className="w-full h-32 object-cover"
+                          />
+                        </div>
+                      )}
+                      <input
+                        id={`question-image-${q.id ?? qIndex}`}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(event) => handleQuestionImageChange(qIndex, event.target.files?.[0] || null)}
+                      />
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => document.getElementById(`question-image-${q.id ?? qIndex}`)?.click()}
+                          className="flex items-center gap-2"
+                        >
+                          <ImageIcon className="h-4 w-4" />
+                          {q.image_preview || q.existing_image_url
+                            ? (t('lessons.changeImage', 'Change image'))
+                            : (t('lessons.addImage', 'Add image'))}
+                        </Button>
+                        {(q.image_preview || q.existing_image_url) && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveQuestionImage(qIndex)}
+                            className="flex items-center gap-2 text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            {t('lessons.removeImage', 'Remove image')}
+                          </Button>
+                        )}
                       </div>
                     </div>
                     {['qcm_single', 'qcm_multiple', 'true_false'].includes(q.question_type) && (

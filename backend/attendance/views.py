@@ -223,7 +223,7 @@ class TimetableSessionViewSet(viewsets.ModelViewSet):
             timetables__is_active=True
         ).distinct().select_related(
             'grade__educational_level',
-            'room'
+            'track'
         ).prefetch_related(
             'student_enrollments__student',
             'timetables__sessions__subject'
@@ -244,7 +244,7 @@ class TimetableSessionViewSet(viewsets.ModelViewSet):
                 teacher=request.user,
                 timetable__school_class=school_class,
                 is_active=True
-            ).select_related('subject').values(
+            ).values(
                 'subject__id', 'subject__name', 'subject__name_arabic', 'subject__code'
             ).distinct()
             
@@ -269,11 +269,11 @@ class TimetableSessionViewSet(viewsets.ModelViewSet):
                         'level': school_class.grade.educational_level.level
                     }
                 },
-                'room': {
-                    'id': school_class.room.id,
-                    'name': school_class.room.name,
-                    'type': school_class.room.room_type
-                } if school_class.room else None,
+                'track': {
+                    'id': school_class.track.id,
+                    'name': school_class.track.name,
+                    'code': school_class.track.code
+                } if school_class.track else None,
                 'student_count': active_students.count(),
                 'students': [
                     {

@@ -67,8 +67,8 @@ const GlowingCard = ({ children, className = "", glowColor = "blue" }) => (
     whileHover={{ y: -5, transition: { duration: 0.2 } }}
     className={`relative group ${className}`}
   >
-    <div className={`absolute -inset-0.5 bg-gradient-to-r ${gradientMap[glowColor] || gradientMap.blue} rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200`}></div>
-    <div className="relative bg-background border rounded-lg backdrop-blur-sm">
+    <div className={`absolute -inset-0.5 bg-gradient-to-r ${gradientMap[glowColor] || gradientMap.blue} rounded-xl blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200`}></div>
+    <div className="relative bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl shadow-soft h-full">
       {children}
     </div>
   </motion.div>
@@ -90,14 +90,14 @@ const SchoolDetailsPage = () => {
     try {
       setLoading(true)
       setError(null)
-      
+
       // Try different endpoints to get school configuration
       let configResponse;
       try {
         // First try: list endpoint (should return array with single school)
         configResponse = await api.get('/schools/config/')
         const data = configResponse.data
-        
+
         // Handle different possible response structures
         let schoolData;
         if (data.results && Array.isArray(data.results)) {
@@ -110,7 +110,7 @@ const SchoolDetailsPage = () => {
           // Direct object response
           schoolData = data
         }
-        
+
         console.log('✅ School config processed:', schoolData)
         setSchoolConfig(schoolData)
       } catch (listError) {
@@ -123,9 +123,9 @@ const SchoolDetailsPage = () => {
           throw new Error('Unable to fetch school configuration')
         }
       }
-      
+
       // KPIs/statistics are shown on the dashboard, not here
-      
+
     } catch (err) {
       console.error('Error fetching school config:', err)
       setError(err.response?.data?.error || err.message || 'Failed to load school details')
@@ -214,9 +214,9 @@ const SchoolDetailsPage = () => {
       )
       const capacityDisplay = schoolConfig.student_capacity
         ? `${Number(schoolConfig.student_capacity).toLocaleString()} ${t(
-            'school.details.students',
-            'Students'
-          )}`
+          'school.details.students',
+          'Students'
+        )}`
         : t('misc.notSet', 'Not Set')
       const capacityValue = escapeHtml(capacityDisplay)
 
@@ -551,11 +551,10 @@ const SchoolDetailsPage = () => {
           <div class="page">
             <div class="header">
               <div class="logo">
-                ${
-                  schoolConfig.logo_url
-                    ? `<img src="${escapeHtml(schoolConfig.logo_url)}" alt="${safeSchoolName}" crossorigin="anonymous" />`
-                    : '<span class="placeholder-logo">🏫</span>'
-                }
+                ${schoolConfig.logo_url
+          ? `<img src="${escapeHtml(schoolConfig.logo_url)}" alt="${safeSchoolName}" crossorigin="anonymous" />`
+          : '<span class="placeholder-logo">🏫</span>'
+        }
               </div>
               <div class="title-block">
                 <h1>${safeSchoolName}</h1>
@@ -580,9 +579,9 @@ const SchoolDetailsPage = () => {
               <div class="detail-list">
                 ${renderDetailRow({ label: t('school.details.address', 'Address'), value: schoolConfig.address })}
                 ${renderDetailRow({
-                  label: t('school.details.cityRegion', 'City & Region'),
-                  htmlContent: locationHtml
-                })}
+          label: t('school.details.cityRegion', 'City & Region'),
+          htmlContent: locationHtml
+        })}
               </div>
             </section>
             <section class="section">
@@ -750,7 +749,7 @@ const SchoolDetailsPage = () => {
       error={error}
     >
       {schoolConfig && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6 }}
@@ -761,7 +760,7 @@ const SchoolDetailsPage = () => {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 via-purple-600 to-indigo-700 p-6 md:p-8 text-white shadow-2xl"
+            className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-indigo-600 to-purple-700 p-6 md:p-8 text-white shadow-2xl"
           >
             <div className="absolute inset-0 bg-black/20"></div>
             <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -806,8 +805,8 @@ const SchoolDetailsPage = () => {
                   className="relative flex-shrink-0"
                 >
                   <div className="absolute inset-0 rounded-full bg-white/20 blur-xl"></div>
-                  <img 
-                    src={schoolConfig.logo_url} 
+                  <img
+                    src={schoolConfig.logo_url}
                     alt={schoolConfig.name}
                     className="relative h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 rounded-full border-2 md:border-4 border-white/50 object-cover shadow-lg"
                   />
@@ -839,7 +838,7 @@ const SchoolDetailsPage = () => {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <motion.div 
+                    <motion.div
                       className="space-y-4"
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -850,7 +849,7 @@ const SchoolDetailsPage = () => {
                           <Phone className="h-4 w-4 group-hover:text-blue-500 transition-colors" />
                           {t('school.details.phone', 'Phone Number')}
                         </label>
-                        <motion.p 
+                        <motion.p
                           className="font-semibold text-lg group-hover:text-blue-600 transition-colors cursor-pointer"
                           whileHover={{ scale: 1.05 }}
                         >
@@ -887,13 +886,13 @@ const SchoolDetailsPage = () => {
                           </motion.p>
                         </div>
                       )}
-                      
+
                       <div className="group">
                         <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                           <Mail className="h-4 w-4 group-hover:text-green-500 transition-colors" />
                           {t('school.details.email', 'Email Address')}
                         </label>
-                        <motion.p 
+                        <motion.p
                           className="font-semibold text-lg group-hover:text-green-600 transition-colors cursor-pointer"
                           whileHover={{ scale: 1.05 }}
                         >
@@ -907,9 +906,9 @@ const SchoolDetailsPage = () => {
                             <Globe className="h-4 w-4 group-hover:text-purple-500 transition-colors" />
                             {t('school.details.website', 'Website')}
                           </label>
-                          <motion.a 
-                            href={schoolConfig.website} 
-                            target="_blank" 
+                          <motion.a
+                            href={schoolConfig.website}
+                            target="_blank"
                             rel="noopener noreferrer"
                             className="font-semibold text-lg text-purple-600 hover:text-purple-700 hover:underline transition-all cursor-pointer block"
                             whileHover={{ scale: 1.05 }}
@@ -923,7 +922,7 @@ const SchoolDetailsPage = () => {
                       <div className="space-y-3">
                         <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                           <Share2 className="h-4 w-4 text-indigo-500" />
-                        {t('school.details.social.label', 'Social Media')}
+                          {t('school.details.social.label', 'Social Media')}
                         </label>
                         {socialLinks.length > 0 ? (
                           <div className="flex flex-wrap gap-3">
@@ -950,7 +949,7 @@ const SchoolDetailsPage = () => {
                       </div>
                     </motion.div>
 
-                    <motion.div 
+                    <motion.div
                       className="space-y-4"
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -961,32 +960,32 @@ const SchoolDetailsPage = () => {
                           <MapPin className="h-4 w-4 group-hover:text-red-500 transition-colors" />
                           {t('school.details.address', 'Address')}
                         </label>
-                        <motion.p 
+                        <motion.p
                           className="font-semibold text-lg group-hover:text-red-600 transition-colors"
                           whileHover={{ scale: 1.02 }}
                         >
                           {schoolConfig.address}
                         </motion.p>
-                        <motion.div 
+                        <motion.div
                           className="flex flex-wrap gap-2 mt-2"
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           transition={{ delay: 1.2 }}
                         >
-                          <Badge 
-                            variant="secondary" 
+                          <Badge
+                            variant="secondary"
                             className="bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors"
                           >
                             {schoolConfig.city}
                           </Badge>
-                          <Badge 
+                          <Badge
                             variant="secondary"
                             className="bg-green-100 text-green-800 hover:bg-green-200 transition-colors"
                           >
                             {schoolConfig.region}
                           </Badge>
                           {schoolConfig.postal_code && (
-                            <Badge 
+                            <Badge
                               variant="outline"
                               className="border-purple-300 text-purple-700 hover:bg-purple-50 transition-colors"
                             >
@@ -1001,7 +1000,7 @@ const SchoolDetailsPage = () => {
                           <label className="text-sm font-medium text-muted-foreground">
                             {t('school.details.capacity', 'Student Capacity')}
                           </label>
-                          <motion.p 
+                          <motion.p
                             className="font-semibold text-lg group-hover:text-indigo-600 transition-colors"
                             whileHover={{ scale: 1.05 }}
                           >
@@ -1084,22 +1083,22 @@ const SchoolDetailsPage = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <motion.div 
+                  <motion.div
                     className="text-center p-6 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg border border-indigo-200"
                     whileHover={{ scale: 1.05 }}
                     transition={{ type: "spring", stiffness: 300 }}
                   >
-                    <motion.div 
+                    <motion.div
                       className="text-3xl font-bold text-indigo-600 mb-2"
-                      animate={{ 
+                      animate={{
                         textShadow: [
-                          "0 0 0px #6366f1", 
-                          "0 0 20px #6366f1", 
+                          "0 0 0px #6366f1",
+                          "0 0 20px #6366f1",
                           "0 0 0px #6366f1"
                         ]
                       }}
-                      transition={{ 
-                        repeat: Infinity, 
+                      transition={{
+                        repeat: Infinity,
                         duration: 3,
                         ease: "easeInOut"
                       }}

@@ -273,7 +273,7 @@ class UserViewSet(viewsets.ModelViewSet):
     """ViewSet for listing, retrieving, and updating users"""
     permission_classes = [IsAdminOrReadOnly]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['role', 'is_active', 'parent', 'profile__school_subject', 'profile__teachable_grades']
+    filterset_fields = ['is_active', 'parent', 'profile__school_subject', 'profile__teachable_grades']
     search_fields = [
         'first_name',
         'last_name',

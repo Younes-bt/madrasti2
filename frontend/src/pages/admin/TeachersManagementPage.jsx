@@ -18,7 +18,10 @@ import {
   UserPlus,
   BookOpen,
   GraduationCap,
-  X
+  X,
+  MessageSquare,
+  Send,
+  Loader2
 } from 'lucide-react';
 import AdminPageLayout from '../../components/admin/layout/AdminPageLayout';
 import { Button } from '../../components/ui/button';
@@ -27,7 +30,10 @@ import { Card, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '../../components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
 import { apiMethods } from '../../services/api';
+import communicationService from '../../services/communication';
 import { toast } from 'sonner';
 
 const AnimatedCounter = ({ from = 0, to, duration = 2, className = "" }) => {
@@ -98,6 +104,12 @@ const TeachersManagementPage = () => {
     inactive: 0,
     bySubject: {}
   });
+
+  // Message Modal State
+  const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
+  const [selectedTeacherForMessage, setSelectedTeacherForMessage] = useState(null);
+  const [messageContent, setMessageContent] = useState('');
+  const [sendingMessage, setSendingMessage] = useState(false);
 
   const fetchTeachers = async () => {
     setLoading(true);
@@ -243,6 +255,38 @@ const TeachersManagementPage = () => {
 
   const handleAddTeacher = () => {
     navigate('/admin/school-management/teachers/add');
+  };
+
+  const handleSendMessage = (teacher) => {
+    setSelectedTeacherForMessage(teacher);
+    setIsMessageModalOpen(true);
+    setMessageContent('');
+  };
+
+  const handleSendMessageSubmit = async () => {
+    if (!messageContent.trim() || !selectedTeacherForMessage) return;
+
+    setSendingMessage(true);
+    try {
+      // Start or get existing conversation
+      const conversation = await communicationService.startDirectConversation(selectedTeacherForMessage.id);
+
+      // Send the message
+      await communicationService.sendMessage({
+        conversation: conversation.id,
+        content: messageContent.trim()
+      });
+
+      toast.success(t('Message sent successfully'));
+      setIsMessageModalOpen(false);
+      setMessageContent('');
+      setSelectedTeacherForMessage(null);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast.error(t('Failed to send message'));
+    } finally {
+      setSendingMessage(false);
+    }
   };
 
   const formatDate = (dateString) => {
@@ -530,17 +574,127 @@ const TeachersManagementPage = () => {
             </CardContent>
           </Card>
 
-          {/* Teachers Grid */}
-          <div>
-            {filteredTeachers.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-                {filteredTeachers.map((teacher, index) =>
-                  <TeacherCard key={teacher.id} teacher={teacher} index={index} />
-                )}
-              </div>
-            ) : (
-              <Card className="border-dashed border-2">
-                <CardContent className="flex flex-col items-center justify-center py-16">
+          {/* Teachers Table */}
+          <Card>
+            <CardContent className="p-0">
+              {filteredTeachers.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[80px]">Avatar</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Phone</TableHead>
+                      <TableHead>Subject</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredTeachers.map((teacher) => (
+                      <TableRow key={teacher.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleViewTeacher(teacher.id)}>
+                        <TableCell>
+                          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden ring-2 ring-primary/20">
+                            {teacher.profile_picture_url ? (
+                              <img src={teacher.profile_picture_url} alt={teacher.full_name} className="h-full w-full object-cover" />
+                            ) : (
+                              <span className="text-sm font-semibold text-primary">
+                                {(teacher.first_name?.[0] || '') + (teacher.last_name?.[0] || '')}
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{getDisplayName(teacher)}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Mail className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">{teacher.email}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Phone className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">{teacher.phone || '—'}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <BookOpen className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">{getDisplaySubject(teacher.school_subject) || '—'}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={teacher.is_active ? "default" : "secondary"}>
+                            {teacher.is_active ? t('status.active') : t('status.inactive')}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleViewTeacher(teacher.id);
+                                }}
+                                className="cursor-pointer"
+                              >
+                                <Eye className="mr-2 h-4 w-4" />
+                                <span>{t('action.view')}</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSendMessage(teacher);
+                                }}
+                                className="cursor-pointer"
+                              >
+                                <MessageSquare className="mr-2 h-4 w-4" />
+                                <span>{t('action.sendMessage') || 'Send Message'}</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditTeacher(teacher.id);
+                                }}
+                                className="cursor-pointer"
+                              >
+                                <Edit className="mr-2 h-4 w-4" />
+                                <span>{t('action.edit')}</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteTeacher(teacher.id);
+                                }}
+                                className="text-destructive focus:text-destructive cursor-pointer"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                <span>{t('action.delete')}</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16">
                   <div className="rounded-full bg-muted p-6 mb-4">
                     <GraduationCap className="h-12 w-12 text-muted-foreground" />
                   </div>
@@ -559,11 +713,59 @@ const TeachersManagementPage = () => {
                       {t('action.addFirstTeacher')}
                     </Button>
                   )}
-                </CardContent>
-              </Card>
-            )}
-          </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Send Message Modal */}
+        <Dialog open={isMessageModalOpen} onOpenChange={setIsMessageModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {t('Send Message to')} {selectedTeacherForMessage?.full_name}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">{t('Message')}</label>
+                <textarea
+                  value={messageContent}
+                  onChange={(e) => setMessageContent(e.target.value)}
+                  placeholder={t('Type your message...')}
+                  className="w-full min-h-[120px] p-3 border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+                  disabled={sendingMessage}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsMessageModalOpen(false)}
+                disabled={sendingMessage}
+              >
+                {t('Cancel')}
+              </Button>
+              <Button
+                onClick={handleSendMessageSubmit}
+                disabled={!messageContent.trim() || sendingMessage}
+              >
+                {sendingMessage ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {t('Sending...')}
+                  </>
+                ) : (
+                  <>
+                    <Send className="mr-2 h-4 w-4" />
+                    {t('Send Message')}
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </AdminPageLayout>
     </div>
   );

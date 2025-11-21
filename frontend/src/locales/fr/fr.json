@@ -73,7 +73,8 @@
     "results": "résultats",
     "filters": "Filtres",
     "popupBlocked": "Veuillez autoriser les fenêtres contextuelles pour exporter ce rapport.",
-    "downloading": "Téléchargement..."
+    "downloading": "Téléchargement...",
+    "viewDetails": "Voir les Détails"
   },
   "error": {
     "failedToLoadData": "Échec du chargement des données. Veuillez réessayer.",
@@ -108,7 +109,9 @@
     "failedToLoadGrades": "Échec du chargement des niveaux",
     "dataNotFound": "Données non trouvées",
     "couldNotFindStaff": "Impossible de trouver le membre du personnel demandé.",
-    "unexpected": "Une erreur inattendue s'est produite. Veuillez réessayer plus tard."
+    "unexpected": "Une erreur inattendue s'est produite. Veuillez réessayer plus tard.",
+    "failedToLoadProgressData": "Échec du chargement des données de progression",
+    "noProgressData": "Aucune donnée de progression disponible"
   },
   "action": {
     "view": "Voir",
@@ -225,6 +228,10 @@
     "requiredFields": "Veuillez remplir tous les champs requis",
     "loadError": "Échec du chargement des données du cours",
     "viewLesson": "Voir le Cours",
+    "startExercise": "Commencer l'exercice",
+    "continueExercise": "Continuer",
+    "exerciseCompleted": "Terminé",
+    "comingSoon": "Bientôt disponible",
     "loading": "Chargement du cours...",
     "notFound": "Cours Introuvable",
     "notFoundDescription": "Le cours que vous recherchez est introuvable ou a peut-être été supprimé.",
@@ -244,7 +251,30 @@
     "academicInfo": "Informations Académiques",
     "personalInfo": "Informations Personnelles",
     "parentInfo": "Informations du Parent",
-    "years": "ans"
+    "years": "ans",
+    "availability": {
+      "title": "Disponibilité par Classe",
+      "description": "Contrôlez quelles classes peuvent accéder à cette leçon",
+      "cardDescription": "Contrôlez quelles classes peuvent accéder à cette leçon",
+      "manage": "Gérer la Disponibilité",
+      "published": "Publié",
+      "unpublished": "Non publié",
+      "total": "Total des Classes",
+      "publishAll": "Publier Tout",
+      "unpublishAll": "Dépublier Tout",
+      "unsavedChanges": "Modifications Non Enregistrées",
+      "toPublish": "à publier",
+      "toUnpublish": "à dépublier",
+      "saveSuccess": "Mis à jour avec succès : {{published}} publié(s), {{unpublished}} dépublié(s)",
+      "saveError": "Échec de l'enregistrement des modifications",
+      "loadError": "Échec du chargement des données de disponibilité",
+      "noClasses": "Aucune classe trouvée"
+    },
+    "questionImage": "Image de la question",
+    "addImage": "Ajouter une image",
+    "changeImage": "Modifier l'image",
+    "removeImage": "Supprimer l'image",
+    "imagePreviewAlt": "Aperçu de l'image de la question"
   },
   "calendar": {
     "monday": "Lundi",
@@ -731,6 +761,47 @@
       "cancelled": "Annulé"
     },
     "showingStudents": "Affichage de {{start}} à {{end}} sur {{total}} élèves"
+  },
+  "progress": {
+    "learningProgress": "Progression d'Apprentissage",
+    "studentProgress": "Progression de l'Élève",
+    "viewDetailedProgress": "Voir le rapport de progression détaillé",
+    "comprehensiveProgressReport": "Rapport de Progression Complet",
+    "completion": "Achèvement",
+    "avgScore": "Score Moyen",
+    "averageScore": "Score Moyen",
+    "overallCompletion": "Achèvement Global",
+    "accuracy": "Précision",
+    "totalExercises": "Total des Exercices",
+    "lessons": "leçons",
+    "lessonsCompleted": "leçons terminées",
+    "acrossAllLessons": "Dans toutes les leçons",
+    "correctAnswers": "Réponses correctes",
+    "subjects": "matières",
+    "completed": "Terminé",
+    "inProgress": "En Cours",
+    "notStarted": "Non Commencé",
+    "noProgressYet": "Aucune Donnée de Progression",
+    "studentHasntStarted": "Cet élève n'a commencé aucune leçon pour le moment.",
+    "clickToViewEmpty": "Cliquez sur \"Voir les Détails\" pour accéder au tableau de bord complet",
+    "timeSpent": "Temps Passé",
+    "minutes": "minutes",
+    "breakdownByStatus": "Répartition par statut de leçon",
+    "rewardsAchievements": "Récompenses et Réalisations",
+    "earnedRewards": "Points, pièces et badges gagnés",
+    "totalPoints": "Total des Points",
+    "totalCoins": "Total des Pièces",
+    "badgesEarned": "Badges Gagnés",
+    "lessonByLessonProgress": "Progression Leçon par Leçon",
+    "detailedBreakdown": "Détails de chaque leçon",
+    "noLessonsYet": "Aucune leçon suivie pour le moment",
+    "score": "Score",
+    "exercises": "Exercices",
+    "status": {
+      "completed": "Terminé",
+      "in_progress": "En Cours",
+      "not_started": "Non Commencé"
+    }
   },
   "timetables": {
     "timetables": "Emplois du Temps",
@@ -2328,7 +2399,11 @@
         "minutes": "minutes",
         "notRecorded": "Non enregistré",
         "points": "points",
-        "coins": "pièces"
+        "coins": "pièces",
+        "notAnswered": "Non répondu",
+        "notProvided": "Non fourni",
+        "correctPosition": "Position correcte",
+        "position": "Position"
       },
       "completedPage": {
         "title": "Devoirs Terminés",

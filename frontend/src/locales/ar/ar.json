@@ -88,7 +88,8 @@
     "allSubjects": "كل المواد",
     "results": "نتائج",
     "filters": "التصفية",
-    "popupBlocked": "يرجى السماح بالنوافذ المنبثقة لتصدير هذا التقرير."
+    "popupBlocked": "يرجى السماح بالنوافذ المنبثقة لتصدير هذا التقرير.",
+    "viewDetails": "عرض التفاصيل"
   },
   "profile": {
     "completeProfile": "أكمل ملفك الشخصي",
@@ -148,7 +149,9 @@
     "failedToLoadGrades": "فشل تحميل الصفوف",
     "dataNotFound": "لم يتم العثور على البيانات",
     "couldNotFindStaff": "تعذر العثور على الموظف المطلوب.",
-    "unexpected": "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى في وقت لاحق."
+    "unexpected": "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى في وقت لاحق.",
+    "failedToLoadProgressData": "فشل تحميل بيانات التقدم",
+    "noProgressData": "لا توجد بيانات تقدم متاحة"
   },
   "action": {
     "view": "عرض",
@@ -248,6 +251,10 @@
     "requiredFields": "يرجى ملء جميع الحقول المطلوبة",
     "loadError": "فشل في تحميل بيانات الدرس",
     "viewLesson": "عرض الدرس",
+    "startExercise": "ابدأ التمرين",
+    "continueExercise": "متابعة التمرين",
+    "exerciseCompleted": "مكتمل",
+    "comingSoon": "قريبًا",
     "loading": "جاري تحميل الدرس...",
     "notFound": "الدرس غير موجود",
     "notFoundDescription": "الدرس الذي تبحث عنه غير موجود أو ربما تم حذفه.",
@@ -267,7 +274,30 @@
     "academicInfo": "المعلومات الأكاديمية",
     "personalInfo": "المعلومات الشخصية",
     "parentInfo": "معلومات ولي الأمر",
-    "years": "سنوات"
+    "years": "سنوات",
+    "availability": {
+      "title": "توفر الدرس للفصول",
+      "description": "تحكم في الفصول التي يمكنها الوصول إلى هذا الدرس",
+      "cardDescription": "تحكم في الفصول التي يمكنها الوصول إلى هذا الدرس",
+      "manage": "إدارة التوفر",
+      "published": "منشور",
+      "unpublished": "غير منشور",
+      "total": "إجمالي الفصول",
+      "publishAll": "نشر للجميع",
+      "unpublishAll": "إلغاء النشر للجميع",
+      "unsavedChanges": "تغييرات غير محفوظة",
+      "toPublish": "للنشر",
+      "toUnpublish": "لإلغاء النشر",
+      "saveSuccess": "تم التحديث بنجاح: {{published}} منشور، {{unpublished}} غير منشور",
+      "saveError": "فشل حفظ التغييرات",
+      "loadError": "فشل تحميل بيانات التوفر",
+      "noClasses": "لا توجد فصول"
+    },
+    "questionImage": "صورة السؤال",
+    "addImage": "إضافة صورة",
+    "changeImage": "تغيير الصورة",
+    "removeImage": "إزالة الصورة",
+    "imagePreviewAlt": "معاينة صورة السؤال"
   },
   "calendar": {
     "monday": "الاثنين",
@@ -912,6 +942,47 @@
       "in_progress": "قيد التنفيذ",
       "completed": "مكتمل",
       "cancelled": "ملغى"
+    }
+  },
+  "progress": {
+    "learningProgress": "التقدم التعليمي",
+    "studentProgress": "تقدم الطالب",
+    "viewDetailedProgress": "عرض تقرير التقدم التفصيلي",
+    "comprehensiveProgressReport": "تقرير التقدم الشامل",
+    "completion": "الإنجاز",
+    "avgScore": "المعدل",
+    "averageScore": "المعدل",
+    "overallCompletion": "الإنجاز الإجمالي",
+    "accuracy": "الدقة",
+    "totalExercises": "إجمالي التمارين",
+    "lessons": "دروس",
+    "lessonsCompleted": "دروس مكتملة",
+    "acrossAllLessons": "عبر جميع الدروس",
+    "correctAnswers": "الإجابات الصحيحة",
+    "subjects": "مواد",
+    "completed": "مكتمل",
+    "inProgress": "قيد التقدم",
+    "notStarted": "لم يبدأ",
+    "noProgressYet": "لا توجد بيانات تقدم بعد",
+    "studentHasntStarted": "لم يبدأ هذا الطالب أي دروس بعد.",
+    "clickToViewEmpty": "انقر على \"عرض التفاصيل\" لرؤية لوحة التقدم الكاملة",
+    "timeSpent": "الوقت المستغرق",
+    "minutes": "دقائق",
+    "breakdownByStatus": "التفصيل حسب حالة الدرس",
+    "rewardsAchievements": "المكافآت والإنجازات",
+    "earnedRewards": "النقاط والعملات والشارات المكتسبة",
+    "totalPoints": "إجمالي النقاط",
+    "totalCoins": "إجمالي العملات",
+    "badgesEarned": "الشارات المكتسبة",
+    "lessonByLessonProgress": "التقدم درسًا بدرس",
+    "detailedBreakdown": "التفصيل الدقيق لكل درس",
+    "noLessonsYet": "لم يتم تتبع أي دروس بعد",
+    "score": "النتيجة",
+    "exercises": "التمارين",
+    "status": {
+      "completed": "مكتمل",
+      "in_progress": "قيد التقدم",
+      "not_started": "لم يبدأ"
     }
   },
   "timetables": {
@@ -2474,7 +2545,11 @@
         "minutes": "دقائق",
         "notRecorded": "غير مسجل",
         "points": "نقاط",
-        "coins": "عملات"
+        "coins": "عملات",
+        "notAnswered": "لم يتم الإجابة",
+        "notProvided": "غير متوفر",
+        "correctPosition": "الموضع الصحيح",
+        "position": "الموضع"
       }
     },
     "achievements": {

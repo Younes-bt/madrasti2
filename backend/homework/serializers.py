@@ -1,4 +1,5 @@
 # homework/serializers.py
+import json
 from datetime import time, datetime, date
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
@@ -7,25 +8,28 @@ from django.utils import timezone
 from .models import (
     # Reward Models
     RewardSettings, RewardType, StudentWallet, RewardTransaction,
-    # Badge Models  
+    # Badge Models
     Badge, StudentBadge,
-    
+
     # Leaderboard Models
     Leaderboard, LeaderboardEntry, WeeklyLeaderboardSnapshot,
-    
+
     # Textbook Models
     TextbookLibrary,
-    
+
     # Exercise Models
     Exercise, ExerciseReward, ExerciseSubmission, ExerciseAnswer,
 
     # Homework Models (renamed from Assignment)
     Homework, HomeworkReward, Question, QuestionChoice, BookExercise,
     FillBlank, FillBlankOption, OrderingItem, MatchingPair,
-    
+
     # Submission Models
     Submission, QuestionAnswer, AnswerFile, BookExerciseAnswer, BookExerciseFile,
-    AnswerFillBlankSelection, AnswerOrderingSelection, AnswerMatchingSelection
+    AnswerFillBlankSelection, AnswerOrderingSelection, AnswerMatchingSelection,
+
+    # Progress Tracking Models
+    LessonProgress
 )
 
 User = get_user_model()
@@ -183,6 +187,14 @@ class QuestionSerializer(serializers.ModelSerializer):
             representation['matching_pairs'] = MatchingPairSerializer(instance.matching_pairs.all(), many=True).data
         else:
             representation['matching_pairs'] = []
+
+        if instance.question_image:
+            try:
+                representation['question_image_url'] = instance.question_image.url
+            except Exception:
+                representation['question_image_url'] = None
+        else:
+            representation['question_image_url'] = None
         return representation
 
 class QuestionCreateSerializer(serializers.ModelSerializer):
@@ -195,10 +207,70 @@ class QuestionCreateSerializer(serializers.ModelSerializer):
     blanks = serializers.ListField(child=serializers.DictField(), required=False, write_only=True)
     ordering_items = serializers.ListField(child=serializers.DictField(), required=False, write_only=True)
     matching_pairs = serializers.ListField(child=serializers.DictField(), required=False, write_only=True)
+    question_image = serializers.ImageField(required=False, allow_null=True, allow_empty_file=False, use_url=True)
+    remove_image = serializers.BooleanField(required=False, default=False, write_only=True)
 
     class Meta:
         model = Question
         fields = '__all__'
+        read_only_fields = ['created_at', 'updated_at']
+
+    def to_internal_value(self, data):
+        mutable_data = data.copy() if hasattr(data, 'copy') else data
+        parsed_json_fields = {}
+
+        # Normalize JSON-like fields that might arrive as strings via multipart form data
+        json_fields = ['choices', 'blanks', 'ordering_items', 'matching_pairs']
+        for field in json_fields:
+            raw_value = None
+            if hasattr(mutable_data, 'get'):
+                raw_value = mutable_data.get(field)
+            elif isinstance(mutable_data, dict):
+                raw_value = mutable_data.get(field)
+
+            if hasattr(mutable_data, 'getlist'):
+                raw_list = mutable_data.getlist(field)
+                if raw_list and len(raw_list) == 1:
+                    raw_value = raw_list[0]
+
+            if isinstance(raw_value, str):
+                try:
+                    parsed_json_fields[field] = json.loads(raw_value)
+                except (ValueError, TypeError):
+                    continue
+
+        # Handle empty string for question_image (when updating without changing image)
+        if hasattr(mutable_data, '__contains__') and 'question_image' in mutable_data:
+            image_value = mutable_data['question_image']
+            if image_value in ['', 'null', None]:
+                if hasattr(mutable_data, 'pop'):
+                    mutable_data.pop('question_image')
+
+        # Build a plain dictionary so complex objects (lists/dicts/files) survive validation
+        if hasattr(mutable_data, 'getlist'):
+            normalized_data = {}
+            for key in mutable_data.keys():
+                if key in parsed_json_fields:
+                    normalized_data[key] = parsed_json_fields[key]
+                    continue
+
+                values = mutable_data.getlist(key)
+                if len(values) == 0:
+                    normalized_data[key] = None
+                elif len(values) == 1:
+                    normalized_data[key] = values[0]
+                else:
+                    normalized_data[key] = values
+        elif isinstance(mutable_data, dict):
+            normalized_data = {**mutable_data}
+        else:
+            normalized_data = mutable_data
+
+        if isinstance(normalized_data, dict):
+            for key, value in parsed_json_fields.items():
+                normalized_data[key] = value
+
+        return super().to_internal_value(normalized_data)
 
     def create(self, validated_data):
         choices_data = validated_data.pop('choices', [])
@@ -210,7 +282,12 @@ class QuestionCreateSerializer(serializers.ModelSerializer):
         if not validated_data.get('homework') and not validated_data.get('exercise'):
             validated_data['author'] = self.context['request'].user
 
+        remove_image = validated_data.pop('remove_image', False)
+
         question = Question.objects.create(**validated_data)
+
+        if remove_image and question.question_image:
+            question.question_image.delete(save=True)
 
         for choice_data in choices_data:
             choice_data.pop('question', None)
@@ -232,6 +309,72 @@ class QuestionCreateSerializer(serializers.ModelSerializer):
             MatchingPair.objects.create(question=question, **pair)
 
         return question
+
+    def update(self, instance, validated_data):
+        choices_data = validated_data.pop('choices', None)
+        blanks_data = validated_data.pop('blanks', None)
+        ordering_items_data = validated_data.pop('ordering_items', None)
+        matching_pairs_data = validated_data.pop('matching_pairs', None)
+        remove_image_flag = validated_data.pop('remove_image', False)
+        new_question_image = validated_data.pop('question_image', serializers.empty)
+
+        # Remove homework and exercise from validated_data during update
+        # These fields should not be changed after creation
+        validated_data.pop('homework', None)
+        validated_data.pop('exercise', None)
+        validated_data.pop('author', None)
+
+        request = self.context.get('request')
+        if request:
+            if not remove_image_flag:
+                incoming_flag = request.data.get('remove_image')
+                if isinstance(incoming_flag, str):
+                    remove_image_flag = incoming_flag.lower() in ('true', '1', 'yes')
+                else:
+                    remove_image_flag = bool(incoming_flag)
+
+        # Handle image removal
+        if remove_image_flag:
+            if instance.question_image:
+                instance.question_image.delete(save=False)
+            instance.question_image = None
+            # Make sure we don't override this with a new image
+            validated_data.pop('question_image', None)
+
+        instance = super().update(instance, validated_data)
+
+        if new_question_image is not serializers.empty:
+            if new_question_image:
+                instance.question_image = new_question_image
+            else:
+                instance.question_image = None
+            instance.save(update_fields=['question_image'])
+
+        if choices_data is not None:
+            instance.choices.all().delete()
+            for choice_data in choices_data:
+                choice_data.pop('question', None)
+                QuestionChoice.objects.create(question=instance, **choice_data)
+
+        if blanks_data is not None:
+            instance.blanks.all().delete()
+            for blank_data in blanks_data:
+                options = blank_data.pop('options', [])
+                blank_obj = FillBlank.objects.create(question=instance, **blank_data)
+                for opt in options:
+                    FillBlankOption.objects.create(blank=blank_obj, **opt)
+
+        if ordering_items_data is not None:
+            instance.ordering_items.all().delete()
+            for item in ordering_items_data:
+                OrderingItem.objects.create(question=instance, **item)
+
+        if matching_pairs_data is not None:
+            instance.matching_pairs.all().delete()
+            for pair in matching_pairs_data:
+                MatchingPair.objects.create(question=instance, **pair)
+
+        return instance
 
 class BookExerciseSerializer(serializers.ModelSerializer):
     class Meta:
@@ -261,6 +404,21 @@ class ExerciseCreateSerializer(serializers.ModelSerializer):
         exercise = Exercise.objects.create(**validated_data)
         ExerciseReward.objects.create(exercise=exercise, **reward_data)
         return exercise
+
+    def update(self, instance, validated_data):
+        reward_data = validated_data.pop('reward_config', None)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        if reward_data is not None:
+            reward_obj, _ = ExerciseReward.objects.get_or_create(exercise=instance)
+            for attr, value in reward_data.items():
+                setattr(reward_obj, attr, value)
+            reward_obj.save()
+
+        return instance
 
 class ExerciseAnswerSerializer(serializers.ModelSerializer):
     question_id = serializers.IntegerField(source='question.id', read_only=True)
@@ -296,10 +454,61 @@ class ExerciseDetailSerializer(serializers.ModelSerializer):
     reward_config = ExerciseRewardSerializer(read_only=True)
     created_by = BasicUserSerializer(read_only=True)
     questions = QuestionSerializer(many=True, read_only=True)
+    is_completed = serializers.SerializerMethodField()
+    attempts_count = serializers.SerializerMethodField()
+    best_score = serializers.SerializerMethodField()
+    latest_submission_status = serializers.SerializerMethodField()
+    last_attempt_score = serializers.SerializerMethodField()
 
     class Meta:
         model = Exercise
         fields = '__all__'
+
+    def _get_student_submission_stats(self, obj):
+        request = self.context.get('request')
+        user = getattr(request, 'user', None)
+        if not user or not getattr(user, 'is_authenticated', False) or getattr(user, 'role', None) != 'STUDENT':
+            return {}
+
+        cache = self.context.setdefault('_exercise_submission_stats', {})
+        if obj.id in cache:
+            return cache[obj.id]
+
+        submissions = ExerciseSubmission.objects.filter(
+            student=user,
+            exercise=obj
+        ).order_by('-created_at')
+
+        latest = submissions.first()
+        completed = submissions.filter(status__in=['completed', 'auto_graded', 'reviewed']).order_by('-created_at').first()
+        best = submissions.filter(total_score__isnull=False).order_by('-total_score', '-created_at').first()
+
+        stats = {
+            'attempts_count': submissions.count(),
+            'latest_status': latest.status if latest else None,
+            'last_score': latest.total_score if latest and latest.total_score is not None else None,
+            'best_score': best.total_score if best else None,
+            'is_completed': completed is not None,
+        }
+        cache[obj.id] = stats
+        return stats
+
+    def get_is_completed(self, obj):
+        return self._get_student_submission_stats(obj).get('is_completed', False)
+
+    def get_attempts_count(self, obj):
+        return self._get_student_submission_stats(obj).get('attempts_count', 0)
+
+    def get_best_score(self, obj):
+        score = self._get_student_submission_stats(obj).get('best_score')
+        return float(score) if score is not None else None
+
+    def get_latest_submission_status(self, obj):
+        return self._get_student_submission_stats(obj).get('latest_status')
+
+    def get_last_attempt_score(self, obj):
+        score = self._get_student_submission_stats(obj).get('last_score')
+        return float(score) if score is not None else None
 
 # =====================================
 # HOMEWORK SERIALIZERS (renamed from ASSIGNMENT)
@@ -710,7 +919,7 @@ class HomeworkDuplicateSerializer(serializers.Serializer):
     new_title = serializers.CharField(max_length=200)
     new_due_date = serializers.DateTimeField()
     school_class_id = serializers.IntegerField()
-    
+
     def validate_school_class_id(self, value):
         from schools.models import SchoolClass
         try:
@@ -718,3 +927,108 @@ class HomeworkDuplicateSerializer(serializers.Serializer):
             return value
         except SchoolClass.DoesNotExist:
             raise serializers.ValidationError("School class not found")
+
+# =====================================
+# LESSON PROGRESS SERIALIZERS
+# =====================================
+
+class LessonProgressSerializer(serializers.ModelSerializer):
+    """Serializer for student lesson progress"""
+    student_name = serializers.CharField(source='student.get_full_name', read_only=True)
+    lesson_title = serializers.CharField(source='lesson.title', read_only=True)
+    lesson_title_arabic = serializers.CharField(source='lesson.title_arabic', read_only=True)
+    lesson_title_french = serializers.CharField(source='lesson.title_french', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    next_exercise_id = serializers.SerializerMethodField()
+
+    class Meta:
+        model = LessonProgress
+        fields = [
+            'id', 'student', 'student_name', 'lesson', 'lesson_title', 'lesson_title_arabic',
+            'lesson_title_french', 'status', 'status_display', 'exercises_completed',
+            'exercises_total', 'completion_percentage', 'average_score',
+            'total_points_earned', 'total_points_possible', 'total_questions_answered',
+            'total_questions_correct', 'accuracy_percentage', 'total_time_spent',
+            'first_viewed_at', 'started_at', 'completed_at', 'last_accessed',
+            'created_at', 'updated_at', 'next_exercise_id'
+        ]
+        read_only_fields = ['created_at', 'updated_at', 'last_accessed']
+
+    def get_next_exercise_id(self, obj):
+        next_ex = obj.next_exercise
+        return next_ex.id if next_ex else None
+
+
+class LessonProgressDetailSerializer(LessonProgressSerializer):
+    """Detailed lesson progress with nested lesson info"""
+    from lessons.serializers import LessonMinimalSerializer
+    lesson_details = LessonMinimalSerializer(source='lesson', read_only=True)
+
+    class Meta(LessonProgressSerializer.Meta):
+        fields = LessonProgressSerializer.Meta.fields + ['lesson_details']
+
+
+class SubjectProgressSerializer(serializers.Serializer):
+    """Aggregated progress for a subject"""
+    subject_id = serializers.IntegerField()
+    subject_name = serializers.CharField()
+    subject_name_arabic = serializers.CharField()
+    subject_name_french = serializers.CharField()
+    grade_id = serializers.IntegerField()
+    grade_name = serializers.CharField()
+
+    # Lesson statistics
+    total_lessons = serializers.IntegerField()
+    lessons_not_started = serializers.IntegerField()
+    lessons_in_progress = serializers.IntegerField()
+    lessons_completed = serializers.IntegerField()
+    lessons_completion_percentage = serializers.DecimalField(max_digits=5, decimal_places=2)
+
+    # Exercise statistics
+    total_exercises = serializers.IntegerField()
+    exercises_completed = serializers.IntegerField()
+    exercises_completion_percentage = serializers.DecimalField(max_digits=5, decimal_places=2)
+
+    # Score statistics
+    average_score = serializers.DecimalField(max_digits=5, decimal_places=2)
+    total_points_earned = serializers.DecimalField(max_digits=8, decimal_places=2)
+    total_points_possible = serializers.DecimalField(max_digits=8, decimal_places=2)
+
+    # Accuracy statistics
+    total_questions_answered = serializers.IntegerField()
+    total_questions_correct = serializers.IntegerField()
+    accuracy_percentage = serializers.DecimalField(max_digits=5, decimal_places=2)
+
+    # Time statistics
+    total_time_spent = serializers.IntegerField()  # in minutes
+
+
+class StudentProgressReportSerializer(serializers.Serializer):
+    """Complete progress report for a student"""
+    student_id = serializers.IntegerField()
+    student_name = serializers.CharField()
+    student_email = serializers.EmailField()
+
+    # Overall statistics
+    total_subjects = serializers.IntegerField()
+    total_lessons = serializers.IntegerField()
+    total_exercises = serializers.IntegerField()
+
+    # Completion statistics
+    lessons_completed = serializers.IntegerField()
+    lessons_in_progress = serializers.IntegerField()
+    lessons_not_started = serializers.IntegerField()
+    overall_completion_percentage = serializers.DecimalField(max_digits=5, decimal_places=2)
+
+    # Performance statistics
+    overall_average_score = serializers.DecimalField(max_digits=5, decimal_places=2)
+    overall_accuracy_percentage = serializers.DecimalField(max_digits=5, decimal_places=2)
+    total_time_spent = serializers.IntegerField()  # in minutes
+
+    # Reward statistics
+    total_points_earned = serializers.IntegerField()
+    total_coins_earned = serializers.IntegerField()
+    badges_earned = serializers.IntegerField()
+
+    # Subject-wise progress (optional, can be included)
+    subjects_progress = SubjectProgressSerializer(many=True, required=False)

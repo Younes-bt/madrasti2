@@ -20,7 +20,8 @@ import {
   XCircle,
   AlertTriangle,
   TrendingUp,
-  Loader2
+  Loader2,
+  ChevronRight
 } from 'lucide-react';
 import AdminPageLayout from '../../components/admin/layout/AdminPageLayout';
 import { Button } from '../../components/ui/button';
@@ -30,6 +31,7 @@ import { Progress } from '../../components/ui/progress';
 import StudentRewardSummary from '../../components/rewards/StudentRewardSummary';
 import { apiMethods } from '../../services/api';
 import attendanceService from '../../services/attendance';
+import progressService from '../../services/progress';
 import { toast } from 'sonner';
 
 const ViewStudentPage = () => {
@@ -40,6 +42,8 @@ const ViewStudentPage = () => {
   const [studentData, setStudentData] = useState(null);
   const [attendanceStats, setAttendanceStats] = useState(null);
   const [loadingStats, setLoadingStats] = useState(true);
+  const [progressData, setProgressData] = useState(null);
+  const [loadingProgress, setLoadingProgress] = useState(true);
 
   // Fetch student data
   const fetchStudentData = async () => {
@@ -70,12 +74,35 @@ const ViewStudentPage = () => {
     }
   };
 
+  // Fetch progress data
+  const fetchProgressData = async () => {
+    setLoadingProgress(true);
+    try {
+      console.log('Fetching progress data for student:', studentId);
+      const report = await progressService.getStudentProgressReport(studentId);
+      console.log('Progress data received:', report);
+      setProgressData(report);
+    } catch (error) {
+      console.error('Failed to fetch progress data:', error);
+      console.error('Error details:', error.response?.data || error.message);
+      // Set progress data to null on error so we show the "no data" message
+      setProgressData(null);
+    } finally {
+      setLoadingProgress(false);
+    }
+  };
+
   useEffect(() => {
     if (studentId) {
       fetchStudentData();
       fetchAttendanceStatistics();
+      fetchProgressData();
     }
   }, [studentId]);
+
+  const handleViewDetailedProgress = () => {
+    navigate(`/admin/school-management/students/${studentId}/progress`);
+  };
 
   const handleEdit = () => {
     navigate(`/admin/school-management/students/edit/${studentId}`);
@@ -554,6 +581,153 @@ const ViewStudentPage = () => {
                       {attendanceStats.consecutive_absences} {t('attendance.consecutiveAbsences')}
                     </p>
                   </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Learning Progress Section */}
+        {!loadingProgress && (
+          <Card className="mt-6 border-border/50 cursor-pointer hover:shadow-lg transition-shadow" onClick={handleViewDetailedProgress}>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                  {t('progress.learningProgress')}
+                </CardTitle>
+                <Button variant="ghost" size="sm" className="gap-2">
+                  {t('common.viewDetails')}
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {progressData ? (
+                <>
+                  {/* Summary Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* Overall Completion */}
+                    <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800/50">
+                      <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-blue-700 dark:text-blue-400">{t('progress.completion')}</p>
+                            <p className="text-2xl font-bold text-blue-800 dark:text-blue-300">{progressData.overall_completion_percentage}%</p>
+                            <p className="text-xs text-blue-600 dark:text-blue-500">
+                              {progressData.lessons_completed}/{progressData.total_lessons} {t('progress.lessons')}
+                            </p>
+                          </div>
+                          <CheckCircle2 className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                {/* Average Score */}
+                <Card className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800/50">
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-green-700 dark:text-green-400">{t('progress.avgScore')}</p>
+                        <p className="text-2xl font-bold text-green-800 dark:text-green-300">{progressData.overall_average_score}%</p>
+                        <p className="text-xs text-green-600 dark:text-green-500">
+                          {t('progress.acrossAllLessons')}
+                        </p>
+                      </div>
+                      <BarChart3 className="h-8 w-8 text-green-600 dark:text-green-400" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Accuracy */}
+                <Card className="bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800/50">
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-purple-700 dark:text-purple-400">{t('progress.accuracy')}</p>
+                        <p className="text-2xl font-bold text-purple-800 dark:text-purple-300">{progressData.overall_accuracy_percentage}%</p>
+                        <p className="text-xs text-purple-600 dark:text-purple-500">
+                          {t('progress.correctAnswers')}
+                        </p>
+                      </div>
+                      <TrendingUp className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Total Exercises */}
+                <Card className="bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800/50">
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-orange-700 dark:text-orange-400">{t('progress.totalExercises')}</p>
+                        <p className="text-2xl font-bold text-orange-800 dark:text-orange-300">{progressData.total_exercises}</p>
+                        <p className="text-xs text-orange-600 dark:text-orange-500">
+                          {progressData.total_subjects} {t('progress.subjects')}
+                        </p>
+                      </div>
+                      <BookOpen className="h-8 w-8 text-orange-600 dark:text-orange-400" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Progress Breakdown */}
+              <div className="space-y-4">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-green-600 dark:text-green-400">{t('progress.completed')}</span>
+                    <span className="text-sm font-medium text-green-600 dark:text-green-400">
+                      {progressData.lessons_completed} ({progressData.total_lessons > 0 ? ((progressData.lessons_completed / progressData.total_lessons) * 100).toFixed(1) : 0}%)
+                    </span>
+                  </div>
+                  <Progress
+                    value={progressData.total_lessons > 0 ? (progressData.lessons_completed / progressData.total_lessons) * 100 : 0}
+                    className="h-3"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-blue-600 dark:text-blue-400">{t('progress.inProgress')}</span>
+                    <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                      {progressData.lessons_in_progress} ({progressData.total_lessons > 0 ? ((progressData.lessons_in_progress / progressData.total_lessons) * 100).toFixed(1) : 0}%)
+                    </span>
+                  </div>
+                  <Progress
+                    value={progressData.total_lessons > 0 ? (progressData.lessons_in_progress / progressData.total_lessons) * 100 : 0}
+                    className="h-3"
+                    indicatorClassName="bg-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('progress.notStarted')}</span>
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      {progressData.lessons_not_started} ({progressData.total_lessons > 0 ? ((progressData.lessons_not_started / progressData.total_lessons) * 100).toFixed(1) : 0}%)
+                    </span>
+                  </div>
+                  <Progress
+                    value={progressData.total_lessons > 0 ? (progressData.lessons_not_started / progressData.total_lessons) * 100 : 0}
+                    className="h-3"
+                    indicatorClassName="bg-gray-400"
+                  />
+                </div>
+              </div>
+                </>
+              ) : (
+                <div className="text-center py-12">
+                  <BookOpen className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">
+                    {t('progress.noProgressYet', 'No Progress Data Yet')}
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {t('progress.studentHasntStarted', 'This student hasn\'t started any lessons yet.')}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {t('progress.clickToViewEmpty', 'Click "View Details" to see the full progress dashboard')}
+                  </p>
                 </div>
               )}
             </CardContent>
