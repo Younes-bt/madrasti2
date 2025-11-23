@@ -13,14 +13,15 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from '../ui/sidebar'
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink } from '../ui/breadcrumb'
 import { Separator } from '../ui/separator'
 import { cn } from '../../lib/utils'
+import NotificationBell from './NotificationBell'
 
 const Layout = ({
   children,
   notifications = [],
   loading = false,
   error = null,
-  onNotificationClick = () => {},
-  onProfileClick = () => {},
+  onNotificationClick = () => { },
+  onProfileClick = () => { },
   showSidebar = true,
   showHeader = true,
   showFooter = true,
@@ -35,7 +36,7 @@ const Layout = ({
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  
+
   const isRTL = language === 'ar'
   const currentPath = location.pathname
 
@@ -82,12 +83,12 @@ const Layout = ({
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner 
-          size="xl" 
+        <LoadingSpinner
+          size="xl"
           text={
             language === 'ar' ? 'جاري التحميل...' :
-            language === 'fr' ? 'Chargement...' :
-            'Loading...'
+              language === 'fr' ? 'Chargement...' :
+                'Loading...'
           }
         />
       </div>
@@ -101,19 +102,19 @@ const Layout = ({
         <div className="text-center space-y-4">
           <h1 className="text-2xl font-bold text-destructive">
             {language === 'ar' ? 'حدث خطأ' :
-             language === 'fr' ? 'Une erreur s\'est produite' :
-             'An error occurred'}
+              language === 'fr' ? 'Une erreur s\'est produite' :
+                'An error occurred'}
           </h1>
           <p className="text-muted-foreground">
             {error.message || 'Something went wrong'}
           </p>
-          <button 
+          <button
             onClick={() => window.location.reload()}
             className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
           >
             {language === 'ar' ? 'إعادة التحميل' :
-             language === 'fr' ? 'Recharger' :
-             'Reload'}
+              language === 'fr' ? 'Recharger' :
+                'Reload'}
           </button>
         </div>
       </div>
@@ -154,7 +155,7 @@ const Layout = ({
 
           {/* Footer */}
           {showFooter && (
-            <Footer 
+            <Footer
               variant={footerVariant}
               schoolInfo={user?.school_info}
             />
@@ -192,6 +193,9 @@ const Layout = ({
                   </BreadcrumbItem>
                 </BreadcrumbList>
               </Breadcrumb>
+              <div className="ml-auto flex items-center gap-2">
+                <NotificationBell />
+              </div>
             </header>
 
             {/* Content Area */}
@@ -219,7 +223,7 @@ const Layout = ({
 
 // Specialized layout variants
 export const DashboardLayout = (props) => (
-  <Layout 
+  <Layout
     {...props}
     showSidebar={true}
     showHeader={true}
@@ -249,57 +253,57 @@ export const AuthLayout = ({ children, className }) => {
               </div>
               <h1 className="text-4xl font-bold mb-4">Madrasti 2.0</h1>
               <p className="text-xl text-primary-foreground/80">
-                {language === 'ar' 
+                {language === 'ar'
                   ? 'نظام إدارة المدارس الحديث'
                   : language === 'fr'
-                  ? 'Système moderne de gestion scolaire'
-                  : 'Modern School Management System'
+                    ? 'Système moderne de gestion scolaire'
+                    : 'Modern School Management System'
                 }
               </p>
             </div>
-            
+
             <div className="space-y-4 text-primary-foreground/80">
               <div className="flex items-center space-x-3 rtl:space-x-reverse">
                 <div className="w-2 h-2 rounded-full bg-primary-foreground/60" />
                 <span>
-                  {language === 'ar' 
+                  {language === 'ar'
                     ? 'إدارة شاملة للطلاب والمعلمين'
                     : language === 'fr'
-                    ? 'Gestion complète des étudiants et enseignants'
-                    : 'Comprehensive student and teacher management'
+                      ? 'Gestion complète des étudiants et enseignants'
+                      : 'Comprehensive student and teacher management'
                   }
                 </span>
               </div>
               <div className="flex items-center space-x-3 rtl:space-x-reverse">
                 <div className="w-2 h-2 rounded-full bg-primary-foreground/60" />
                 <span>
-                  {language === 'ar' 
+                  {language === 'ar'
                     ? 'نظام حضور وغياب متقدم'
                     : language === 'fr'
-                    ? 'Système de présence avancé'
-                    : 'Advanced attendance tracking system'
+                      ? 'Système de présence avancé'
+                      : 'Advanced attendance tracking system'
                   }
                 </span>
               </div>
               <div className="flex items-center space-x-3 rtl:space-x-reverse">
                 <div className="w-2 h-2 rounded-full bg-primary-foreground/60" />
                 <span>
-                  {language === 'ar' 
+                  {language === 'ar'
                     ? 'واجبات وامتحانات تفاعلية'
                     : language === 'fr'
-                    ? 'Devoirs et examens interactifs'
-                    : 'Interactive assignments and exams'
+                      ? 'Devoirs et examens interactifs'
+                      : 'Interactive assignments and exams'
                   }
                 </span>
               </div>
               <div className="flex items-center space-x-3 rtl:space-x-reverse">
                 <div className="w-2 h-2 rounded-full bg-primary-foreground/60" />
                 <span>
-                  {language === 'ar' 
+                  {language === 'ar'
                     ? 'تقارير وإحصائيات مفصلة'
                     : language === 'fr'
-                    ? 'Rapports et statistiques détaillés'
-                    : 'Detailed reports and analytics'
+                      ? 'Rapports et statistiques détaillés'
+                      : 'Detailed reports and analytics'
                   }
                 </span>
               </div>
@@ -346,7 +350,7 @@ export const PublicLayout = ({ children, className }) => {
             </div>
             <span className="font-semibold">Madrasti 2.0</span>
           </div>
-          
+
           <div className="flex items-center space-x-2 rtl:space-x-reverse">
             <LanguageSwitcher />
             <ThemeToggle />

@@ -65,6 +65,27 @@ class CommunicationService {
     const response = await api.delete(`/communication/announcements/${id}/`);
     return response.data;
   }
+
+  // ==================== NOTIFICATIONS ====================
+  async getNotifications(params = {}) {
+    const response = await api.get('/communication/notifications/', { params });
+    return response.data;
+  }
+
+  async getUnreadCount() {
+    const response = await api.get('/communication/notifications/unread_count/');
+    return response.data;
+  }
+
+  async markNotificationRead(id) {
+    const response = await api.post(`/communication/notifications/${id}/mark_read/`);
+    return response.data;
+  }
+
+  async markAllNotificationsRead() {
+    const response = await api.post('/communication/notifications/mark_all_read/');
+    return response.data;
+  }
 }
 
 export const communicationService = new CommunicationService();

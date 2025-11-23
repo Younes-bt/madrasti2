@@ -125,6 +125,7 @@ import AddExercisePage from './pages/admin/AddExercisePage'
 import EditExercisePage from './pages/admin/EditExercisePage'
 import ViewExercisePage from './pages/admin/ViewExercisePage'
 import AttendanceReportsPage from './pages/admin/AttendanceReportsPage'
+import AcademicPerformanceReportsPage from './pages/admin/AcademicPerformanceReportsPage'
 import FeeSetupPage from './pages/admin/finance/FeeSetupPage'
 import InvoicesPage from './pages/admin/finance/InvoicesPage'
 import InvoiceDetailsPage from './pages/admin/finance/InvoiceDetailsPage'
@@ -326,6 +327,25 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute requiredRoles={['STUDENT']}>
             <StudentSubmissionReviewPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Student Communication Routes */}
+      <Route
+        path="/student/communication/messages"
+        element={
+          <ProtectedRoute requiredRoles={['STUDENT']}>
+            <MessagesPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/student/communication/announcements"
+        element={
+          <ProtectedRoute requiredRoles={['STUDENT']}>
+            <AnnouncementsPage />
           </ProtectedRoute>
         }
       />
@@ -552,6 +572,44 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute requiredRoles={['TEACHER']}>
             <GradeSubmissionPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Teacher Communication Routes */}
+      <Route
+        path="/teacher/communication/messages"
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <MessagesPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/teacher/communication/announcements"
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <AnnouncementsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Admin Communication Routes */}
+      <Route
+        path="/admin/communication/messages"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <MessagesPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/communication/announcements"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <AnnouncementsPage />
           </ProtectedRoute>
         }
       />
@@ -1230,28 +1288,28 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-      < Route
+      <Route
         path="/admin/education-management/homework"
         element={
-          < ProtectedRoute requiredRoles={['ADMIN', 'STAFF']} >
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <div>Homework Page - Coming Soon</div>
-          </ProtectedRoute >
+          </ProtectedRoute>
         }
       />
-      < Route
+      <Route
         path="/admin/education-management/exams"
         element={
-          < ProtectedRoute requiredRoles={['ADMIN', 'STAFF']} >
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <div>Exams Page - Coming Soon</div>
-          </ProtectedRoute >
+          </ProtectedRoute>
         }
       />
-      < Route
+      <Route
         path="/admin/education-management/grading-system"
         element={
-          < ProtectedRoute requiredRoles={['ADMIN', 'STAFF']} >
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <div>Grading System Page - Coming Soon</div>
-          </ProtectedRoute >
+          </ProtectedRoute>
         }
       />
 
@@ -1268,7 +1326,7 @@ const AppRoutes = () => {
         path="/admin/reports/academic-performance"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
-            <div>Academic Performance Reports Page - Coming Soon</div>
+            <AcademicPerformanceReportsPage />
           </ProtectedRoute>
         }
       />

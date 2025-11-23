@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Conversation, Message, Announcement
+from .models import Conversation, Message, Announcement, Notification
 from users.serializers import UserBasicSerializer
 
 class MessageSerializer(serializers.ModelSerializer):
@@ -48,3 +48,9 @@ class AnnouncementSerializer(serializers.ModelSerializer):
         model = Announcement
         fields = ['id', 'title', 'content', 'target_role', 'target_grade', 'is_published', 'created_by', 'created_by_name', 'created_at']
         read_only_fields = ['created_by', 'created_at']
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ['id', 'recipient', 'title', 'message', 'notification_type', 'related_object_id', 'related_object_type', 'is_read', 'created_at']
+        read_only_fields = ['recipient', 'created_at']

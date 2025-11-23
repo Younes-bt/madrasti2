@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'media',
     'finance',
     'communication',
+    'reports',
     
     # 3rd Party Apps
     'rest_framework',

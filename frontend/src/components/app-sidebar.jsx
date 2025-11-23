@@ -40,6 +40,94 @@ export function AppSidebar({ ...props }) {
 
   // Construct navigation data based on user role and translations
   const data = React.useMemo(() => {
+    const role = user?.role || 'STUDENT';
+    const basePath = role === 'ADMIN' || role === 'STAFF' ? '/admin' :
+      role === 'TEACHER' ? '/teacher' :
+        role === 'PARENT' ? '/parent' : '/student';
+
+    // Student Navigation
+    if (role === 'STUDENT') {
+      return {
+        user: {
+          name: user?.full_name || user?.name || "Student User",
+          email: user?.email || "student@madrasti.com",
+          avatar: user?.avatar || "/avatars/student.jpg",
+        },
+        teams: [
+          {
+            name: "Madrasti",
+            logo: School,
+            plan: "Student",
+          },
+        ],
+        navMain: [
+          {
+            title: t('studentSidebar.dashboard', 'Dashboard'),
+            url: "/student",
+            icon: LayoutDashboard,
+            isActive: true,
+          },
+          {
+            title: t('studentSidebar.lessons.title', 'My Lessons'),
+            url: "/student/lessons",
+            icon: BookOpen,
+          },
+          {
+            title: t('studentSidebar.homework.title', 'Homework'),
+            url: "/student/homework",
+            icon: FileText,
+            items: [
+              {
+                title: t('studentSidebar.homework.pending', 'Pending'),
+                url: "/student/homework/pending",
+              },
+              {
+                title: t('studentSidebar.homework.completed', 'Completed'),
+                url: "/student/homework/completed",
+              },
+              {
+                title: t('studentSidebar.homework.grades', 'Grades'),
+                url: "/student/homework/grades",
+              },
+            ],
+          },
+          {
+            title: t('studentSidebar.communication', 'Communication'),
+            url: "/student/communication",
+            icon: MessageSquare,
+            items: [
+              {
+                title: t('studentSidebar.messages', 'Messages'),
+                url: "/student/communication/messages",
+              },
+              {
+                title: t('studentSidebar.announcements', 'Announcements'),
+                url: "/student/communication/announcements",
+              },
+            ],
+          },
+        ],
+        projects: [
+          {
+            name: t('studentSidebar.timetable.title', 'Timetable'),
+            url: "/student/timetable",
+            icon: Calendar,
+          },
+          {
+            name: t('studentSidebar.progress', 'Progress'),
+            url: "/student/progress",
+            icon: PieChart,
+          },
+          {
+            name: t('studentSidebar.points', 'Points & Rewards'),
+            url: "/student/points",
+            icon: GraduationCap,
+          },
+        ],
+      };
+    }
+
+    // Admin/Staff Navigation  
     return {
       user: {
         name: user?.name || "Admin User",
