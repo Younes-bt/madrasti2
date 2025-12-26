@@ -512,6 +512,17 @@ class LessonViewSet(viewsets.ModelViewSet):
             )
         }
 
+        # Get lesson availability for student's class
+        from .models import LessonAvailability
+        student_class = enrollment.school_class
+        availability_map = {
+            avail.lesson_id: avail.is_published
+            for avail in LessonAvailability.objects.filter(
+                lesson_id__in=lesson_ids,
+                school_class=student_class
+            )
+        }
+
         # Serialize all lessons at once (more efficient)
         serializer = LessonSerializer(lessons, many=True)
         lessons_data = serializer.data
@@ -538,8 +549,12 @@ class LessonViewSet(viewsets.ModelViewSet):
                     'time_spent_minutes': 0,
                 }
 
-            # TODO: Implement prerequisite logic (for now, all lessons are unlocked)
-            lesson_data['is_locked'] = False
+            # Check if lesson is published/available for student's class
+            # If no LessonAvailability record exists, treat as locked
+            # If record exists, check is_published flag
+            is_published = availability_map.get(lesson_data['id'], False)
+            lesson_data['is_locked'] = not is_published
+
             results.append(lesson_data)
 
         # Calculate summary statistics (based on ALL lessons, not just current page)

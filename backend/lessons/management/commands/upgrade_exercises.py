@@ -19,7 +19,7 @@ from homework.models import (
 )
 
 # --- CONFIGURATION ---
-API_KEY = "AIzaSyCiUithPuXgVwXzXr5MRg-g7xzQijBSLes"  # <--- PUT YOUR KEY HERE
+API_KEY = ""  # <--- PUT YOUR KEY HERE
 MODEL_NAME = "gemini-2.5-flash" # Standard Flash (Better reasoning than Lite)
 MAX_WORKERS = 15  # Parallel threads
 
