@@ -15,7 +15,7 @@ import { apiMethods } from '../../services/api'
 const FirstLoginPage = () => {
   const { t, isRTL } = useLanguage()
   const navigate = useNavigate()
-  const { user, changePassword } = useAuth()
+  const { user, changePassword, logout } = useAuth()
 
   const [profileLoading, setProfileLoading] = useState(true)
   const [savingProfile, setSavingProfile] = useState(false)
@@ -116,6 +116,10 @@ const FirstLoginPage = () => {
       const res = await changePassword(passwordData)
       if (res.success) {
         setPasswordChanged(true)
+        setTimeout(async () => {
+          await logout()
+          window.location.href = '/login'
+        }, 1500)
       } else {
         setPasswordError(res.error || 'Password change failed')
       }
@@ -152,20 +156,7 @@ const FirstLoginPage = () => {
     }
   }
 
-  const readyToContinue = passwordChanged && profileUpdated
 
-  const goToDashboard = () => {
-    const roleRoutes = {
-      'ADMIN': '/admin',
-      'TEACHER': '/teacher',
-      'STUDENT': '/student',
-      'PARENT': '/parent',
-      'STAFF': '/admin',
-      'DRIVER': '/admin'
-    }
-    const target = roleRoutes[user?.role] || '/'
-    navigate(target, { replace: true })
-  }
 
   return (
     <div className={`min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 ${isRTL ? 'rtl' : 'ltr'}`} dir={isRTL ? 'rtl' : 'ltr'}>
@@ -242,31 +233,20 @@ const FirstLoginPage = () => {
               </div>
             </div>
 
-            {/* Progress Indicator */}
             <div className="pt-8 border-t border-white/20">
               <div className="flex items-center justify-between text-sm mb-2">
                 <span className="font-medium">{t('auth.setupProgress') || 'Setup Progress'}</span>
                 <span className="font-semibold">
-                  {(passwordChanged && profileUpdated) ? '100%' : passwordChanged || profileUpdated ? '50%' : '0%'}
+                  {(passwordChanged && profileUpdated) ? '100%' : profileUpdated ? '50%' : '0%'}
                 </span>
               </div>
               <div className="h-2 bg-white/20 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-white transition-all duration-500 ease-out"
-                  style={{ width: (passwordChanged && profileUpdated) ? '100%' : passwordChanged || profileUpdated ? '50%' : '0%' }}
+                  style={{ width: (passwordChanged && profileUpdated) ? '100%' : profileUpdated ? '50%' : '0%' }}
                 ></div>
               </div>
               <div className="flex gap-4 mt-3 text-xs">
-                <div className="flex items-center gap-1.5">
-                  {passwordChanged ? (
-                    <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                  ) : (
-                    <div className="w-4 h-4 border-2 border-white/40 rounded-full"></div>
-                  )}
-                  <span>{t('auth.passwordChanged') || 'Password Changed'}</span>
-                </div>
                 <div className="flex items-center gap-1.5">
                   {profileUpdated ? (
                     <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -276,6 +256,16 @@ const FirstLoginPage = () => {
                     <div className="w-4 h-4 border-2 border-white/40 rounded-full"></div>
                   )}
                   <span>{t('auth.profileCompleted') || 'Profile Completed'}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  {passwordChanged ? (
+                    <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    <div className="w-4 h-4 border-2 border-white/40 rounded-full"></div>
+                  )}
+                  <span>{t('auth.passwordChanged') || 'Password Changed'}</span>
                 </div>
               </div>
             </div>
@@ -289,283 +279,262 @@ const FirstLoginPage = () => {
             {/* Step Indicator */}
             <div className="mb-6">
               <div className="flex items-center gap-3 mb-4">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${passwordChanged ? 'bg-green-500 text-white' : 'bg-primary text-primary-foreground'}`}>
-                  {passwordChanged ? '✓' : '1'}
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${profileUpdated ? 'bg-green-500 text-white' : 'bg-primary text-primary-foreground'}`}>
+                  {profileUpdated ? '✓' : '1'}
                 </div>
                 <div className="flex-1 h-0.5 bg-border"></div>
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${profileUpdated ? 'bg-green-500 text-white' : passwordChanged ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                  {profileUpdated ? '✓' : '2'}
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${passwordChanged ? 'bg-green-500 text-white' : profileUpdated ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                  {passwordChanged ? '✓' : '2'}
                 </div>
               </div>
             </div>
 
-            {/* Step 1: Change Password - Only show if password not changed */}
-            {!passwordChanged && (
-            <Card className="border-2 hover:border-primary/50 transition-colors">
-              <CardContent className="p-6 space-y-4">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold">{t('auth.changePassword') || 'Step 1: Change Password'}</h2>
-                    <p className="text-sm text-muted-foreground">{t('auth.passwordRequired') || 'Create a strong, secure password'}</p>
-                  </div>
-                </div>
-                <form onSubmit={handlePasswordSubmit} className="space-y-4">
-                  <div>
-                    <Label className="block text-sm font-medium mb-2">{t('auth.currentPassword') || 'Current Password'}</Label>
-                    <div className="relative">
-                      <Input
-                        name="currentPassword"
-                        type={showPassword.currentPassword ? "text" : "password"}
-                        value={passwordData.currentPassword}
-                        onChange={onPasswordFieldChange}
-                        className="h-11 pr-10"
-                        placeholder="••••••••"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => togglePasswordVisibility('currentPassword')}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        {showPassword.currentPassword ? (
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                          </svg>
-                        ) : (
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                        )}
-                      </button>
+            {/* Step 2: Change Password - Only show if profile is updated */}
+            {profileUpdated && !passwordChanged && (
+              <Card className="border-2 hover:border-primary/50 transition-colors">
+                <CardContent className="p-6 space-y-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                      </svg>
                     </div>
-                  </div>
-                  <div>
-                    <Label className="block text-sm font-medium mb-2">{t('auth.newPassword') || 'New Password'}</Label>
-                    <div className="relative">
-                      <Input
-                        name="newPassword"
-                        type={showPassword.newPassword ? "text" : "password"}
-                        value={passwordData.newPassword}
-                        onChange={onPasswordFieldChange}
-                        className="h-11 pr-10"
-                        placeholder="••••••••"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => togglePasswordVisibility('newPassword')}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        {showPassword.newPassword ? (
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                          </svg>
-                        ) : (
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="block text-sm font-medium mb-2">{t('auth.confirmPassword') || 'Confirm Password'}</Label>
-                    <div className="relative">
-                      <Input
-                        name="confirmPassword"
-                        type={showPassword.confirmPassword ? "text" : "password"}
-                        value={passwordData.confirmPassword}
-                        onChange={onPasswordFieldChange}
-                        className="h-11 pr-10"
-                        placeholder="••••••••"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => togglePasswordVisibility('confirmPassword')}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        {showPassword.confirmPassword ? (
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                          </svg>
-                        ) : (
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                  {passwordError && (
-                    <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                      <p className="text-sm text-red-600 dark:text-red-400">{passwordError}</p>
-                    </div>
-                  )}
-                  <Button type="submit" className="w-full h-11" disabled={passwordLoading || passwordChanged}>
-                    {passwordLoading ? (
-                      <span className="inline-flex items-center">
-                        <LoadingSpinner size="sm" />
-                        <span className="ml-2">{t('common.saving') || 'Saving...'}</span>
-                      </span>
-                    ) : passwordChanged ? (
-                      <span className="inline-flex items-center">
-                        <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                        </svg>
-                        {t('common.saved') || 'Password Changed'}
-                      </span>
-                    ) : (
-                      t('auth.updatePassword') || 'Update Password'
-                    )}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-            )}
-
-            {/* Step 2: Complete Profile - Only show if password changed */}
-            {passwordChanged && !profileUpdated && (
-            <Card className="border-2 hover:border-primary/50 transition-colors">
-              <CardContent className="p-6 space-y-4">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold">{t('profile.completeProfile') || 'Step 2: Complete Your Profile'}</h2>
-                    <p className="text-sm text-muted-foreground">{t('profile.profileDescription') || 'Add your personal information'}</p>
-                  </div>
-                </div>
-                {profileLoading ? (
-                  <div className="py-12 text-center">
-                    <LoadingSpinner />
-                  </div>
-                ) : (
-                  <form onSubmit={handleProfileSubmit} className="space-y-5">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label className="block text-sm font-medium mb-2">{t('profile.firstName') || 'First Name'}</Label>
-                        <Input name="first_name" value={profileData.first_name} onChange={onChangeProfileField} className="h-11" />
-                      </div>
-                      <div>
-                        <Label className="block text-sm font-medium mb-2">{t('profile.lastName') || 'Last Name'}</Label>
-                        <Input name="last_name" value={profileData.last_name} onChange={onChangeProfileField} className="h-11" />
-                      </div>
-                      <div>
-                        <Label className="block text-sm font-medium mb-2">{t('profile.arFirstName') || 'Arabic First Name'}</Label>
-                        <Input name="ar_first_name" value={profileData.ar_first_name} onChange={onChangeProfileField} dir="rtl" className="h-11" />
-                      </div>
-                      <div>
-                        <Label className="block text-sm font-medium mb-2">{t('profile.arLastName') || 'Arabic Last Name'}</Label>
-                        <Input name="ar_last_name" value={profileData.ar_last_name} onChange={onChangeProfileField} dir="rtl" className="h-11" />
-                      </div>
-                      <div>
-                        <Label className="block text-sm font-medium mb-2">{t('profile.phone') || 'Phone'}</Label>
-                        <Input name="phone" value={profileData.phone} onChange={onChangeProfileField} className="h-11" />
-                      </div>
-                      <div>
-                        <Label className="block text-sm font-medium mb-2">{t('common.dateOfBirth') || 'Date of Birth'}</Label>
-                        <Input type="date" name="date_of_birth" value={profileData.date_of_birth} onChange={onChangeProfileField} className="h-11" />
-                      </div>
-                    </div>
-
                     <div>
-                      <Label className="block text-sm font-medium mb-2">{t('profile.address') || 'Address'}</Label>
-                      <Input name="address" value={profileData.address} onChange={onChangeProfileField} className="h-11" />
+                      <h2 className="text-xl font-bold">{t('auth.changePassword') || 'Step 2: Change Password'}</h2>
+                      <p className="text-sm text-muted-foreground">{t('auth.passwordRequired') || 'Create a strong, secure password'}</p>
                     </div>
-
+                  </div>
+                  <form onSubmit={handlePasswordSubmit} className="space-y-4">
                     <div>
-                      <Label className="block text-sm font-medium mb-2">{t('profile.bio') || 'Bio'}</Label>
-                      <Textarea name="bio" value={profileData.bio} onChange={onChangeProfileField} rows={3} className="resize-none" />
+                      <Label className="block text-sm font-medium mb-2">{t('auth.currentPassword') || 'Current Password'}</Label>
+                      <div className="relative">
+                        <Input
+                          name="currentPassword"
+                          type={showPassword.currentPassword ? "text" : "password"}
+                          value={passwordData.currentPassword}
+                          onChange={onPasswordFieldChange}
+                          className="h-11 pr-10"
+                          placeholder="••••••••"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => togglePasswordVisibility('currentPassword')}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          {showPassword.currentPassword ? (
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                            </svg>
+                          ) : (
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                          )}
+                        </button>
+                      </div>
                     </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label className="block text-sm font-medium mb-2">{t('profile.emergencyContactName') || 'Emergency Contact Name'}</Label>
-                        <Input name="emergency_contact_name" value={profileData.emergency_contact_name} onChange={onChangeProfileField} className="h-11" />
-                      </div>
-                      <div>
-                        <Label className="block text-sm font-medium mb-2">{t('profile.emergencyContactPhone') || 'Emergency Contact Phone'}</Label>
-                        <Input name="emergency_contact_phone" value={profileData.emergency_contact_phone} onChange={onChangeProfileField} className="h-11" />
-                      </div>
-                      <div>
-                        <Label className="block text-sm font-medium mb-2">{t('profile.linkedin') || 'LinkedIn URL'}</Label>
-                        <Input name="linkedin_url" value={profileData.linkedin_url} onChange={onChangeProfileField} className="h-11" placeholder="https://linkedin.com/in/..." />
-                      </div>
-                      <div>
-                        <Label className="block text-sm font-medium mb-2">{t('profile.twitter') || 'Twitter URL'}</Label>
-                        <Input name="twitter_url" value={profileData.twitter_url} onChange={onChangeProfileField} className="h-11" placeholder="https://twitter.com/..." />
-                      </div>
-                    </div>
-
                     <div>
-                      <Label className="block text-sm font-medium mb-2">{t('profile.profilePicture') || 'Profile Picture'}</Label>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => setProfilePicture(e.target.files?.[0] || null)}
-                        className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 cursor-pointer"
-                      />
+                      <Label className="block text-sm font-medium mb-2">{t('auth.newPassword') || 'New Password'}</Label>
+                      <div className="relative">
+                        <Input
+                          name="newPassword"
+                          type={showPassword.newPassword ? "text" : "password"}
+                          value={passwordData.newPassword}
+                          onChange={onPasswordFieldChange}
+                          className="h-11 pr-10"
+                          placeholder="••••••••"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => togglePasswordVisibility('newPassword')}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          {showPassword.newPassword ? (
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                            </svg>
+                          ) : (
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                          )}
+                        </button>
+                      </div>
                     </div>
-
-                    {profileError && (
+                    <div>
+                      <Label className="block text-sm font-medium mb-2">{t('auth.confirmPassword') || 'Confirm Password'}</Label>
+                      <div className="relative">
+                        <Input
+                          name="confirmPassword"
+                          type={showPassword.confirmPassword ? "text" : "password"}
+                          value={passwordData.confirmPassword}
+                          onChange={onPasswordFieldChange}
+                          className="h-11 pr-10"
+                          placeholder="••••••••"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => togglePasswordVisibility('confirmPassword')}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          {showPassword.confirmPassword ? (
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                            </svg>
+                          ) : (
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                    {passwordError && (
                       <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                        <p className="text-sm text-red-600 dark:text-red-400">{profileError}</p>
+                        <p className="text-sm text-red-600 dark:text-red-400">{passwordError}</p>
                       </div>
                     )}
-                    <Button type="submit" className="w-full h-11" disabled={savingProfile || profileUpdated}>
-                      {savingProfile ? (
+                    <Button type="submit" className="w-full h-11" disabled={passwordLoading || passwordChanged}>
+                      {passwordLoading ? (
                         <span className="inline-flex items-center">
                           <LoadingSpinner size="sm" />
                           <span className="ml-2">{t('common.saving') || 'Saving...'}</span>
                         </span>
-                      ) : profileUpdated ? (
+                      ) : passwordChanged ? (
                         <span className="inline-flex items-center">
                           <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                           </svg>
-                          {t('common.saved') || 'Profile Updated'}
+                          {t('common.saved') || 'Password Changed'}
                         </span>
                       ) : (
-                        t('common.update') || 'Update Profile'
+                        t('auth.updatePassword') || 'Update Password'
                       )}
                     </Button>
                   </form>
-                )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
             )}
 
-            {/* Continue Button - Show when both steps are complete */}
-            {readyToContinue && (
-            <div className="pt-4">
-              <Button
-                className="w-full h-12 text-lg font-semibold"
-                disabled={!readyToContinue}
-                onClick={goToDashboard}
-                size="lg"
-              >
-                {readyToContinue ? (
-                  <span className="inline-flex items-center">
-                    {t('common.continue') || 'Continue to Dashboard'}
-                    <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                    </svg>
-                  </span>
-                ) : (
-                  t('auth.completeStepsToContinue') || 'Complete both steps to continue'
-                )}
-              </Button>
-            </div>
+            {/* Step 1: Complete Profile - Only show if profile not updated */}
+            {!profileUpdated && (
+              <Card className="border-2 hover:border-primary/50 transition-colors">
+                <CardContent className="p-6 space-y-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold">{t('profile.completeProfile') || 'Step 1: Complete Your Profile'}</h2>
+                      <p className="text-sm text-muted-foreground">{t('profile.profileDescription') || 'Add your personal information'}</p>
+                    </div>
+                  </div>
+                  {profileLoading ? (
+                    <div className="py-12 text-center">
+                      <LoadingSpinner />
+                    </div>
+                  ) : (
+                    <form onSubmit={handleProfileSubmit} className="space-y-5">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label className="block text-sm font-medium mb-2">{t('profile.firstName') || 'First Name'}</Label>
+                          <Input name="first_name" value={profileData.first_name} onChange={onChangeProfileField} className="h-11" />
+                        </div>
+                        <div>
+                          <Label className="block text-sm font-medium mb-2">{t('profile.lastName') || 'Last Name'}</Label>
+                          <Input name="last_name" value={profileData.last_name} onChange={onChangeProfileField} className="h-11" />
+                        </div>
+                        <div>
+                          <Label className="block text-sm font-medium mb-2">{t('profile.arFirstName') || 'Arabic First Name'}</Label>
+                          <Input name="ar_first_name" value={profileData.ar_first_name} onChange={onChangeProfileField} dir="rtl" className="h-11" />
+                        </div>
+                        <div>
+                          <Label className="block text-sm font-medium mb-2">{t('profile.arLastName') || 'Arabic Last Name'}</Label>
+                          <Input name="ar_last_name" value={profileData.ar_last_name} onChange={onChangeProfileField} dir="rtl" className="h-11" />
+                        </div>
+                        <div>
+                          <Label className="block text-sm font-medium mb-2">{t('profile.phone') || 'Phone'}</Label>
+                          <Input name="phone" value={profileData.phone} onChange={onChangeProfileField} className="h-11" />
+                        </div>
+                        <div>
+                          <Label className="block text-sm font-medium mb-2">{t('common.dateOfBirth') || 'Date of Birth'}</Label>
+                          <Input type="date" name="date_of_birth" value={profileData.date_of_birth} onChange={onChangeProfileField} className="h-11" />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="block text-sm font-medium mb-2">{t('profile.address') || 'Address'}</Label>
+                        <Input name="address" value={profileData.address} onChange={onChangeProfileField} className="h-11" />
+                      </div>
+
+                      <div>
+                        <Label className="block text-sm font-medium mb-2">{t('profile.bio') || 'Bio'}</Label>
+                        <Textarea name="bio" value={profileData.bio} onChange={onChangeProfileField} rows={3} className="resize-none" />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label className="block text-sm font-medium mb-2">{t('profile.emergencyContactName') || 'Emergency Contact Name'}</Label>
+                          <Input name="emergency_contact_name" value={profileData.emergency_contact_name} onChange={onChangeProfileField} className="h-11" />
+                        </div>
+                        <div>
+                          <Label className="block text-sm font-medium mb-2">{t('profile.emergencyContactPhone') || 'Emergency Contact Phone'}</Label>
+                          <Input name="emergency_contact_phone" value={profileData.emergency_contact_phone} onChange={onChangeProfileField} className="h-11" />
+                        </div>
+                        <div>
+                          <Label className="block text-sm font-medium mb-2">{t('profile.linkedin') || 'LinkedIn URL'}</Label>
+                          <Input name="linkedin_url" value={profileData.linkedin_url} onChange={onChangeProfileField} className="h-11" placeholder="https://linkedin.com/in/..." />
+                        </div>
+                        <div>
+                          <Label className="block text-sm font-medium mb-2">{t('profile.twitter') || 'Twitter URL'}</Label>
+                          <Input name="twitter_url" value={profileData.twitter_url} onChange={onChangeProfileField} className="h-11" placeholder="https://twitter.com/..." />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="block text-sm font-medium mb-2">{t('profile.profilePicture') || 'Profile Picture'}</Label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => setProfilePicture(e.target.files?.[0] || null)}
+                          className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 cursor-pointer"
+                        />
+                      </div>
+
+                      {profileError && (
+                        <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                          <p className="text-sm text-red-600 dark:text-red-400">{profileError}</p>
+                        </div>
+                      )}
+                      <Button type="submit" className="w-full h-11" disabled={savingProfile || profileUpdated}>
+                        {savingProfile ? (
+                          <span className="inline-flex items-center">
+                            <LoadingSpinner size="sm" />
+                            <span className="ml-2">{t('common.saving') || 'Saving...'}</span>
+                          </span>
+                        ) : profileUpdated ? (
+                          <span className="inline-flex items-center">
+                            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                            {t('common.saved') || 'Profile Updated'}
+                          </span>
+                        ) : (
+                          t('common.update') || 'Update Profile'
+                        )}
+                      </Button>
+                    </form>
+                  )}
+                </CardContent>
+              </Card>
             )}
+
+
           </div>
         </div>
       </div>

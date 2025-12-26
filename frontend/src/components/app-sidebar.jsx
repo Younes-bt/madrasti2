@@ -23,7 +23,8 @@ import {
   GraduationCap,
   School,
   ClipboardList,
-  Bell
+  Bell,
+  ScrollText
 } from "lucide-react"
 
 import { NavMain } from "./nav-main"
@@ -44,12 +45,19 @@ export function AppSidebar({ ...props }) {
     const basePath = role === 'ADMIN' || role === 'STAFF' ? '/admin' :
       role === 'TEACHER' ? '/teacher' :
         role === 'PARENT' ? '/parent' : '/student';
+    const displayName = (fallback) => (
+      user?.full_name ||
+      [user?.first_name, user?.last_name].filter(Boolean).join(' ') ||
+      user?.name ||
+      user?.email ||
+      fallback
+    );
 
     // Student Navigation
     if (role === 'STUDENT') {
       return {
         user: {
-          name: user?.full_name || user?.name || "Student User",
+          name: displayName("Student User"),
           email: user?.email || "student@madrasti.com",
           avatar: user?.avatar || "/avatars/student.jpg",
         },
@@ -77,6 +85,10 @@ export function AppSidebar({ ...props }) {
             url: "/student/homework",
             icon: FileText,
             items: [
+              {
+                title: t('studentSidebar.homework.overview', 'Overview'),
+                url: "/student/homework",
+              },
               {
                 title: t('studentSidebar.homework.pending', 'Pending'),
                 url: "/student/homework/pending",
@@ -130,7 +142,7 @@ export function AppSidebar({ ...props }) {
     // Admin/Staff Navigation  
     return {
       user: {
-        name: user?.name || "Admin User",
+        name: displayName("Admin User"),
         email: user?.email || "admin@madrasti.com",
         avatar: user?.avatar || "/avatars/shadcn.jpg",
       },
@@ -269,6 +281,11 @@ export function AppSidebar({ ...props }) {
           name: t('sidebar.reports', 'Reports'),
           url: "/admin/reports",
           icon: PieChart,
+        },
+        {
+          name: t('sidebar.logs', 'Activity Logs'),
+          url: "/admin/logs",
+          icon: ScrollText,
         },
       ],
     }

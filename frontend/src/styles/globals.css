@@ -135,14 +135,8 @@
     text-align: right;
   }
 
-  /* Keep icons and buttons aligned properly in RTL */
-  .rtl-content .card-content .flex {
-    flex-direction: row-reverse;
-  }
-
-  .rtl-content .card-content .justify-between {
-    flex-direction: row-reverse;
-  }
+  /* Only reverse flex items when explicitly needed, not globally on card content flex */
+  /* .rtl-content .card-content .flex { flex-direction: row-reverse; } REMOVED to avoid layout breakage */
 
   /* Keep sidebar and navigation LTR */
   .rtl-content nav,

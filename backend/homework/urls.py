@@ -24,6 +24,7 @@ router.register(r'textbooks', views.TextbookLibraryViewSet, basename='textbooks'
 
 # Exercise Routes
 router.register(r'exercises', views.ExerciseViewSet, basename='exercises')
+router.register(r'exercise-submissions', views.ExerciseSubmissionViewSet, basename='exercise-submissions')
 
 # Homework Routes (renamed from Assignment)
 router.register(r'homework', views.HomeworkViewSet, basename='homework')

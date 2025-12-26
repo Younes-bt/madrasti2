@@ -4,11 +4,12 @@ from rest_framework import viewsets, permissions, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Sum
 from django.utils import timezone
 from schools.models import Subject, Grade, SchoolClass
-from .models import Lesson, LessonResource, LessonTag, LessonAvailability
+from .models import Lesson, LessonResource, LessonTag, LessonAvailability, SubjectCategory
 from .serializers import (
     LessonSerializer,
     LessonMinimalSerializer,
@@ -20,21 +21,48 @@ from .serializers import (
     BulkPublishSerializer,
     LessonWithAvailabilitySerializer,
     SubjectSerializer,
-    GradeSerializer
+    GradeSerializer,
+    SubjectCategorySerializer
 )
 from rest_framework.views import APIView
 from users.models import Profile, StudentEnrollment
 from rest_framework import serializers
 
+class SubjectCategoryViewSet(viewsets.ModelViewSet):
+    """API endpoint for managing subject categories"""
+    queryset = SubjectCategory.objects.select_related('subject').all()
+    serializer_class = SubjectCategorySerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['subject']
+    search_fields = ['ar_name', 'fr_name', 'en_name', 'subject__name']
+    ordering_fields = ['subject', 'ar_name']
+
+    def get_permissions(self):
+        """Allow authenticated users to view, but only admins/teachers to modify?"""
+        # Assuming similar permissions to LessonTag or stricter
+        if self.action in ['list', 'retrieve']:
+            self.permission_classes = [permissions.IsAuthenticated]
+        else:
+            self.permission_classes = [permissions.IsAdminUser] # Restrict creation to admins for now
+        return super().get_permissions()
+
+class LessonPagination(PageNumberPagination):
+    """Custom pagination class for lessons with configurable page size"""
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 1000
+
 class LessonViewSet(viewsets.ModelViewSet):
     """API endpoint for managing lessons with filtering and search"""
     queryset = Lesson.objects.select_related('subject', 'grade', 'created_by').prefetch_related('resources', 'tracks').annotate(exercise_count=Count('exercises'))
     serializer_class = LessonSerializer
+    pagination_class = LessonPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['subject', 'grade', 'tracks', 'cycle', 'difficulty_level', 'is_active']
-    search_fields = ['title', 'title_arabic', 'title_french', 'description']
-    ordering_fields = ['created_at', 'updated_at', 'order', 'title']
-    ordering = ['subject', 'grade', 'cycle', 'order']
+    filterset_fields = ['subject', 'grade', 'tracks', 'category', 'unit', 'cycle', 'difficulty_level', 'is_active']
+    search_fields = ['title', 'title_arabic', 'title_french', 'description', 'unit']
+    ordering_fields = ['created_at', 'updated_at', 'order', 'title', 'subject']
+    ordering = ['cycle', 'order', 'subject']  # Changed: cycle and order first, then subject
 
     def get_queryset(self):
         """
@@ -160,7 +188,8 @@ class LessonViewSet(viewsets.ModelViewSet):
                 Q(title__icontains=query) |
                 Q(title_arabic__icontains=query) |
                 Q(title_french__icontains=query) |
-                Q(description__icontains=query)
+                Q(description__icontains=query) |
+                Q(unit__icontains=query)
             )
         
         if cycle:
@@ -369,6 +398,221 @@ class LessonViewSet(viewsets.ModelViewSet):
             'status': 'success',
             'message': f'Lesson {"published" if is_published else "unpublished"} for {school_class.name}',
             'availability': LessonAvailabilitySerializer(availability).data
+        })
+
+    @action(detail=False, methods=['get'])
+    def with_progress(self, request):
+        """
+        Get lessons with student progress included
+        Combines lessons and progress data in single optimized query for students
+        """
+        # Only students can use this endpoint
+        if request.user.role != 'STUDENT':
+            return Response(
+                {"error": "This endpoint is for students only"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Get student's grade from enrollment
+        enrollment = (
+            StudentEnrollment.objects
+            .select_related('school_class__grade')
+            .filter(student=request.user, is_active=True, academic_year__is_current=True)
+            .first()
+        )
+
+        # Fallback: any active enrollment
+        if not enrollment:
+            enrollment = (
+                StudentEnrollment.objects
+                .select_related('school_class__grade')
+                .filter(student=request.user, is_active=True)
+                .order_by('-created_at')
+                .first()
+            )
+
+        if not enrollment or not enrollment.school_class:
+            return Response({
+                'summary': {
+                    'total_lessons': 0,
+                    'completed_lessons': 0,
+                    'in_progress_lessons': 0,
+                    'completion_percentage': 0,
+                    'total_points': 0,
+                    'study_time_hours': 0.0,
+                    'next_lesson_id': None,
+                },
+                'lessons': []
+            })
+
+        grade = enrollment.school_class.grade
+
+        # Query lessons (optimized with select_related/prefetch_related)
+        lessons = Lesson.objects.filter(
+            grade=grade,
+            is_active=True
+        ).select_related('subject', 'grade', 'category').prefetch_related('resources')
+
+        # Apply filters from query params
+        subject_id = request.query_params.get('subject')
+        search = request.query_params.get('search')
+
+        if subject_id:
+            lessons = lessons.filter(subject_id=subject_id)
+        if search:
+            lessons = lessons.filter(
+                Q(title__icontains=search) |
+                Q(title_arabic__icontains=search) |
+                Q(title_french__icontains=search) |
+                Q(description__icontains=search)
+            )
+
+        # Get total count before pagination
+        total_count = lessons.count()
+
+        # Extract all unique subjects from ALL lessons (for filter dropdown)
+        # This needs to be done before pagination to show all available subjects
+        all_subjects_qs = lessons.values(
+            'subject__id',
+            'subject__name',
+            'subject__name_arabic',
+            'subject__name_french'
+        )
+
+        # Deduplicate by subject_id (distinct() doesn't work reliably across databases)
+        subjects_dict = {}
+        for subj in all_subjects_qs:
+            subject_id = subj['subject__id']
+            if subject_id and subject_id not in subjects_dict:
+                subjects_dict[subject_id] = {
+                    'id': subject_id,
+                    'name': subj['subject__name'],
+                    'name_arabic': subj['subject__name_arabic'],
+                    'name_french': subj['subject__name_french'],
+                }
+
+        subjects_list = list(subjects_dict.values())
+
+        # Pagination (20 lessons per page)
+        page = int(request.query_params.get('page', 1))
+        page_size = int(request.query_params.get('page_size', 20))
+        start = (page - 1) * page_size
+        end = start + page_size
+
+        lessons = lessons[start:end]
+
+        # Get all progress data for student (O(1) lookup)
+        from homework.models import LessonProgress
+        lesson_ids = [lesson.id for lesson in lessons]
+        progress_map = {
+            p.lesson_id: p
+            for p in LessonProgress.objects.filter(
+                student=request.user,
+                lesson_id__in=lesson_ids
+            )
+        }
+
+        # Serialize all lessons at once (more efficient)
+        serializer = LessonSerializer(lessons, many=True)
+        lessons_data = serializer.data
+
+        # Merge lesson + progress data
+        results = []
+        for lesson_data in lessons_data:
+            progress = progress_map.get(lesson_data['id'])
+
+            if progress:
+                lesson_data['progress'] = {
+                    'status': progress.status,
+                    'completion_percentage': float(progress.completion_percentage),
+                    'average_score': float(progress.average_score) if progress.average_score else None,
+                    'total_points_earned': float(progress.total_points_earned),
+                    'time_spent_minutes': progress.total_time_spent,
+                }
+            else:
+                lesson_data['progress'] = {
+                    'status': 'not_started',
+                    'completion_percentage': 0,
+                    'average_score': None,
+                    'total_points_earned': 0,
+                    'time_spent_minutes': 0,
+                }
+
+            # TODO: Implement prerequisite logic (for now, all lessons are unlocked)
+            lesson_data['is_locked'] = False
+            results.append(lesson_data)
+
+        # Calculate summary statistics (based on ALL lessons, not just current page)
+        from homework.models import StudentWallet
+        try:
+            wallet = StudentWallet.objects.get(student=request.user)
+            total_points = wallet.total_points
+        except StudentWallet.DoesNotExist:
+            total_points = 0
+
+        # Get all lesson IDs for summary calculation
+        all_lesson_ids = Lesson.objects.filter(
+            grade=grade,
+            is_active=True
+        ).values_list('id', flat=True)
+
+        # Get progress for ALL lessons
+        all_progress = LessonProgress.objects.filter(
+            student=request.user,
+            lesson_id__in=all_lesson_ids
+        )
+
+        total_lessons = len(all_lesson_ids)
+        completed = all_progress.filter(status='completed').count()
+        in_progress = all_progress.filter(status='in_progress').count()
+
+        # Calculate study time (sum of time spent on ALL in-progress and completed lessons)
+        total_minutes = all_progress.filter(
+            status__in=['in_progress', 'completed']
+        ).aggregate(
+            total_time=Sum('total_time_spent')
+        )['total_time'] or 0
+        study_time_hours = round(total_minutes / 60, 1)
+
+        # Find next recommended lesson
+        next_lesson = None
+        # First, check for in-progress lessons
+        for r in results:
+            if r['progress']['status'] == 'in_progress':
+                next_lesson = r['id']
+                break
+        # If no in-progress, find first not-started unlocked lesson
+        if not next_lesson:
+            for r in results:
+                if r['progress']['status'] == 'not_started' and not r['is_locked']:
+                    next_lesson = r['id']
+                    break
+
+        # Calculate total pages
+        import math
+        total_pages = math.ceil(total_count / page_size) if page_size > 0 else 1
+
+        # Prepare response
+        return Response({
+            'summary': {
+                'total_lessons': total_lessons,
+                'completed_lessons': completed,
+                'in_progress_lessons': in_progress,
+                'completion_percentage': (completed / total_lessons * 100) if total_lessons > 0 else 0,
+                'total_points': total_points,
+                'study_time_hours': study_time_hours,
+                'next_lesson_id': next_lesson,
+            },
+            'lessons': results,
+            'subjects': subjects_list,
+            'pagination': {
+                'total_count': total_count,
+                'total_pages': total_pages,
+                'current_page': page,
+                'page_size': page_size,
+                'has_next': page < total_pages,
+                'has_previous': page > 1,
+            }
         })
 
 class LessonResourceViewSet(viewsets.ModelViewSet):

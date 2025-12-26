@@ -1,6 +1,7 @@
 # homework/views.py
 
-from rest_framework import viewsets, status, permissions
+from rest_framework import viewsets, status, permissions, filters
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
@@ -216,9 +217,42 @@ class TextbookLibraryViewSet(viewsets.ModelViewSet):
 # EXERCISE VIEWS
 # =====================================
 
+class ExerciseSubmissionViewSet(viewsets.ReadOnlyModelViewSet):
+    """Expose exercise submissions for reporting; students see only their own."""
+    serializer_class = ExerciseSubmissionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        qs = ExerciseSubmission.objects.all().select_related('exercise', 'student')
+        user = self.request.user
+
+        # Students can only see their own submissions
+        if getattr(user, 'role', None) == 'STUDENT':
+            qs = qs.filter(student=user)
+
+        exercise_id = self.request.query_params.get('exercise')
+        if exercise_id:
+            qs = qs.filter(exercise_id=exercise_id)
+
+        exercise_ids = self.request.query_params.get('exercise__in')
+        if exercise_ids:
+            ids = [eid for eid in exercise_ids.split(',') if eid.strip().isdigit()]
+            if ids:
+                qs = qs.filter(exercise_id__in=ids)
+
+        status_param = self.request.query_params.get('status')
+        if status_param:
+            qs = qs.filter(status=status_param)
+
+        return qs.order_by('-created_at')
+
 class ExerciseViewSet(viewsets.ModelViewSet):
     queryset = Exercise.objects.all()
     permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
+    filterset_fields = ['is_published', 'lesson', 'is_active']
+    ordering_fields = ['order', 'created_at', 'title']
+    ordering = ['order']
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
@@ -231,7 +265,6 @@ class ExerciseViewSet(viewsets.ModelViewSet):
         if lesson_id:
             queryset = queryset.filter(lesson_id=lesson_id)
         return queryset
-
 
     @action(detail=True, methods=['post'], url_path='start')
     def start_exercise(self, request, pk=None):
@@ -644,7 +677,7 @@ class HomeworkViewSet(viewsets.ModelViewSet):
             return Response({'message': 'Homework duplicated successfully', 'id': new_homework.id})
         
         return Response(serializer.errors, status=400)
-
+        
 # =====================================
 # QUESTION VIEWS  
 # =====================================
@@ -934,6 +967,9 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         for answer in submission.answers.all():
             question_type = answer.question.question_type
 
+            if question_type not in Homework.AUTO_GRADE_SUPPORTED_TYPES:
+                continue
+
             if question_type in ['qcm_single', 'qcm_multiple', 'true_false']:
                 correct_choices = answer.question.choices.filter(is_correct=True)
                 selected_choices = answer.selected_choices.all()
@@ -952,6 +988,17 @@ class SubmissionViewSet(viewsets.ModelViewSet):
                 elif question_type == 'qcm_multiple':
                     # Multiple choice: must select all correct answers and no incorrect ones
                     if (set(selected_choices) == set(correct_choices)):
+                        answer.is_correct = True
+                        answer.points_earned = answer.question.points
+                        auto_score += float(answer.question.points)
+                    else:
+                        answer.is_correct = False
+                        answer.points_earned = 0
+
+                elif question_type == 'true_false':
+                    # True/False acts like single choice
+                    if (selected_choices.count() == 1 and
+                        selected_choices.first() in correct_choices):
                         answer.is_correct = True
                         answer.points_earned = answer.question.points
                         auto_score += float(answer.question.points)
@@ -1012,6 +1059,8 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         
         submission.status = 'auto_graded'
         submission.save()
+        # Award rewards for auto-graded submissions as well
+        self._calculate_rewards(submission)
     
     def _calculate_rewards(self, submission):
         """Calculate and award rewards for a submission"""

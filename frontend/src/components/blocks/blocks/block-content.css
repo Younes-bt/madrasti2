@@ -1,0 +1,236 @@
+/* ============================================
+   HTML/SVG Content in Paragraphs
+   ============================================ */
+.paragraph-html-content svg,
+.semantic-content svg,
+.table-cell-html svg,
+.image-block-svg svg {
+    display: inline-block !important;
+    vertical-align: middle;
+    max-width: 100%;
+    height: auto;
+    min-height: 20px;
+}
+
+/* Ensure SVG elements are visible */
+.paragraph-html-content svg *,
+.semantic-content svg *,
+.table-cell-html svg *,
+.image-block-svg svg * {
+    vector-effect: non-scaling-stroke;
+}
+
+/* SVG fallback for missing viewBox */
+.paragraph-html-content svg:not([viewBox]),
+.semantic-content svg:not([viewBox]),
+.table-cell-html svg:not([viewBox]),
+.image-block-svg svg:not([viewBox]) {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+}
+
+/* Special handling for image block SVG container */
+.image-block-svg {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.paragraph-html-content table,
+.semantic-content table {
+    width: 100%;
+    max-width: 100%;
+    margin: 1rem 0;
+    border-collapse: collapse;
+    overflow-x: auto;
+    display: table;
+}
+
+.paragraph-html-content table th,
+.semantic-content table th {
+    background-color: rgb(249 250 251);
+    font-weight: 600;
+    text-align: left;
+    padding: 0.75rem 1rem;
+    border: 1px solid rgb(229 231 235);
+}
+
+.paragraph-html-content table td,
+.semantic-content table td {
+    padding: 0.75rem 1rem;
+    border: 1px solid rgb(229 231 235);
+}
+
+.paragraph-html-content table tbody tr:nth-child(even),
+.semantic-content table tbody tr:nth-child(even) {
+    background-color: rgb(249 250 251);
+}
+
+/* Dark mode */
+.dark .paragraph-html-content table th,
+.dark .semantic-content table th {
+    background-color: rgb(31 41 55);
+    border-color: rgb(55 65 81);
+}
+
+.dark .paragraph-html-content table td,
+.dark .semantic-content table td {
+    border-color: rgb(55 65 81);
+}
+
+.dark .paragraph-html-content table tbody tr:nth-child(even),
+.dark .semantic-content table tbody tr:nth-child(even) {
+    background-color: rgb(31 41 55 / 0.5);
+}
+
+/* ============================================
+   HTML Tables in TableBlock
+   ============================================ */
+.lesson-table-html table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.lesson-table-html table th {
+    background-color: rgb(249 250 251);
+    font-weight: 600;
+    text-align: left;
+    padding: 1rem 1.5rem;
+    border-bottom: 2px solid rgb(229 231 235);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: rgb(107 114 128);
+}
+
+.lesson-table-html table td {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid rgb(229 231 235);
+    color: rgb(17 24 39);
+}
+
+.lesson-table-html table tbody tr {
+    transition: background-color 0.15s ease;
+}
+
+.lesson-table-html table tbody tr:nth-child(even) {
+    background-color: rgb(249 250 251 / 0.5);
+}
+
+.lesson-table-html table tbody tr:hover {
+    background-color: rgb(243 244 246);
+}
+
+/* SVG in tables */
+.lesson-table-html svg,
+.table-cell-html svg {
+    display: inline-block !important;
+    vertical-align: middle;
+    max-width: 100%;
+    height: auto;
+}
+
+/* Dark mode */
+.dark .lesson-table-html table th {
+    background-color: rgb(31 41 55);
+    border-color: rgb(55 65 81);
+    color: rgb(209 213 219);
+}
+
+.dark .lesson-table-html table td {
+    border-color: rgb(55 65 81);
+    color: rgb(229 231 235);
+}
+
+.dark .lesson-table-html table tbody tr:nth-child(even) {
+    background-color: rgb(31 41 55 / 0.3);
+}
+
+.dark .lesson-table-html table tbody tr:hover {
+    background-color: rgb(55 65 81 / 0.5);
+}
+
+/* ============================================
+   Math Content Fixes
+   ============================================ */
+.katex {
+    font-size: 1.1em;
+}
+
+.katex-display {
+    margin: 1.5rem 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+/* Ensure math rendering in tables */
+.table-cell-html .katex,
+td .katex {
+    font-size: 1rem;
+}
+
+/* ============================================
+   Semantic Block Enhancements
+   ============================================ */
+.semantic-content p {
+    margin: 0.5rem 0;
+}
+
+.semantic-content p:first-child {
+    margin-top: 0;
+}
+
+.semantic-content p:last-child {
+    margin-bottom: 0;
+}
+
+/* ============================================
+   Responsive Improvements
+   ============================================ */
+@media (max-width: 768px) {
+
+    .paragraph-html-content table,
+    .semantic-content table,
+    .lesson-table-html table {
+        font-size: 0.75rem;
+    }
+
+    .paragraph-html-content table th,
+    .paragraph-html-content table td,
+    .semantic-content table th,
+    .semantic-content table td {
+        padding: 0.5rem;
+    }
+
+    .lesson-table-html table th,
+    .lesson-table-html table td {
+        padding: 0.5rem 0.75rem;
+    }
+}
+
+/* ============================================
+   RTL Support
+   ============================================ */
+[dir="rtl"] .paragraph-html-content table th,
+[dir="rtl"] .semantic-content table th,
+[dir="rtl"] .lesson-table-html table th {
+    text-align: right;
+}
+
+/* ============================================
+   Print Styles
+   ============================================ */
+@media print {
+
+    .lesson-table-html table,
+    .paragraph-html-content table,
+    .semantic-content table {
+        page-break-inside: avoid;
+    }
+
+    .semantic-content {
+        border: 1px solid #000;
+    }
+}

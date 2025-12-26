@@ -1842,7 +1842,8 @@
       "academicPerformance": "Performance Académique",
       "financialReports": "Rapports Financiers",
       "customReportBuilder": "Générateur de Rapports",
-      "comparativeAnalysis": "Analyse Comparative"
+      "comparativeAnalysis": "Analyse Comparative",
+      "activityLogs": "Journaux d'activité"
     },
     "communications": {
       "title": "Communications",
@@ -2466,7 +2467,8 @@
         "untitledHomework": "Devoir sans titre",
         "subject": "Matière",
         "grade": "Classe"
-      }
+      },
+      "overview": "Vue globale"
     },
     "achievements": {
       "title": "Réussites & Récompenses",
@@ -2877,5 +2879,58 @@
     "profilePictureFormat": "JPG, PNG ou GIF. Taille max 5 Mo",
     "emailCannotBeChanged": "L'email ne peut pas être modifié",
     "emergencyContact": "Les coordonnées d'urgence sont utilisées en cas de situations urgentes"
+  },
+  "adminLogs": {
+    "title": "Journaux d'activite",
+    "subtitle": "Surveillez les actions recentes des administrateurs et du staff",
+    "refresh": "Rafraichir",
+    "error": "Echec du chargement des journaux",
+    "system": "Systeme",
+    "empty": "Aucune activite a afficher pour le moment.",
+    "filters": {
+      "title": "Filtrer les journaux",
+      "search": "Recherche",
+      "searchPlaceholder": "Rechercher par description, cible ou utilisateur...",
+      "action": "Action",
+      "role": "Role",
+      "target": "Cible",
+      "start": "Du",
+      "end": "Au",
+      "apply": "Appliquer les filtres",
+      "reset": "Reinitialiser"
+    },
+    "actions": {
+      "all": "Toutes les actions",
+      "MESSAGE_SENT": "Message envoye",
+      "HOMEWORK_CREATED": "Devoir cree",
+      "HOMEWORK_PUBLISHED": "Devoir publie",
+      "PAYMENT_RECORDED": "Paiement enregistre",
+      "USER_CREATED": "Utilisateur cree",
+      "USER_UPDATED": "Utilisateur mis a jour",
+      "SYSTEM": "Systeme",
+      "OTHER": "Autre"
+    },
+    "targets": {
+      "all": "Toutes les cibles",
+      "message": "Message",
+      "payment": "Paiement",
+      "homework": "Devoir",
+      "invoice": "Facture"
+    },
+    "table": {
+      "title": "Journal des activites",
+      "subtitle": "Evenements recents tries par date",
+      "total": "Total {{count}} entrees",
+      "time": "Horodatage",
+      "actor": "Utilisateur",
+      "action": "Action",
+      "target": "Cible",
+      "description": "Description",
+      "metadata": "Metadonnees",
+      "unknownTarget": "Cible inconnue",
+      "pagination": "Page {{page}} sur {{totalPages}}",
+      "prev": "Precedent",
+      "next": "Suivant"
+    }
   }
 }

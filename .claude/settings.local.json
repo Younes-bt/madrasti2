@@ -13,7 +13,10 @@
       "Bash(sed -n '1057,1065p' \"frontend/src/locales/en/en.json\")",
       "Bash(git log --all --oneline --grep=\"lesson\" --grep=\"enable\" --grep=\"disable\" --grep=\"availability\" -i -20)",
       "Read(//c/Users/younes/Desktop/**)",
-      "Bash(npm run dev)"
+      "Bash(npm run dev)",
+      "WebSearch",
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": []

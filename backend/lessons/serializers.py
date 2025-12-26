@@ -1,24 +1,96 @@
 # lessons/serializers.py
 
 from rest_framework import serializers
-from .models import Lesson, LessonResource, LessonTag, LessonTagging, LessonAvailability
+from .models import Lesson, LessonResource, LessonTag, LessonTagging, LessonAvailability, SubjectCategory
 from schools.serializers import SubjectSerializer, GradeSerializer, SchoolClassSerializer
+
+class SubjectCategorySerializer(serializers.ModelSerializer):
+    subject_details = SubjectSerializer(source='subject', read_only=True)
+
+    class Meta:
+        model = SubjectCategory
+        fields = ['id', 'subject', 'subject_details', 'ar_name', 'fr_name', 'en_name', 'created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at']
 
 class LessonResourceSerializer(serializers.ModelSerializer):
     file_url = serializers.ReadOnlyField()
     uploaded_by_name = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = LessonResource
         fields = [
             'id', 'title', 'description', 'resource_type', 'file', 'external_url',
-            'file_url', 'file_size', 'file_format', 'is_visible_to_students',
-            'is_downloadable', 'order', 'uploaded_at', 'uploaded_by', 'uploaded_by_name'
+            'file_url', 'file_size', 'file_format', 'markdown_content', 'blocks_content',
+            'content_version', 'is_visible_to_students', 'is_downloadable', 'order',
+            'uploaded_at', 'uploaded_by', 'uploaded_by_name'
         ]
         read_only_fields = ['file_size', 'file_format', 'uploaded_at', 'uploaded_by']
-    
+
     def get_uploaded_by_name(self, obj):
         return obj.uploaded_by.full_name if obj.uploaded_by else None
+
+    def validate_blocks_content(self, value):
+        """Validate the structure of blocks_content JSON"""
+        if value is None:
+            return value
+
+        # Validate that it's a dictionary with required keys
+        if not isinstance(value, dict):
+            raise serializers.ValidationError("blocks_content must be a JSON object")
+
+        # Check for blocks array
+        if 'blocks' not in value:
+            raise serializers.ValidationError("blocks_content must contain a 'blocks' array")
+
+        blocks = value.get('blocks', [])
+        if not isinstance(blocks, list):
+            raise serializers.ValidationError("'blocks' must be an array")
+
+        # Validate each block
+        VALID_BLOCK_TYPES = [
+            'heading', 'paragraph', 'quote', 'callout', 'list',
+            'code', 'math', 'image', 'video', 'audio', 'table',
+            'divider', 'spacer', 'toggle', 'columns', 'embed'
+        ]
+
+        for idx, block in enumerate(blocks):
+            if not isinstance(block, dict):
+                raise serializers.ValidationError(f"Block at index {idx} must be an object")
+
+            # Required fields
+            required_fields = ['id', 'type', 'content']
+            for field in required_fields:
+                if field not in block:
+                    raise serializers.ValidationError(
+                        f"Block at index {idx} is missing required field: {field}"
+                    )
+
+            # Validate block type
+            if block['type'] not in VALID_BLOCK_TYPES:
+                raise serializers.ValidationError(
+                    f"Block at index {idx} has invalid type: {block['type']}"
+                )
+
+            # Validate content is a dictionary
+            if not isinstance(block['content'], dict):
+                raise serializers.ValidationError(
+                    f"Block at index {idx} content must be an object"
+                )
+
+        return value
+
+    def validate(self, data):
+        """Cross-field validation"""
+        # If resource_type is 'blocks', blocks_content should be provided
+        resource_type = data.get('resource_type', self.instance.resource_type if self.instance else None)
+        blocks_content = data.get('blocks_content')
+
+        if resource_type == 'blocks' and not blocks_content:
+            raise serializers.ValidationError({
+                'blocks_content': 'blocks_content is required when resource_type is "blocks"'
+            })
+
+        return data
 
 class LessonTagSerializer(serializers.ModelSerializer):
     class Meta:
@@ -34,6 +106,10 @@ class LessonSerializer(serializers.ModelSerializer):
     # Add nested serializers for full multilingual support
     subject_details = SubjectSerializer(source='subject', read_only=True)
     grade_details = GradeSerializer(source='grade', read_only=True)
+    
+    # Category details
+    category_details = SubjectCategorySerializer(source='category', read_only=True)
+    
     created_by_name = serializers.SerializerMethodField()
     resources = LessonResourceSerializer(many=True, read_only=True)
     tags = serializers.SerializerMethodField()
@@ -44,7 +120,10 @@ class LessonSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lesson
         fields = [
-            'id', 'subject', 'subject_name', 'subject_details', 'grade', 'grade_name', 'grade_details', 'tracks', 'title',
+            'id', 'subject', 'subject_name', 'subject_details', 
+            'grade', 'grade_name', 'grade_details', 
+            'category', 'category_details', 'unit',
+            'tracks', 'title',
             'title_arabic', 'title_french', 'description', 'cycle',
             'cycle_display', 'order', 'objectives', 'prerequisites',
             'difficulty_level', 'difficulty_display', 'is_active', 'created_at',
@@ -77,7 +156,7 @@ class LessonMinimalSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'title_arabic', 'title_french', 'subject', 'subject_name',
             'subject_name_arabic', 'subject_name_french', 'grade', 'grade_name',
-            'grade_name_arabic', 'grade_name_french', 'tracks', 'cycle', 'cycle_display',
+            'grade_name_arabic', 'grade_name_french', 'tracks', 'category', 'unit', 'cycle', 'cycle_display',
             'order', 'difficulty_level', 'is_active'
         ]
 
@@ -94,7 +173,7 @@ class LessonCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lesson
         fields = [
-            'subject', 'grade', 'tracks', 'title', 'title_arabic', 'title_french',
+            'subject', 'grade', 'tracks', 'category', 'unit', 'title', 'title_arabic', 'title_french',
             'description', 'cycle', 'order', 'objectives',
             'prerequisites', 'difficulty_level', 'is_active'
         ]

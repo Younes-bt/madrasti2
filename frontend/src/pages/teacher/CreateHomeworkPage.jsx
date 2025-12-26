@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useLanguage } from '../../hooks/useLanguage'
 import { useAuth } from '../../hooks/useAuth'
@@ -103,17 +103,18 @@ const CreateHomeworkPage = () => {
     { id: 'matching', label: 'Matching' },
     { id: 'ordering', label: 'Ordering' }
   ]
+  const AUTO_GRADABLE_TYPES = ['qcm_single', 'qcm_multiple', 'true_false', 'fill_blank', 'matching', 'ordering']
 
-  const getAllowedQuestionTypesForFormat = (format) => {
+const getAllowedQuestionTypesForFormat = (format, autoGradeEnabled) => {
     switch (format) {
       case 'qcm_only':
         return ALL_QUESTION_TYPES.filter(t => t.id === 'qcm_single' || t.id === 'qcm_multiple')
       case 'open_only':
         return ALL_QUESTION_TYPES.filter(t => t.id === 'open_short' || t.id === 'open_long')
       case 'mixed':
-        return ALL_QUESTION_TYPES
+        return autoGradeEnabled ? ALL_QUESTION_TYPES.filter(t => AUTO_GRADABLE_TYPES.includes(t.id)) : ALL_QUESTION_TYPES
       default:
-        return ALL_QUESTION_TYPES
+        return autoGradeEnabled ? ALL_QUESTION_TYPES.filter(t => AUTO_GRADABLE_TYPES.includes(t.id)) : ALL_QUESTION_TYPES
     }
   }
 
@@ -129,7 +130,8 @@ const CreateHomeworkPage = () => {
     school_class: '',
     due_date: '',
     estimated_duration: 30,
-    total_points: 20,
+    total_points: 0,
+    auto_grade_qcm: true,
     is_timed: false,
     time_limit: null,
     allow_late_submissions: true,
@@ -141,6 +143,30 @@ const CreateHomeworkPage = () => {
 
   // Book exercises
   const [bookExercises, setBookExercises] = useState([])
+
+  const autoGradingAvailable = homeworkData.homework_format !== 'open_only' && homeworkData.homework_format !== 'book_exercises'
+  const autoGradeSelected = autoGradingAvailable && homeworkData.auto_grade_qcm
+
+  // Derived totals
+  const totalQuestionPoints = useMemo(() => {
+    const total = questions.reduce((sum, q) => {
+      const points = Number(q.points)
+      return sum + (Number.isFinite(points) ? points : 0)
+    }, 0)
+    return Math.round(total * 100) / 100
+  }, [questions])
+  const hasAutoGradableQuestions = useMemo(
+    () => questions.some(q => AUTO_GRADABLE_TYPES.includes(q.question_type)),
+    [questions]
+  )
+  const gradingIsAuto = homeworkData.auto_grade_qcm && autoGradingAvailable && hasAutoGradableQuestions
+
+  useEffect(() => {
+    setHomeworkData(prev => {
+      if (prev.total_points === totalQuestionPoints) return prev
+      return { ...prev, total_points: totalQuestionPoints }
+    })
+  }, [totalQuestionPoints])
 
   // Form validation
   const [errors, setErrors] = useState({})
@@ -255,7 +281,8 @@ const CreateHomeworkPage = () => {
         school_class: homework.school_class?.toString() || '',
         due_date: homework.due_date || '',
         estimated_duration: homework.estimated_duration || 30,
-        total_points: homework.total_points || 20,
+        total_points: homework.total_points || 0,
+        auto_grade_qcm: homework.auto_grade_qcm !== false && !['open_only', 'book_exercises'].includes(homework.homework_format),
         is_timed: homework.is_timed || false,
         time_limit: homework.time_limit || null,
         allow_late_submissions: homework.allow_late_submissions !== false,
@@ -334,16 +361,27 @@ const CreateHomeworkPage = () => {
   }
 
   const updateHomeworkData = (field, value) => {
-    setHomeworkData(prev => ({ ...prev, [field]: value }))
+    setHomeworkData(prev => {
+      const updated = { ...prev, [field]: value }
+
+      if (field === 'homework_format') {
+        if (value === 'qcm_only') {
+          updated.auto_grade_qcm = true
+        } else if (value === 'open_only' || value === 'book_exercises') {
+          updated.auto_grade_qcm = false
+        }
+      }
+
+      return updated
+    })
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: null }))
     }
   }
 
   const addQuestion = () => {
-    const defaultType = homeworkData.homework_format === 'qcm_only'
-      ? 'qcm_single'
-      : (homeworkData.homework_format === 'open_only' ? 'open_short' : 'qcm_single')
+    const allowedTypes = getAllowedQuestionTypesForFormat(homeworkData.homework_format, autoGradeSelected)
+    const defaultType = allowedTypes[0]?.id || 'qcm_single'
 
     const now = Date.now()
     const base = {
@@ -591,6 +629,7 @@ const CreateHomeworkPage = () => {
       if (!subjectValue) newErrors.subject = 'Teacher subject not found'
       if (!homeworkData.title.trim()) newErrors.title = 'Title is required'
       if (!homeworkData.description.trim()) newErrors.description = 'Description is required'
+      if (!homeworkData.instructions.trim()) newErrors.instructions = 'Instructions are required'
       if (!homeworkData.grade) newErrors.grade = 'Grade is required'
       if (!homeworkData.school_class) newErrors.school_class = 'Class is required'
       if (!homeworkData.due_date) newErrors.due_date = 'Due date is required'
@@ -704,12 +743,15 @@ const CreateHomeworkPage = () => {
 
     setIsSubmitting(true)
     try {
+      const computedTotalPoints = totalQuestionPoints
+      const shouldAutoGrade = autoGradingAvailable && homeworkData.auto_grade_qcm
+
       // Step 1: Create the homework
       const homeworkPayload = {
         title: homeworkData.title,
         title_arabic: homeworkData.title_arabic || '',
         description: homeworkData.description,
-        instructions: homeworkData.instructions,
+        instructions: homeworkData.instructions || homeworkData.description,
         homework_type: homeworkData.homework_type,
         homework_format: homeworkData.homework_format,
         subject: parseInt(homeworkData.subject),
@@ -718,12 +760,12 @@ const CreateHomeworkPage = () => {
         teacher: user.id,
         due_date: homeworkData.due_date,
         estimated_duration: homeworkData.estimated_duration,
-        total_points: homeworkData.total_points,
+        total_points: computedTotalPoints,
         is_timed: homeworkData.is_timed,
         time_limit: homeworkData.time_limit,
         allow_late_submissions: homeworkData.allow_late_submissions,
         late_penalty_percentage: homeworkData.late_penalty_percentage,
-        auto_grade_qcm: homeworkData.homework_format === 'qcm_only',
+        auto_grade_qcm: shouldAutoGrade,
         is_published: true
       }
 
@@ -980,6 +1022,59 @@ const CreateHomeworkPage = () => {
               </CardContent>
             </Card>
 
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">Grading Mode</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Choose when students get their scores. Auto-grade is available for objective question types.
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    disabled={!autoGradingAvailable}
+                    onClick={() => updateHomeworkData('auto_grade_qcm', true)}
+                    className={cn(
+                      "w-full p-4 border rounded-lg text-left transition",
+                      autoGradeSelected ? "border-blue-500 bg-blue-50" : "hover:border-blue-300",
+                      !autoGradingAvailable && "cursor-not-allowed opacity-60"
+                    )}
+                  >
+                    <div className="flex items-center gap-2">
+                      <CheckSquare className="h-5 w-5 text-blue-600" />
+                      <div className="font-semibold">Auto Grade</div>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Instant grading for QCM, True/False, Fill in the Blanks, Matching, and Ordering.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => updateHomeworkData('auto_grade_qcm', false)}
+                    className={cn(
+                      "w-full p-4 border rounded-lg text-left transition",
+                      !autoGradeSelected ? "border-slate-500 bg-slate-50" : "hover:border-slate-400"
+                    )}
+                  >
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-5 w-5 text-slate-600" />
+                      <div className="font-semibold">Manual Grade</div>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Use for open-ended responses or when you prefer teacher review.
+                    </p>
+                  </button>
+                </div>
+                {!autoGradingAvailable && (
+                  <p className="text-xs text-amber-600 mt-2">
+                    Auto grading is not available for this homework type.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Basic Information */}
             <Card>
               <CardHeader>
@@ -1092,6 +1187,7 @@ const CreateHomeworkPage = () => {
                       className="text-base resize-none"
                       rows={3}
                     />
+                    {errors.instructions && <p className="text-red-500 text-sm mt-1">{errors.instructions}</p>}
                   </div>
                 </div>
               </CardContent>
@@ -1105,25 +1201,17 @@ const CreateHomeworkPage = () => {
             {(homeworkData.homework_format === 'qcm_only' || homeworkData.homework_format === 'open_only' || homeworkData.homework_format === 'mixed') && (
               <Card>
                 <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        {homeworkData.homework_format === 'qcm_only' ? (
-                          <CheckSquare className="h-5 w-5" />
-                        ) : (
-                          <HelpCircle className="h-5 w-5" />
-                        )}
-                        Questions
-                      </CardTitle>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Add questions for your students to answer
-                      </p>
-                    </div>
-                    <Button onClick={addQuestion} size="sm">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Question
-                    </Button>
-                  </div>
+                  <CardTitle className="flex items-center gap-2">
+                    {homeworkData.homework_format === 'qcm_only' ? (
+                      <CheckSquare className="h-5 w-5" />
+                    ) : (
+                      <HelpCircle className="h-5 w-5" />
+                    )}
+                    Questions
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Add questions for your students to answer
+                  </p>
                 </CardHeader>
                 <CardContent>
                   {errors.questions && (
@@ -1156,15 +1244,15 @@ const CreateHomeworkPage = () => {
                                 value={question.question_type}
                                 onValueChange={(val) => updateQuestion(question.id, 'question_type', val)}
                               >
-                                <SelectTrigger className="text-base">
-                                  <SelectValue placeholder="Select question type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {getAllowedQuestionTypesForFormat(homeworkData.homework_format).map((t) => (
-                                    <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                                  <SelectTrigger className="text-base">
+                                    <SelectValue placeholder="Select question type" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {getAllowedQuestionTypesForFormat(homeworkData.homework_format, autoGradeSelected).map((t) => (
+                                      <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
                             </div>
                             <div>
                               <label className="text-sm font-medium mb-2 block">Question Text *</label>
@@ -1356,6 +1444,13 @@ const CreateHomeworkPage = () => {
                         <p>Click "Add Question" to get started creating your homework</p>
                       </div>
                     )}
+
+                    <div className="pt-2">
+                      <Button onClick={addQuestion} size="sm">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Question
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -1516,6 +1611,69 @@ const CreateHomeworkPage = () => {
                 </p>
               </CardHeader>
               <CardContent className="space-y-6">
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Grading Mode</label>
+                      <p className="text-xs text-muted-foreground">
+                        Choose automatic grading for supported question types or keep manual review.
+                      </p>
+                    </div>
+                    {!autoGradingAvailable && (
+                      <Badge variant="outline" className="text-xs font-normal">
+                        Auto grading unavailable for this format
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      disabled={!autoGradingAvailable}
+                      onClick={() => autoGradingAvailable && updateHomeworkData('auto_grade_qcm', true)}
+                      className={cn(
+                        "w-full p-4 border rounded-lg text-left transition",
+                        homeworkData.auto_grade_qcm && autoGradingAvailable
+                          ? "border-blue-500 bg-blue-50"
+                          : "hover:border-blue-300",
+                        !autoGradingAvailable && "cursor-not-allowed opacity-60"
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <CheckSquare className="h-5 w-5 text-blue-600" />
+                        <div className="font-semibold">Auto Grade</div>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Instantly score QCM, True/False, Fill in the Blanks, Matching, and Ordering questions.
+                      </p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => updateHomeworkData('auto_grade_qcm', false)}
+                      className={cn(
+                        "w-full p-4 border rounded-lg text-left transition",
+                        !homeworkData.auto_grade_qcm ? "border-slate-500 bg-slate-50" : "hover:border-slate-400"
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-slate-600" />
+                        <div className="font-semibold">Manual Grade</div>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Keep submissions for teacher review before releasing scores.
+                      </p>
+                    </button>
+                  </div>
+                  {homeworkData.auto_grade_qcm && !hasAutoGradableQuestions && (
+                    <p className="text-xs text-amber-600">
+                      Add at least one auto-gradable question (QCM, True/False, Fill in the Blanks, Matching, Ordering) to enable instant scoring.
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Auto grading supports: QCM (single/multiple), True/False, Fill in the Blanks, Matching, Ordering. Other questions stay for manual grading.
+                  </p>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="text-sm font-medium mb-2 block">Duration (minutes)</label>
@@ -1536,12 +1694,12 @@ const CreateHomeworkPage = () => {
                     <Input
                       type="number"
                       placeholder="20"
-                      value={homeworkData.total_points}
-                      onChange={(e) => updateHomeworkData('total_points', parseFloat(e.target.value) || 0)}
-                      className="text-base"
+                      value={totalQuestionPoints}
+                      readOnly
+                      className="text-base bg-gray-50"
                     />
                     <p className="text-xs text-muted-foreground mt-1">
-                      Maximum points students can earn
+                      Calculated from all question points. Update questions to change this total.
                     </p>
                   </div>
                 </div>
@@ -1650,7 +1808,7 @@ const CreateHomeworkPage = () => {
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">Points & Duration</label>
                       <p className="text-base">
-                        {homeworkData.total_points} points • {homeworkData.estimated_duration} minutes
+                        {totalQuestionPoints} points / {homeworkData.estimated_duration} minutes
                       </p>
                     </div>
                   </div>
@@ -1688,6 +1846,12 @@ const CreateHomeworkPage = () => {
                           `Allowed (${homeworkData.late_penalty_percentage}% penalty)` :
                           'Not allowed'
                         }
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Grading:</span>
+                      <span className={gradingIsAuto ? "text-green-600" : "text-gray-700"}>
+                        {gradingIsAuto ? 'Auto (instant for supported types)' : 'Manual review'}
                       </span>
                     </div>
                   </div>

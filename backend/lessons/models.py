@@ -12,6 +12,10 @@ class Lesson(models.Model):
     grade = models.ForeignKey('schools.Grade', on_delete=models.CASCADE, related_name='lessons')
     tracks = models.ManyToManyField('schools.Track', related_name='lessons', blank=True)
     
+    # Optional categorization
+    category = models.ForeignKey('SubjectCategory', on_delete=models.SET_NULL, null=True, blank=True, related_name='lessons')
+    unit = models.CharField(max_length=200, blank=True)
+    
     # Lesson details
     title = models.CharField(max_length=200)
     title_arabic = models.CharField(max_length=200, blank=True)
@@ -76,6 +80,8 @@ class LessonResource(models.Model):
         ('link', 'رابط خارجي - Lien externe'),
         ('exercise', 'تمرين - Exercice'),
         ('presentation', 'عرض تقديمي - Présentation'),
+        ('markdown', 'ماركداون - Markdown'),
+        ('blocks', 'كتل تفاعلية - Blocs interactifs'),
     ]
     resource_type = models.CharField(max_length=20, choices=RESOURCE_TYPES)
     
@@ -91,6 +97,22 @@ class LessonResource(models.Model):
     # Alternative external URL
     external_url = models.URLField(blank=True, help_text="YouTube, external resources, etc.")
     
+    # Markdown content (for markdown resource type)
+    markdown_content = models.TextField(blank=True, help_text="Markdown formatted content")
+
+    # Notion-style blocks content (for blocks resource type)
+    blocks_content = models.JSONField(
+        blank=True,
+        null=True,
+        help_text="JSON structure containing Notion-style content blocks"
+    )
+
+    # Version control for concurrent editing
+    content_version = models.PositiveIntegerField(
+        default=1,
+        help_text="Version number for conflict detection during concurrent editing"
+    )
+
     # File metadata (auto-populated by Cloudinary)
     file_size = models.PositiveIntegerField(null=True, blank=True, help_text="File size in bytes")
     file_format = models.CharField(max_length=10, blank=True)  # pdf, mp4, jpg, etc.
@@ -123,6 +145,24 @@ class LessonResource(models.Model):
     def file_url(self):
         """Get the Cloudinary URL for the file"""
         return self.file.url if self.file else self.external_url
+
+class SubjectCategory(models.Model):
+    """Categories within a subject (e.g. Algebra, Geometry for Math)"""
+    subject = models.ForeignKey('schools.Subject', on_delete=models.CASCADE, related_name='categories')
+    ar_name = models.CharField(max_length=100, verbose_name="Arabic Name")
+    fr_name = models.CharField(max_length=100, verbose_name="French Name")
+    en_name = models.CharField(max_length=100, verbose_name="English Name")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Subject Category"
+        verbose_name_plural = "Subject Categories"
+        ordering = ['subject', 'ar_name']
+
+    def __str__(self):
+        return f"{self.subject.name} - {self.en_name} ({self.ar_name})"
 
 # Optional: Lesson Tags for better organization
 class LessonTag(models.Model):

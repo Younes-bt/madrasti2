@@ -21,9 +21,13 @@ import {
 } from 'lucide-react'
 import { exerciseService } from '../../services/exercises'
 import { ROUTES } from '../../utils/constants'
+import OrderingQuestion from '../../components/exercise/OrderingQuestion'
+import MatchingQuestion from '../../components/exercise/MatchingQuestion'
+import FillBlankQuestion from '../../components/exercise/FillBlankQuestion'
 
 const SUPPORTED_AUTO_TYPES = ['qcm_single', 'qcm_multiple', 'true_false']
-const TEXT_TYPES = ['open_short', 'open_long', 'fill_blank']
+const TEXT_TYPES = ['open_short', 'open_long']
+const INTERACTIVE_TYPES = ['ordering', 'matching', 'fill_blank']
 
 const StudentExerciseEntryPage = () => {
   const { t, currentLanguage } = useLanguage()
@@ -172,6 +176,12 @@ const StudentExerciseEntryPage = () => {
       initial[question.id] = {
         textAnswer: existing?.text_answer || '',
         selectedChoices: existingChoices.map((value) => String(value)),
+        // For ordering questions
+        orderingSequence: existing?.ordering_sequence || [],
+        // For matching questions
+        matchingAnswers: existing?.matching_answers || [],
+        // For fill_blank questions
+        blankAnswers: existing?.blank_answers || [],
       }
     })
 
@@ -243,8 +253,41 @@ const StudentExerciseEntryPage = () => {
     setAnswers((prev) => ({
       ...prev,
       [questionId]: {
-        ...(prev[questionId] || { selectedChoices: [] }),
+        ...(prev[questionId] || { selectedChoices: [], orderingSequence: [], matchingAnswers: [], blankAnswers: [] }),
         textAnswer: value,
+      },
+    }))
+  }
+
+  // Handler for ordering questions
+  const updateOrderingSequence = (questionId, sequence) => {
+    setAnswers((prev) => ({
+      ...prev,
+      [questionId]: {
+        ...(prev[questionId] || { selectedChoices: [], textAnswer: '', matchingAnswers: [], blankAnswers: [] }),
+        orderingSequence: sequence,
+      },
+    }))
+  }
+
+  // Handler for matching questions
+  const updateMatchingAnswers = (questionId, matches) => {
+    setAnswers((prev) => ({
+      ...prev,
+      [questionId]: {
+        ...(prev[questionId] || { selectedChoices: [], textAnswer: '', orderingSequence: [], blankAnswers: [] }),
+        matchingAnswers: matches,
+      },
+    }))
+  }
+
+  // Handler for fill_blank questions
+  const updateBlankAnswers = (questionId, blankAnswers) => {
+    setAnswers((prev) => ({
+      ...prev,
+      [questionId]: {
+        ...(prev[questionId] || { selectedChoices: [], textAnswer: '', orderingSequence: [], matchingAnswers: [] }),
+        blankAnswers: blankAnswers,
       },
     }))
   }
@@ -263,7 +306,19 @@ const StudentExerciseEntryPage = () => {
         return answer.textAnswer?.trim() ? count + 1 : count
       }
 
-      // Fallback for advanced types: consider answered when text provided
+      if (question.question_type === 'ordering') {
+        return answer.orderingSequence?.length ? count + 1 : count
+      }
+
+      if (question.question_type === 'matching') {
+        return answer.matchingAnswers?.length ? count + 1 : count
+      }
+
+      if (question.question_type === 'fill_blank') {
+        return answer.blankAnswers?.length ? count + 1 : count
+      }
+
+      // Fallback for other types
       return answer.textAnswer?.trim() ? count + 1 : count
     }, 0)
   }, [answers, exercise?.questions])
@@ -283,6 +338,21 @@ const StudentExerciseEntryPage = () => {
         return Boolean(answer.textAnswer && answer.textAnswer.trim())
       }
 
+      if (question.question_type === 'ordering') {
+        const expectedLength = question.ordering_items?.length || 0
+        return (answer.orderingSequence || []).length === expectedLength
+      }
+
+      if (question.question_type === 'matching') {
+        const expectedLength = question.matching_pairs?.length || 0
+        return (answer.matchingAnswers || []).length === expectedLength
+      }
+
+      if (question.question_type === 'fill_blank') {
+        const expectedLength = question.blanks?.length || 0
+        return (answer.blankAnswers || []).length === expectedLength
+      }
+
       return Boolean(answer.textAnswer && answer.textAnswer.trim())
     })
   }, [answers, exercise?.questions])
@@ -292,16 +362,34 @@ const StudentExerciseEntryPage = () => {
 
     const payload = {
       answers: (exercise.questions || []).map((question) => {
-        const rawChoices = answers[question.id]?.selectedChoices || []
+        const answer = answers[question.id] || {}
+        const rawChoices = answer.selectedChoices || []
         const selectedChoiceIds = rawChoices
           .map((choiceId) => Number(choiceId))
           .filter((value) => !Number.isNaN(value))
 
-        return {
+        const answerPayload = {
           question: question.id,
-          text_answer: (answers[question.id]?.textAnswer || '').trim(),
+          text_answer: (answer.textAnswer || '').trim(),
           selected_choice_ids: selectedChoiceIds,
         }
+
+        // Add ordering sequence if present
+        if (question.question_type === 'ordering' && answer.orderingSequence) {
+          answerPayload.ordering_sequence = answer.orderingSequence
+        }
+
+        // Add matching answers if present
+        if (question.question_type === 'matching' && answer.matchingAnswers) {
+          answerPayload.matching_answers = answer.matchingAnswers
+        }
+
+        // Add blank answers if present
+        if (question.question_type === 'fill_blank' && answer.blankAnswers) {
+          answerPayload.blank_answers = answer.blankAnswers
+        }
+
+        return answerPayload
       }),
     }
 
@@ -445,8 +533,39 @@ const renderChoices = (question) => {
             />
           )}
 
+          {question.question_type === 'ordering' && (
+            <OrderingQuestion
+              question={question}
+              currentOrder={answer.orderingSequence}
+              onChange={(sequence) => updateOrderingSequence(questionId, sequence)}
+              currentLanguage={currentLanguage}
+              disabled={attemptState === 'submitted'}
+            />
+          )}
+
+          {question.question_type === 'matching' && (
+            <MatchingQuestion
+              question={question}
+              matches={answer.matchingAnswers}
+              onChange={(matches) => updateMatchingAnswers(questionId, matches)}
+              currentLanguage={currentLanguage}
+              disabled={attemptState === 'submitted'}
+            />
+          )}
+
+          {question.question_type === 'fill_blank' && (
+            <FillBlankQuestion
+              question={question}
+              blankAnswers={answer.blankAnswers}
+              onChange={(blankAnswers) => updateBlankAnswers(questionId, blankAnswers)}
+              currentLanguage={currentLanguage}
+              disabled={attemptState === 'submitted'}
+            />
+          )}
+
           {!SUPPORTED_AUTO_TYPES.includes(question.question_type) &&
-            !TEXT_TYPES.includes(question.question_type) && (
+            !TEXT_TYPES.includes(question.question_type) &&
+            !INTERACTIVE_TYPES.includes(question.question_type) && (
               <div className="space-y-2">
                 <AlertCircle className="h-4 w-4 text-amber-500" />
                 <p className="text-sm text-muted-foreground">

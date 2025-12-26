@@ -6,6 +6,10 @@ import { TeacherPageLayout } from '../../components/teacher/layout'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Button } from '../../components/ui/button'
 import { Badge } from '../../components/ui/badge'
+import EnhancedMarkdown from '../../components/markdown/EnhancedMarkdown'
+import BlockRenderer from '../../components/blocks/BlockRenderer'
+import 'katex/dist/katex.min.css'
+import '../../styles/lesson-content.css'
 import {
   Edit,
   Share2,
@@ -348,8 +352,8 @@ const ViewLessonPage = () => {
 
         {/* Lesson Details */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-6">
 
             {/* Learning Objectives */}
             {lesson.objectives && (
@@ -398,64 +402,95 @@ const ViewLessonPage = () => {
                   <div className="space-y-3">
                     {lesson.resources.map((resource) => {
                       const ResourceIcon = getResourceIcon(resource.resource_type)
+                      const isMarkdown = resource.resource_type?.toLowerCase() === 'markdown'
+                      const isBlocks = resource.resource_type?.toLowerCase() === 'blocks'
+                      const isInlineContent = isMarkdown || isBlocks
+                      const currentLanguage = i18n.language
+
                       return (
                         <div
                           key={resource.id}
                           className="border rounded-lg p-4 hover:shadow-md transition-shadow"
                         >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3 flex-1 min-w-0">
-                              <div className="flex-shrink-0">
-                                <ResourceIcon className="h-8 w-8 text-primary" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <h4 className="font-medium truncate">{resource.title}</h4>
-                                {resource.description && (
-                                  <p className="text-sm text-muted-foreground truncate">
-                                    {resource.description}
-                                  </p>
-                                )}
-                                <div className="flex items-center gap-2 mt-1">
-                                  <Badge variant="outline" className="text-xs">
-                                    {resource.resource_type}
-                                  </Badge>
-                                  {resource.file_size && (
-                                    <span className="text-xs text-muted-foreground">
-                                      {Math.round(resource.file_size / 1024)} KB
-                                    </span>
+                          <div className="flex flex-col gap-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3 flex-1 min-w-0">
+                                <div className="flex-shrink-0">
+                                  <ResourceIcon className="h-8 w-8 text-primary" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-medium truncate">{resource.title}</h4>
+                                  {resource.description && (
+                                    <p className="text-sm text-muted-foreground truncate">
+                                      {resource.description}
+                                    </p>
                                   )}
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <Badge variant="outline" className="text-xs">
+                                      {resource.resource_type}
+                                    </Badge>
+                                    {resource.file_size && (
+                                      <span className="text-xs text-muted-foreground">
+                                        {Math.round(resource.file_size / 1024)} KB
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
+                              {!isInlineContent && (
+                                <div className="flex items-center gap-2">
+                                  {resource.is_visible_to_students && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleResourceClick(resource)}
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                  {resource.is_downloadable && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleDownloadResource(resource)}
+                                    >
+                                      <Download className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                  {resource.external_url && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => window.open(resource.external_url, '_blank')}
+                                    >
+                                      <ExternalLink className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                              )}
                             </div>
-                            <div className="flex items-center gap-2">
-                              {resource.is_visible_to_students && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleResourceClick(resource)}
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              )}
-                              {resource.is_downloadable && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleDownloadResource(resource)}
-                                >
-                                  <Download className="h-4 w-4" />
-                                </Button>
-                              )}
-                              {resource.external_url && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => window.open(resource.external_url, '_blank')}
-                                >
-                                  <ExternalLink className="h-4 w-4" />
-                                </Button>
-                              )}
-                            </div>
+
+                            {/* Display blocks content inline */}
+                            {isBlocks && resource.blocks_content && (
+                              <div className="mt-4 pt-4 border-t">
+                                <BlockRenderer
+                                  blocksContent={resource.blocks_content}
+                                  language={currentLanguage}
+                                />
+                              </div>
+                            )}
+
+                            {/* Display markdown content inline */}
+                            {isMarkdown && resource.markdown_content && (
+                              <div className="mt-4 pt-4 border-t">
+                                <EnhancedMarkdown
+                                  content={resource.markdown_content}
+                                  language={currentLanguage}
+                                  showCopyButton={true}
+                                  collapsibleHeadings={false}
+                                />
+                              </div>
+                            )}
                           </div>
                         </div>
                       )
@@ -605,7 +640,7 @@ const ViewLessonPage = () => {
                 </CardContent>
               </Card>
             )}
-        </div>
+          </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
@@ -782,7 +817,7 @@ const ViewLessonPage = () => {
             </Card>
           </div>
         </div>
-        </div>
+      </div>
 
       {/* Lesson Availability Dialog */}
       <LessonAvailabilityDialog

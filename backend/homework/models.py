@@ -3,9 +3,11 @@
 from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.db.models import Sum
 from django.utils import timezone
 from cloudinary.models import CloudinaryField
 import json
+from decimal import Decimal
 
 # =====================================
 # REWARD SYSTEM MODELS
@@ -343,6 +345,14 @@ class TextbookLibrary(models.Model):
 
 class Homework(models.Model):
     """Homework assignments created by teachers - mandatory submissions"""
+    AUTO_GRADE_SUPPORTED_TYPES = (
+        'qcm_single',
+        'qcm_multiple',
+        'true_false',
+        'fill_blank',
+        'matching',
+        'ordering'
+    )
     # Relationships
     subject = models.ForeignKey('schools.Subject', on_delete=models.CASCADE, related_name='homework')
     grade = models.ForeignKey('schools.Grade', on_delete=models.CASCADE, related_name='homework')
@@ -415,6 +425,16 @@ class Homework(models.Model):
     @property
     def is_overdue(self):
         return timezone.now() > self.due_date
+
+    def recalculate_total_points(self):
+        """
+        Refresh the homework total points from all attached questions.
+        Used when authors add/remove questions so the total remains accurate.
+        """
+        total = self.questions.aggregate(total=Sum('points'))['total'] or Decimal('0')
+        self.total_points = total
+        self.save(update_fields=['total_points', 'updated_at'])
+        return self.total_points
 
     @property
     def submissions_count(self):

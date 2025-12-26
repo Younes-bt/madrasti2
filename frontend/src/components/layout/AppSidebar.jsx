@@ -39,7 +39,8 @@ import {
   Target,
   Sparkles,
   LogOut,
-  DollarSign
+  DollarSign,
+  ScrollText
 } from 'lucide-react'
 import { useLanguage } from '../../hooks/useLanguage'
 import { useAuth } from '../../contexts/AuthContext'
@@ -82,13 +83,21 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
   // Navigation items configuration based on user roles
   const navigationItems = useMemo(() => {
     const userRole = user?.role
+    const isTeacher = userRole === USER_ROLES.TEACHER
+    const dashboardLabel = isTeacher ? t('teacherHome.title', 'Home') : t('common.dashboard')
+    const dashboardPath = isTeacher
+      ? '/teacher'
+      : userRole
+        ? `/dashboard/${userRole.toLowerCase()}`
+        : '/'
+
     const baseItems = [
       {
         key: 'dashboard',
         icon: Home,
-        label: t('common.dashboard'),
-        path: userRole ? `/dashboard/${userRole.toLowerCase()}` : '/',
-        tooltip: t('common.dashboard')
+        label: dashboardLabel,
+        path: dashboardPath,
+        tooltip: dashboardLabel
       }
     ]
 
@@ -154,6 +163,7 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
             { key: 'financial-reports', label: t('adminSidebar.reportsAnalytics.financialReports'), path: '/admin/reports/financial' },
             { key: 'custom-report-builder', label: t('adminSidebar.reportsAnalytics.customReportBuilder'), path: '/admin/reports/custom-builder' },
             { key: 'comparative-analysis', label: t('adminSidebar.reportsAnalytics.comparativeAnalysis'), path: '/admin/reports/comparative-analysis' },
+            { key: 'activity-logs', label: t('adminSidebar.reportsAnalytics.activityLogs', 'Activity Logs'), path: '/admin/logs', icon: ScrollText },
           ]
         },
         // 💰 Finance Management
@@ -262,6 +272,7 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
             { key: 'student-analytics', label: t('teacherSidebar.analytics.studentAnalytics'), path: '/teacher/analytics/student-analytics' },
             { key: 'assignment-stats', label: t('teacherSidebar.analytics.assignmentStats'), path: '/teacher/analytics/assignment-stats' },
             { key: 'reports', label: t('teacherSidebar.analytics.reports'), path: '/teacher/analytics/reports' },
+            { key: 'academic-performance', label: t('teacherSidebar.analytics.academicPerformance', 'Academic Performance'), path: '/teacher/reports/academic-performance' },
           ]
         },
         // 📅 Planning & Organization
@@ -293,6 +304,14 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
       ],
 
       [USER_ROLES.STUDENT]: [
+        // 🏠 Home
+        {
+          key: 'home',
+          icon: Home,
+          label: t('common.home'),
+          tooltip: t('common.home'),
+          path: '/student/home',
+        },
         // 👤 My Profile
         {
           key: 'student-profile',
@@ -354,6 +373,7 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
           label: t('studentSidebar.homework.title'),
           tooltip: t('studentSidebar.homework.tooltip'),
           items: [
+            { key: 'homework-overview', label: t('studentSidebar.homework.overview', 'Overview'), path: ROUTES.STUDENT_HOMEWORK.HOME },
             { key: 'homework-pending', label: t('studentSidebar.homework.pending'), path: ROUTES.STUDENT_HOMEWORK.PENDING },
             { key: 'homework-completed', label: t('studentSidebar.homework.completed'), path: ROUTES.STUDENT_HOMEWORK.COMPLETED },
             { key: 'homework-grades', label: t('studentSidebar.homework.grades'), path: ROUTES.STUDENT_HOMEWORK.GRADES },
@@ -513,8 +533,15 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
     }
   ]
 
+  const userDisplayName =
+    user?.full_name ||
+    [user?.first_name, user?.last_name].filter(Boolean).join(' ') ||
+    user?.name ||
+    user?.email ||
+    "User"
+
   const userData = {
-    name: user?.name || "User",
+    name: userDisplayName,
     email: user?.email || "",
     avatar: user?.avatar || ""
   }
@@ -534,4 +561,3 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
     </Sidebar>
   )
 }
-

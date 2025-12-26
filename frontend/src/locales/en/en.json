@@ -2322,7 +2322,8 @@
       "academicPerformance": "Academic Performance",
       "financialReports": "Financial Reports",
       "customReportBuilder": "Custom Report Builder",
-      "comparativeAnalysis": "Comparative Analysis"
+      "comparativeAnalysis": "Comparative Analysis",
+      "activityLogs": "Activity Logs"
     },
     "communications": {
       "title": "Communications",
@@ -2824,7 +2825,8 @@
         "notProvided": "Not provided",
         "correctPosition": "Correct position",
         "position": "Position"
-      }
+      },
+      "overview": "Overview"
     },
     "achievements": {
       "title": "Achievements & Rewards",
@@ -2965,6 +2967,105 @@
       "featuredFailed": "Unable to update featured image.",
       "loadFailed": "Could not load equipment images.",
       "empty": "No images uploaded yet. Add images to showcase this equipment."
+    }
+  },
+  "teacherHome": {
+    "title": "Home",
+    "subtitle": "Your teaching hub with quick access to daily essentials.",
+    "readyToTeach": "Ready to teach",
+    "greeting": "Welcome back,",
+    "teacherLabel": "Teacher",
+    "helperText": "Plan classes, track students, and communicate in one place.",
+    "today": "Today",
+    "schedulePreview": "Today's schedule",
+    "quickActions": "Quick actions",
+    "touchAnyCard": "Tap a tile",
+    "open": "Open",
+    "tapToStart": "Tap to start",
+    "myProfile": "My Profile",
+    "myStudents": "My Students",
+    "myClasses": "My Classes",
+    "myLessons": "My Lessons",
+    "myHomework": "My Homework",
+    "myExercises": "My Exercises",
+    "myTimetable": "My Timetable",
+    "myAttendance": "My Attendance Records",
+    "myMessages": "My Messages",
+    "myAnnouncements": "My Announcements"
+  },
+  "studentHome": {
+    "welcome": "Welcome to your learning space",
+    "subtitle": "Everything you need to succeed in one place",
+    "readyToLearn": "Ready to learn",
+    "greeting": "Hello,",
+    "studentLabel": "Student",
+    "helperText": "Access lessons, homework, and messages in one place.",
+    "today": "Today",
+    "schedulePreview": "Today's schedule",
+    "quickActions": "Quick actions",
+    "touchAnyCard": "Tap a tile",
+    "open": "Open",
+    "tapToStart": "Tap to start",
+    "myProfile": "My Profile",
+    "myLessons": "My Lessons",
+    "myHomework": "My Homework",
+    "myExercises": "My Exercises",
+    "myTimetable": "My Timetable",
+    "myAttendance": "Attendance Record",
+    "myMessages": "My Messages",
+    "myAnnouncements": "Announcements"
+  },
+  "adminLogs": {
+    "title": "Activity Logs",
+    "subtitle": "Monitor the latest actions performed by admins and staff",
+    "refresh": "Refresh",
+    "error": "Failed to load activity logs",
+    "system": "System",
+    "empty": "No activity logs to display yet.",
+    "filters": {
+      "title": "Filter Logs",
+      "search": "Search",
+      "searchPlaceholder": "Search description, target, or user name...",
+      "action": "Action",
+      "role": "Role",
+      "target": "Target",
+      "start": "From date",
+      "end": "To date",
+      "apply": "Apply filters",
+      "reset": "Reset"
+    },
+    "actions": {
+      "all": "All actions",
+      "MESSAGE_SENT": "Message sent",
+      "HOMEWORK_CREATED": "Homework created",
+      "HOMEWORK_PUBLISHED": "Homework published",
+      "PAYMENT_RECORDED": "Payment recorded",
+      "USER_CREATED": "User created",
+      "USER_UPDATED": "User updated",
+      "SYSTEM": "System",
+      "OTHER": "Other"
+    },
+    "targets": {
+      "all": "All targets",
+      "message": "Message",
+      "payment": "Payment",
+      "homework": "Homework",
+      "invoice": "Invoice"
+    },
+    "table": {
+      "title": "Activity Log",
+      "subtitle": "Latest events ordered by time",
+      "total": "Total {{count}} records",
+      "time": "Time",
+      "actor": "User",
+      "action": "Action",
+      "target": "Target",
+      "description": "Description",
+      "metadata": "Additional data",
+      "unknownTarget": "Unknown target",
+      "pagination": "Page {{page}} of {{totalPages}}",
+      "prev": "Previous",
+      "next": "Next"
     }
   }
 }

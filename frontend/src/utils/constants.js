@@ -191,6 +191,7 @@ export const ROUTES = {
     LEADERBOARD: '/homework/leaderboard',
   },
   STUDENT_HOMEWORK: {
+    HOME: '/student/homework',
     PENDING: '/student/homework/pending',
     WORK: '/student/homework/:id',
     COMPLETED: '/student/homework/completed',

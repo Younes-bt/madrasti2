@@ -9,6 +9,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import LoginPage from './pages/auth/LoginPage'
 import FirstLoginPage from './pages/auth/FirstLoginPage'
 import StudentDashboard from './pages/dashboard/StudentDashboard'
+import StudentHome from './pages/student/StudentHome'
 import StudentProfileOverview from './pages/student/StudentProfileOverview'
 import StudentProgressPageStudent from './pages/student/StudentProgressPage'
 import StudentTimetablePage from './pages/student/StudentTimetablePage'
@@ -18,12 +19,15 @@ import StudentAttendanceHistory from './pages/student/StudentAttendanceHistory'
 import StudentLessonsPage from './pages/student/StudentLessonsPage'
 import StudentViewLessonPage from './pages/student/StudentViewLessonPage'
 import StudentExerciseEntryPage from './pages/student/StudentExerciseEntryPage'
+import StudentMyExercisesPage from './pages/student/StudentMyExercisesPage'
 import StudentPointsPage from './pages/student/StudentPointsPage'
 import StudentHomeworkPendingPage from './pages/student/StudentHomeworkPendingPage'
 import StudentHomeworkWorkPage from './pages/student/StudentHomeworkWorkPage'
 import StudentHomeworkCompletedPage from './pages/student/StudentHomeworkCompletedPage'
 import StudentHomeworkGradesPage from './pages/student/StudentHomeworkGradesPage'
 import StudentHomeworkFeedbackPage from './pages/student/StudentHomeworkFeedbackPage'
+import StudentHomework from './pages/student/StudentHomework'
+import TeacherHome from './pages/teacher/TeacherHome'
 import StudentSubmissionReviewPage from './pages/student/StudentSubmissionReviewPage'
 import TeacherDashboard from './pages/teacher/TeacherDashboard'
 import TeacherProfileOverviewPage from './pages/teacher/TeacherProfileOverviewPage'
@@ -130,6 +134,7 @@ import FeeSetupPage from './pages/admin/finance/FeeSetupPage'
 import InvoicesPage from './pages/admin/finance/InvoicesPage'
 import InvoiceDetailsPage from './pages/admin/finance/InvoiceDetailsPage'
 import PaymentsPage from './pages/admin/finance/PaymentsPage'
+import AdminLogs from './pages/admin/log/AdminLogs'
 
 // Import feature pages
 import LessonsPage from './pages/lessons/LessonsPage'
@@ -156,7 +161,7 @@ const DashboardRedirect = () => {
   const roleRoutes = {
     'ADMIN': '/admin',
     'TEACHER': '/teacher',
-    'STUDENT': '/student',
+    'STUDENT': '/student/home',
     'PARENT': '/parent',
     'STAFF': '/admin', // Staff users go to admin dashboard
     'DRIVER': '/admin' // Driver users go to admin dashboard
@@ -191,6 +196,22 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute requiredRoles={['STUDENT']}>
             <StudentDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/home"
+        element={
+          <ProtectedRoute requiredRoles={['STUDENT']}>
+            <StudentHome />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/homework"
+        element={
+          <ProtectedRoute requiredRoles={['STUDENT']}>
+            <StudentHomework />
           </ProtectedRoute>
         }
       />
@@ -260,6 +281,15 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute requiredRoles={['STUDENT']}>
             <StudentViewLessonPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/student/exercises"
+        element={
+          <ProtectedRoute requiredRoles={['STUDENT']}>
+            <StudentMyExercisesPage />
           </ProtectedRoute>
         }
       />
@@ -352,6 +382,22 @@ const AppRoutes = () => {
 
       <Route
         path="/teacher"
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <TeacherHome />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/home"
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <TeacherHome />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/dashboard"
         element={
           <ProtectedRoute requiredRoles={['TEACHER']}>
             <TeacherDashboard />
@@ -1331,6 +1377,14 @@ const AppRoutes = () => {
         }
       />
       <Route
+        path="/teacher/reports/academic-performance"
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <AcademicPerformanceReportsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/admin/reports/financial"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
@@ -1351,6 +1405,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <div>Comparative Analysis Page - Coming Soon</div>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/logs"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <AdminLogs />
           </ProtectedRoute>
         }
       />

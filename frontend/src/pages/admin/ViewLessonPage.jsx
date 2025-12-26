@@ -1,8 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../lib/i18n';
 import { motion } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import {
   ArrowLeft,
   BookOpen,
@@ -36,9 +41,12 @@ import {
   Clock2,
   BarChart3,
   CheckSquare,
-  Brain
+  Brain,
+  FileCode,
+  Layout
 } from 'lucide-react';
 import AdminPageLayout from '../../components/admin/layout/AdminPageLayout';
+import BlockRenderer from '../../components/blocks/BlockRenderer';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
@@ -74,6 +82,10 @@ const getResourceIcon = (resourceType) => {
       return Link;
     case 'presentation':
       return FileText;
+    case 'markdown':
+      return FileCode;
+    case 'blocks':
+      return Layout;
     default:
       return File;
   }
@@ -90,15 +102,23 @@ const ViewLessonPage = () => {
   const [loading, setLoading] = useState(true);
   const [exercisesLoading, setExercisesLoading] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [previewResource, setPreviewResource] = useState(null);
 
-  // Load lesson data
-  useEffect(() => {
-    if (id) {
-      loadLesson();
+  const loadExercises = useCallback(async () => {
+    try {
+      setExercisesLoading(true);
+      const response = await exerciseService.getExercisesByLesson(id);
+      if (response.success) {
+        setExercises(response.data);
+      }
+    } catch (error) {
+      console.error('Error loading exercises:', error);
+    } finally {
+      setExercisesLoading(false);
     }
   }, [id]);
 
-  const loadLesson = async () => {
+  const loadLesson = useCallback(async () => {
     try {
       setLoading(true);
       const response = await lessonsService.getLessonById(id);
@@ -112,21 +132,14 @@ const ViewLessonPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, navigate, t, loadExercises]);
 
-  const loadExercises = async () => {
-    try {
-      setExercisesLoading(true);
-      const response = await exerciseService.getExercisesByLesson(id);
-      if (response.success) {
-        setExercises(response.data);
-      }
-    } catch (error) {
-      console.error('Error loading exercises:', error);
-    } finally {
-      setExercisesLoading(false);
+  // Load lesson data
+  useEffect(() => {
+    if (id) {
+      loadLesson();
     }
-  };
+  }, [id, loadLesson]);
 
   const handleEdit = () => {
     navigate(`/admin/education-management/lessons/${id}/edit`);
@@ -156,7 +169,9 @@ const ViewLessonPage = () => {
   };
 
   const handleResourceClick = (resource) => {
-    if (resource.file_url || resource.external_url) {
+    if (resource.resource_type === 'markdown' || resource.resource_type === 'blocks') {
+      setPreviewResource(resource);
+    } else if (resource.file_url || resource.external_url) {
       window.open(resource.file_url || resource.external_url, '_blank');
     }
   };
@@ -268,7 +283,12 @@ const ViewLessonPage = () => {
         </Button>
       ]}
     >
-      <div className="space-y-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="space-y-6"
+      >
         {/* Lesson Header */}
         <Card>
           <CardHeader>
@@ -458,6 +478,45 @@ const ViewLessonPage = () => {
                               )}
                             </div>
                           </div>
+
+                          {/* Display markdown content if resource type is markdown - Inline small preview if needed, but dialog is preferred now */}
+                          {resource.resource_type === 'markdown' && resource.markdown_content && (
+                            <div className="mt-4 pt-4 border-t" dir="rtl">
+                              <div className="prose prose-sm max-w-none dark:prose-invert text-right line-clamp-3">
+                                <ReactMarkdown
+                                  remarkPlugins={[remarkGfm, remarkMath]}
+                                  rehypePlugins={[rehypeKatex]}
+                                >
+                                  {resource.markdown_content}
+                                </ReactMarkdown>
+                              </div>
+                              <Button
+                                variant="link"
+                                size="sm"
+                                className="mt-2 p-0 h-auto"
+                                onClick={() => handleResourceClick(resource)}
+                              >
+                                {t('common.readMore')}
+                              </Button>
+                            </div>
+                          )}
+
+                          {/* Display blocks content preview if resource type is blocks */}
+                          {resource.resource_type === 'blocks' && resource.blocks_content && (
+                            <div className="mt-4 pt-4 border-t" dir="rtl">
+                              <div className="text-sm text-muted-foreground mb-2">
+                                {t('lessons.blocksContentPreview', 'This resource contains interactive content blocks.')}
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleResourceClick(resource)}
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                {t('lessons.viewContent', 'View Lesson Content')}
+                              </Button>
+                            </div>
+                          )}
                         </motion.div>
                       );
                     })}
@@ -752,7 +811,42 @@ const ViewLessonPage = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
+
+        {/* Resource Preview Dialog */}
+        <Dialog open={!!previewResource} onOpenChange={(open) => !open && setPreviewResource(null)}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{previewResource?.title}</DialogTitle>
+              <DialogDescription>
+                {previewResource?.description || t('lessons.resourcePreview')}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4 min-h-[400px]" dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}>
+              {previewResource?.resource_type === 'markdown' && (
+                <div className="prose prose-base max-w-none dark:prose-invert leading-relaxed">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm, remarkMath]}
+                    rehypePlugins={[rehypeKatex]}
+                  >
+                    {previewResource.markdown_content}
+                  </ReactMarkdown>
+                </div>
+              )}
+              {previewResource?.resource_type === 'blocks' && previewResource.blocks_content && (
+                <BlockRenderer
+                  blocksContent={previewResource.blocks_content}
+                  language={i18n.language}
+                />
+              )}
+            </div>
+            <DialogFooter>
+              <Button onClick={() => setPreviewResource(null)}>
+                {t('common.close')}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </motion.div>
     </AdminPageLayout>
   );
 };

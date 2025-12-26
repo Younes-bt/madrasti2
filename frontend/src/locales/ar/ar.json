@@ -16,6 +16,7 @@
     "settings": "الإعدادات",
     "notifications": "الإشعارات",
     "dashboard": "لوحة التحكم",
+    "home": "الرئيسية",
     "welcome": "مرحباً",
     "ago": "منذ",
     "name": "الاسم",
@@ -89,7 +90,8 @@
     "results": "نتائج",
     "filters": "التصفية",
     "popupBlocked": "يرجى السماح بالنوافذ المنبثقة لتصدير هذا التقرير.",
-    "viewDetails": "عرض التفاصيل"
+    "viewDetails": "عرض التفاصيل",
+    "readMore": "اقرأ المزيد"
   },
   "profile": {
     "completeProfile": "أكمل ملفك الشخصي",
@@ -268,6 +270,9 @@
     "addResource": "إضافة مورد",
     "addFirstResource": "إضافة أول مورد",
     "addResourcePlaceholder": "سيتم تنفيذ وظيفة إضافة المورد قريباً",
+    "resourcePreview": "معاينة المورد",
+    "blocksContentPreview": "هذا المورد يحتوي على كتل محتوى تفاعلية.",
+    "viewContent": "عرض محتوى الدرس",
     "notAvailable": "غير متوفر",
     "tryAgain": "حاول مرة أخرى",
     "studentID": "رقم الطالب",
@@ -285,7 +290,7 @@
       "total": "إجمالي الفصول",
       "publishAll": "نشر للجميع",
       "unpublishAll": "إلغاء النشر للجميع",
-      "unsavedChanges": "تغييرات غير محفوظة",
+      "unsavedChanges": "تغيير غير محفوظ",
       "toPublish": "للنشر",
       "toUnpublish": "لإلغاء النشر",
       "saveSuccess": "تم التحديث بنجاح: {{published}} منشور، {{unpublished}} غير منشور",
@@ -1926,7 +1931,8 @@
       "academicPerformance": "الأداء الأكاديمي",
       "financialReports": "التقارير المالية",
       "customReportBuilder": "منشئ التقارير المخصصة",
-      "comparativeAnalysis": "التحليل المقارن"
+      "comparativeAnalysis": "التحليل المقارن",
+      "activityLogs": "سجل الأنشطة"
     },
     "communications": {
       "title": "الاتصالات",
@@ -2550,7 +2556,8 @@
         "notProvided": "غير متوفر",
         "correctPosition": "الموضع الصحيح",
         "position": "الموضع"
-      }
+      },
+      "overview": "نظرة عامة"
     },
     "achievements": {
       "title": "الإنجازات والمكافآت",
@@ -2961,5 +2968,104 @@
     "profilePictureFormat": "JPG أو PNG أو GIF. الحد الأقصى للحجم 5 ميجابايت",
     "emailCannotBeChanged": "لا يمكن تغيير البريد الإلكتروني",
     "emergencyContact": "تستخدم معلومات الاتصال في حالات الطوارئ في الحالات العاجلة"
+  },
+  "studentHome": {
+    "welcome": "مرحبا في مساحة التعلم الخاصة بك",
+    "subtitle": "كل ما تحتاجه للنجاح في مكان واحد",
+    "readyToLearn": "جاهز للتعلم",
+    "greeting": "مرحباً بعودتك",
+    "studentLabel": "طالب",
+    "helperText": "ادخل إلى الدروس والواجبات والرسائل في مكان واحد.",
+    "today": "اليوم",
+    "schedulePreview": "جدول اليوم",
+    "quickActions": "إجراءات سريعة",
+    "touchAnyCard": "المس أي بطاقة",
+    "open": "فتح",
+    "tapToStart": "اضغط للبدء",
+    "myProfile": "ملفي الشخصي",
+    "myLessons": "دروسي",
+    "myHomework": "واجباتي",
+    "myExercises": "تماريني",
+    "myTimetable": "جدولي الزمني",
+    "myAttendance": "سجل الحضور",
+    "myMessages": "رسائلي",
+    "myAnnouncements": "إعلاناتي"
+  },
+  "teacherHome": {
+    "title": "الصفحة الرئيسية",
+    "subtitle": "مركز التدريس الخاص بك مع وصول سريع لأدواتك اليومية.",
+    "readyToTeach": "جاهز للتدريس",
+    "greeting": "مرحباً بعودتك",
+    "teacherLabel": "معلم",
+    "helperText": "خطط للدروس وتابع الطلاب وتواصل في مكان واحد.",
+    "today": "اليوم",
+    "schedulePreview": "جدول اليوم",
+    "quickActions": "إجراءات سريعة",
+    "touchAnyCard": "المس أي بطاقة",
+    "open": "فتح",
+    "tapToStart": "ابدأ الآن",
+    "myProfile": "ملفي الشخصي",
+    "myStudents": "طلابي",
+    "myClasses": "صفوفي",
+    "myLessons": "دروسي",
+    "myHomework": "واجباتي",
+    "myExercises": "تماريني",
+    "myTimetable": "جدولي الزمني",
+    "myAttendance": "سجلات حضوري",
+    "myMessages": "رسائلي",
+    "myAnnouncements": "إعلاناتي"
+  },
+  "adminLogs": {
+    "title": "سجل الأنشطة",
+    "subtitle": "راقب أحدث الأنشطة التي قام بها المسؤولون والموظفون",
+    "refresh": "تحديث",
+    "error": "تعذر تحميل سجل الأنشطة",
+    "system": "النظام",
+    "empty": "لا توجد سجلات لعرضها بعد.",
+    "filters": {
+      "title": "تصفية السجل",
+      "search": "بحث",
+      "searchPlaceholder": "ابحث في الوصف أو الهدف أو اسم المستخدم...",
+      "action": "الإجراء",
+      "role": "الدور",
+      "target": "الهدف",
+      "start": "من تاريخ",
+      "end": "إلى تاريخ",
+      "apply": "تطبيق الفلاتر",
+      "reset": "إعادة تعيين"
+    },
+    "actions": {
+      "all": "كل الإجراءات",
+      "MESSAGE_SENT": "إرسال رسالة",
+      "HOMEWORK_CREATED": "إنشاء واجب",
+      "HOMEWORK_PUBLISHED": "نشر واجب",
+      "PAYMENT_RECORDED": "تسجيل دفعة",
+      "USER_CREATED": "إنشاء مستخدم",
+      "USER_UPDATED": "تحديث مستخدم",
+      "SYSTEM": "النظام",
+      "OTHER": "أخرى"
+    },
+    "targets": {
+      "all": "كل الأهداف",
+      "message": "رسالة",
+      "payment": "دفعة",
+      "homework": "واجب",
+      "invoice": "فاتورة"
+    },
+    "table": {
+      "title": "سجل الأنشطة",
+      "subtitle": "آخر الأحداث مرتبة زمنياً",
+      "total": "إجمالي {{count}} سجل",
+      "time": "الوقت",
+      "actor": "المستخدم",
+      "action": "الإجراء",
+      "target": "الهدف",
+      "description": "الوصف",
+      "metadata": "بيانات إضافية",
+      "unknownTarget": "هدف غير معروف",
+      "pagination": "صفحة {{page}} من {{totalPages}}",
+      "prev": "السابق",
+      "next": "التالي"
+    }
   }
 }

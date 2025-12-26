@@ -7,6 +7,7 @@ from .views import (
     LessonViewSet,
     LessonResourceViewSet,
     LessonTagViewSet,
+    SubjectCategoryViewSet,
     SubjectGradesView,
     GradeSubjectsView,
     TeacherInfoView
@@ -16,6 +17,7 @@ from .views import (
 router = DefaultRouter()
 router.register(r'lessons', LessonViewSet)
 router.register(r'tags', LessonTagViewSet)
+router.register(r'subject-categories', SubjectCategoryViewSet)
 
 # Nested router for lesson resources
 lessons_router = routers.NestedDefaultRouter(router, r'lessons', lookup='lesson')

@@ -30,14 +30,13 @@ const Layout = ({
   className,
   contentClassName,
 }) => {
-  const { language } = useContext(LanguageContext)
+  const { currentLanguage: language, isRTL } = useContext(LanguageContext)
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
-  const isRTL = language === 'ar'
   const currentPath = location.pathname
 
   // Load sidebar collapsed state from localStorage
@@ -49,12 +48,6 @@ const Layout = ({
   }, [])
 
   // Save sidebar collapsed state to localStorage
-  const toggleSidebarCollapsed = () => {
-    const newState = !sidebarCollapsed
-    setSidebarCollapsed(newState)
-    localStorage.setItem('madrasti_sidebar_collapsed', JSON.stringify(newState))
-  }
-
   const handleSidebarToggle = () => {
     setSidebarOpen(!sidebarOpen)
   }
@@ -167,7 +160,7 @@ const Layout = ({
 
   // Layout with new shadcn sidebar
   return (
-    <div className={cn(isRTL && 'rtl', className)}>
+    <div className={className} dir="ltr">
       <SidebarProvider defaultOpen={true}>
         <AppSidebar
           onNavigate={handleNavigate}
@@ -179,9 +172,9 @@ const Layout = ({
         />
         <SidebarInset>
           {/* Main Content */}
-          <main className={cn('flex-1 flex flex-col', contentClassName)}>
+          <main className={cn('flex-1 flex flex-col', contentClassName, isRTL && 'rtl')} dir={isRTL ? 'rtl' : 'ltr'}>
             {/* Header with Sidebar Trigger */}
-            <header className="flex h-14 shrink-0 items-center gap-2 border-b px-2 sm:px-4">
+            <header className="flex h-14 shrink-0 items-center gap-2 border-b px-2 sm:px-4" dir="ltr">
               <SidebarTrigger className="-ml-1" />
               <Separator orientation="vertical" className="h-4" />
               <Breadcrumb>
@@ -201,7 +194,7 @@ const Layout = ({
             {/* Content Area */}
             <div className="flex-1 overflow-auto p-2 sm:p-4">
               <PageErrorBoundary>
-                <div className="container mx-auto px-2 sm:px-4">
+                <div className={cn("container px-2 sm:px-4", isRTL ? "!ml-auto !mr-0" : "mx-auto")}>
                   {children}
                 </div>
               </PageErrorBoundary>

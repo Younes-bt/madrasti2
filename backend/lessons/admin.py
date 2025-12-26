@@ -1,13 +1,13 @@
 # lessons/admin.py
 
 from django.contrib import admin
-from .models import Lesson, LessonResource, LessonTag, LessonTagging
+from .models import Lesson, LessonResource, LessonTag, LessonTagging, SubjectCategory
 
 class LessonResourceInline(admin.TabularInline):
     """Inline for managing lesson resources"""
     model = LessonResource
     extra = 1
-    fields = ('title', 'resource_type', 'file', 'external_url', 'order', 'is_visible_to_students')
+    fields = ('title', 'resource_type', 'file', 'external_url', 'markdown_content', 'blocks_content', 'order', 'is_visible_to_students')
     readonly_fields = ('file_size', 'file_format', 'uploaded_at', 'uploaded_by')
 
 class LessonTaggingInline(admin.TabularInline):
@@ -18,15 +18,15 @@ class LessonTaggingInline(admin.TabularInline):
 
 @admin.register(Lesson)
 class LessonAdmin(admin.ModelAdmin):
-    list_display = ('title', 'subject', 'grade', 'cycle', 'order', 'difficulty_level', 'is_active', 'created_by')
-    list_filter = ('subject', 'grade__educational_level', 'cycle', 'difficulty_level', 'is_active', 'created_at', 'tracks')
-    search_fields = ('title', 'title_arabic', 'title_french', 'description')
-    autocomplete_fields = ['subject', 'grade', 'created_by']
+    list_display = ('title', 'subject', 'grade', 'cycle', 'category', 'unit', 'order', 'difficulty_level', 'is_active', 'created_by')
+    list_filter = ('subject', 'grade__educational_level', 'cycle', 'category', 'difficulty_level', 'is_active', 'created_at', 'tracks')
+    search_fields = ('title', 'title_arabic', 'title_french', 'description', 'unit')
+    autocomplete_fields = ['subject', 'grade', 'created_by', 'category']
     filter_horizontal = ('tracks',)
     
     fieldsets = (
         ('Basic Information', {
-            'fields': ('subject', 'grade', 'tracks', 'title', 'title_arabic', 'title_french', 'description')
+            'fields': ('subject', 'grade', 'tracks', 'category', 'unit', 'title', 'title_arabic', 'title_french', 'description')
         }),
         ('Academic Organization', {
             'fields': ('cycle', 'order', 'difficulty_level', 'is_active')
@@ -65,7 +65,7 @@ class LessonResourceAdmin(admin.ModelAdmin):
             'fields': ('lesson', 'title', 'description', 'resource_type')
         }),
         ('File/Content', {
-            'fields': ('file', 'external_url', 'file_size', 'file_format')
+            'fields': ('file', 'external_url', 'markdown_content', 'blocks_content', 'file_size', 'file_format')
         }),
         ('Settings', {
             'fields': ('is_visible_to_students', 'is_downloadable', 'order')
@@ -102,6 +102,13 @@ class LessonTaggingAdmin(admin.ModelAdmin):
     
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('lesson', 'tag')
+
+@admin.register(SubjectCategory)
+class SubjectCategoryAdmin(admin.ModelAdmin):
+    list_display = ('subject', 'ar_name', 'fr_name', 'en_name')
+    list_filter = ('subject',)
+    search_fields = ('ar_name', 'fr_name', 'en_name')
+    autocomplete_fields = ['subject']
 
 # Customize admin site headers
 admin.site.site_header = "Madrasti Administration"

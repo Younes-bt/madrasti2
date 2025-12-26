@@ -14,6 +14,7 @@ import {
   Users,
 } from 'lucide-react';
 import AdminPageLayout from '../../components/admin/layout/AdminPageLayout';
+import { TeacherPageLayout } from '../../components/teacher/layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
@@ -83,6 +84,7 @@ const AcademicPerformanceReportsPage = () => {
   const role = (user?.role || '').toUpperCase();
   const isAdmin = role === 'ADMIN' || role === 'STAFF';
   const isTeacher = role === 'TEACHER';
+  const Layout = isTeacher ? TeacherPageLayout : AdminPageLayout;
 
   const filteredTopStudents = useMemo(() => {
     return topStudents.filter((student) => {
@@ -199,7 +201,8 @@ const AcademicPerformanceReportsPage = () => {
         ...(gradeFilter !== 'all' ? { grade_id: Number(gradeFilter) } : {}),
         ...(yearFilter !== 'all' ? { academic_year_id: Number(yearFilter) } : {}),
       });
-      setTeacherRows(teachersPayload?.teachers || []);
+      const teacherData = teachersPayload?.teachers || [];
+      setTeacherRows(isTeacher && user?.id ? teacherData.filter((t) => t.teacher_id === user.id) : teacherData);
     } catch (error) {
       toast.error('Failed to load performance data. Please retry.');
     } finally {
@@ -211,7 +214,7 @@ const AcademicPerformanceReportsPage = () => {
   const totalPages = Math.max(1, Math.ceil((totalStudents || 0) / pageSize));
 
   return (
-    <AdminPageLayout
+    <Layout
       title="Academic Performance Reports"
       subtitle="Track grades, mastery, and improvement across classes and subjects."
       showRefreshButton
@@ -430,7 +433,7 @@ const AcademicPerformanceReportsPage = () => {
           <TabsList className="w-full grid grid-cols-2 md:grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="students">Students</TabsTrigger>
-            <TabsTrigger value="teachers">Teachers</TabsTrigger>
+            <TabsTrigger value="teachers">{isTeacher ? 'My Performance' : 'Teachers'}</TabsTrigger>
             <TabsTrigger value="subjects">Subjects</TabsTrigger>
             <TabsTrigger value="classes">Classes</TabsTrigger>
             <TabsTrigger value="flags">Flags</TabsTrigger>
@@ -655,7 +658,7 @@ const AcademicPerformanceReportsPage = () => {
                   </thead>
                   <tbody className="divide-y">
                     {filteredTopStudents.map((student) => (
-                      <tr key={student.student_id} className="hover:bg-muted/50">
+                      <tr key={`${student.student_id}-${student.subject}-${student.class_name}`} className="hover:bg-muted/50">
                         <td className="py-3 font-medium">{student.name}</td>
                         <td>{student.class_name || '—'}</td>
                         <td>{student.subject || '—'}</td>
@@ -858,8 +861,12 @@ const AcademicPerformanceReportsPage = () => {
           <TabsContent value="teachers" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Teacher Performance</CardTitle>
-                <CardDescription>Scores and completion across each teacher's cohorts.</CardDescription>
+                <CardTitle>{isTeacher ? 'My Performance' : 'Teacher Performance'}</CardTitle>
+                <CardDescription>
+                  {isTeacher
+                    ? 'Scores and completion across your cohorts.'
+                    : 'Scores and completion across each teacher’s cohorts.'}
+                </CardDescription>
               </CardHeader>
               <CardContent className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -902,7 +909,7 @@ const AcademicPerformanceReportsPage = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </AdminPageLayout>
+    </Layout>
   );
 };
 

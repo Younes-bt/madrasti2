@@ -39,6 +39,7 @@ import {
 } from 'lucide-react'
 import { exerciseService } from '../../services/exercises'
 import { toast } from 'sonner'
+import MathRenderer from '../../components/MathRenderer'
 
 const ViewLessonExercisePage = () => {
   const { t } = useTranslation()
@@ -326,7 +327,7 @@ const ViewLessonExercisePage = () => {
                     <div key={question.id} className="border p-4 rounded-lg">
                       <div className="flex justify-between items-start">
                         <h4 className="font-semibold" dir={currentLanguage === 'ar' ? 'rtl' : 'ltr'}>
-                          {t('exercises.question')} #{index + 1}: {getLocalizedText(question.question_text, question.question_text_arabic)}
+                          {t('exercises.question')} #{index + 1}: <MathRenderer text={getLocalizedText(question.question_text, question.question_text_arabic)} />
                         </h4>
                         <Badge variant="secondary">{question.points} {t('exercises.points')}</Badge>
                       </div>
@@ -359,14 +360,16 @@ const ViewLessonExercisePage = () => {
                             {question.choices.map(choice => (
                               <li key={choice.id} className={`flex items-center gap-2 text-sm p-2 rounded-md ${choice.is_correct ? 'bg-green-100 dark:bg-green-900/50' : 'bg-muted/50'}`}>
                                 {choice.is_correct ? <CheckCircle className="h-4 w-4 text-green-600" /> : <XCircle className="h-4 w-4 text-muted-foreground" />}
-                                <span dir={currentLanguage === 'ar' ? 'rtl' : 'ltr'}>
-                                  {getLocalizedChoiceText(choice)}
-                                </span>
+                                <MathRenderer
+                                  text={getLocalizedChoiceText(choice)}
+                                  className={currentLanguage === 'ar' ? 'rtl' : 'ltr'}
+                                />
                                 {/* Show both languages when not in Arabic mode and Arabic text is available */}
                                 {currentLanguage !== 'ar' && choice.choice_text_arabic && choice.choice_text_arabic !== choice.choice_text && (
-                                  <span className="text-xs text-muted-foreground" dir="rtl">
-                                    ({choice.choice_text_arabic})
-                                  </span>
+                                  <MathRenderer
+                                    text={choice.choice_text_arabic}
+                                    className="text-xs text-muted-foreground rtl"
+                                  />
                                 )}
                               </li>
                             ))}

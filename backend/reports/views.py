@@ -22,6 +22,7 @@ from rest_framework.views import APIView
 from homework.models import Homework, Submission
 from schools.models import SchoolClass
 from users.models import StudentEnrollment
+from homework.models import LessonProgress
 
 
 def _parse_int(value):
@@ -242,7 +243,7 @@ class StudentPerformanceReportView(APIView):
 
         grade_distribution = self._grade_distribution(scored_submissions)
         top_students, at_risk_students, pagination = self._student_leaderboards(
-            scored_submissions, scored_prev, assigned_count, pass_flag, params
+            homework_qs, submissions_qs, scored_submissions, scored_prev, pass_flag, params
         )
         subject_breakdown = self._subject_breakdown(scored_submissions, pass_flag, on_time_flag)
         class_breakdown = self._class_breakdown(scored_submissions, pass_flag)
@@ -288,14 +289,16 @@ class StudentPerformanceReportView(APIView):
             )
         return results
 
-    def _student_leaderboards(self, scored_submissions, scored_prev, assigned_count, pass_flag, params):
-        per_student = (
+    def _student_leaderboards(self, homework_qs, submissions_qs, scored_submissions, scored_prev, pass_flag, params):
+        per_student_qs = (
             scored_submissions.values(
                 "student_id",
                 "student__first_name",
                 "student__last_name",
                 "homework__school_class__name",
+                "homework__school_class_id",
                 "homework__subject__name",
+                "homework__subject_id",
             )
             .annotate(
                 avg_score=Avg("score_pct"),
@@ -304,6 +307,7 @@ class StudentPerformanceReportView(APIView):
                 late_count=Count("id", filter=Q(is_late=True)),
             )
         )
+        per_student = list(per_student_qs)
 
         prev_map = {}
         if scored_prev.exists():
@@ -313,17 +317,70 @@ class StudentPerformanceReportView(APIView):
             )
             prev_map = {row["student_id"]: float(row["prev_avg"] or 0) for row in prev_rows}
 
+        # Build enrollment map for student -> class ids
+        student_ids = [row["student_id"] for row in per_student]
+        enrollment_map = {}
+        if student_ids:
+            enrolls = StudentEnrollment.objects.filter(student_id__in=student_ids).values(
+                "student_id", "school_class_id"
+            )
+            for e in enrolls:
+                enrollment_map.setdefault(e["student_id"], set()).add(e["school_class_id"])
+
+        # Homework counts per class/subject
+        hw_counts = {}
+        hw_rows = (
+            homework_qs.values("school_class_id", "subject_id")
+            .annotate(total=Count("id", distinct=True))
+        )
+        for row in hw_rows:
+            hw_counts[(row["school_class_id"], row["subject_id"])] = row["total"]
+
+        # Submitted counts per student/class/subject (any submitted/graded)
+        submitted_rows = (
+            submissions_qs.filter(status__in=["submitted", "auto_graded", "manually_graded", "late"])
+            .values("student_id", "homework__school_class_id", "homework__subject_id")
+            .annotate(total=Count("homework", distinct=True))
+        )
+        submitted_map = {
+            (row["student_id"], row["homework__school_class_id"], row["homework__subject_id"]): row["total"]
+            for row in submitted_rows
+        }
+
+        # Accuracy from LessonProgress (if available)
+        accuracy_map = {}
+        if student_ids:
+            lp_rows = (
+                LessonProgress.objects.filter(student_id__in=student_ids)
+                .values("student_id", "lesson__subject_id")
+                .annotate(acc=Avg("accuracy_percentage"))
+            )
+            for row in lp_rows:
+                accuracy_map[(row["student_id"], row["lesson__subject_id"])] = float(row["acc"] or 0)
+
         students = []
         at_risk = []
 
         for row in per_student:
-            missing = max(0, assigned_count - row["submitted"])
+            class_ids = enrollment_map.get(row["student_id"], set())
+            if class_ids:
+                assigned_for_student = 0
+                assigned_for_student += hw_counts.get((row.get("homework__school_class_id"), row.get("homework__subject_id")), 0)
+            else:
+                assigned_for_student = hw_counts.get((row.get("homework__school_class_id"), row.get("homework__subject_id")), 0)
+
+            submitted_for_student = submitted_map.get(
+                (row["student_id"], row.get("homework__school_class_id"), row.get("homework__subject_id")),
+                0,
+            )
+
+            missing = max(0, assigned_for_student - submitted_for_student)
             name = f"{row.get('student__first_name', '')} {row.get('student__last_name', '')}".strip() or "Student"
             current_avg = round(float(row["avg_score"] or 0), 2)
             improvement = None
             if row["student_id"] in prev_map:
                 improvement = round(current_avg - prev_map[row["student_id"]], 2)
-            accuracy = None
+            accuracy = accuracy_map.get((row["student_id"], row.get("homework__subject_id")))
 
             students.append({
                 "student_id": row["student_id"],
@@ -500,6 +557,7 @@ class TeacherPerformanceReportView(APIView):
         pass_flag = Case(When(score_pct__gte=50, then=1), default=0, output_field=DecimalField())
         on_time_flag = Case(When(is_late=False, then=1), default=0, output_field=DecimalField())
 
+        # Base aggregates from homework submissions (scores, completion, etc.)
         aggregates = (
             scored.values("homework__teacher_id", "homework__teacher__first_name", "homework__teacher__last_name")
             .annotate(
@@ -514,18 +572,60 @@ class TeacherPerformanceReportView(APIView):
             .order_by("-average_score")
         )
 
+        # Map teacher -> set of students who submitted their homework (cohorts)
+        teacher_student_map = {}
+        teacher_student_rows = (
+            submissions_qs.values("homework__teacher_id", "student_id").distinct()
+        )
+        for row in teacher_student_rows:
+            teacher_id = row["homework__teacher_id"]
+            student_id = row["student_id"]
+            if teacher_id and student_id:
+                teacher_student_map.setdefault(teacher_id, set()).add(student_id)
+
+        # Pre-fetch LessonProgress for all involved students, optionally time‑bounded
+        all_student_ids = {sid for ids in teacher_student_map.values() for sid in ids}
+        lesson_progress_qs = LessonProgress.objects.filter(student_id__in=all_student_ids)
+
+        if params["subject_id"]:
+            lesson_progress_qs = lesson_progress_qs.filter(lesson__subject_id=params["subject_id"])
+        if params["grade_id"]:
+            lesson_progress_qs = lesson_progress_qs.filter(lesson__grade_id=params["grade_id"])
+        if params["date_start"] and params["date_end"]:
+            lesson_progress_qs = lesson_progress_qs.filter(
+                last_accessed__date__gte=params["date_start"].date(),
+                last_accessed__date__lte=params["date_end"].date(),
+            )
+
         teachers = []
         for row in aggregates:
-            homework_for_teacher = homework_qs.filter(teacher_id=row["homework__teacher_id"])
+            teacher_id = row["homework__teacher_id"]
+
+            # Homework‑based completion metrics
+            homework_for_teacher = homework_qs.filter(teacher_id=teacher_id)
             assigned_count = homework_for_teacher.count()
-            submitted_count = submissions_qs.filter(homework__teacher_id=row["homework__teacher_id"]).values(
+            submitted_count = submissions_qs.filter(homework__teacher_id=teacher_id).values(
                 "homework_id"
             ).distinct().count()
             completion_rate = (submitted_count / assigned_count * 100) if assigned_count else 0
+
+            # LessonProgress‑based learning metrics for this teacher's students
+            lp_for_teacher = lesson_progress_qs.filter(student_id__in=teacher_student_map.get(teacher_id, set()))
+            lp_stats = lp_for_teacher.aggregate(
+                avg_accuracy=Avg("accuracy_percentage"),
+                avg_completion=Avg("completion_percentage"),
+                total_lessons=Count("id"),
+                completed_lessons=Count("id", filter=Q(status="completed")),
+            )
+            total_lessons = lp_stats.get("total_lessons") or 0
+            completed_lessons = lp_stats.get("completed_lessons") or 0
+            lesson_completion_rate = (completed_lessons / total_lessons * 100) if total_lessons else 0
+            lesson_accuracy = lp_stats.get("avg_accuracy") or 0
+
             name = f"{row.get('homework__teacher__first_name','')} {row.get('homework__teacher__last_name','')}".strip() or "Teacher"
 
             teachers.append({
-                "teacher_id": row["homework__teacher_id"],
+                "teacher_id": teacher_id,
                 "name": name,
                 "average_score": round(float(row["average_score"] or 0), 2),
                 "pass_rate": round(float(row["pass_rate"] or 0), 2),
@@ -534,6 +634,9 @@ class TeacherPerformanceReportView(APIView):
                 "assignments": row["assignments"],
                 "classes": row["classes"],
                 "students": row["students"],
+                # New LessonProgress‑backed signals
+                "lesson_accuracy": round(float(lesson_accuracy), 2) if total_lessons else None,
+                "lesson_completion_rate": round(float(lesson_completion_rate), 2) if total_lessons else None,
             })
 
         return Response({"teachers": teachers, "filters_applied": {k: v for k, v in params.items() if v}})

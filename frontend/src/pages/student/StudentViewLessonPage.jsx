@@ -9,21 +9,22 @@ import { exerciseService } from '../../services/exercises'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card'
 import { Badge } from '../../components/ui/badge'
 import { Button } from '../../components/ui/button'
+import EnhancedMarkdown from '../../components/markdown/EnhancedMarkdown'
+import BlockRenderer from '../../components/blocks/BlockRenderer'
+import { LessonProvider, useLesson } from '../../contexts/LessonContext'
+import { StickyHeader } from '../../components/lesson/StickyHeader'
+import { LessonOverview } from '../../components/lesson/LessonOverview'
+import { VideoSection } from '../../components/lesson/VideoSection'
+import { StickyFooter } from '../../components/lesson/StickyFooter'
+import 'katex/dist/katex.min.css'
 import {
   BookOpen,
-  GraduationCap,
-  Users,
-  Target,
-  Award,
-  Clock,
-  Calendar,
   FileText,
   File,
   FileVideo,
   FileAudio,
   Image as ImageIcon,
   Link as LinkIcon,
-  ExternalLink,
   Loader2,
   Eye,
   Brain,
@@ -32,7 +33,6 @@ import {
   CheckCircle,
   PlayCircle,
   RotateCcw,
-  ChevronLeft,
   Layers
 } from 'lucide-react'
 
@@ -63,6 +63,306 @@ const getResourceIcon = (type) => {
     default:
       return File
   }
+}
+
+// Inner component that uses LessonContext
+const LessonContent = ({ lesson, exercises, exercisesLoading, t, currentLanguage, navigate, lessonId }) => {
+  const { state, dispatch } = useLesson()
+
+  const localizedSubject = useMemo(() => {
+    if (!lesson?.subject_details) return lesson?.subject_name || ''
+    const subject = lesson.subject_details
+    return getLocalizedValue(subject.name, subject.name_arabic, subject.name_french, currentLanguage)
+  }, [lesson, currentLanguage])
+
+  const visibleResources = useMemo(() => {
+    if (!lesson?.resources) return []
+    return lesson.resources.filter((resource) => resource.is_visible_to_students !== false)
+  }, [lesson])
+
+  const videoResources = useMemo(() => {
+    return visibleResources.filter(r => r.resource_type?.toLowerCase() === 'video')
+  }, [visibleResources])
+
+  const markdownResources = useMemo(() => {
+    return visibleResources.filter(r => r.resource_type?.toLowerCase() === 'markdown')
+  }, [visibleResources])
+
+  const blocksResources = useMemo(() => {
+    return visibleResources.filter(r => r.resource_type?.toLowerCase() === 'blocks')
+  }, [visibleResources])
+
+  const otherResources = useMemo(() => {
+    return visibleResources.filter(r =>
+      !['video', 'markdown', 'blocks'].includes(r.resource_type?.toLowerCase())
+    )
+  }, [visibleResources])
+
+  const handleGoBack = () => {
+    navigate('/student/lessons')
+  }
+
+  const handleOpenExercise = (exerciseId) => {
+    const target = ROUTES.STUDENT_EXERCISES.VIEW.replace(':exerciseId', exerciseId)
+    navigate(target, { state: { lessonId: lesson?.id || lessonId } })
+  }
+
+  const handleOpenResource = (resource) => {
+    const url = resource.file_url || resource.external_url
+    if (url) {
+      window.open(url, '_blank', 'noopener,noreferrer')
+    }
+    // Mark resource as viewed
+    if (resource.id) {
+      dispatch({
+        type: 'VIEW_RESOURCE',
+        payload: { resourceId: resource.id }
+      })
+    }
+  }
+
+  const handleBookmark = () => {
+    dispatch({ type: 'TOGGLE_BOOKMARK' })
+    // TODO: API call to save bookmark
+  }
+
+  const handleNextLesson = () => {
+    // TODO: Navigate to next lesson
+    console.log('Next lesson')
+  }
+
+  const canProceed = state.progress.overall >= 70 // Require 70% completion
+
+  // Parse learning objectives if they're in the objectives field
+  const learningObjectives = useMemo(() => {
+    if (!lesson?.objectives) return []
+    // Split by newlines or bullets
+    return lesson.objectives
+      .split(/[\n•]/)
+      .map(obj => obj.trim())
+      .filter(obj => obj.length > 0)
+  }, [lesson])
+
+  return (
+    <>
+      <StickyHeader
+        subject={localizedSubject}
+        lessonNumber={lesson?.order}
+        onBack={handleGoBack}
+        currentLanguage={currentLanguage}
+      />
+
+      <div className="space-y-6">
+        {/* Lesson Overview Card */}
+        {lesson && (
+          <LessonOverview
+            duration={lesson.estimated_duration || 15}
+            difficulty={lesson.difficulty_level}
+            learningObjectives={learningObjectives}
+            description={lesson.description}
+            attachments={otherResources}
+            currentLanguage={currentLanguage}
+          />
+        )}
+
+        {/* Video Sections */}
+        {videoResources.map((video) => (
+          <VideoSection
+            key={video.id}
+            videoUrl={video.file_url || video.external_url}
+            title={video.title}
+            sectionId={`video-${video.id}`}
+            currentLanguage={currentLanguage}
+          />
+        ))}
+
+        {/* Main Content - Blocks */}
+        {blocksResources.map((resource) => (
+          <Card key={resource.id} className="mb-6">
+            <CardHeader dir={currentLanguage === 'ar' ? 'rtl' : 'ltr'}>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                {resource.title || t('lessons.content', 'Lesson Content')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent dir={currentLanguage === 'ar' ? 'rtl' : 'ltr'}>
+              <BlockRenderer
+                blocksContent={resource.blocks_content}
+                language={currentLanguage}
+              />
+            </CardContent>
+          </Card>
+        ))}
+
+        {/* Main Content - Markdown */}
+        {markdownResources.map((resource) => (
+          <Card key={resource.id} className="mb-6">
+            <CardHeader dir={currentLanguage === 'ar' ? 'rtl' : 'ltr'}>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                {resource.title || t('lessons.content', 'Lesson Content')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent dir={currentLanguage === 'ar' ? 'rtl' : 'ltr'}>
+              <EnhancedMarkdown
+                content={resource.markdown_content}
+                language={currentLanguage}
+                showCopyButton={true}
+                collapsibleHeadings={false}
+              />
+            </CardContent>
+          </Card>
+        ))}
+
+        {/* Other Resources */}
+        {otherResources.length > 0 && (
+          <Card>
+            <CardHeader dir={currentLanguage === 'ar' ? 'rtl' : 'ltr'}>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                {t('lessons.additionalResources', 'Additional Resources')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent dir={currentLanguage === 'ar' ? 'rtl' : 'ltr'}>
+              <div className="space-y-3">
+                {otherResources.map((resource) => {
+                  const ResourceIcon = getResourceIcon(resource.resource_type)
+                  return (
+                    <div key={resource.id} className="border rounded-lg p-4 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <ResourceIcon className="h-6 w-6 text-primary" />
+                          <div>
+                            <h4 className="font-medium">{resource.title || t('lessons.resourceUntitled', 'Untitled resource')}</h4>
+                            {resource.description && (
+                              <p className="text-sm text-muted-foreground">{resource.description}</p>
+                            )}
+                          </div>
+                        </div>
+                        {(resource.file_url || resource.external_url) && (
+                          <Button size="sm" onClick={() => handleOpenResource(resource)} className="flex items-center gap-1">
+                            <Eye className="h-4 w-4" />
+                            {t('common.open', 'Open')}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Exercises Section */}
+        <Card>
+          <CardHeader dir={currentLanguage === 'ar' ? 'rtl' : 'ltr'}>
+            <CardTitle className="flex items-center gap-2">
+              <Brain className="h-5 w-5" />
+              {t('lessons.exercises', 'Practice Exercises')}
+            </CardTitle>
+            <CardDescription>
+              {t('lessons.exercisesDescription', 'Test your knowledge with these exercises')}
+            </CardDescription>
+          </CardHeader>
+          <CardContent dir={currentLanguage === 'ar' ? 'rtl' : 'ltr'}>
+            {exercisesLoading ? (
+              <div className="flex justify-center items-center py-8 text-muted-foreground gap-3">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>{t('lessons.loadingExercises', 'Loading exercises...')}</span>
+              </div>
+            ) : exercises.length > 0 ? (
+              <div className="space-y-3">
+                {exercises.map((exercise) => {
+                  const exerciseStatus = exerciseService.calculateExerciseStatus(exercise)
+                  const isExerciseCompleted = exerciseStatus === 'completed'
+                  const hasExerciseAttempts = exerciseStatus === 'in_progress'
+
+                  let buttonLabel = t('lessons.startExercise', 'Start Exercise')
+                  let ButtonIcon = PlayCircle
+                  let buttonVariant = 'default'
+                  let buttonClassName = 'flex items-center gap-2'
+                  let buttonDisabled = false
+
+                  if (isExerciseCompleted) {
+                    buttonLabel = t('lessons.exerciseCompleted', 'Completed')
+                    ButtonIcon = CheckCircle
+                    buttonVariant = 'outline'
+                    buttonClassName += ' text-emerald-600 border-emerald-200 bg-emerald-50 dark:text-emerald-300 dark:border-emerald-500 dark:bg-emerald-900/20 cursor-default'
+                    buttonDisabled = true
+                  } else if (hasExerciseAttempts) {
+                    buttonLabel = t('lessons.continueExercise', 'Continue')
+                    ButtonIcon = RotateCcw
+                    buttonVariant = 'outline'
+                  }
+
+                  return (
+                    <div key={exercise.id} className="border rounded-lg p-4 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
+                      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                        <div className="space-y-2 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="font-medium text-base">{exercise.title}</h4>
+                            {exercise.difficulty_level && (
+                              <Badge variant="outline" className="text-xs uppercase">
+                                {exercise.difficulty_level}
+                              </Badge>
+                            )}
+                          </div>
+                          {exercise.description && (
+                            <p className="text-sm text-muted-foreground line-clamp-2">
+                              {exercise.description}
+                            </p>
+                          )}
+                          <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+                            {(exercise.questions_count || (exercise.questions && exercise.questions.length)) && (
+                              <span className="flex items-center gap-1">
+                                <HelpCircle className="h-3 w-3" />
+                                {(exercise.questions_count || (exercise.questions && exercise.questions.length) || 0)} {t('lessons.questions', 'questions')}
+                              </span>
+                            )}
+                            {(exercise.total_points || exercise.total_score) && (
+                              <span className="flex items-center gap-1">
+                                <Trophy className="h-3 w-3" />
+                                {(exercise.total_points || exercise.total_score)} {t('lessons.points', 'points')}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant={buttonVariant}
+                          onClick={buttonDisabled ? undefined : () => handleOpenExercise(exercise.id)}
+                          disabled={buttonDisabled}
+                          className={buttonClassName}
+                        >
+                          <ButtonIcon className="h-4 w-4" />
+                          {buttonLabel}
+                        </Button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-10 text-center gap-3 text-muted-foreground">
+                <Layers className="h-10 w-10" />
+                <p>{t('lessons.noExercises', 'No exercises available yet')}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <StickyFooter
+        onBookmark={handleBookmark}
+        onNextLesson={handleNextLesson}
+        isBookmarked={state.bookmarked}
+        isLastLesson={false}
+        canProceed={canProceed}
+        currentLanguage={currentLanguage}
+      />
+    </>
+  )
 }
 
 const StudentViewLessonPage = () => {
@@ -124,443 +424,60 @@ const StudentViewLessonPage = () => {
     fetchExercises()
   }, [lesson?.id])
 
-  const localizedTitle = useMemo(() => {
-    if (!lesson) return ''
-    return getLocalizedValue(lesson.title, lesson.title_arabic, lesson.title_french, currentLanguage)
-  }, [lesson, currentLanguage])
-
-  const localizedSubject = useMemo(() => {
-    if (!lesson?.subject_details) return lesson?.subject_name || ''
-    const subject = lesson.subject_details
-    return getLocalizedValue(subject.name, subject.name_arabic, subject.name_french, currentLanguage)
-  }, [lesson, currentLanguage])
-
-  const localizedGrade = useMemo(() => {
-    if (!lesson?.grade_details) return lesson?.grade_name || ''
-    const grade = lesson.grade_details
-    return getLocalizedValue(grade.name, grade.name_arabic, grade.name_french, currentLanguage)
-  }, [lesson, currentLanguage])
-
-  const visibleResources = useMemo(() => {
-    if (!lesson?.resources) return []
-    return lesson.resources.filter((resource) => resource.is_visible_to_students !== false)
-  }, [lesson])
-
-  const cycleLabel = useMemo(() => {
-    if (!lesson?.cycle) return null
-    const map = {
-      first: t('lessons.firstCycle', 'First Cycle'),
-      second: t('lessons.secondCycle', 'Second Cycle'),
-    }
-    return map[lesson.cycle] || lesson.cycle_display || lesson.cycle
-  }, [lesson, t])
-
-  const difficultyLabel = useMemo(() => {
-    if (!lesson?.difficulty_level) return null
-    const map = {
-      easy: t('difficulty.easy', 'Easy'),
-      medium: t('difficulty.medium', 'Medium'),
-      hard: t('difficulty.hard', 'Hard'),
-    }
-    return map[lesson.difficulty_level] || lesson.difficulty_display || lesson.difficulty_level
-  }, [lesson, t])
-
-  const handleGoBack = () => {
-
-    navigate('/student/lessons')
-
-  }
-
-
-
-  const handleOpenExercise = (exerciseId) => {
-
-    const target = ROUTES.STUDENT_EXERCISES.VIEW.replace(':exerciseId', exerciseId)
-
-    navigate(target, { state: { lessonId: lesson?.id || lessonId } })
-
-  }
-
-
-
-  const handleOpenResource = (resource) => {
-    const url = resource.file_url || resource.external_url
-    if (url) {
-      window.open(url, '_blank', 'noopener,noreferrer')
-    }
-  }
-
   return (
     <DashboardLayout user={user}>
-      <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={handleGoBack} size="sm">
-            <ChevronLeft className="h-4 w-4" />
-            {t('common.back', 'Back')}
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">{localizedTitle || t('lessons.viewLesson', 'Lesson details')}</h1>
-            {lesson && (
-              <p className="text-muted-foreground mt-1">
-                {localizedSubject}  {localizedGrade}
-              </p>
-            )}
+      {loading ? (
+        <div className="flex justify-center items-center min-h-screen">
+          <div className="text-center space-y-4">
+            <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+            <p className="text-muted-foreground">{t('common.loading', 'Loading lesson...')}</p>
           </div>
         </div>
-
-        {loading ? (
-          <Card>
-            <CardContent className="py-12 flex flex-col items-center gap-3">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="text-sm text-muted-foreground">{t('common.loading', 'Loading...')}</p>
-            </CardContent>
-          </Card>
-        ) : error ? (
-          <Card className="border-destructive">
+      ) : error ? (
+        <div className="flex justify-center items-center min-h-screen">
+          <Card className="max-w-md w-full">
             <CardContent className="py-12 text-center space-y-4">
-              <BookOpen className="h-10 w-10 text-destructive mx-auto" />
-              <p className="text-muted-foreground">{error}</p>
-              <Button variant="outline" onClick={handleGoBack}>
-                {t('common.backToList', 'Back to lessons')}
+              <BookOpen className="h-16 w-16 text-destructive mx-auto" />
+              <div className="space-y-2">
+                <h2 className="text-xl font-semibold">{t('common.error', 'Error')}</h2>
+                <p className="text-muted-foreground">{error}</p>
+              </div>
+              <Button onClick={() => navigate('/student/lessons')}>
+                {t('common.backToLessons', 'Back to Lessons')}
               </Button>
             </CardContent>
           </Card>
-        ) : !lesson ? (
-          <Card>
-            <CardContent className="py-12 text-center space-y-3">
-              <BookOpen className="h-10 w-10 text-muted-foreground mx-auto" />
-              <p className="text-muted-foreground">{t('lessons.notFound', 'Lesson not found')}</p>
-              <Button variant="outline" onClick={handleGoBack}>
-                {t('common.backToList', 'Back to lessons')}
+        </div>
+      ) : !lesson ? (
+        <div className="flex justify-center items-center min-h-screen">
+          <Card className="max-w-md w-full">
+            <CardContent className="py-12 text-center space-y-4">
+              <BookOpen className="h-16 w-16 text-muted-foreground mx-auto" />
+              <div className="space-y-2">
+                <h2 className="text-xl font-semibold">{t('lessons.notFound', 'Lesson Not Found')}</h2>
+                <p className="text-muted-foreground">{t('lessons.notFoundDescription', 'The lesson you\'re looking for doesn\'t exist.')}</p>
+              </div>
+              <Button onClick={() => navigate('/student/lessons')}>
+                {t('common.backToLessons', 'Back to Lessons')}
               </Button>
             </CardContent>
           </Card>
-        ) : (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader className="pb-3">
-                <div className="flex flex-wrap items-center gap-3">
-                  <Badge variant="outline" className="text-xs">
-                    {localizedSubject || t('lessons.subject', 'Subject')}
-                  </Badge>
-                  {cycleLabel && (
-                    <Badge variant="outline" className="text-xs">
-                      {cycleLabel}
-                    </Badge>
-                  )}
-                  {difficultyLabel && (
-                    <Badge variant="outline" className="text-xs">
-                      {difficultyLabel}
-                    </Badge>
-                  )}
-                  <Badge variant="outline" className="text-xs">
-                    {t('lessons.order', 'Order')} #{lesson.order || 0}
-                  </Badge>
-                  {lesson.is_active === false && (
-                    <Badge variant="secondary" className="text-xs">
-                      {t('common.inactive', 'Inactive')}
-                    </Badge>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {lesson.description && (
-                  <p className="text-muted-foreground whitespace-pre-line">{lesson.description}</p>
-                )}
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <GraduationCap className="h-4 w-4" />
-                    <span>{localizedGrade}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Target className="h-4 w-4" />
-                    <span>{lesson.cycle_display || cycleLabel || t('lessons.cycle', 'Cycle')}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Award className="h-4 w-4" />
-                    <span>{lesson.difficulty_display || difficultyLabel || t('difficulty.medium', 'Medium')}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Clock className="h-4 w-4" />
-                    <span>{t('common.updated', 'Updated')} {lesson.updated_at ? new Date(lesson.updated_at).toLocaleDateString() : t('common.notAvailable', 'N/A')}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 space-y-6">
-                {lesson.objectives && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-base">
-                        <Target className="h-5 w-5" />
-                        {t('lessons.objectives', 'Learning objectives')}
-                      </CardTitle>
-                      <CardDescription>{t('lessons.objectivesDescription', 'What you will achieve after completing this lesson')}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground whitespace-pre-line">{lesson.objectives}</p>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {lesson.prerequisites && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-base">
-                        <BookOpen className="h-5 w-5" />
-                        {t('lessons.prerequisites', 'Prerequisites')}
-                      </CardTitle>
-                      <CardDescription>{t('lessons.prerequisitesDescription', 'Recommended knowledge before starting')}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground whitespace-pre-line">{lesson.prerequisites}</p>
-                    </CardContent>
-                  </Card>
-                )}
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <FileText className="h-5 w-5" />
-                      {t('lessons.resources', 'Lesson resources')}
-                    </CardTitle>
-                    <CardDescription>
-                      {visibleResources.length > 0
-                        ? t('lessons.resourcesDescription', 'Download or open the materials provided for this lesson')
-                        : t('lessons.noResources', 'No resources available for this lesson yet.')}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {visibleResources.length > 0 ? (
-                      <div className="space-y-3">
-                        {visibleResources.map((resource) => {
-                          const ResourceIcon = getResourceIcon(resource.resource_type)
-                          return (
-                            <div key={resource.id} className="border rounded-lg p-4">
-                              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                                <div className="flex items-start gap-3 flex-1 min-w-0">
-                                  <ResourceIcon className="h-6 w-6 text-primary mt-1" />
-                                  <div className="space-y-1 min-w-0">
-                                    <h4 className="font-medium truncate">{resource.title || t('lessons.resourceUntitled', 'Untitled resource')}</h4>
-                                    {resource.description && (
-                                      <p className="text-xs text-muted-foreground truncate">
-                                        {resource.description}
-                                      </p>
-                                    )}
-                                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                                      {resource.resource_type && (
-                                        <Badge variant="outline" className="text-[10px] uppercase tracking-wide">
-                                          {resource.resource_type}
-                                        </Badge>
-                                      )}
-                                      {resource.file_size && (
-                                        <span>
-                                          {Math.round(resource.file_size / 1024)} KB
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  {(resource.file_url || resource.external_url) && (
-                                    <Button size="sm" onClick={() => handleOpenResource(resource)} className="flex items-center gap-1">
-                                      <Eye className="h-4 w-4" />
-                                      {t('common.open', 'Open')}
-                                    </Button>
-                                  )}
-                                  {resource.external_url && (
-                                    <Button size="sm" variant="ghost" onClick={() => window.open(resource.external_url, '_blank')}>
-                                      <ExternalLink className="h-4 w-4" />
-                                    </Button>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center py-10 text-center gap-3 text-muted-foreground">
-                        <FileText className="h-10 w-10" />
-                        <p>{t('lessons.noResources', 'No resources available for this lesson yet.')}</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <Brain className="h-5 w-5" />
-                      {t('lessons.exercises', 'Exercises')}
-                    </CardTitle>
-                    <CardDescription>
-                      {t('lessons.exercisesDescription', 'Practice what you learned with these exercises')}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {exercisesLoading ? (
-                      <div className="flex justify-center items-center py-8 text-muted-foreground gap-3">
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                        <span>{t('lessons.loadingExercises', 'Loading exercises...')}</span>
-                      </div>
-                    ) : exercises.length > 0 ? (
-                      <div className="space-y-3">
-                        {exercises.map((exercise) => {
-                          const exerciseStatus = exerciseService.calculateExerciseStatus(exercise)
-                          const isExerciseCompleted = exerciseStatus === 'completed'
-                          const hasExerciseAttempts = exerciseStatus === 'in_progress'
-
-                          let buttonLabel = t('lessons.startExercise', 'Start exercise')
-                          let ButtonIcon = PlayCircle
-                          let buttonVariant = 'default'
-                          let buttonClassName = 'flex items-center gap-2'
-                          let buttonDisabled = false
-
-                          if (isExerciseCompleted) {
-                            buttonLabel = t('lessons.exerciseCompleted', 'Completed')
-                            ButtonIcon = CheckCircle
-                            buttonVariant = 'outline'
-                            buttonClassName += ' text-emerald-600 border-emerald-200 bg-emerald-50 dark:text-emerald-300 dark:border-emerald-500 dark:bg-emerald-900/20 cursor-default'
-                            buttonDisabled = true
-                          } else if (hasExerciseAttempts) {
-                            buttonLabel = t('lessons.continueExercise', 'Continue')
-                            ButtonIcon = RotateCcw
-                            buttonVariant = 'outline'
-                          }
-
-                          return (
-                            <div key={exercise.id} className="border rounded-lg p-4">
-                              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                                <div className="space-y-2">
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <h4 className="font-medium text-base">{exercise.title}</h4>
-                                    {exercise.difficulty_level && (
-                                      <Badge variant="outline" className="text-xs uppercase">
-                                        {exercise.difficulty_level}
-                                      </Badge>
-                                    )}
-                                    {exercise.is_published === false && (
-                                      <Badge variant="secondary" className="text-xs">
-                                        {t('common.draft', 'Draft')}
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  {exercise.description && (
-                                    <p className="text-sm text-muted-foreground line-clamp-3">
-                                      {exercise.description}
-                                    </p>
-                                  )}
-                                  <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
-                                    {(exercise.questions_count || (exercise.questions && exercise.questions.length)) && (
-                                      <span className="flex items-center gap-1">
-                                        <HelpCircle className="h-3 w-3" />
-                                        {(exercise.questions_count || (exercise.questions && exercise.questions.length) || 0)} {t('lessons.questions', 'questions')}
-                                      </span>
-                                    )}
-                                    {(exercise.total_points || exercise.total_score) && (
-                                      <span className="flex items-center gap-1">
-                                        <Trophy className="h-3 w-3" />
-                                        {(exercise.total_points || exercise.total_score)} {t('lessons.points', 'points')}
-                                      </span>
-                                    )}
-                                    {exercise.estimated_duration && (
-                                      <span className="flex items-center gap-1">
-                                        <Clock className="h-3 w-3" />
-                                        {exercise.estimated_duration} {t('lessons.minutes', 'min')}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <Button
-                                    size="sm"
-                                    variant={buttonVariant}
-                                    onClick={buttonDisabled ? undefined : () => handleOpenExercise(exercise.id)}
-                                    disabled={buttonDisabled}
-                                    className={buttonClassName}
-                                  >
-                                    <ButtonIcon className="h-4 w-4" />
-                                    {buttonLabel}
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center py-10 text-center gap-3 text-muted-foreground">
-                        <Layers className="h-10 w-10" />
-                        <p>{t('lessons.noExercises', 'No exercises available for this lesson yet.')}</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">{t('lessons.metadata', 'Lesson information')}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3 text-sm text-muted-foreground">
-                    <div className="flex items-center justify-between">
-                      <span>{t('lessons.created', 'Created')}</span>
-                      <span className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        {lesson.created_at ? new Date(lesson.created_at).toLocaleDateString() : t('common.notAvailable', 'N/A')}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>{t('lessons.updated', 'Updated')}</span>
-                      <span className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        {lesson.updated_at ? new Date(lesson.updated_at).toLocaleDateString() : t('common.notAvailable', 'N/A')}
-                      </span>
-                    </div>
-                    {lesson.created_by_name && (
-                      <div className="flex items-center justify-between">
-                        <span>{t('lessons.createdBy', 'Created by')}</span>
-                        <span className="flex items-center gap-2">
-                          <Users className="h-4 w-4" />
-                          {lesson.created_by_name}
-                        </span>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {lesson.tags && lesson.tags.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">{t('lessons.tags', 'Tags')}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex flex-wrap gap-2">
-                        {lesson.tags.map((tag) => (
-                          <Badge key={tag.id} variant="outline" style={{ backgroundColor: `${tag.color}22`, borderColor: tag.color }}>
-                            {tag.name}
-                          </Badge>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <LessonProvider lessonId={lessonId}>
+          <LessonContent
+            lesson={lesson}
+            exercises={exercises}
+            exercisesLoading={exercisesLoading}
+            t={t}
+            currentLanguage={currentLanguage}
+            navigate={navigate}
+            lessonId={lessonId}
+          />
+        </LessonProvider>
+      )}
     </DashboardLayout>
   )
 }
 
 export default StudentViewLessonPage
-
-
-
-

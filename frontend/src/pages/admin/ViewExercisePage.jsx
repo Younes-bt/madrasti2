@@ -305,6 +305,7 @@ const ViewExercisePage = () => {
                         </div>
                       )}
 
+                      {/* QCM/True-False Choices */}
                       {['qcm_single', 'qcm_multiple', 'true_false'].includes(question.question_type) && (
                         <div className="mt-2 space-y-2">
                           <h5 className="text-sm font-medium text-muted-foreground">{t('exercises.choices')}</h5>
@@ -315,7 +316,6 @@ const ViewExercisePage = () => {
                                 <span dir={currentLanguage === 'ar' ? 'rtl' : 'ltr'}>
                                   {getLocalizedChoiceText(choice)}
                                 </span>
-                                {/* Show both languages when not in Arabic mode and Arabic text is available */}
                                 {currentLanguage !== 'ar' && choice.choice_text_arabic && choice.choice_text_arabic !== choice.choice_text && (
                                   <span className="text-xs text-muted-foreground" dir="rtl">
                                     ({choice.choice_text_arabic})
@@ -324,6 +324,78 @@ const ViewExercisePage = () => {
                               </li>
                             ))}
                           </ul>
+                        </div>
+                      )}
+
+                      {/* Ordering Items */}
+                      {question.question_type === 'ordering' && question.ordering_items && question.ordering_items.length > 0 && (
+                        <div className="mt-2 space-y-2">
+                          <h5 className="text-sm font-medium text-muted-foreground">{t('exercises.orderingItems', 'Items to Order')}</h5>
+                          <ul className="space-y-1">
+                            {question.ordering_items
+                              .sort((a, b) => a.correct_position - b.correct_position)
+                              .map((item, idx) => (
+                                <li key={item.id} className="flex items-center gap-2 text-sm p-2 rounded-md bg-blue-50 dark:bg-blue-900/20">
+                                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs font-medium text-white">
+                                    {item.correct_position}
+                                  </span>
+                                  <span dir={currentLanguage === 'ar' ? 'rtl' : 'ltr'}>{item.text}</span>
+                                </li>
+                              ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Matching Pairs */}
+                      {question.question_type === 'matching' && question.matching_pairs && question.matching_pairs.length > 0 && (
+                        <div className="mt-2 space-y-2">
+                          <h5 className="text-sm font-medium text-muted-foreground">{t('exercises.matchingPairs', 'Matching Pairs')}</h5>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {question.matching_pairs.map((pair, idx) => (
+                              <div key={pair.id} className="flex items-center gap-2 text-sm p-2 rounded-md bg-purple-50 dark:bg-purple-900/20">
+                                <span className="flex-1 font-medium" dir={currentLanguage === 'ar' ? 'rtl' : 'ltr'}>
+                                  {pair.left_text}
+                                </span>
+                                <span className="text-purple-600">↔</span>
+                                <span className="flex-1" dir={currentLanguage === 'ar' ? 'rtl' : 'ltr'}>
+                                  {pair.right_text}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Fill in the Blanks */}
+                      {question.question_type === 'fill_blank' && question.blanks && question.blanks.length > 0 && (
+                        <div className="mt-2 space-y-3">
+                          <h5 className="text-sm font-medium text-muted-foreground">{t('exercises.fillBlanks', 'Fill in the Blanks')}</h5>
+                          {question.blanks.map((blank, idx) => (
+                            <div key={blank.id} className="p-3 rounded-md bg-amber-50 dark:bg-amber-900/20">
+                              <div className="text-xs font-medium text-amber-900 dark:text-amber-100 mb-2">
+                                {blank.label || `Blank ${idx + 1}`} (Position: {blank.order})
+                              </div>
+                              <ul className="space-y-1">
+                                {blank.options && blank.options.map((option) => (
+                                  <li
+                                    key={option.id}
+                                    className={`flex items-center gap-2 text-sm p-2 rounded ${
+                                      option.is_correct
+                                        ? 'bg-green-100 dark:bg-green-900/50'
+                                        : 'bg-white dark:bg-gray-800'
+                                    }`}
+                                  >
+                                    {option.is_correct ? (
+                                      <CheckCircle className="h-4 w-4 text-green-600" />
+                                    ) : (
+                                      <XCircle className="h-4 w-4 text-muted-foreground" />
+                                    )}
+                                    <span>{option.option_text}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
                         </div>
                       )}
                     </div>

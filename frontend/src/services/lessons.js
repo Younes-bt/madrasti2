@@ -27,6 +27,22 @@ class LessonsService {
   }
 
   /**
+   * Get Lessons with Student Progress
+   * Returns lessons combined with student progress data (for students only)
+   * @param {Object} params - Query parameters (subject, search, etc.)
+   * @returns {Promise<Object>} Object with summary stats and lessons array
+   */
+  async getLessonsWithProgress(params = {}) {
+    try {
+      const response = await apiMethods.get('lessons/lessons/with_progress/', { params });
+      return response;
+    } catch (error) {
+      console.error('Get lessons with progress failed:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get Minimal Lessons for Dropdowns
    * @param {Object} params - Query parameters
    * @returns {Promise<Array>} Minimal lessons list
