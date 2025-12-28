@@ -8,7 +8,9 @@ export function LessonCard({ lesson, onLessonClick }) {
   const { id, title, difficulty_level, progress, is_locked } = lesson;
 
   // Determine status
-  const status = is_locked ? 'locked' : (progress?.status || 'not_started');
+  // TODO: Re-enable availability check later
+  // const status = is_locked ? 'locked' : (progress?.status || 'not_started');
+  const status = progress?.status || 'not_started'; // Temporarily ignore is_locked for testing
   const completionPercentage = progress?.completion_percentage || 0;
   const pointsEarned = progress?.total_points_earned || 0;
   const averageScore = progress?.average_score || 0;

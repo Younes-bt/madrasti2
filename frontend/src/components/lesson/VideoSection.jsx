@@ -1,6 +1,5 @@
 import { useState, useRef } from 'react'
 import { Play, Pause, Volume2, VolumeX, Maximize } from 'lucide-react'
-import { Card, CardContent } from '../ui/card'
 import { Slider } from '../ui/slider'
 import { Button } from '../ui/button'
 import { useLesson } from '../../contexts/LessonContext'
@@ -106,8 +105,7 @@ export function VideoSection({
   const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0
 
   return (
-    <Card className="mb-6">
-      <CardContent className="p-6" dir={isRTL ? 'rtl' : 'ltr'}>
+    <div dir={isRTL ? 'rtl' : 'ltr'}>
         {/* Header */}
         <div className="flex items-center gap-2 mb-4">
           <span className="text-2xl">🎥</span>
@@ -218,7 +216,6 @@ export function VideoSection({
             }
           </p>
         </div>
-      </CardContent>
-    </Card>
+    </div>
   )
 }

@@ -1,0 +1,106 @@
+/* Custom styles for KaTeX math rendering */
+
+/* Ensure KaTeX renders inline with text */
+.katex {
+  font-size: 1em;
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0 0.1em;
+}
+
+/* Display mode (block equations) */
+.katex-display {
+  display: block;
+  margin: 1em 0;
+  text-align: center;
+}
+
+/* Better spacing for superscripts and subscripts */
+.katex .base {
+  position: relative;
+}
+
+/* Ensure formulas work well in Arabic RTL context */
+[dir="rtl"] .katex {
+  direction: ltr;
+  display: inline-block;
+}
+
+/* Formula styling in question text */
+.prose .katex,
+.text-lg .katex {
+  font-size: 1.1em;
+}
+
+/* Formula styling in choice labels */
+label .katex {
+  font-size: 1em;
+}
+
+/* Ensure formulas don't break layout */
+.katex-html {
+  white-space: nowrap;
+}
+
+/* Better color for formulas */
+.katex {
+  color: inherit;
+}
+
+/* Fractions */
+.katex .frac-line {
+  border-bottom-width: 0.04em;
+}
+
+/* Square roots */
+.katex .sqrt > .root {
+  margin-left: 0.2em;
+  margin-right: -0.2em;
+}
+
+/* Chemical formulas and physics units */
+.katex .mord {
+  font-family: inherit;
+}
+
+/* Ensure proper vertical alignment in flex containers */
+.flex .katex {
+  align-self: center;
+}
+
+/* Better rendering in cards */
+.card .katex {
+  line-height: 1.5;
+}
+
+/* Semantic block content styling */
+.semantic-content {
+  font-family: 'Noto Kufi Arabic', 'Cairo', system-ui, sans-serif;
+}
+
+.semantic-content .katex {
+  font-size: 1.05em;
+}
+
+/* Better formula visibility in semantic blocks */
+.semantic-content p {
+  margin: 0.75rem 0;
+  line-height: 1.8;
+}
+
+.semantic-content strong {
+  font-weight: 600;
+}
+
+/* Lists in semantic blocks */
+.semantic-content ul,
+.semantic-content ol {
+  margin: 1rem 0;
+  padding-right: 1.5rem;
+  padding-left: 1.5rem;
+}
+
+.semantic-content li {
+  margin: 0.5rem 0;
+  line-height: 1.6;
+}

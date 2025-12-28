@@ -70,7 +70,7 @@ const getResourceIcon = (type) => {
 // Component to render blocks content with clean UI
 const BlocksContentRenderer = ({ blocksContent, language }) => {
   const isRTL = language === 'ar'
-
+  
   if (!blocksContent || !blocksContent.blocks || !Array.isArray(blocksContent.blocks)) {
     return null
   }
@@ -87,10 +87,10 @@ const BlocksContentRenderer = ({ blocksContent, language }) => {
           5: 'text-lg font-semibold text-indigo-600 mb-2',
           6: 'text-base font-semibold text-indigo-600 mb-2'
         }
-
+        
         return (
-          <HeadingTag
-            key={block.id}
+          <HeadingTag 
+            key={block.id} 
             className={headingClasses[block.level || 2]}
             dir={isRTL ? 'rtl' : 'ltr'}
           >
@@ -101,7 +101,7 @@ const BlocksContentRenderer = ({ blocksContent, language }) => {
       case 'paragraph':
         const semanticType = block.properties?.semanticType
         let paragraphClasses = 'text-lg text-gray-700 leading-relaxed mb-6'
-
+        
         if (semanticType === 'definition') {
           return (
             <div key={block.id} className="bg-indigo-50 border-r-4 border-indigo-500 p-6 rounded-lg mb-6" dir={isRTL ? 'rtl' : 'ltr'}>
@@ -111,10 +111,10 @@ const BlocksContentRenderer = ({ blocksContent, language }) => {
             </div>
           )
         }
-
+        
         return (
-          <p
-            key={block.id}
+          <p 
+            key={block.id} 
             className={paragraphClasses}
             dir={isRTL ? 'rtl' : 'ltr'}
           >
@@ -125,12 +125,12 @@ const BlocksContentRenderer = ({ blocksContent, language }) => {
       case 'image':
         const imageSrc = block.content?.data || block.content?.url
         if (!imageSrc) return null
-
+        
         return (
           <div key={block.id} className="mb-6">
             <div className="rounded-xl overflow-hidden bg-gray-50 p-6">
               {imageSrc.startsWith('<svg') ? (
-                <div
+                <div 
                   className="w-full max-w-2xl mx-auto"
                   dangerouslySetInnerHTML={{ __html: imageSrc }}
                 />
@@ -152,10 +152,10 @@ const BlocksContentRenderer = ({ blocksContent, language }) => {
 
       case 'table':
         if (!block.content?.html) return null
-
+        
         return (
           <div key={block.id} className="mb-6 overflow-x-auto">
-            <div
+            <div 
               className="prose prose-lg max-w-none"
               dangerouslySetInnerHTML={{ __html: block.content.html }}
               dir={isRTL ? 'rtl' : 'ltr'}
@@ -165,10 +165,10 @@ const BlocksContentRenderer = ({ blocksContent, language }) => {
 
       case 'list':
         const ListTag = block.content?.ordered ? 'ol' : 'ul'
-        const listClass = block.content?.ordered
-          ? 'list-decimal list-inside space-y-2 mb-6 text-lg text-gray-700'
+        const listClass = block.content?.ordered 
+          ? 'list-decimal list-inside space-y-2 mb-6 text-lg text-gray-700' 
           : 'list-disc list-inside space-y-2 mb-6 text-lg text-gray-700'
-
+        
         return (
           <ListTag key={block.id} className={listClass} dir={isRTL ? 'rtl' : 'ltr'}>
             {block.content?.items?.map((item, idx) => (
@@ -192,8 +192,8 @@ const BlocksContentRenderer = ({ blocksContent, language }) => {
 
       case 'quote':
         return (
-          <blockquote
-            key={block.id}
+          <blockquote 
+            key={block.id} 
             className="border-l-4 border-indigo-500 pl-6 italic text-gray-700 mb-6"
             dir={isRTL ? 'rtl' : 'ltr'}
           >
@@ -304,14 +304,14 @@ const LessonContent = ({ lesson, exercises, exercisesLoading, t, currentLanguage
       {/* Main Content Area */}
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 pb-20" dir={isRTL ? 'rtl' : 'ltr'}>
         <div className="max-w-5xl mx-auto px-4 py-12">
-
+          
           {/* Header Section */}
           <header className="mb-12 text-center">
             <h1 className="text-4xl md:text-5xl font-bold text-indigo-900 mb-4">
               {localizedTitle}
             </h1>
             <div className="w-24 h-1 bg-indigo-600 mx-auto rounded-full"></div>
-
+            
             {/* Meta Information */}
             <div className="mt-6 flex flex-wrap justify-center gap-4 text-sm text-gray-600">
               {lesson?.estimated_duration && (
@@ -391,7 +391,7 @@ const LessonContent = ({ lesson, exercises, exercisesLoading, t, currentLanguage
                   {resource.title}
                 </h2>
               )}
-              <BlocksContentRenderer
+              <BlocksContentRenderer 
                 blocksContent={resource.blocks_content}
                 language={currentLanguage}
               />
@@ -409,8 +409,8 @@ const LessonContent = ({ lesson, exercises, exercisesLoading, t, currentLanguage
                 {otherResources.map((resource) => {
                   const ResourceIcon = getResourceIcon(resource.resource_type)
                   return (
-                    <div
-                      key={resource.id}
+                    <div 
+                      key={resource.id} 
                       className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                     >
                       <div className="flex items-center gap-3">
@@ -427,8 +427,8 @@ const LessonContent = ({ lesson, exercises, exercisesLoading, t, currentLanguage
                         </div>
                       </div>
                       {(resource.file_url || resource.external_url) && (
-                        <Button
-                          size="sm"
+                        <Button 
+                          size="sm" 
                           onClick={() => handleOpenResource(resource)}
                           className="gap-2"
                         >
@@ -449,7 +449,7 @@ const LessonContent = ({ lesson, exercises, exercisesLoading, t, currentLanguage
               <Brain className="h-8 w-8" />
               {t('lessons.practiceExercises', 'تمارين تطبيقية')}
             </h2>
-
+            
             {exercisesLoading ? (
               <div className="flex justify-center items-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin" />
@@ -462,8 +462,8 @@ const LessonContent = ({ lesson, exercises, exercisesLoading, t, currentLanguage
                   const inProgress = exerciseStatus === 'in_progress'
 
                   return (
-                    <div
-                      key={exercise.id}
+                    <div 
+                      key={exercise.id} 
                       className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:bg-white/20 transition-all"
                     >
                       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -485,11 +485,11 @@ const LessonContent = ({ lesson, exercises, exercisesLoading, t, currentLanguage
                               </Badge>
                             )}
                           </div>
-
+                          
                           {exercise.description && (
                             <p className="text-white/80 mb-3">{exercise.description}</p>
                           )}
-
+                          
                           <div className="flex flex-wrap gap-4 text-sm text-white/70">
                             {(exercise.questions_count || exercise.questions?.length) && (
                               <span className="flex items-center gap-1">
@@ -510,7 +510,7 @@ const LessonContent = ({ lesson, exercises, exercisesLoading, t, currentLanguage
                             )}
                           </div>
                         </div>
-
+                        
                         <Button
                           size="lg"
                           onClick={() => handleOpenExercise(exercise.id)}

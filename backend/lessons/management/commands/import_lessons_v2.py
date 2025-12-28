@@ -18,6 +18,10 @@ from homework.models import (
 
 class Command(BaseCommand):
     help = 'Import lessons from converted JSON files (Lycée and Collège)'
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.error_log = []  # Track all errors with details
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -99,6 +103,16 @@ class Command(BaseCommand):
                             error_msg = f'Error in lesson {lesson_path.name}: {str(e)}'
                             self.stdout.write(self.style.ERROR(f'      ❌ {error_msg}'))
                             stats['errors'].append(error_msg)
+                            
+                            # Log detailed error info
+                            self.error_log.append({
+                                'lesson_path': str(lesson_path),
+                                'grade': grade_code,
+                                'track': track_code,
+                                'subject': subject_code,
+                                'error': str(e),
+                                'error_type': type(e).__name__
+                            })
 
         self._print_summary(stats)
 
@@ -408,7 +422,25 @@ class Command(BaseCommand):
                     stats['questions_created'] += 1
                     total_points += float(q_data.get('points', 1))
                 except Exception as e:
-                    self.stdout.write(self.style.WARNING(f'        ⚠️ Question Error: {str(e)}'))
+                    q_id = q_data.get('question_id', f'q{q_idx}')
+                    q_type = q_data.get('type', 'unknown')
+                    self.stdout.write(self.style.WARNING(f'        ⚠️ Question Error ({q_id} - {q_type}): {str(e)}'))
+                    
+                    # Log detailed question error
+                    try:
+                        path_str = str(lesson_path) if lesson_path else 'unknown'
+                    except:
+                        path_str = 'unknown'
+                    
+                    self.error_log.append({
+                        'lesson_path': path_str,
+                        'exercise_id': ex_data.get('exercise_id', 'unknown'),
+                        'question_id': q_id,
+                        'question_type': q_type,
+                        'error': str(e),
+                        'error_type': type(e).__name__,
+                        'question_data': str(q_data)[:500]  # First 500 chars of data
+                    })
 
             # Update total points
             exercise.total_points = total_points
@@ -444,50 +476,87 @@ class Command(BaseCommand):
         # 1. Multiple Choice & True/False
         if db_type in ['qcm_single', 'qcm_multiple', 'true_false']:
             choices = q_data.get('choices', [])
-            for idx, ch in enumerate(choices, 1):
-                if isinstance(ch, dict):
-                    text = ch.get('text', '')
-                    is_correct = ch.get('is_correct', False)
-                else:
-                    text = str(ch)
-                    is_correct = False 
-
+            
+            # Handle old format: true_false with just is_correct field (no choices array)
+            if db_type == 'true_false' and not choices:
+                is_correct = q_data.get('is_correct', False)
+                # Create True/False choices
                 QuestionChoice.objects.create(
                     question=question,
-                    choice_text=text[:500],
+                    choice_text='صحيح',
                     is_correct=is_correct,
-                    order=idx
+                    order=1
                 )
+                QuestionChoice.objects.create(
+                    question=question,
+                    choice_text='خطأ',
+                    is_correct=not is_correct,
+                    order=2
+                )
+            else:
+                # Standard format with choices array
+                for idx, ch in enumerate(choices, 1):
+                    if isinstance(ch, dict):
+                        text = ch.get('text', '')
+                        is_correct = ch.get('is_correct', False)
+                    else:
+                        text = str(ch)
+                        is_correct = False 
+
+                    QuestionChoice.objects.create(
+                        question=question,
+                        choice_text=text[:500],
+                        is_correct=is_correct,
+                        order=idx
+                    )
 
         # 2. Fill in Blanks
         elif db_type == 'fill_blank':
             blanks = q_data.get('blanks', [])
+            
+            # Ensure blanks is a list
+            if not isinstance(blanks, list):
+                blanks = []
+            
             if not blanks and 'choices' in q_data:
                  blanks = [{'order': i, 'options': [{'text': c, 'is_correct': True}]} for i, c in enumerate(q_data['choices'], 1)]
 
             for b_idx, blank_data in enumerate(blanks, 1):
-                if not isinstance(blank_data, dict): continue
+                if not isinstance(blank_data, dict): 
+                    continue
 
                 blank = FillBlank.objects.create(
                     question=question,
                     order=blank_data.get('order', b_idx)
                 )
                 
-                options = blank_data.get('options', [])
-                for o_idx, opt in enumerate(options, 1):
-                    if isinstance(opt, dict):
-                        txt = opt.get('text', '')
-                        is_cor = opt.get('is_correct', False)
-                    else:
-                        txt = str(opt)
-                        is_cor = False
-                        
+                # Check for old format: blanks[].answer instead of blanks[].options[]
+                if 'answer' in blank_data and 'options' not in blank_data:
+                    # Old format with direct answer
+                    answer_text = blank_data.get('answer', '')
                     FillBlankOption.objects.create(
                         blank=blank,
-                        option_text=txt[:800],
-                        is_correct=is_cor,
-                        order=o_idx
+                        option_text=answer_text[:800],
+                        is_correct=True,
+                        order=1
                     )
+                else:
+                    # Standard format with options array
+                    options = blank_data.get('options', [])
+                    for o_idx, opt in enumerate(options, 1):
+                        if isinstance(opt, dict):
+                            txt = opt.get('text', '')
+                            is_cor = opt.get('is_correct', False)
+                        else:
+                            txt = str(opt)
+                            is_cor = False
+                            
+                        FillBlankOption.objects.create(
+                            blank=blank,
+                            option_text=txt[:800],
+                            is_correct=is_cor,
+                            order=o_idx
+                        )
 
         # 3. Matching
         elif db_type == 'matching':
@@ -500,8 +569,18 @@ class Command(BaseCommand):
                 right_text = ""
 
                 if isinstance(match, dict):
-                    left_text = match.get('left', '')
-                    right_text = match.get('right', '')
+                    # Standard format with 'left' and 'right'
+                    if 'left' in match:
+                        left_text = match.get('left', '')
+                        right_text = match.get('right', '')
+                    # Alternative format with 'term' and 'definition'
+                    elif 'term' in match:
+                        left_text = match.get('term', '')
+                        right_text = match.get('definition', '')
+                    else:
+                        # Fallback to any available keys
+                        left_text = str(match)
+                        right_text = "..."
                 elif isinstance(match, str) and ':' in match:
                     parts = match.split(':', 1)
                     left_text = parts[0].strip()
@@ -520,22 +599,61 @@ class Command(BaseCommand):
         # 4. Ordering
         elif db_type == 'ordering':
             items = q_data.get('ordering_items', [])
-            if not items and 'choices' in q_data:
+            
+            # Format 1: "items" + "correct_order" (new collège format)
+            if not items and 'items' in q_data and 'correct_order' in q_data:
+                items_list = q_data.get('items', [])
+                correct_order = q_data.get('correct_order', [])
+                
+                # Create a mapping of item_id to position
+                id_to_position = {item_id: idx + 1 for idx, item_id in enumerate(correct_order)}
+                
+                for item in items_list:
+                    if isinstance(item, dict):
+                        item_id = item.get('id', '')
+                        text = item.get('text', '')
+                        position = id_to_position.get(item_id, 1)
+                        
+                        OrderingItem.objects.create(
+                            question=question,
+                            text=text[:800],
+                            correct_position=position
+                        )
+            
+            # Format 2: "order" array with position strings (old collège format)
+            elif not items and 'order' in q_data:
+                order_sequence = q_data.get('order', [])
+                
+                for idx, position_str in enumerate(order_sequence, 1):
+                    try:
+                        correct_pos = int(position_str)
+                        OrderingItem.objects.create(
+                            question=question,
+                            text=f"الخطوة {position_str}",
+                            correct_position=correct_pos
+                        )
+                    except (ValueError, TypeError):
+                        pass
+            
+            # Format 3: fallback to choices
+            elif not items and 'choices' in q_data:
                 items = q_data['choices']
 
-            for idx, item in enumerate(items, 1):
-                if isinstance(item, dict):
-                    text = item.get('text', '')
-                    pos = item.get('position', idx)
-                else:
-                    text = str(item)
-                    pos = idx
+            # Format 4: Standard "ordering_items" array (lycée format)
+            if items:
+                for idx, item in enumerate(items, 1):
+                    if isinstance(item, dict):
+                        text = item.get('text', '')
+                        pos = item.get('position', idx)
+                    else:
+                        text = str(item)
+                        pos = idx
 
-                OrderingItem.objects.create(
-                    question=question,
-                    text=text[:800],
-                    correct_position=pos
-                )
+                    OrderingItem.objects.create(
+                        question=question,
+                        text=text[:800],
+                        correct_position=pos
+                    )
 
 
     # ==========================================
@@ -585,13 +703,17 @@ class Command(BaseCommand):
         
         resolved = {}
         for key, value in q_data.items():
-            if isinstance(value, str):
-                resolved[key] = self._resolve_placeholders_in_text(value, image_id_mapping, images_generated_path)
-            elif isinstance(value, list):
-                resolved[key] = self._resolve_list_placeholders(value, image_id_mapping, images_generated_path)
-            elif isinstance(value, dict):
-                resolved[key] = self._resolve_question_placeholders(value, image_id_mapping, images_generated_path)
-            else:
+            try:
+                if isinstance(value, str):
+                    resolved[key] = self._resolve_placeholders_in_text(value, image_id_mapping, images_generated_path)
+                elif isinstance(value, list):
+                    resolved[key] = self._resolve_list_placeholders(value, image_id_mapping, images_generated_path)
+                elif isinstance(value, dict):
+                    resolved[key] = self._resolve_question_placeholders(value, image_id_mapping, images_generated_path)
+                else:
+                    resolved[key] = value
+            except Exception as e:
+                # If resolution fails, keep original value
                 resolved[key] = value
         return resolved
 

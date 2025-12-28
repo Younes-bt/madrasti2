@@ -174,8 +174,12 @@ td .katex {
 /* ============================================
    Semantic Block Enhancements
    ============================================ */
+.semantic-content {
+    font-family: 'Noto Kufi Arabic', 'Cairo', system-ui, sans-serif !important;
+}
+
 .semantic-content p {
-    margin: 0.5rem 0;
+    margin: 0.75rem 0;
 }
 
 .semantic-content p:first-child {
@@ -184,6 +188,19 @@ td .katex {
 
 .semantic-content p:last-child {
     margin-bottom: 0;
+}
+
+/* Specific styling for math/formulas inside semantic blocks */
+.semantic-content .katex {
+    font-size: 1.25em;
+}
+
+/* Arabic text in block renderer */
+[dir="rtl"] .block-renderer,
+[dir="rtl"] .paragraph-html-content,
+[dir="rtl"] .semantic-content,
+[dir="rtl"] .text-block-content {
+    font-family: 'Noto Kufi Arabic', 'Cairo', system-ui, sans-serif !important;
 }
 
 /* ============================================

@@ -128,13 +128,16 @@ const TableBlock = ({ block }) => {
   // Check if this is an HTML table
   if (content?.html) {
     return (
-      <div className="my-6">
+      <div className="my-8">
         {content.description && (
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 italic">
+          <div className="font-bold text-lg text-indigo-900 bg-indigo-50 py-3 px-4 rounded-t-lg border-b border-indigo-100">
             {content.description}
-          </p>
+          </div>
         )}
-        <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className={cn(
+          "overflow-x-auto border border-gray-200 dark:border-gray-700 shadow-md",
+          content.description ? "rounded-b-lg border-t-0" : "rounded-lg"
+        )}>
           <div
             className="lesson-table-html min-w-full"
             dangerouslySetInnerHTML={{ __html: content.html }}
@@ -155,15 +158,15 @@ const TableBlock = ({ block }) => {
   }
 
   return (
-    <div className="my-6 overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+    <div className="my-8 overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 shadow-md">
       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
         {hasHeader && headers.length > 0 && (
-          <thead className="bg-gray-50 dark:bg-gray-800">
+          <thead className="bg-indigo-100 dark:bg-indigo-900/50">
             <tr>
               {headers.map((header, index) => (
                 <th
                   key={index}
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                  className="px-6 py-4 text-left text-sm font-bold text-indigo-900 dark:text-indigo-100 uppercase tracking-wider border-b border-indigo-200 dark:border-indigo-800"
                 >
                   {renderCellContent(header)}
                 </th>
@@ -183,13 +186,13 @@ const TableBlock = ({ block }) => {
                 striped && rowIndex % 2 === 0
                   ? 'bg-white dark:bg-gray-900'
                   : 'bg-gray-50 dark:bg-gray-800/50',
-                'hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors'
+                'hover:bg-indigo-50/50 dark:hover:bg-indigo-900/20 transition-colors'
               )}
             >
               {row.map((cell, cellIndex) => (
                 <td
                   key={cellIndex}
-                  className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100"
+                  className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100 border-r border-gray-100 dark:border-gray-800 last:border-r-0"
                 >
                   {renderCellContent(cell)}
                 </td>

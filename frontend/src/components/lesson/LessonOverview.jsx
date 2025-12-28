@@ -1,5 +1,4 @@
 import { Clock, BarChart, Target, ChevronDown, Paperclip } from 'lucide-react'
-import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import { useState } from 'react'
 
@@ -30,8 +29,7 @@ export function LessonOverview({
     }
 
     return (
-        <Card className="mb-6">
-            <CardContent className="p-6" dir={isRTL ? 'rtl' : 'ltr'}>
+        <div dir={isRTL ? 'rtl' : 'ltr'}>
                 {/* Header */}
                 <div className="flex items-center gap-2 mb-4">
                     <span className="text-2xl">📚</span>
@@ -113,7 +111,6 @@ export function LessonOverview({
                         </Button>
                     )}
                 </div>
-            </CardContent>
-        </Card>
+        </div>
     )
 }

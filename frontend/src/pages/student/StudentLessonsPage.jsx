@@ -176,9 +176,10 @@ const StudentLessonsPage = () => {
 
   // Navigation handlers
   const handleLessonClick = (lesson) => {
-    if (!lesson.is_locked) {
+    // TODO: Re-enable availability check later
+    // if (!lesson.is_locked) {
       navigate(`/student/lessons/${lesson.id}`);
-    }
+    // }
   };
 
   const handleContinue = (lessonId) => {

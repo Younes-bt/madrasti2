@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../lib/i18n';
@@ -43,7 +43,9 @@ import {
   CheckSquare,
   Brain,
   FileCode,
-  Layout
+  Layout,
+  X,
+  PlayCircle
 } from 'lucide-react';
 import AdminPageLayout from '../../components/admin/layout/AdminPageLayout';
 import BlockRenderer from '../../components/blocks/BlockRenderer';
@@ -91,6 +93,331 @@ const getResourceIcon = (resourceType) => {
   }
 };
 
+// ========================================
+// STUDENT PREVIEW MODAL COMPONENT
+// ========================================
+const StudentPreviewModal = ({ open, onClose, lesson, exercises, language }) => {
+  const { t } = useTranslation();
+  const isRTL = language === 'ar';
+
+  const learningObjectives = useMemo(() => {
+    if (!lesson?.objectives) return [];
+    return lesson.objectives
+      .split(/[\n•]/)
+      .map(obj => obj.trim())
+      .filter(obj => obj.length > 0);
+  }, [lesson]);
+
+  const visibleResources = useMemo(() => {
+    if (!lesson?.resources) return [];
+    return lesson.resources.filter((resource) => resource.is_visible_to_students !== false);
+  }, [lesson]);
+
+  const videoResources = useMemo(() => {
+    return visibleResources.filter(r => r.resource_type?.toLowerCase() === 'video');
+  }, [visibleResources]);
+
+  const blocksResources = useMemo(() => {
+    return visibleResources.filter(r => r.resource_type?.toLowerCase() === 'blocks');
+  }, [visibleResources]);
+
+  const otherResources = useMemo(() => {
+    return visibleResources.filter(r =>
+      !['video', 'blocks'].includes(r.resource_type?.toLowerCase())
+    );
+  }, [visibleResources]);
+
+  // Simple block renderer for preview
+  const renderBlock = (block) => {
+    switch (block.type) {
+      case 'heading':
+        const HeadingTag = `h${block.level || 2}`;
+        const headingClasses = {
+          1: 'text-4xl font-bold text-indigo-900 mb-6',
+          2: 'text-3xl font-bold text-indigo-800 mb-6 border-r-4 border-indigo-600 pr-4',
+          3: 'text-2xl font-bold text-indigo-700 mb-4',
+          4: 'text-xl font-semibold text-indigo-700 mb-3',
+        };
+        return (
+          <HeadingTag 
+            key={block.id} 
+            className={headingClasses[block.level || 2]}
+            dir={isRTL ? 'rtl' : 'ltr'}
+          >
+            {block.content?.text || ''}
+          </HeadingTag>
+        );
+
+      case 'paragraph':
+        return (
+          <p 
+            key={block.id} 
+            className="text-lg text-gray-700 leading-relaxed mb-6"
+            dir={isRTL ? 'rtl' : 'ltr'}
+          >
+            {block.content?.text || ''}
+          </p>
+        );
+
+      case 'image':
+        const imageSrc = block.content?.data || block.content?.url;
+        if (!imageSrc) return null;
+        
+        return (
+          <div key={block.id} className="mb-6">
+            <div className="rounded-xl overflow-hidden bg-gray-50 p-6">
+              {imageSrc.startsWith('<svg') ? (
+                <div 
+                  className="w-full max-w-2xl mx-auto"
+                  dangerouslySetInnerHTML={{ __html: imageSrc }}
+                />
+              ) : (
+                <img
+                  src={imageSrc}
+                  alt={block.content?.alt_text || ''}
+                  className="w-full max-w-2xl mx-auto"
+                />
+              )}
+            </div>
+          </div>
+        );
+
+      case 'table':
+        if (!block.content?.html) return null;
+        return (
+          <div key={block.id} className="mb-6 overflow-x-auto">
+            <div 
+              className="prose prose-lg max-w-none"
+              dangerouslySetInnerHTML={{ __html: block.content.html }}
+              dir={isRTL ? 'rtl' : 'ltr'}
+            />
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  if (!lesson) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-6xl max-h-[90vh] p-0 overflow-hidden">
+        {/* Modal Header */}
+        <div className="sticky top-0 z-50 bg-white border-b shadow-sm px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Eye className="h-5 w-5 text-indigo-600" />
+              <div>
+                <h2 className="font-semibold text-lg">{t('lessons.lessonContentPreview', 'معاينة محتوى الدرس')}</h2>
+                <p className="text-sm text-muted-foreground">{getLocalizedLessonTitle(lesson)}</p>
+              </div>
+            </div>
+            <Button onClick={onClose} variant="ghost" size="icon">
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Scrollable Content */}
+        <div className="overflow-y-auto max-h-[calc(90vh-80px)] bg-gradient-to-br from-blue-50 to-indigo-50" dir={isRTL ? 'rtl' : 'ltr'}>
+          <div className="max-w-5xl mx-auto px-6 py-8">
+            {/* Header */}
+            <header className="mb-8 text-center">
+              <h1 className="text-3xl md:text-4xl font-bold text-indigo-900 mb-4">
+                {getLocalizedLessonTitle(lesson)}
+              </h1>
+              <div className="w-24 h-1 bg-indigo-600 mx-auto rounded-full"></div>
+              
+              {/* Meta Information */}
+              <div className="mt-6 flex flex-wrap justify-center gap-3 text-sm text-gray-600">
+                {lesson?.estimated_duration && (
+                  <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-full shadow-sm">
+                    <Clock className="h-4 w-4 text-indigo-600" />
+                    <span>{lesson.estimated_duration} {t('lessons.minutes', 'دقيقة')}</span>
+                  </div>
+                )}
+                {lesson?.difficulty_display && (
+                  <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-full shadow-sm">
+                    <Award className="h-4 w-4 text-indigo-600" />
+                    <span>{lesson.difficulty_display}</span>
+                  </div>
+                )}
+                {lesson?.subject_name && (
+                  <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-full shadow-sm">
+                    <BookOpen className="h-4 w-4 text-indigo-600" />
+                    <span>{lesson.subject_name}</span>
+                  </div>
+                )}
+              </div>
+            </header>
+
+            {/* Learning Objectives */}
+            {learningObjectives.length > 0 && (
+              <section className="mb-8 bg-white rounded-2xl shadow-lg p-6">
+                <h2 className="text-xl font-bold text-indigo-800 mb-4 flex items-center gap-2">
+                  <Target className="h-5 w-5" />
+                  {t('lessons.learningObjectives', 'أهداف التعلم')}
+                </h2>
+                <ul className="space-y-2">
+                  {learningObjectives.map((objective, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <span className="text-indigo-500 mt-1">•</span>
+                      <span className="text-gray-700">{objective}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            {/* Description */}
+            {lesson?.description && (
+              <section className="mb-8 bg-white rounded-2xl shadow-lg p-6">
+                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                  {lesson.description}
+                </p>
+              </section>
+            )}
+
+            {/* Video Resources */}
+            {videoResources.map((video) => (
+              <section key={video.id} className="mb-8 bg-white rounded-2xl shadow-lg p-6">
+                <h2 className="text-xl font-bold text-indigo-800 mb-4 flex items-center gap-2">
+                  <FileVideo className="h-5 w-5" />
+                  {video.title || t('lessons.videoContent', 'محتوى الفيديو')}
+                </h2>
+                <div className="relative bg-black rounded-lg overflow-hidden aspect-video">
+                  <video
+                    src={video.file_url || video.external_url}
+                    controls
+                    className="w-full h-full"
+                  />
+                </div>
+                {video.description && (
+                  <p className="mt-3 text-gray-600 text-sm">{video.description}</p>
+                )}
+              </section>
+            ))}
+
+            {/* Blocks Content */}
+            {blocksResources.map((resource) => (
+              <section key={resource.id} className="mb-8 bg-white rounded-2xl shadow-lg p-6">
+                {resource.title && (
+                  <h2 className="text-xl font-bold text-indigo-800 mb-4 flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    {resource.title}
+                  </h2>
+                )}
+                <div className="space-y-4">
+                  {resource.blocks_content?.blocks?.map(block => renderBlock(block))}
+                </div>
+              </section>
+            ))}
+
+            {/* Other Resources */}
+            {otherResources.length > 0 && (
+              <section className="mb-8 bg-white rounded-2xl shadow-lg p-6">
+                <h2 className="text-xl font-bold text-indigo-800 mb-4 flex items-center gap-2">
+                  <File className="h-5 w-5" />
+                  {t('lessons.additionalResources', 'موارد إضافية')}
+                </h2>
+                <div className="space-y-2">
+                  {otherResources.map((resource) => {
+                    const ResourceIcon = getResourceIcon(resource.resource_type);
+                    return (
+                      <div 
+                        key={resource.id} 
+                        className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="p-2 bg-indigo-50 rounded-lg">
+                            <ResourceIcon className="h-4 w-4 text-indigo-600" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-sm text-gray-900">
+                              {resource.title || t('lessons.resource', 'مورد')}
+                            </h3>
+                            {resource.description && (
+                              <p className="text-xs text-gray-600">{resource.description}</p>
+                            )}
+                          </div>
+                        </div>
+                        {(resource.file_url || resource.external_url) && (
+                          <Button 
+                            size="sm" 
+                            onClick={() => window.open(resource.file_url || resource.external_url, '_blank')}
+                            className="gap-2"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                            {t('common.open', 'فتح')}
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+
+            {/* Exercises */}
+            {exercises.length > 0 && (
+              <section className="bg-gradient-to-br from-indigo-900 to-purple-900 rounded-2xl shadow-lg p-6 text-white">
+                <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                  <Brain className="h-6 w-6" />
+                  {t('lessons.practiceExercises', 'تمارين تطبيقية')}
+                </h2>
+                
+                <div className="space-y-3">
+                  {exercises.map((exercise) => (
+                    <div 
+                      key={exercise.id} 
+                      className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20"
+                    >
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                        <div className="flex-1">
+                          <h3 className="text-lg font-bold mb-2">{exercise.title}</h3>
+                          {exercise.description && (
+                            <p className="text-white/80 text-sm mb-2">{exercise.description}</p>
+                          )}
+                          <div className="flex flex-wrap gap-3 text-sm text-white/70">
+                            {exercise.questions_count && (
+                              <span className="flex items-center gap-1">
+                                <HelpCircle className="h-4 w-4" />
+                                {exercise.questions_count} {t('lessons.questions', 'أسئلة')}
+                              </span>
+                            )}
+                            {exercise.total_points && (
+                              <span className="flex items-center gap-1">
+                                <Trophy className="h-4 w-4" />
+                                {exercise.total_points} {t('lessons.points', 'نقطة')}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          size="lg"
+                          className="bg-white text-indigo-900 hover:bg-gray-100 gap-2"
+                        >
+                          <PlayCircle className="h-5 w-5" />
+                          {t('lessons.start', 'ابدأ')}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// ========================================
+// MAIN ADMIN VIEW LESSON PAGE
+// ========================================
 const ViewLessonPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -102,7 +429,7 @@ const ViewLessonPage = () => {
   const [loading, setLoading] = useState(true);
   const [exercisesLoading, setExercisesLoading] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [previewResource, setPreviewResource] = useState(null);
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
 
   const loadExercises = useCallback(async () => {
     try {
@@ -165,14 +492,6 @@ const ViewLessonPage = () => {
     } catch (error) {
       console.error('Error updating lesson status:', error);
       toast.error(t('lessons.statusUpdateError'));
-    }
-  };
-
-  const handleResourceClick = (resource) => {
-    if (resource.resource_type === 'markdown' || resource.resource_type === 'blocks') {
-      setPreviewResource(resource);
-    } else if (resource.file_url || resource.external_url) {
-      window.open(resource.file_url || resource.external_url, '_blank');
     }
   };
 
@@ -250,150 +569,89 @@ const ViewLessonPage = () => {
   return (
     <AdminPageLayout
       title={getLocalizedLessonTitle(lesson)}
-      subtitle={`${lesson.subject_name} - ${lesson.grade_name}`}
-      actions={[
-        <Button
-          key="back"
-          variant="outline"
-          onClick={() => navigate('/admin/education-management/lessons')}
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          {t('common.back')}
-        </Button>,
-        <Button key="edit" variant="outline" onClick={handleEdit}>
-          <Edit className="h-4 w-4 mr-2" />
-          {t('common.edit')}
-        </Button>,
-        <Button
-          key="toggle"
-          variant={lesson.is_active ? "destructive" : "default"}
-          onClick={toggleLessonStatus}
-        >
-          {lesson.is_active ? (
-            <>
-              <XCircle className="h-4 w-4 mr-2" />
-              {t('common.deactivate')}
-            </>
-          ) : (
-            <>
-              <CheckCircle className="h-4 w-4 mr-2" />
-              {t('common.activate')}
-            </>
-          )}
-        </Button>
-      ]}
+      subtitle={`${lesson.subject_name} • ${lesson.grade_name}${lesson.track_name ? ` • ${lesson.track_name}` : ''}`}
     >
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="space-y-6"
+        transition={{ duration: 0.3 }}
       >
-        {/* Lesson Header */}
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-              <div className="flex-1 space-y-4">
-                <div className="flex flex-wrap items-center gap-3">
-                  <h1 className="text-2xl font-bold">{getLocalizedLessonTitle(lesson)}</h1>
-                  <Badge
-                    variant={lesson.is_active ? "success" : "secondary"}
-                    className="shrink-0"
-                  >
-                    {lesson.is_active ? t('common.active') : t('common.inactive')}
-                  </Badge>
-                </div>
+        {/* Header Actions */}
+        <div className="flex flex-wrap gap-3 mb-6">
+          <Button onClick={() => navigate('/admin/education-management/lessons')} variant="outline">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            {t('common.back')}
+          </Button>
+          <Button onClick={handleEdit}>
+            <Edit className="h-4 w-4 mr-2" />
+            {t('common.edit')}
+          </Button>
+          <Button
+            variant={lesson.is_active ? "destructive" : "default"}
+            onClick={toggleLessonStatus}
+          >
+            {lesson.is_active ? (
+              <>
+                <XCircle className="h-4 w-4 mr-2" />
+                {t('common.deactivate')}
+              </>
+            ) : (
+              <>
+                <CheckCircle className="h-4 w-4 mr-2" />
+                {t('common.activate')}
+              </>
+            )}
+          </Button>
+        </div>
 
-                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <GraduationCap className="h-4 w-4" />
-                    {lesson.subject_name}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Users className="h-4 w-4" />
-                    {lesson.grade_name}
-                  </span>
-                  {lesson.tracks && lesson.tracks.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Tags className="h-4 w-4" />
-                      {lesson.tracks.map(track => (
-                        <Badge key={track.id} variant="outline">{track.name}</Badge>
-                      ))}
-                    </div>
-                  )}
-                  <span className="flex items-center gap-1">
-                    <Target className="h-4 w-4" />
-                    {lesson.cycle_display}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Award className="h-4 w-4" />
-                    {lesson.difficulty_display}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-4 w-4" />
-                    {t('lessons.order')}: {lesson.order}
-                  </span>
-                </div>
-
-                {lesson.description && (
-                  <p className="text-muted-foreground">{lesson.description}</p>
-                )}
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowDeleteDialog(true)}
-                  className="text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  {t('common.delete')}
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-        </Card>
-
-        {/* Lesson Details */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Learning Objectives */}
-            {lesson.objectives && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Target className="h-5 w-5" />
-                    {t('lessons.objectives')}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="prose prose-sm max-w-none">
-                    <p className="whitespace-pre-wrap">{lesson.objectives}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            {/* Overview Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BookOpen className="h-5 w-5" />
+                  {t('lessons.overview')}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <h3 className="font-semibold mb-2">{t('lessons.description')}</h3>
+                  <p className="text-muted-foreground whitespace-pre-wrap">
+                    {lesson.description || t('lessons.noDescription')}
+                  </p>
+                </div>
 
-            {/* Prerequisites */}
-            {lesson.prerequisites && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BookOpen className="h-5 w-5" />
-                    {t('lessons.prerequisites')}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="prose prose-sm max-w-none">
-                    <p className="whitespace-pre-wrap">{lesson.prerequisites}</p>
+                {lesson.objectives && (
+                  <div>
+                    <h3 className="font-semibold mb-2 flex items-center gap-2">
+                      <Target className="h-4 w-4" />
+                      {t('lessons.objectives')}
+                    </h3>
+                    <div className="prose prose-sm max-w-none">
+                      <p className="text-muted-foreground whitespace-pre-wrap">{lesson.objectives}</p>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                )}
 
-            {/* Resources */}
+                {lesson.prerequisites && (
+                  <div>
+                    <h3 className="font-semibold mb-2">{t('lessons.prerequisites')}</h3>
+                    <p className="text-muted-foreground whitespace-pre-wrap">{lesson.prerequisites}</p>
+                  </div>
+                )}
+
+                {lesson.estimated_duration && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <span>{t('lessons.estimatedDuration')}: {lesson.estimated_duration} {t('lessons.minutes')}</span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Resources Summary Card - NOT COLLAPSIBLE */}
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -401,125 +659,53 @@ const ViewLessonPage = () => {
                     <FileText className="h-5 w-5" />
                     {t('lessons.resources')} ({lesson.resources?.length || 0})
                   </CardTitle>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleAddResource}
-                    className="flex items-center gap-2"
-                  >
-                    <Plus className="h-4 w-4" />
-                    {t('lessons.addResource')}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPreviewModalOpen(true)}
+                      className="flex items-center gap-2"
+                    >
+                      <Eye className="h-4 w-4" />
+                      {t('lessons.viewContent', 'عرض محتوى الدرس')}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAddResource}
+                      className="flex items-center gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      {t('lessons.addResource')}
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
                 {lesson.resources && lesson.resources.length > 0 ? (
-                  <div className="space-y-3">
-                    {lesson.resources.map((resource) => {
+                  <div className="space-y-2">
+                    {lesson.resources.slice(0, 3).map((resource, index) => {
                       const ResourceIcon = getResourceIcon(resource.resource_type);
                       return (
-                        <motion.div
-                          key={resource.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="border rounded-lg p-4 hover:shadow-md transition-shadow"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3 flex-1 min-w-0">
-                              <div className="flex-shrink-0">
-                                <ResourceIcon className="h-8 w-8 text-primary" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <h4 className="font-medium truncate">{resource.title}</h4>
-                                {resource.description && (
-                                  <p className="text-sm text-muted-foreground truncate">
-                                    {resource.description}
-                                  </p>
-                                )}
-                                <div className="flex items-center gap-2 mt-1">
-                                  <Badge variant="outline" className="text-xs">
-                                    {resource.resource_type}
-                                  </Badge>
-                                  {resource.file_size && (
-                                    <span className="text-xs text-muted-foreground">
-                                      {Math.round(resource.file_size / 1024)} KB
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {resource.is_visible_to_students && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleResourceClick(resource)}
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              )}
-                              {resource.is_downloadable && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleDownloadResource(resource)}
-                                >
-                                  <Download className="h-4 w-4" />
-                                </Button>
-                              )}
-                              {resource.external_url && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => window.open(resource.external_url, '_blank')}
-                                >
-                                  <ExternalLink className="h-4 w-4" />
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Display markdown content if resource type is markdown - Inline small preview if needed, but dialog is preferred now */}
-                          {resource.resource_type === 'markdown' && resource.markdown_content && (
-                            <div className="mt-4 pt-4 border-t" dir="rtl">
-                              <div className="prose prose-sm max-w-none dark:prose-invert text-right line-clamp-3">
-                                <ReactMarkdown
-                                  remarkPlugins={[remarkGfm, remarkMath]}
-                                  rehypePlugins={[rehypeKatex]}
-                                >
-                                  {resource.markdown_content}
-                                </ReactMarkdown>
-                              </div>
-                              <Button
-                                variant="link"
-                                size="sm"
-                                className="mt-2 p-0 h-auto"
-                                onClick={() => handleResourceClick(resource)}
-                              >
-                                {t('common.readMore')}
-                              </Button>
-                            </div>
-                          )}
-
-                          {/* Display blocks content preview if resource type is blocks */}
-                          {resource.resource_type === 'blocks' && resource.blocks_content && (
-                            <div className="mt-4 pt-4 border-t" dir="rtl">
-                              <div className="text-sm text-muted-foreground mb-2">
-                                {t('lessons.blocksContentPreview', 'This resource contains interactive content blocks.')}
-                              </div>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleResourceClick(resource)}
-                              >
-                                <Eye className="h-4 w-4 mr-2" />
-                                {t('lessons.viewContent', 'View Lesson Content')}
-                              </Button>
-                            </div>
-                          )}
-                        </motion.div>
+                        <div key={resource.id || index} className="flex items-center gap-2 text-sm">
+                          <ResourceIcon className="h-4 w-4 text-muted-foreground" />
+                          <span className="truncate flex-1">{resource.title || t('lessons.resource', 'مورد')}</span>
+                          <Badge variant="outline" className="text-xs">
+                            {resource.resource_type || 'file'}
+                          </Badge>
+                        </div>
                       );
                     })}
+                    {lesson.resources.length > 3 && (
+                      <p className="text-sm text-muted-foreground pt-2">
+                        +{lesson.resources.length - 3} {t('lessons.moreResources', 'موارد أخرى')}
+                      </p>
+                    )}
+                    <div className="pt-3 border-t">
+                      <p className="text-xs text-muted-foreground mb-2">
+                        {t('lessons.viewContentDescription', 'هذا المورد يحتوي على كتل محتوى تفاعلية.')}
+                      </p>
+                    </div>
                   </div>
                 ) : (
                   <div className="text-center py-8">
@@ -598,18 +784,12 @@ const ViewLessonPage = () => {
                               )}
                               <span className="flex items-center gap-1">
                                 <HelpCircle className="h-3 w-3" />
-                                {exercise.questions?.length || 0} questions
+                                {exercise.questions_count || 0} {t('exercises.questions')}
                               </span>
                               <span className="flex items-center gap-1">
                                 <Trophy className="h-3 w-3" />
-                                {exercise.total_points || 0} points
+                                {exercise.total_points || 0} {t('exercises.points')}
                               </span>
-                              {exercise.completion_count > 0 && (
-                                <span className="flex items-center gap-1">
-                                  <CheckSquare className="h-3 w-3" />
-                                  {exercise.completion_count} completions
-                                </span>
-                              )}
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
@@ -635,7 +815,7 @@ const ViewLessonPage = () => {
                 ) : (
                   <div className="text-center py-8">
                     <Brain className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground mb-4">{t('lessons.noExercises') || 'No exercises created for this lesson yet.'}</p>
+                    <p className="text-muted-foreground mb-4">{t('lessons.noExercises')}</p>
                     <Button
                       variant="outline"
                       onClick={handleAddExercise}
@@ -664,7 +844,11 @@ const ViewLessonPage = () => {
                       <Badge
                         key={tag.id}
                         variant="outline"
-                        style={{ backgroundColor: `${tag.color}20`, borderColor: tag.color }}
+                        style={{
+                          backgroundColor: `${tag.color}20`,
+                          borderColor: tag.color,
+                          color: tag.color
+                        }}
                       >
                         {tag.name}
                       </Badge>
@@ -677,7 +861,7 @@ const ViewLessonPage = () => {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Lesson Metadata */}
+            {/* Metadata */}
             <Card>
               <CardHeader>
                 <CardTitle>{t('lessons.metadata')}</CardTitle>
@@ -812,40 +996,14 @@ const ViewLessonPage = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Resource Preview Dialog */}
-        <Dialog open={!!previewResource} onOpenChange={(open) => !open && setPreviewResource(null)}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{previewResource?.title}</DialogTitle>
-              <DialogDescription>
-                {previewResource?.description || t('lessons.resourcePreview')}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="py-4 min-h-[400px]" dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}>
-              {previewResource?.resource_type === 'markdown' && (
-                <div className="prose prose-base max-w-none dark:prose-invert leading-relaxed">
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm, remarkMath]}
-                    rehypePlugins={[rehypeKatex]}
-                  >
-                    {previewResource.markdown_content}
-                  </ReactMarkdown>
-                </div>
-              )}
-              {previewResource?.resource_type === 'blocks' && previewResource.blocks_content && (
-                <BlockRenderer
-                  blocksContent={previewResource.blocks_content}
-                  language={i18n.language}
-                />
-              )}
-            </div>
-            <DialogFooter>
-              <Button onClick={() => setPreviewResource(null)}>
-                {t('common.close')}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {/* Student Preview Modal */}
+        <StudentPreviewModal
+          open={previewModalOpen}
+          onClose={() => setPreviewModalOpen(false)}
+          lesson={lesson}
+          exercises={exercises}
+          language={i18n.language}
+        />
       </motion.div>
     </AdminPageLayout>
   );

@@ -42,7 +42,6 @@ import {
   SelectValue,
 } from '../../components/ui/select'
 import { cn } from '../../lib/utils'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table'
 
 const LessonsPage = () => {
   const { t, isRTL, currentLanguage } = useLanguage()
@@ -251,6 +250,25 @@ const LessonsPage = () => {
       <Badge className={cn('text-xs', config.color)}>
         {config.label}
       </Badge>
+    )
+  }
+
+  const getDifficultyDots = (difficulty) => {
+    const dotCount = { easy: 1, medium: 2, hard: 3 }[difficulty] || 1
+    const colors = { easy: 'bg-green-500', medium: 'bg-yellow-500', hard: 'bg-red-500' }[difficulty] || 'bg-gray-500'
+
+    return (
+      <div className="flex items-center gap-1">
+        {[...Array(3)].map((_, i) => (
+          <div
+            key={i}
+            className={cn(
+              'h-1.5 w-1.5 rounded-full transition-all',
+              i < dotCount ? colors : 'bg-gray-200'
+            )}
+          />
+        ))}
+      </div>
     )
   }
 
@@ -471,247 +489,127 @@ const LessonsPage = () => {
         </Card>
       </div>
 
-      {/* Lessons Table */}
-      <Card className="mb-6">
-        <CardContent className="pt-6">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="min-w-[220px]">{t('lessons.lesson')}</TableHead>
-                <TableHead>{t('lessons.subject')}</TableHead>
-                <TableHead>{t('lessons.grade')}</TableHead>
-                <TableHead>{t('lessons.cycle')}</TableHead>
-                <TableHead>{t('lessons.difficulty')}</TableHead>
-                <TableHead className="text-center">{t('lessons.resources')}</TableHead>
-                <TableHead className="text-center">{t('lessons.practiceExercises')}</TableHead>
-                <TableHead>{t('common.updated')}</TableHead>
-                <TableHead>{t('common.status')}</TableHead>
-                <TableHead className="w-[70px]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {lessons.map((lesson) => (
-                <TableRow key={lesson.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <BookOpen className="h-4 w-4" />
-                      <button
-                        className="text-left font-medium hover:underline"
-                        onClick={() => handleViewLesson(lesson.id)}
-                      >
-                        {getLocalizedTitle(lesson)}
-                      </button>
-                    </div>
-                    <div className="mt-1 text-xs text-muted-foreground line-clamp-1">{lesson.description}</div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="text-xs">
-                      {lesson.subject_details ? getLocalizedSubjectName(lesson.subject_details) : lesson.subject_name}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {lesson.grade_details ? getLocalizedGradeName(lesson.grade_details) : lesson.grade_name}
-                  </TableCell>
-                  <TableCell>{getCycleBadge(lesson.cycle)}</TableCell>
-                  <TableCell>{getDifficultyBadge(lesson.difficulty_level)}</TableCell>
-                  <TableCell className="text-center">{(lesson.resources?.length || 0)}</TableCell>
-                  <TableCell className="text-center">{lesson.exercise_count || 0}</TableCell>
-                  <TableCell>{new Date(lesson.updated_at).toLocaleDateString()}</TableCell>
-                  <TableCell>{getStatusBadge(lesson)}</TableCell>
-                  <TableCell>
+      {/* Lessons Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        {lessons.map((lesson) => (
+          <Card
+            key={lesson.id}
+            className="group relative overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer border-border/50"
+            onClick={() => handleViewLesson(lesson.id)}
+          >
+            {/* Active Status Indicator */}
+            <div className={cn(
+              "absolute top-0 right-0 w-2 h-full",
+              lesson.is_active ? "bg-green-500" : "bg-gray-300"
+            )} />
+
+            <CardContent className="p-5">
+              {/* Header Section */}
+              <div className="mb-4">
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <h3 className="font-semibold text-base leading-tight line-clamp-2 flex-1 group-hover:text-primary transition-colors">
+                    {getLocalizedTitle(lesson)}
+                  </h3>
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => handleViewLesson(lesson.id)}>
-                          <Eye className="h-4 w-4 mr-2" />{t('common.view')}
+                          <Eye className="h-4 w-4 mr-2" />
+                          {t('common.view')}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleEditLesson(lesson.id)}>
-                          <Edit className="h-4 w-4 mr-2" />{t('lessons.editLesson')}
+                          <Edit className="h-4 w-4 mr-2" />
+                          {t('common.edit')}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleManageExercises(lesson.id)}>
-                          <Target className="h-4 w-4 mr-2" />{t('lessons.manageExercises')}
+                          <Target className="h-4 w-4 mr-2" />
+                          {t('lessons.manageExercises')}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleCreateExercise(lesson.id)}>
-                          <Zap className="h-4 w-4 mr-2" />{t('lessons.createExercise')}
+                          <Zap className="h-4 w-4 mr-2" />
+                          {t('lessons.createExercise')}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleToggleStatus(lesson)}>
                           {lesson.is_active ? (
                             <>
-                              <Eye className="h-4 w-4 mr-2" />{t('common.deactivate')}
+                              <Eye className="h-4 w-4 mr-2" />
+                              {t('common.deactivate')}
                             </>
                           ) : (
                             <>
-                              <Play className="h-4 w-4 mr-2" />{t('common.activate')}
+                              <Play className="h-4 w-4 mr-2" />
+                              {t('common.activate')}
                             </>
                           )}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleDeleteLesson(lesson.id)} className="text-red-600">
-                          <Trash2 className="h-4 w-4 mr-2" />{t('common.delete')}
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          {t('common.delete')}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {/* Lessons Grid */}
-      {false && (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {lessons.map((lesson) => (
-          <Card key={lesson.id} className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2">
-                  <BookOpen className="h-4 w-4" />
-                  <CardTitle className="text-lg line-clamp-1">{getLocalizedTitle(lesson)}</CardTitle>
-                </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => handleViewLesson(lesson.id)}>
-                      <Eye className="h-4 w-4 mr-2" />
-                      {t('common.view')}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleEditLesson(lesson.id)}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      {t('lessons.editLesson')}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleManageExercises(lesson.id)}>
-                      <Target className="h-4 w-4 mr-2" />
-                      {t('lessons.manageExercises')}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleCreateExercise(lesson.id)}>
-                      <Zap className="h-4 w-4 mr-2" />
-                      {t('lessons.createExercise')}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => handleToggleStatus(lesson)}
-                    >
-                      {lesson.is_active ? (
-                        <>
-                          <Eye className="h-4 w-4 mr-2" />
-                          {t('common.deactivate')}
-                        </>
-                      ) : (
-                        <>
-                          <Play className="h-4 w-4 mr-2" />
-                          {t('common.activate')}
-                        </>
-                      )}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => handleDeleteLesson(lesson.id)}
-                      className="text-red-600"
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      {t('common.delete')}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-
-              <div className="flex items-center gap-2 flex-wrap">
-                {getStatusBadge(lesson)}
-                <Badge variant="outline" className="text-xs">
-                  {lesson.subject_details ? getLocalizedSubjectName(lesson.subject_details) : lesson.subject_name}
-                </Badge>
-                {getCycleBadge(lesson.cycle)}
-                {getDifficultyBadge(lesson.difficulty_level)}
-              </div>
-            </CardHeader>
-
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                {lesson.description}
-              </p>
-
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <span>{lesson.grade_details ? getLocalizedGradeName(lesson.grade_details) : lesson.grade_name} • {t('lessons.order')}: {lesson.order}</span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <BookOpen className="h-4 w-4 text-muted-foreground" />
-                  <span>{lesson.cycle_display}</span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span>{t('common.updated')} {new Date(lesson.updated_at).toLocaleDateString()}</span>
-                </div>
-
-                {lesson.resources && lesson.resources.length > 0 && (
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    <span>{lesson.resources.length} {t('lessons.resources')}</span>
                   </div>
-                )}
+                </div>
 
-                <div className="flex items-center gap-2">
-                  <Target className="h-4 w-4 text-green-600" />
-                  <span>{lesson.exercise_count || 0} {t('lessons.practiceExercises')}</span>
+                {/* Metadata Row */}
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className="font-medium">
+                    {lesson.grade_details ? getLocalizedGradeName(lesson.grade_details) : lesson.grade_name}
+                  </span>
+                  <span>•</span>
+                  {getCycleBadge(lesson.cycle)}
+                  <span className="ml-auto">{getDifficultyDots(lesson.difficulty_level)}</span>
                 </div>
               </div>
 
-              <div className="flex gap-2 mt-4">
+              {/* Stats Section */}
+              <div className="flex items-center gap-3 mb-4 text-sm">
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700">
+                  <FileText className="h-3.5 w-3.5" />
+                  <span className="font-medium">{lesson.resources?.length || 0}</span>
+                </div>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-50 text-green-700">
+                  <Target className="h-3.5 w-3.5" />
+                  <span className="font-medium">{lesson.exercise_count || 0}</span>
+                </div>
+              </div>
+
+              {/* Hover Actions */}
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="grid grid-cols-2 gap-2 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-y-2 group-hover:translate-y-0"
+              >
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => handleViewLesson(lesson.id)}
-                  className="flex-1"
-                >
-                  <Eye className="h-4 w-4 mr-1" />
-                  {t('common.view')}
-                </Button>
-                <Button
-                  size="sm"
                   onClick={() => handleEditLesson(lesson.id)}
-                  className="flex-1"
+                  className="h-8 text-xs"
                 >
-                  <Edit className="h-4 w-4 mr-1" />
+                  <Edit className="h-3 w-3 mr-1" />
                   {t('common.edit')}
                 </Button>
-              </div>
-
-              {/* Exercise Management Section */}
-              <div className="flex gap-2 mt-2">
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => handleManageExercises(lesson.id)}
-                  className="flex-1 border-green-200 text-green-700 hover:bg-green-50"
+                  className="h-8 text-xs border-green-200 text-green-700 hover:bg-green-50"
                 >
-                  <Target className="h-4 w-4 mr-1" />
+                  <Target className="h-3 w-3 mr-1" />
                   {t('lessons.manageExercises')}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleCreateExercise(lesson.id)}
-                  className="flex-1 border-green-200 text-green-700 hover:bg-green-50"
-                >
-                  <Zap className="h-4 w-4 mr-1" />
-                  {t('lessons.addExercise')}
                 </Button>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
-      )}
 
       {lessons.length === 0 && (
         <Card className="mt-6">

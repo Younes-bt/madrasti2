@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&family=Cairo:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&family=Cairo:wght@300;400;500;600;700&family=Noto+Kufi+Arabic:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -114,7 +114,13 @@
   }
 
   html.rtl-content {
-    font-family: 'Cairo', system-ui, sans-serif;
+    font-family: 'Noto Kufi Arabic', 'Cairo', system-ui, sans-serif !important;
+  }
+
+  /* Global Arabic Font Application */
+  [lang="ar"],
+  [dir="rtl"] {
+    font-family: 'Noto Kufi Arabic', 'Cairo', system-ui, sans-serif;
   }
 
   /* RTL Support - Content only, keeping layout LTR */
@@ -158,6 +164,50 @@
 
   .card-premium {
     @apply bg-card text-card-foreground rounded-xl border border-border/50 shadow-soft hover:shadow-medium transition-all duration-300;
+  }
+
+  /* Specific Lesson Block Styles */
+  .lesson-definition,
+  .lesson-summary,
+  .lesson-formula {
+    @apply relative overflow-hidden rounded-2xl border-none shadow-lg transition-all duration-300;
+  }
+
+  .lesson-definition {
+    @apply bg-gradient-to-br from-indigo-50/80 to-purple-50/80 dark:from-indigo-950/40 dark:to-purple-950/40;
+    border-left: 5px solid hsl(var(--primary)) !important;
+  }
+
+  .lesson-summary {
+    @apply bg-gradient-to-br from-emerald-50/80 to-teal-50/80 dark:from-emerald-950/40 dark:to-teal-950/40;
+    border-left: 5px solid #10b981 !important;
+  }
+
+  .lesson-formula {
+    @apply bg-gradient-to-br from-blue-50/80 to-cyan-50/80 dark:from-blue-950/40 dark:to-cyan-950/40;
+    border-left: 5px solid #3b82f6 !important;
+  }
+
+  /* RTL Border Logic - Using more specific selectors to ensure override */
+  [dir="rtl"] .lesson-definition,
+  html[dir="rtl"] .lesson-definition,
+  .rtl-content .lesson-definition {
+    border-left: none !important;
+    border-right: 5px solid hsl(var(--primary)) !important;
+  }
+
+  [dir="rtl"] .lesson-summary,
+  html[dir="rtl"] .lesson-summary,
+  .rtl-content .lesson-summary {
+    border-left: none !important;
+    border-right: 5px solid #10b981 !important;
+  }
+
+  [dir="rtl"] .lesson-formula,
+  html[dir="rtl"] .lesson-formula,
+  .rtl-content .lesson-formula {
+    border-left: none !important;
+    border-right: 5px solid #3b82f6 !important;
   }
 }
 

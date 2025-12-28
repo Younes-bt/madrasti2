@@ -686,7 +686,7 @@ class FillBlank(models.Model):
 class FillBlankOption(models.Model):
     """Options for a specific blank; one must be correct"""
     blank = models.ForeignKey(FillBlank, on_delete=models.CASCADE, related_name='options')
-    option_text = models.CharField(max_length=300)
+    option_text = models.CharField(max_length=2000)
     is_correct = models.BooleanField(default=False)
     order = models.PositiveIntegerField(default=0)
 
@@ -699,7 +699,7 @@ class FillBlankOption(models.Model):
 class OrderingItem(models.Model):
     """An item that must be ordered by the student"""
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='ordering_items')
-    text = models.CharField(max_length=500)
+    text = models.CharField(max_length=2000)
     correct_position = models.PositiveIntegerField(help_text="Correct order position (1-based)")
 
     class Meta:
@@ -711,8 +711,8 @@ class OrderingItem(models.Model):
 class MatchingPair(models.Model):
     """A correct left-right pair for matching questions"""
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='matching_pairs')
-    left_text = models.CharField(max_length=300)
-    right_text = models.CharField(max_length=300)
+    left_text = models.CharField(max_length=2000)
+    right_text = models.CharField(max_length=2000)
     order = models.PositiveIntegerField(default=0, help_text="Display order for authoring")
 
     class Meta:
@@ -726,9 +726,9 @@ class BookExercise(models.Model):
     homework = models.ForeignKey(Homework, on_delete=models.CASCADE, related_name='book_exercises')
     
     # Book Information
-    book_title = models.CharField(max_length=200)
-    book_title_arabic = models.CharField(max_length=200, blank=True)
-    publisher = models.CharField(max_length=100, blank=True)
+    book_title = models.CharField(max_length=500)
+    book_title_arabic = models.CharField(max_length=500, blank=True)
+    publisher = models.CharField(max_length=200, blank=True)
     isbn = models.CharField(max_length=20, blank=True)
     edition = models.CharField(max_length=50, blank=True)
     

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState, useCallback } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { DashboardLayout } from '../../components/layout/Layout'
 import { useLanguage } from '../../hooks/useLanguage'
@@ -24,6 +24,14 @@ import { ROUTES } from '../../utils/constants'
 import OrderingQuestion from '../../components/exercise/OrderingQuestion'
 import MatchingQuestion from '../../components/exercise/MatchingQuestion'
 import FillBlankQuestion from '../../components/exercise/FillBlankQuestion'
+import { ExerciseProgressHeader } from '../../components/exercise/ExerciseProgressHeader'
+import { QuestionContainer } from '../../components/exercise/QuestionContainer'
+import { QuestionNavigation } from '../../components/exercise/QuestionNavigation'
+import { ReviewScreen } from '../../components/exercise/ReviewScreen'
+import { ImprovedMultipleChoiceQuestion } from '../../components/exercise/ImprovedMultipleChoiceQuestion'
+import { TextWithMath, useMathText } from '../../components/exercise/MathRenderer'
+import 'katex/dist/katex.min.css'
+import '../../styles/katex-custom.css'
 
 const SUPPORTED_AUTO_TYPES = ['qcm_single', 'qcm_multiple', 'true_false']
 const TEXT_TYPES = ['open_short', 'open_long']
@@ -46,6 +54,9 @@ const StudentExerciseEntryPage = () => {
   const [startLoading, setStartLoading] = useState(false)
   const [submitLoading, setSubmitLoading] = useState(false)
   const [submissionResult, setSubmissionResult] = useState(null)
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
+  const [showReview, setShowReview] = useState(false)
+  const [timeRemaining, setTimeRemaining] = useState(null)
 
   const lessonIdFromState = location.state?.lessonId || null
 
@@ -188,6 +199,19 @@ const StudentExerciseEntryPage = () => {
     return initial
   }
 
+  const handleSaveDraft = useCallback(async () => {
+    if (!exercise || !submission) return
+
+    try {
+      // Save draft silently without showing toast
+      if (exerciseService.saveDraft) {
+        await exerciseService.saveDraft(exercise.id, { answers })
+      }
+    } catch (err) {
+      console.error('Failed to save draft:', err)
+    }
+  }, [exercise, submission, answers])
+
   const handleStartExercise = async () => {
     if (!exercise) return
 
@@ -205,6 +229,11 @@ const StudentExerciseEntryPage = () => {
       setAttemptState('in-progress')
       setSubmissionResult(null)
       setError(null)
+
+      // Initialize timer if exercise is timed
+      if (exercise.is_timed && exercise.estimated_duration) {
+        setTimeRemaining(exercise.estimated_duration * 60) // Convert minutes to seconds
+      }
     } catch (err) {
       console.error('Failed to start exercise:', err)
       setError(t('exercises.startError', 'Unable to start this exercise.'))
@@ -357,7 +386,7 @@ const StudentExerciseEntryPage = () => {
     })
   }, [answers, exercise?.questions])
 
-  const handleSubmitExercise = async () => {
+  const handleSubmitExercise = useCallback(async () => {
     if (!exercise) return
 
     const payload = {
@@ -422,7 +451,59 @@ const StudentExerciseEntryPage = () => {
     } finally {
       setSubmitLoading(false)
     }
-  }
+  }, [exercise, answers, submission, t])
+
+  // Timer countdown effect
+  useEffect(() => {
+    if (!exercise?.is_timed || !timeRemaining || attemptState !== 'in-progress') return
+
+    const interval = setInterval(() => {
+      setTimeRemaining(prev => {
+        if (prev <= 1) {
+          handleSubmitExercise()
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [exercise?.is_timed, timeRemaining, attemptState, handleSubmitExercise])
+
+  // Auto-save draft effect (debounced)
+  useEffect(() => {
+    if (attemptState !== 'in-progress' || !Object.keys(answers).length) return
+
+    const timeout = setTimeout(() => {
+      handleSaveDraft()
+    }, 3000) // Save every 3 seconds after changes
+
+    return () => clearTimeout(timeout)
+  }, [answers, attemptState, handleSaveDraft])
+
+  // Get current question and answered questions set - MUST be before any early returns
+  const currentQuestion = exercise?.questions?.[currentQuestionIndex]
+  const answeredQuestions = useMemo(() => {
+    const set = new Set()
+    exercise?.questions?.forEach((question, index) => {
+      const answer = answers[question.id]
+      if (!answer) return
+
+      // Check if question is answered based on type
+      if (SUPPORTED_AUTO_TYPES.includes(question.question_type)) {
+        if (answer.selectedChoices?.length > 0) set.add(index + 1)
+      } else if (TEXT_TYPES.includes(question.question_type)) {
+        if (answer.textAnswer?.trim()) set.add(index + 1)
+      } else if (question.question_type === 'ordering') {
+        if (answer.orderingSequence?.length > 0) set.add(index + 1)
+      } else if (question.question_type === 'matching') {
+        if (answer.matchingAnswers?.length > 0) set.add(index + 1)
+      } else if (question.question_type === 'fill_blank') {
+        if (answer.blankAnswers?.length > 0) set.add(index + 1)
+      }
+    })
+    return set
+  }, [answers, exercise?.questions])
 
 const renderChoices = (question) => {
   const questionId = question.id
@@ -449,6 +530,9 @@ const renderChoices = (question) => {
           ? choice.choice_text_arabic
           : choice.choice_text || choice.label || choice.value
 
+        // Process label for math formulas
+        const processedLabel = useMathText(label)
+
         return (
           <label
             key={choice.id ?? choiceKey}
@@ -469,9 +553,10 @@ const renderChoices = (question) => {
               }}
               className="h-4 w-4"
             />
-            <span className="flex-1 text-sm">
-              {label}
-            </span>
+            <span
+              className="flex-1 text-sm"
+              dangerouslySetInnerHTML={{ __html: processedLabel }}
+            />
           </label>
         )
       })}
@@ -490,6 +575,9 @@ const renderChoices = (question) => {
     const hint = question.hint || question.hint_text
     const explanation = question.explanation || question.explanation_text
 
+    // Process question text for math formulas
+    const processedQuestionText = useMathText(localizedQuestionText)
+
     return (
       <Card key={questionId} className="border-primary/10 shadow-sm">
         <CardHeader className="space-y-2">
@@ -498,9 +586,11 @@ const renderChoices = (question) => {
               <CardTitle className="text-base">
                 {t('exercises.question', 'Question')} #{index + 1}
               </CardTitle>
-              <p className="text-sm text-muted-foreground" dir={currentLanguage === 'ar' ? 'rtl' : 'ltr'}>
-                {localizedQuestionText}
-              </p>
+              <p
+                className="text-sm text-muted-foreground"
+                dir={currentLanguage === 'ar' ? 'rtl' : 'ltr'}
+                dangerouslySetInnerHTML={{ __html: processedQuestionText }}
+              />
             </div>
             <Badge variant="outline">{question.points} {t('exercises.points', 'points')}</Badge>
           </div>
@@ -645,6 +735,28 @@ const renderChoices = (question) => {
     )
   }
 
+  const renderInstructions = () => {
+    if (!exercise?.instructions) return null
+
+    return (
+      <Card className="border-blue-200 bg-blue-50">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2 text-blue-700">
+            <Info className="h-4 w-4" />
+            {t('exercises.instructions', 'Instructions')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div
+            className="prose prose-sm max-w-none text-blue-900/90"
+            dir={currentLanguage === 'ar' ? 'rtl' : 'ltr'}
+            dangerouslySetInnerHTML={{ __html: exercise.instructions }}
+          />
+        </CardContent>
+      </Card>
+    )
+  }
+
   const renderSidebar = () => (
     <Card>
       <CardHeader>
@@ -753,93 +865,225 @@ const renderChoices = (question) => {
     )
   }
 
+  // Render current question content
+  const renderCurrentQuestion = () => {
+    if (!currentQuestion) return null
+
+    const questionId = currentQuestion.id
+    const answer = answers[questionId] || { textAnswer: '', selectedChoices: [], orderingSequence: [], matchingAnswers: [], blankAnswers: [] }
+    const localizedQuestionText = currentLanguage === 'ar' && currentQuestion.question_text_arabic
+      ? currentQuestion.question_text_arabic
+      : currentQuestion.question_text
+
+    const questionImage = getQuestionImageSource(currentQuestion)
+    const hint = currentQuestion.hint || currentQuestion.hint_text
+
+    return (
+      <QuestionContainer
+        questionNumber={currentQuestionIndex + 1}
+        totalQuestions={exercise.questions.length}
+        points={currentQuestion.points}
+        questionText={localizedQuestionText}
+        questionType={currentQuestion.question_type}
+        questionImage={questionImage}
+        hint={hint}
+        explanation={currentQuestion.explanation}
+        showExplanation={attemptState === 'submitted'}
+      >
+        {/* Render question type specific component */}
+        {SUPPORTED_AUTO_TYPES.includes(currentQuestion.question_type) && (
+          <ImprovedMultipleChoiceQuestion
+            choices={currentQuestion.choices || []}
+            allowMultiple={currentQuestion.question_type === 'qcm_multiple'}
+            selectedChoices={answer.selectedChoices || []}
+            onAnswerChange={(choices) => updateSelectedChoices(questionId, choices)}
+            questionId={questionId}
+          />
+        )}
+
+        {TEXT_TYPES.includes(currentQuestion.question_type) && (
+          <Textarea
+            value={answer.textAnswer}
+            onChange={(event) => updateTextAnswer(questionId, event.target.value)}
+            placeholder={t('exercises.writeAnswer', 'اكتب إجابتك هنا...')}
+            rows={currentQuestion.question_type === 'open_long' ? 6 : 4}
+            disabled={attemptState === 'submitted'}
+          />
+        )}
+
+        {currentQuestion.question_type === 'ordering' && (
+          <OrderingQuestion
+            question={currentQuestion}
+            currentOrder={answer.orderingSequence}
+            onChange={(sequence) => updateOrderingSequence(questionId, sequence)}
+            currentLanguage={currentLanguage}
+            disabled={attemptState === 'submitted'}
+          />
+        )}
+
+        {currentQuestion.question_type === 'matching' && (
+          <MatchingQuestion
+            question={currentQuestion}
+            matches={answer.matchingAnswers}
+            onChange={(matches) => updateMatchingAnswers(questionId, matches)}
+            currentLanguage={currentLanguage}
+            disabled={attemptState === 'submitted'}
+          />
+        )}
+
+        {currentQuestion.question_type === 'fill_blank' && (
+          <FillBlankQuestion
+            question={currentQuestion}
+            blankAnswers={answer.blankAnswers}
+            onChange={(blankAnswers) => updateBlankAnswers(questionId, blankAnswers)}
+            currentLanguage={currentLanguage}
+            disabled={attemptState === 'submitted'}
+          />
+        )}
+
+        {!SUPPORTED_AUTO_TYPES.includes(currentQuestion.question_type) &&
+          !TEXT_TYPES.includes(currentQuestion.question_type) &&
+          !INTERACTIVE_TYPES.includes(currentQuestion.question_type) && (
+            <div className="space-y-2">
+              <AlertCircle className="h-4 w-4 text-amber-500" />
+              <p className="text-sm text-muted-foreground">
+                {t('exercises.unsupportedTypeFallback', 'هذا النوع من الأسئلة غير مدعوم بالكامل بعد. يرجى وصف إجابتك في المربع أدناه.')}
+              </p>
+              <Textarea
+                value={answer.textAnswer}
+                onChange={(event) => updateTextAnswer(questionId, event.target.value)}
+                placeholder={t('exercises.describeAnswer', 'اكتب إجابتك هنا...')}
+                rows={5}
+                disabled={attemptState === 'submitted'}
+              />
+            </div>
+          )}
+      </QuestionContainer>
+    )
+  }
+
+  // Show review screen
+  if (showReview && attemptState === 'in-progress') {
+    return (
+      <DashboardLayout user={user}>
+        <ReviewScreen
+          questions={exercise.questions}
+          answers={answers}
+          onEditQuestion={(questionNum) => {
+            setCurrentQuestionIndex(questionNum - 1)
+            setShowReview(false)
+          }}
+          onSubmit={handleSubmitExercise}
+          onBack={() => setShowReview(false)}
+          allowMultipleAttempts={exercise?.allow_multiple_attempts !== false}
+        />
+      </DashboardLayout>
+    )
+  }
+
+  // Main exercise view
   return (
     <DashboardLayout user={user}>
-      <div className="space-y-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" onClick={goBackToLesson}>
-              <ArrowLeft className="h-4 w-4" />
-              {t('common.back', 'Back')}
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">{localizedTitle || t('exercises.exerciseDetails', 'Exercise details')}</h1>
-              {lessonTitle && (
-                <p className="text-muted-foreground mt-1">
-                  {t('lessons.lesson', 'Lesson')}: {lessonTitle}
-                </p>
-              )}
+      {attemptState === 'in-progress' && (
+        <>
+          {/* Progress Header */}
+          <ExerciseProgressHeader
+            exerciseTitle={localizedTitle || exercise?.title || t('exercises.exerciseDetails', 'التمرين')}
+            currentQuestion={currentQuestionIndex + 1}
+            totalQuestions={exercise?.questions?.length || 0}
+            timeRemaining={timeRemaining}
+            onBack={goBackToLesson}
+            onSaveDraft={handleSaveDraft}
+          />
+
+          {/* Question View */}
+          <div className="min-h-screen bg-neutral-50 pb-6">
+            <div className="max-w-4xl mx-auto space-y-4">
+              {renderCurrentQuestion()}
+
+              {/* Navigation - placed right after question */}
+              <QuestionNavigation
+                currentQuestion={currentQuestionIndex + 1}
+                totalQuestions={exercise?.questions?.length || 0}
+                answeredQuestions={answeredQuestions}
+                onPrevious={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
+                onNext={() => setCurrentQuestionIndex(prev => Math.min(exercise.questions.length - 1, prev + 1))}
+                onJumpTo={(questionNum) => setCurrentQuestionIndex(questionNum - 1)}
+                onSaveDraft={handleSaveDraft}
+                onReview={() => setShowReview(true)}
+              />
             </div>
           </div>
+        </>
+      )}
 
-          {attemptState === 'preview' && (
+      {attemptState === 'preview' && (
+        <div className="space-y-6 p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <Button variant="outline" size="sm" onClick={goBackToLesson}>
+                <ArrowLeft className="h-4 w-4" />
+                {t('common.back', 'رجوع')}
+              </Button>
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight">{localizedTitle || t('exercises.exerciseDetails', 'تفاصيل التمرين')}</h1>
+                {lessonTitle && (
+                  <p className="text-muted-foreground mt-1">
+                    {t('lessons.lesson', 'الدرس')}: {lessonTitle}
+                  </p>
+                )}
+              </div>
+            </div>
+
             <Button onClick={handleStartExercise} disabled={startLoading} className="flex items-center gap-2">
               {startLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <BookOpen className="h-4 w-4" />}
-              {startLoading ? t('common.starting', 'Starting...') : t('common.start', 'Start')}
+              {startLoading ? t('common.starting', 'جاري البدء...') : t('common.start', 'بدء')}
             </Button>
-          )}
-        </div>
+          </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            {renderProgressCard()}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              {renderProgressCard()}
+              {renderInstructions()}
 
-            {attemptState === 'preview' && (
               <Card className="bg-muted/40">
                 <CardHeader>
-                  <CardTitle className="text-base">{t('exercises.readyToPractice', 'Ready to practice?')}</CardTitle>
+                  <CardTitle className="text-base">{t('exercises.readyToPractice', 'هل أنت مستعد للممارسة؟')}</CardTitle>
                   <CardDescription>
-                    {t('exercises.readyToPracticeDescription', 'Start the exercise when you are ready. You can answer at your own pace and submit when finished.')}
+                    {t('exercises.readyToPracticeDescription', 'ابدأ التمرين عندما تكون مستعداً. يمكنك الإجابة بالسرعة التي تناسبك وإرسال الإجابات عند الانتهاء.')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-3">
                   <Button onClick={handleStartExercise} disabled={startLoading}>
-                    {startLoading ? t('common.starting', 'Starting...') : t('exercises.startExercise', 'Start exercise')}
+                    {startLoading ? t('common.starting', 'جاري البدء...') : t('exercises.startExercise', 'بدء التمرين')}
                   </Button>
                   <p className="text-xs text-muted-foreground">
-                    {t('exercises.progressNote', 'Your progress will be saved when you submit. If you leave before submitting, you may need to restart depending on teacher settings.')}
+                    {t('exercises.progressNote', 'سيتم حفظ تقدمك عند الإرسال. إذا غادرت قبل الإرسال، قد تحتاج إلى إعادة البدء حسب إعدادات المعلم.')}
                   </p>
                 </CardContent>
               </Card>
-            )}
+            </div>
 
-            {attemptState !== 'preview' && exercise?.questions?.length > 0 && (
-              <div className="space-y-4">
-                {exercise.questions.map((question, index) => renderQuestion(question, index))}
-
-                {attemptState === 'in-progress' && (
-                  <div className="flex flex-col gap-3 rounded-md border border-primary/20 bg-primary/5 p-4">
-                    <p className="text-sm text-muted-foreground">
-                      {t('exercises.submitReminder', 'Review your answers before submitting. You can only submit once if multiple attempts are disabled.')}
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        onClick={handleSubmitExercise}
-                        disabled={!allRequiredAnswered || submitLoading}
-                        className="flex items-center gap-2"
-                      >
-                        {submitLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                        {submitLoading ? t('common.submitting', 'Submitting...') : t('common.submit', 'Submit')}
-                      </Button>
-                      {!allRequiredAnswered && (
-                        <Badge variant="outline" className="text-xs">
-                          {t('exercises.answerAllRequired', 'Answer all required questions to submit')}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {attemptState === 'submitted' && renderSubmissionSummary()}
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-6">
-            {renderSidebar()}
+            <div className="space-y-6">
+              {renderSidebar()}
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {attemptState === 'submitted' && (
+        <div className="space-y-6 p-6">
+          <div className="flex items-center gap-3">
+            <Button variant="outline" size="sm" onClick={goBackToLesson}>
+              <ArrowLeft className="h-4 w-4" />
+              {t('common.back', 'رجوع')}
+            </Button>
+            <h1 className="text-3xl font-bold tracking-tight">{localizedTitle || t('exercises.exerciseDetails', 'تفاصيل التمرين')}</h1>
+          </div>
+
+          {renderSubmissionSummary()}
+        </div>
+      )}
     </DashboardLayout>
   )
 }

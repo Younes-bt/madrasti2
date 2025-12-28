@@ -121,53 +121,83 @@ const TextBlock = ({ block, language }) => {
     })
   }
 
-  // Semantic type configurations (Notion-style)
+  // Semantic type configurations (Premium styles matching user requests)
   const semanticTypes = {
     introduction: {
       icon: BookOpen,
       label: { en: 'Introduction', ar: 'مقدمة', fr: 'Introduction' },
-      bg: 'bg-blue-50 dark:bg-blue-950/30',
-      border: 'border-l-4 border-blue-500',
-      iconColor: 'text-blue-600 dark:text-blue-400',
-      textColor: 'text-blue-900 dark:text-blue-100'
+      bg: 'bg-white border-2 border-indigo-50 shadow-sm',
+      border: '',
+      iconColor: 'text-indigo-600',
+      textColor: 'text-gray-700', // Specific containers keep specific text color
+      badgeBg: 'bg-indigo-50',
+      badgeText: 'text-indigo-700'
     },
     definition: {
       icon: BrainCircuit,
       label: { en: 'Definition', ar: 'تعريف', fr: 'Définition' },
-      bg: 'bg-purple-50 dark:bg-purple-950/30',
-      border: 'border-l-4 border-purple-500',
-      iconColor: 'text-purple-600 dark:text-purple-400',
-      textColor: 'text-purple-900 dark:text-purple-100'
+      bg: 'bg-indigo-50', // Fixed: Use direct Tailwind class
+      border: 'border-r-4 border-indigo-500',
+      iconColor: 'text-indigo-600 dark:text-indigo-400',
+      textColor: 'text-gray-800 dark:text-indigo-950',
+      badgeBg: 'bg-white dark:bg-indigo-900',
+      badgeText: 'text-indigo-700 dark:text-indigo-300'
     },
     example: {
       icon: Lightbulb,
       label: { en: 'Example', ar: 'مثال', fr: 'Exemple' },
-      bg: 'bg-amber-50 dark:bg-amber-950/30',
-      border: 'border-l-4 border-amber-500',
+      bg: 'bg-amber-50', // Fixed
+      border: 'border-r-4 border-amber-500',
       iconColor: 'text-amber-600 dark:text-amber-400',
-      textColor: 'text-amber-900 dark:text-amber-100'
+      textColor: 'text-gray-800 dark:text-amber-900',
+      badgeBg: 'bg-white dark:bg-amber-900',
+      badgeText: 'text-amber-700 dark:text-amber-300'
     },
     theorem: {
       icon: FlaskConical,
       label: { en: 'Theorem', ar: 'نظرية', fr: 'Théorème' },
-      bg: 'bg-emerald-50 dark:bg-emerald-950/30',
-      border: 'border-l-4 border-emerald-500',
-      iconColor: 'text-emerald-600 dark:text-emerald-400',
-      textColor: 'text-emerald-900 dark:text-emerald-100'
+      bg: 'bg-teal-50', // Fixed
+      border: 'border-r-4 border-teal-500',
+      iconColor: 'text-teal-600 dark:text-teal-400',
+      textColor: 'text-gray-800 dark:text-teal-900',
+      badgeBg: 'bg-white dark:bg-teal-900',
+      badgeText: 'text-teal-700 dark:text-teal-300'
+    },
+    formula: {
+      icon: FlaskConical,
+      label: { en: 'Formula', ar: 'قاعدة', fr: 'Formule' },
+      bg: 'bg-blue-50', // Fixed
+      border: 'border-r-4 border-blue-500',
+      iconColor: 'text-blue-600 dark:text-blue-400',
+      textColor: 'text-gray-800 dark:text-blue-900',
+      badgeBg: 'bg-white dark:bg-blue-900',
+      badgeText: 'text-blue-700 dark:text-blue-300'
+    },
+    summary: { // For inner summary blocks if used
+      icon: BookOpen,
+      label: { en: 'Summary', ar: 'ملخص الدرس', fr: 'Résumé' },
+      bg: 'bg-gradient-to-br from-indigo-900 to-purple-900',
+      border: 'border-2 border-white/20',
+      iconColor: 'text-white',
+      textColor: 'text-white',
+      badgeBg: 'bg-white/10 backdrop-blur-sm',
+      badgeText: 'text-white'
     },
     note: {
       icon: BookOpen,
       label: { en: 'Note', ar: 'ملاحظة', fr: 'Remarque' },
-      bg: 'bg-gray-50 dark:bg-gray-900/30',
-      border: 'border-l-4 border-gray-500',
+      bg: 'bg-gray-50',
+      border: 'border-r-4 border-gray-500',
       iconColor: 'text-gray-600 dark:text-gray-400',
-      textColor: 'text-gray-900 dark:text-gray-100'
+      textColor: 'text-gray-900 dark:text-gray-100',
+      badgeBg: 'bg-white dark:bg-gray-900',
+      badgeText: 'text-gray-700 dark:text-gray-300'
     }
   }
 
   // Color classes mapping
   const colorClasses = {
-    default: 'text-gray-900 dark:text-gray-100',
+    default: '', // Updated: Remove specific color to allow inheritance (e.g. from Summary parent)
     gray: 'text-gray-600 dark:text-gray-400',
     brown: 'text-amber-800 dark:text-amber-400',
     orange: 'text-orange-600 dark:text-orange-400',
@@ -188,7 +218,9 @@ const TextBlock = ({ block, language }) => {
 
   const color = properties.color || 'default'
   const alignment = properties.alignment || 'left'
-  const semanticType = properties.semanticType
+  // Check both semanticType in properties and section_type in content
+  // Prioritize semanticType if it exists
+  const semanticType = properties.semanticType || content.section_type
 
   const baseClasses = cn(
     colorClasses[color],
@@ -200,13 +232,43 @@ const TextBlock = ({ block, language }) => {
   if (type === 'heading') {
     const headingLevel = level || 2
 
+    // If it's a semantic heading, render it with special styling
+    if (semanticType && semanticTypes[semanticType]) {
+      const semantic = semanticTypes[semanticType]
+      const IconComponent = semantic.icon
+      const label = semantic.label[language] || semantic.label.en
+      const isRTL = language === 'ar'
+
+      return (
+        <div className={cn('my-10 mb-6', isRTL ? 'text-right' : 'text-left')}>
+          <div className={cn(
+            'flex items-center gap-4 p-1 rounded-2xl shadow-sm border border-opacity-20 w-fit min-w-[300px]',
+            semantic.bg,
+            isRTL ? 'flex-row-reverse pl-6' : 'flex-row pr-6'
+          )}>
+            <div className={cn('p-2 rounded-xl bg-white/50 dark:bg-black/20', semantic.iconColor)}>
+              <IconComponent className="h-6 w-6" />
+            </div>
+            <div className={cn('flex flex-col', isRTL ? 'text-right' : 'text-left')}>
+              <span className={cn('text-[10px] uppercase tracking-widest font-extrabold opacity-80', semantic.textColor)}>
+                {label}
+              </span>
+              <h2 className={cn('text-2xl font-bold m-0 leading-tight', semantic.textColor)}>
+                {text}
+              </h2>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
     const headingClasses = {
-      1: 'text-4xl font-bold mt-8 mb-4 border-b pb-2',
-      2: 'text-3xl font-bold mt-6 mb-3',
-      3: 'text-2xl font-semibold mt-5 mb-2',
-      4: 'text-xl font-semibold mt-4 mb-2',
-      5: 'text-lg font-semibold mt-3 mb-1',
-      6: 'text-base font-semibold mt-2 mb-1',
+      1: 'text-4xl font-bold mt-10 mb-6 border-b pb-3',
+      2: 'text-3xl font-bold mt-8 mb-4',
+      3: 'text-2xl font-semibold mt-6 mb-3',
+      4: 'text-xl font-semibold mt-5 mb-2',
+      5: 'text-lg font-semibold mt-4 mb-2',
+      6: 'text-base font-semibold mt-3 mb-1',
     }
 
     const HeadingTag = `h${headingLevel}`
@@ -214,7 +276,7 @@ const TextBlock = ({ block, language }) => {
     return React.createElement(
       HeadingTag,
       {
-        className: cn(baseClasses, headingClasses[headingLevel]),
+        className: cn(baseClasses, headingClasses[headingLevel], 'tracking-tight'),
       },
       text
     )
@@ -225,6 +287,7 @@ const TextBlock = ({ block, language }) => {
     const semantic = semanticTypes[semanticType]
     const IconComponent = semantic.icon
     const label = semantic.label[language] || semantic.label.en
+    const isRTL = language === 'ar'
 
     // Check if content has HTML/SVG
     const hasHTML = containsHTML(text)
@@ -232,37 +295,41 @@ const TextBlock = ({ block, language }) => {
     return (
       <div
         className={cn(
-          'my-6 p-5 rounded-xl',
+          'my-10 p-8 md:p-10 rounded-3xl relative',
           semantic.bg,
           semantic.border,
-          'shadow-md hover:shadow-lg transition-shadow duration-200',
-          'border border-opacity-20'
+          'shadow-md border border-opacity-20 transition-all duration-300 hover:shadow-xl'
         )}
+        dir={isRTL ? 'rtl' : 'ltr'}
       >
-        <div className="flex items-start gap-4">
-          <div className={cn(
-            'h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0',
-            semantic.bg,
-            'ring-2 ring-offset-2',
-            semantic.iconColor.replace('text-', 'ring-')
-          )}>
-            <IconComponent className={cn('h-5 w-5', semantic.iconColor)} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className={cn('font-bold text-base mb-3', semantic.iconColor)}>
-              {label}
+        {/* Badge positioned on the right for RTL, left for LTR - more modern floating style */}
+        <div
+          className={cn(
+            'absolute -top-5',
+            isRTL ? 'right-8' : 'left-8',
+            'flex items-center gap-2.5 px-6 py-3 rounded-2xl',
+            semantic.badgeBg,
+            'shadow-lg z-10 border border-white/20'
+          )}
+        >
+          <IconComponent className={cn('h-6 w-6', semantic.iconColor)} />
+          <span className={cn('font-bold text-sm tracking-wider uppercase', semantic.badgeText)}>
+            {label}
+          </span>
+        </div>
+
+        {/* Content with proper spacing from badge */}
+        <div className={cn('mt-8', isRTL ? 'text-right' : 'text-left')}>
+          {hasHTML ? (
+            <div
+              className={cn('text-lg leading-relaxed md:text-xl semantic-content', semantic.textColor)}
+              dangerouslySetInnerHTML={{ __html: text }}
+            />
+          ) : (
+            <div className={cn('text-lg leading-relaxed md:text-xl font-medium', semantic.textColor)}>
+              {renderTextWithMath(text)}
             </div>
-            {hasHTML ? (
-              <div
-                className={cn('text-base leading-relaxed semantic-content', semantic.textColor)}
-                dangerouslySetInnerHTML={{ __html: text }}
-              />
-            ) : (
-              <div className={cn('text-base leading-relaxed', semantic.textColor)}>
-                {renderTextWithMath(text)}
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
     )

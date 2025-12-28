@@ -41,7 +41,7 @@ const BlockRenderer = ({ blocksContent, language = 'en', className = '' }) => {
     return blocksContent
   }, [blocksContent])
 
-  const blocks = decodedContent?.blocks || []
+  const blocks = useMemo(() => decodedContent?.blocks || [], [decodedContent])
   const isRTL = language === 'ar'
 
   /* Check if content has Arabic characters to determine direction */
@@ -82,6 +82,7 @@ const BlockRenderer = ({ blocksContent, language = 'en', className = '' }) => {
     const blockProps = {
       block,
       language,
+      direction: contentDirection,
       key: block.id || `block-${index}`,
     }
 
@@ -95,54 +96,23 @@ const BlockRenderer = ({ blocksContent, language = 'en', className = '' }) => {
       }
     }
 
-    const BlockComponent = () => {
+    const getBlockComponent = (block, blockProps) => {
       switch (block.type) {
-        case 'heading':
-          return <TextBlock {...blockProps} />
-
-        case 'paragraph':
-          return <TextBlock {...blockProps} />
-
-        case 'list':
-          return <ListBlock {...blockProps} />
-
-        case 'quote':
-          return <QuoteBlock {...blockProps} />
-
-        case 'callout':
-          return <CalloutBlock {...blockProps} />
-
-        case 'code':
-          return <CodeBlock {...blockProps} />
-
-        case 'math':
-          return <MathBlock {...blockProps} />
-
-        case 'image':
-          return <ImageBlock {...blockProps} />
-
-        case 'video':
-          return <VideoBlock {...blockProps} />
-
-        case 'audio':
-          return <AudioBlock {...blockProps} />
-
-        case 'divider':
-          return <DividerBlock {...blockProps} />
-
-        case 'spacer':
-          return <div className="h-8" key={blockProps.key} />
-
-        case 'toggle':
-          return <ToggleBlock {...blockProps} />
-
-        case 'table':
-          return <TableBlock {...blockProps} />
-
-        case 'embed':
-          // Handle embeds similar to videos for now
-          return <VideoBlock {...blockProps} />
-
+        case 'heading': return <TextBlock {...blockProps} />
+        case 'paragraph': return <TextBlock {...blockProps} />
+        case 'list': return <ListBlock {...blockProps} />
+        case 'quote': return <QuoteBlock {...blockProps} />
+        case 'callout': return <CalloutBlock {...blockProps} />
+        case 'code': return <CodeBlock {...blockProps} />
+        case 'math': return <MathBlock {...blockProps} />
+        case 'image': return <ImageBlock {...blockProps} />
+        case 'video': return <VideoBlock {...blockProps} />
+        case 'audio': return <AudioBlock {...blockProps} />
+        case 'divider': return <DividerBlock {...blockProps} />
+        case 'spacer': return <div className="h-8" key={blockProps.key} />
+        case 'toggle': return <ToggleBlock {...blockProps} />
+        case 'table': return <TableBlock {...blockProps} />
+        case 'embed': return <VideoBlock {...blockProps} />
         default:
           console.warn(`Unknown block type: ${block.type}`)
           return null
@@ -156,7 +126,7 @@ const BlockRenderer = ({ blocksContent, language = 'en', className = '' }) => {
         initial="hidden"
         animate="visible"
       >
-        <BlockComponent />
+        {getBlockComponent(block, blockProps)}
       </motion.div>
     )
   }
@@ -165,10 +135,8 @@ const BlockRenderer = ({ blocksContent, language = 'en', className = '' }) => {
     <div
       className={cn(
         'block-renderer',
-        'space-y-2',
-        'max-w-4xl',
-        'mx-auto',
-        'px-2',
+        'space-y-10',
+        'w-full',
         alignmentClass,
         className
       )}
