@@ -1,0 +1,366 @@
+XHRPUT
+http://localhost:5173/api/homework/questions/5281/
+[HTTP/1.1 400 Bad Request 397ms]
+
+	
+PUT
+	http://localhost:5173/api/homework/questions/5281/
+Status
+400
+Bad Request
+VersionHTTP/1.1
+Transferred543 B (75 B size)
+Referrer Policystrict-origin-when-cross-origin
+DNS ResolutionSystem
+
+	
+access-control-allow-credentials
+	true
+access-control-allow-origin
+	http://localhost:5173
+allow
+	GET, PUT, PATCH, DELETE, HEAD, OPTIONS
+connection
+	keep-alive
+content-length
+	75
+content-type
+	application/json
+cross-origin-opener-policy
+	same-origin
+date
+	Thu, 23 Oct 2025 14:09:14 GMT
+referrer-policy
+	same-origin
+server
+	WSGIServer/0.2 CPython/3.11.8
+vary
+	Accept, origin
+x-content-type-options
+	nosniff
+x-frame-options
+	DENY
+	
+Accept
+	application/json
+Accept-Encoding
+	gzip, deflate, br, zstd
+Accept-Language
+	en-US,en;q=0.5
+Authorization
+	Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYxMjMxMzY0LCJpYXQiOjE3NjEyMjc3NjUsImp0aSI6IjUwNDUzOGI2ZDUwNTQ3ZjA4YjhhODg1NzExMTg2YTA3IiwidXNlcl9pZCI6IjczOSIsInJvbGUiOiJURUFDSEVSIiwiZnVsbF9uYW1lIjoiWU9VTkVTIEVMIEJFVFRBVEVFIn0.dsfAQ9nv6Ip9WHvgUkzZMHTOf4wCvKKpB6prdTvha1s
+Connection
+	keep-alive
+Content-Length
+	160118
+Content-Type
+	multipart/form-data; boundary=----geckoformboundary60c58cbe38e271374bdbfc5d452b4eea
+Cookie
+	i18next=en
+Host
+	localhost:5173
+Origin
+	http://localhost:5173
+Referer
+	http://localhost:5173/teacher/content/lesson-exercises/1116/edit
+Sec-Fetch-Dest
+	empty
+Sec-Fetch-Mode
+	cors
+Sec-Fetch-Site
+	same-origin
+User-Agent
+	Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:144.0) Gecko/20100101 Firefox/144.0
+XHRPUT
+http://localhost:5173/api/homework/questions/5282/
+[HTTP/1.1 400 Bad Request 149ms]
+
+	
+PUT
+	http://localhost:5173/api/homework/questions/5282/
+Status
+400
+Bad Request
+VersionHTTP/1.1
+Transferred543 B (75 B size)
+Referrer Policystrict-origin-when-cross-origin
+DNS ResolutionSystem
+
+	
+access-control-allow-credentials
+	true
+access-control-allow-origin
+	http://localhost:5173
+allow
+	GET, PUT, PATCH, DELETE, HEAD, OPTIONS
+connection
+	keep-alive
+content-length
+	75
+content-type
+	application/json
+cross-origin-opener-policy
+	same-origin
+date
+	Thu, 23 Oct 2025 14:09:14 GMT
+referrer-policy
+	same-origin
+server
+	WSGIServer/0.2 CPython/3.11.8
+vary
+	Accept, origin
+x-content-type-options
+	nosniff
+x-frame-options
+	DENY
+	
+Accept
+	application/json
+Accept-Encoding
+	gzip, deflate, br, zstd
+Accept-Language
+	en-US,en;q=0.5
+Authorization
+	Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYxMjMxMzY0LCJpYXQiOjE3NjEyMjc3NjUsImp0aSI6IjUwNDUzOGI2ZDUwNTQ3ZjA4YjhhODg1NzExMTg2YTA3IiwidXNlcl9pZCI6IjczOSIsInJvbGUiOiJURUFDSEVSIiwiZnVsbF9uYW1lIjoiWU9VTkVTIEVMIEJFVFRBVEVFIn0.dsfAQ9nv6Ip9WHvgUkzZMHTOf4wCvKKpB6prdTvha1s
+Connection
+	keep-alive
+Content-Length
+	1013
+Content-Type
+	multipart/form-data; boundary=----geckoformboundarya91edf25f294a82b3caf0730b1e614b0
+Cookie
+	i18next=en
+Host
+	localhost:5173
+Origin
+	http://localhost:5173
+Referer
+	http://localhost:5173/teacher/content/lesson-exercises/1116/edit
+Sec-Fetch-Dest
+	empty
+Sec-Fetch-Mode
+	cors
+Sec-Fetch-Site
+	same-origin
+User-Agent
+	Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:144.0) Gecko/20100101 Firefox/144.0
+XHRPUT
+http://localhost:5173/api/homework/questions/5283/
+[HTTP/1.1 400 Bad Request 272ms]
+
+	
+PUT
+	http://localhost:5173/api/homework/questions/5283/
+Status
+400
+Bad Request
+VersionHTTP/1.1
+Transferred543 B (75 B size)
+Referrer Policystrict-origin-when-cross-origin
+DNS ResolutionSystem
+
+	
+access-control-allow-credentials
+	true
+access-control-allow-origin
+	http://localhost:5173
+allow
+	GET, PUT, PATCH, DELETE, HEAD, OPTIONS
+connection
+	keep-alive
+content-length
+	75
+content-type
+	application/json
+cross-origin-opener-policy
+	same-origin
+date
+	Thu, 23 Oct 2025 14:09:14 GMT
+referrer-policy
+	same-origin
+server
+	WSGIServer/0.2 CPython/3.11.8
+vary
+	Accept, origin
+x-content-type-options
+	nosniff
+x-frame-options
+	DENY
+	
+Accept
+	application/json
+Accept-Encoding
+	gzip, deflate, br, zstd
+Accept-Language
+	en-US,en;q=0.5
+Authorization
+	Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYxMjMxMzY0LCJpYXQiOjE3NjEyMjc3NjUsImp0aSI6IjUwNDUzOGI2ZDUwNTQ3ZjA4YjhhODg1NzExMTg2YTA3IiwidXNlcl9pZCI6IjczOSIsInJvbGUiOiJURUFDSEVSIiwiZnVsbF9uYW1lIjoiWU9VTkVTIEVMIEJFVFRBVEVFIn0.dsfAQ9nv6Ip9WHvgUkzZMHTOf4wCvKKpB6prdTvha1s
+Connection
+	keep-alive
+Content-Length
+	961
+Content-Type
+	multipart/form-data; boundary=----geckoformboundaryd21dcafc8cfc276427631d15831f8e1
+Cookie
+	i18next=en
+Host
+	localhost:5173
+Origin
+	http://localhost:5173
+Referer
+	http://localhost:5173/teacher/content/lesson-exercises/1116/edit
+Sec-Fetch-Dest
+	empty
+Sec-Fetch-Mode
+	cors
+Sec-Fetch-Site
+	same-origin
+User-Agent
+	Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:144.0) Gecko/20100101 Firefox/144.0
+❌ API Error: 400 /homework/questions/5282/ 
+Object { error: {…}, config: {…} }
+<anonymous code>:1:147461
+    overrideMethod <anonymous code>:1
+    <anonymous> api.js:93
+    (Async: promise callback)
+    _request Axios.js:163
+    request Axios.js:40
+    httpMethod Axios.js:226
+    wrap bind.js:5
+    updateQuestion exercises.js:381
+    handleSubmit EditLessonExercisePage.jsx:397
+    handleSubmit EditLessonExercisePage.jsx:372
+    React 13
+    <anonymous> main.jsx:9
+Error updating question: 
+Object { message: "Request failed with status code 400", name: "AxiosError", code: "ERR_BAD_REQUEST", config: {…}, request: XMLHttpRequest, response: {…}, status: 400, userMessage: "Invalid request. Please check your input.", stack: "", … }
+​
+code: "ERR_BAD_REQUEST"
+​
+config: Object { timeout: 30000, xsrfCookieName: "XSRF-TOKEN", xsrfHeaderName: "X-XSRF-TOKEN", … }
+​
+message: "Request failed with status code 400"
+​
+name: "AxiosError"
+​
+request: XMLHttpRequest { readyState: 4, timeout: 30000, withCredentials: false, … }
+​
+response: Object { data: {…}, status: 400, statusText: "Bad Request", … }
+​
+stack: "settle@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:1253:12\nonloadend@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:1585:13\nEventHandlerNonNull*dispatchXhrRequest@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:1595:7\nxhr_default<@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:1552:10\ndispatchRequest@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:2027:10\npromise callback*_request@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:2230:27\nrequest@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:2139:25\nhttpMethod@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:2277:19\nwrap@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:8:15\nupdateQuestion@http://localhost:5173/src/services/exercises.js:381:34\nEditLessonExercisePage/handleSubmit/<@http://localhost:5173/src/pages/teacher/EditLessonExercisePage.jsx:363:49\nhandleSubmit@http://localhost:5173/src/pages/teacher/EditLessonExercisePage.jsx:344:19\nasync*executeDispatch@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:11736:19\nrunWithFiberInDEV@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:1487:15\nprocessDispatchQueue@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:11772:37\nnode_modules/react-dom/cjs/react-dom-client.development.js/dispatchEventForPluginEventSystem/<@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:12182:31\nbatchedUpdates$1@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:2628:44\ndispatchEventForPluginEventSystem@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:11877:25\ndispatchEvent@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:14792:46\ndispatchDiscreteEvent@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:14773:62\nEventListener.handleEvent*addTrappedEventListener@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:11842:30\nlistenToNativeEvent@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:11801:32\nnode_modules/react-dom/cjs/react-dom-client.development.js/listenToAllSupportedEvents/<@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:11812:92\nlistenToAllSupportedEvents@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:11811:27\nnode_modules/react-dom/cjs/react-dom-client.development.js/exports.createRoot@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:18025:35\n@http://localhost:5173/src/main.jsx:9:11\n"
+​
+status: 400
+​
+userMessage: "Invalid request. Please check your input."
+​
+<prototype>: Object { constructor: AxiosError(message, code, config, request, response), toJSON: toJSON()
+, stack: "", … }
+<anonymous code>:1:147461
+    overrideMethod <anonymous code>:1
+    updateQuestion exercises.js:388
+    handleSubmit EditLessonExercisePage.jsx:397
+    handleSubmit EditLessonExercisePage.jsx:372
+    React 13
+    <anonymous> main.jsx:9
+❌ API Error: 400 /homework/questions/5283/ 
+Object { error: {…}, config: {…} }
+​
+config: Object { timeout: 30000, xsrfCookieName: "XSRF-TOKEN", xsrfHeaderName: "X-XSRF-TOKEN", … }
+​
+error: Object { choices: {…} }
+​
+<prototype>: Object { … }
+<anonymous code>:1:147461
+    overrideMethod <anonymous code>:1
+    <anonymous> api.js:93
+    (Async: promise callback)
+    _request Axios.js:163
+    request Axios.js:40
+    httpMethod Axios.js:226
+    wrap bind.js:5
+    updateQuestion exercises.js:381
+    handleSubmit EditLessonExercisePage.jsx:397
+    handleSubmit EditLessonExercisePage.jsx:372
+    React 13
+    <anonymous> main.jsx:9
+Error updating question: 
+Object { message: "Request failed with status code 400", name: "AxiosError", code: "ERR_BAD_REQUEST", config: {…}, request: XMLHttpRequest, response: {…}, status: 400, userMessage: "Invalid request. Please check your input.", stack: "", … }
+​
+code: "ERR_BAD_REQUEST"
+​
+config: Object { timeout: 30000, xsrfCookieName: "XSRF-TOKEN", xsrfHeaderName: "X-XSRF-TOKEN", … }
+​
+message: "Request failed with status code 400"
+​
+name: "AxiosError"
+​
+request: XMLHttpRequest { readyState: 4, timeout: 30000, withCredentials: false, … }
+​
+response: Object { data: {…}, status: 400, statusText: "Bad Request", … }
+​
+stack: "settle@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:1253:12\nonloadend@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:1585:13\nEventHandlerNonNull*dispatchXhrRequest@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:1595:7\nxhr_default<@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:1552:10\ndispatchRequest@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:2027:10\npromise callback*_request@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:2230:27\nrequest@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:2139:25\nhttpMethod@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:2277:19\nwrap@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:8:15\nupdateQuestion@http://localhost:5173/src/services/exercises.js:381:34\nEditLessonExercisePage/handleSubmit/<@http://localhost:5173/src/pages/teacher/EditLessonExercisePage.jsx:363:49\nhandleSubmit@http://localhost:5173/src/pages/teacher/EditLessonExercisePage.jsx:344:19\nasync*executeDispatch@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:11736:19\nrunWithFiberInDEV@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:1487:15\nprocessDispatchQueue@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:11772:37\nnode_modules/react-dom/cjs/react-dom-client.development.js/dispatchEventForPluginEventSystem/<@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:12182:31\nbatchedUpdates$1@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:2628:44\ndispatchEventForPluginEventSystem@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:11877:25\ndispatchEvent@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:14792:46\ndispatchDiscreteEvent@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:14773:62\nEventListener.handleEvent*addTrappedEventListener@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:11842:30\nlistenToNativeEvent@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:11801:32\nnode_modules/react-dom/cjs/react-dom-client.development.js/listenToAllSupportedEvents/<@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:11812:92\nlistenToAllSupportedEvents@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:11811:27\nnode_modules/react-dom/cjs/react-dom-client.development.js/exports.createRoot@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:18025:35\n@http://localhost:5173/src/main.jsx:9:11\n"
+​
+status: 400
+​
+userMessage: "Invalid request. Please check your input."
+​
+<prototype>: Object { constructor: AxiosError(message, code, config, request, response), toJSON: toJSON()
+, stack: "", … }
+<anonymous code>:1:147461
+    overrideMethod <anonymous code>:1
+    updateQuestion exercises.js:388
+    handleSubmit EditLessonExercisePage.jsx:397
+    handleSubmit EditLessonExercisePage.jsx:372
+    React 13
+    <anonymous> main.jsx:9
+❌ API Error: 400 /homework/questions/5281/ 
+Object { error: {…}, config: {…} }
+​
+config: Object { timeout: 30000, xsrfCookieName: "XSRF-TOKEN", xsrfHeaderName: "X-XSRF-TOKEN", … }
+​
+error: Object { choices: {…} }
+​
+<prototype>: Object { … }
+<anonymous code>:1:147461
+    overrideMethod <anonymous code>:1
+    <anonymous> api.js:93
+    (Async: promise callback)
+    _request Axios.js:163
+    request Axios.js:40
+    httpMethod Axios.js:226
+    wrap bind.js:5
+    updateQuestion exercises.js:381
+    handleSubmit EditLessonExercisePage.jsx:397
+    handleSubmit EditLessonExercisePage.jsx:372
+    React 13
+    <anonymous> main.jsx:9
+Error updating question: 
+Object { message: "Request failed with status code 400", name: "AxiosError", code: "ERR_BAD_REQUEST", config: {…}, request: XMLHttpRequest, response: {…}, status: 400, userMessage: "Invalid request. Please check your input.", stack: "", … }
+​
+code: "ERR_BAD_REQUEST"
+​
+config: Object { timeout: 30000, xsrfCookieName: "XSRF-TOKEN", xsrfHeaderName: "X-XSRF-TOKEN", … }
+​
+message: "Request failed with status code 400"
+​
+name: "AxiosError"
+​
+request: XMLHttpRequest { readyState: 4, timeout: 30000, withCredentials: false, … }
+​
+response: Object { data: {…}, status: 400, statusText: "Bad Request", … }
+​
+stack: "settle@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:1253:12\nonloadend@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:1585:13\nEventHandlerNonNull*dispatchXhrRequest@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:1595:7\nxhr_default<@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:1552:10\ndispatchRequest@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:2027:10\npromise callback*_request@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:2230:27\nrequest@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:2139:25\nhttpMethod@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:2277:19\nwrap@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:8:15\nupdateQuestion@http://localhost:5173/src/services/exercises.js:381:34\nEditLessonExercisePage/handleSubmit/<@http://localhost:5173/src/pages/teacher/EditLessonExercisePage.jsx:363:49\nhandleSubmit@http://localhost:5173/src/pages/teacher/EditLessonExercisePage.jsx:344:19\nasync*executeDispatch@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:11736:19\nrunWithFiberInDEV@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:1487:15\nprocessDispatchQueue@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:11772:37\nnode_modules/react-dom/cjs/react-dom-client.development.js/dispatchEventForPluginEventSystem/<@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:12182:31\nbatchedUpdates$1@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:2628:44\ndispatchEventForPluginEventSystem@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:11877:25\ndispatchEvent@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:14792:46\ndispatchDiscreteEvent@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:14773:62\nEventListener.handleEvent*addTrappedEventListener@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:11842:30\nlistenToNativeEvent@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:11801:32\nnode_modules/react-dom/cjs/react-dom-client.development.js/listenToAllSupportedEvents/<@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:11812:92\nlistenToAllSupportedEvents@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:11811:27\nnode_modules/react-dom/cjs/react-dom-client.development.js/exports.createRoot@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:18025:35\n@http://localhost:5173/src/main.jsx:9:11\n"
+​
+status: 400
+​
+userMessage: "Invalid request. Please check your input."
+​
+<prototype>: Object { constructor: AxiosError(message, code, config, request, response), toJSON: toJSON()
+, stack: "", … }
+<anonymous code>:1:147461
+    overrideMethod <anonymous code>:1
+    updateQuestion exercises.js:388
+    handleSubmit EditLessonExercisePage.jsx:397
+    handleSubmit EditLessonExercisePage.jsx:372
+    React 13
+    <anonymous> main.jsx:9

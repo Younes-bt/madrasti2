@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
     BarChart3,
     Users,
@@ -86,132 +86,8 @@ const normalizeText = (value) => (value ? value.toString().toLowerCase() : '');
 const matchById = (value, target) =>
     value !== undefined && value !== null && String(value) === String(target);
 
-const pickTop = (items = [], key, limit = 5) =>
-    items
-        .slice()
-        .sort((a, b) => (b?.[key] || 0) - (a?.[key] || 0))
-        .slice(0, limit);
 
-const aggregateStudentStats = (records = []) => {
-    const studentMap = {};
 
-    records.forEach((record) => {
-        const studentId = record.student_id || record.student?.id;
-        if (!studentId) return;
-
-        const student = record.student || {};
-        const className =
-            record.class_name ||
-            record.session?.class_name ||
-            student.class_name ||
-            'Unknown';
-
-        if (!studentMap[studentId]) {
-            const fallbackName = `${student.first_name || ''} ${student.last_name || ''}`.trim();
-            studentMap[studentId] = {
-                id: studentId,
-                name: student.full_name || record.student_name || fallbackName || 'Unknown',
-                arName:
-                    student.ar_first_name && student.ar_last_name
-                        ? `${student.ar_first_name} ${student.ar_last_name}`
-                        : null,
-                avatar: student.profile_picture_url,
-                classId: record.class_id || record.session?.class_id || student.class_id,
-                class: className,
-                className,
-                gradeId: record.grade_id,
-                gradeName: record.grade_name,
-                trackId: record.track_id,
-                trackName: record.track_name,
-                absent_count: 0,
-                late_count: 0,
-                present_count: 0,
-                excused_count: 0,
-                total_sessions: 0,
-            };
-        }
-
-        const stats = studentMap[studentId];
-        stats.total_sessions += 1;
-
-        switch (record.status) {
-            case 'absent':
-                stats.absent_count += 1;
-                break;
-            case 'late':
-                stats.late_count += 1;
-                break;
-            case 'present':
-                stats.present_count += 1;
-                break;
-            case 'excused':
-                stats.excused_count += 1;
-                break;
-            default:
-                break;
-        }
-    });
-
-    return Object.values(studentMap);
-};
-
-const aggregateClassStats = (records = []) => {
-    const classMap = {};
-
-    records.forEach((record) => {
-        const classId = record.class_id || record.session?.class_id;
-        if (!classId) return;
-
-        if (!classMap[classId]) {
-            const className =
-                record.class_name || record.session?.class_name || 'Unknown';
-
-            classMap[classId] = {
-                id: classId,
-                name: className,
-                class_name: className,
-                gradeId: record.grade_id,
-                gradeName: record.grade_name,
-                trackId: record.track_id,
-                trackName: record.track_name,
-                total_students: 0,
-                present_count: 0,
-                absent_count: 0,
-                late_count: 0,
-                total_records: 0,
-            };
-        }
-
-        const stats = classMap[classId];
-        stats.total_records += 1;
-        if (record.status === 'present') stats.present_count += 1;
-        if (record.status === 'absent') stats.absent_count += 1;
-        if (record.status === 'late') stats.late_count += 1;
-    });
-
-    return Object.values(classMap).map((cls) => {
-        const presenceRate =
-            cls.total_records > 0
-                ? Math.round((cls.present_count / cls.total_records) * 100)
-                : 0;
-        const absenceRate =
-            cls.total_records > 0
-                ? Math.round((cls.absent_count / cls.total_records) * 100)
-                : 0;
-        const lateRate =
-            cls.total_records > 0
-                ? Math.round((cls.late_count / cls.total_records) * 100)
-                : 0;
-
-        return {
-            ...cls,
-            presence_rate: presenceRate,
-            absence_rate: absenceRate,
-            late_rate: lateRate,
-            total_students: Math.max(cls.total_records, cls.total_students || 0),
-        };
-    });
-};
 
 const filterStudentsByCriteria = (students = [], filters = {}) => {
     const { gradeId, classId, trackId, search } = filters;
@@ -278,6 +154,7 @@ const filterClassesByCriteria = (classes = [], filters = {}) => {
 const StaffAttendanceReportsPage = () => {
     const { t } = useTranslation();
     const location = useLocation();
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState(location.state?.activeTab || 'overview');
 
     const [overviewLoading, setOverviewLoading] = useState(true);
@@ -314,13 +191,6 @@ const StaffAttendanceReportsPage = () => {
     const [studentStatsCache, setStudentStatsCache] = useState([]);
     const [classStatsCache, setClassStatsCache] = useState([]);
     const [pendingFlags, setPendingFlags] = useState([]);
-
-    // Flag dialog state
-    const [selectedFlag, setSelectedFlag] = useState(null);
-    const [isFlagDialogOpen, setIsFlagDialogOpen] = useState(false);
-    const [clearanceReason, setClearanceReason] = useState('');
-    const [clearanceNotes, setClearanceNotes] = useState('');
-    const [isClearing, setIsClearing] = useState(false);
 
     // Data
     const [overallStats, setOverallStats] = useState(null);
@@ -367,45 +237,6 @@ const StaffAttendanceReportsPage = () => {
     }, [t]);
 
 
-    const calculateOverallStatsFromRecords = (records = []) => {
-        const stats = {
-            total_sessions: 0,
-            total_records: records.length,
-            presence_rate: 0,
-            absence_rate: 0,
-            late_rate: 0,
-            excused_rate: 0,
-            present_count: 0,
-            absent_count: 0,
-            late_count: 0,
-            excused_count: 0,
-        };
-
-        records.forEach((record) => {
-            switch (record.status) {
-                case 'present': stats.present_count += 1; break;
-                case 'absent': stats.absent_count += 1; break;
-                case 'late': stats.late_count += 1; break;
-                case 'excused': stats.excused_count += 1; break;
-                default: break;
-            }
-        });
-
-        const total = stats.total_records || 0;
-        if (total > 0) {
-            stats.presence_rate = Math.round((stats.present_count / total) * 100);
-            stats.absence_rate = Math.round((stats.absent_count / total) * 100);
-            stats.late_rate = Math.round((stats.late_count / total) * 100);
-            stats.excused_rate = Math.round((stats.excused_count / total) * 100);
-        }
-
-        const uniqueSessions = new Set(
-            records.map((record) => record.session_id || record.attendance_session?.id || record.attendance_session_id).filter(Boolean)
-        );
-        stats.total_sessions = uniqueSessions.size;
-
-        return stats;
-    };
 
     const fetchOverviewData = useCallback(async () => {
         setOverviewLoading(true);
@@ -415,16 +246,25 @@ const StaffAttendanceReportsPage = () => {
             if (overviewSubjectId !== 'all') params.subject_id = overviewSubjectId;
             if (overviewTeacherId !== 'all') params.teacher_id = overviewTeacherId;
 
-            const [recordsRes, sessionsRes] = await Promise.all([
-                attendanceService.getAttendanceRecords(params).catch(() => ({ results: [] })),
+            const [summaryRes, sessionsRes] = await Promise.all([
+                attendanceService.getAttendanceSummary(params).catch(() => null),
                 attendanceService.getAttendanceSessions({ ...params, limit: 10 }).catch(() => ({ results: [] })),
             ]);
 
-            const records = Array.isArray(recordsRes) ? recordsRes : recordsRes?.results || [];
-            const studentsAggregated = aggregateStudentStats(records);
-            setTopAbsentStudents(pickTop(studentsAggregated, 'absent_count'));
-            setTopLateStudents(pickTop(studentsAggregated, 'late_count'));
-            setOverallStats(calculateOverallStatsFromRecords(records));
+            if (summaryRes) {
+                setOverallStats(summaryRes);
+                // Map the summary top students to the format expected by the UI
+                setTopAbsentStudents(summaryRes.top_absent_students?.map(s => ({
+                    id: s.student_id,
+                    name: `${s.student__first_name || ''} ${s.student__last_name || ''}`.trim(),
+                    absent_count: s.count
+                })) || []);
+                setTopLateStudents(summaryRes.top_late_students?.map(s => ({
+                    id: s.student_id,
+                    name: `${s.student__first_name || ''} ${s.student__last_name || ''}`.trim(),
+                    late_count: s.count
+                })) || []);
+            }
 
             const sessions = Array.isArray(sessionsRes) ? sessionsRes : sessionsRes?.results || [];
             setRecentSessions(sessions);
@@ -439,21 +279,42 @@ const StaffAttendanceReportsPage = () => {
     const fetchStudentData = useCallback(async () => {
         setStudentLoading(true);
         try {
-            const params = { ...buildDateRangeParams(studentDateRange) };
+            const params = {
+                ...buildDateRangeParams(studentDateRange),
+                search: studentFilters.search
+            };
             if (studentGradeId !== 'all') params.grade_id = studentGradeId;
             if (studentClassId !== 'all') params.class_id = studentClassId;
             if (studentTrackId !== 'all') params.track_id = studentTrackId;
-            const recordsRes = await attendanceService.getAttendanceRecords(params).catch(() => ({ results: [] }));
 
-            const records = Array.isArray(recordsRes) ? recordsRes : recordsRes?.results || [];
-            setStudentStatsCache(aggregateStudentStats(records));
+            const response = await attendanceService.getStudentsStatistics(params).catch(() => ({ statistics: [] }));
+            const stats = response?.statistics || [];
+
+            // Map backend stats to the format expected by the frontend
+            const mappedStats = stats.map(s => ({
+                id: s.student_id,
+                name: s.student_name,
+                arName: s.student_ar_name,
+                class: s.class_name,
+                className: s.class_name,
+                gradeName: s.grade_name,
+                trackName: s.track_name,
+                total_sessions: s.total_sessions,
+                present_count: s.present_count,
+                absent_count: s.absent_count,
+                late_count: s.late_count,
+                excused_count: s.excused_count,
+                attendance_percentage: s.attendance_percentage
+            }));
+
+            setStudentStatsCache(mappedStats);
         } catch (error) {
             console.error('Failed to fetch student attendance data:', error);
             toast.error(t('attendance.failedToLoadData'));
         } finally {
             setStudentLoading(false);
         }
-    }, [studentClassId, studentDateRange, studentGradeId, studentTrackId, t]);
+    }, [studentClassId, studentDateRange, studentGradeId, studentTrackId, studentFilters.search, t]);
 
     const fetchClassData = useCallback(async () => {
         setClassLoading(true);
@@ -461,10 +322,25 @@ const StaffAttendanceReportsPage = () => {
             const params = { ...buildDateRangeParams(classDateRange) };
             if (classGradeId !== 'all') params.grade_id = classGradeId;
             if (classTrackId !== 'all') params.track_id = classTrackId;
-            const recordsRes = await attendanceService.getAttendanceRecords(params).catch(() => ({ results: [] }));
 
-            const records = Array.isArray(recordsRes) ? recordsRes : recordsRes?.results || [];
-            setClassStatsCache(aggregateClassStats(records));
+            const response = await attendanceService.getClassesStatistics(params).catch(() => ({ statistics: [] }));
+            const stats = response?.statistics || [];
+
+            // Map backend stats to the format expected by the frontend
+            const mappedStats = stats.map(s => ({
+                id: s.class_id,
+                name: s.class_name,
+                class_name: s.class_name,
+                gradeName: s.grade_name,
+                total_sessions: s.total_sessions,
+                present_count: s.present_count,
+                absent_count: s.absent_count,
+                late_count: s.late_count,
+                excused_count: s.excused_count,
+                attendance_percentage: s.attendance_percentage
+            }));
+
+            setClassStatsCache(mappedStats);
         } catch (error) {
             console.error('Failed to fetch class attendance data:', error);
             toast.error(t('attendance.failedToLoadData'));
@@ -563,31 +439,9 @@ const StaffAttendanceReportsPage = () => {
     const handleExport = () => toast.info(t('attendance.exportInProgress'));
 
     const handleFlagClick = (flag) => {
-        setSelectedFlag(flag);
-        setClearanceReason('');
-        setClearanceNotes('');
-        setIsFlagDialogOpen(true);
-    };
-
-    const handleClearFlag = async () => {
-        if (!selectedFlag || !clearanceReason) {
-            toast.error(t('attendance.pleaseSelectReason'));
-            return;
-        }
-        setIsClearing(true);
-        try {
-            await attendanceService.clearAbsenceFlag(selectedFlag.id, {
-                clearance_reason: clearanceReason,
-                clearance_notes: clearanceNotes
-            });
-            toast.success(t('attendance.flagCleared'));
-            setIsFlagDialogOpen(false);
-            fetchFlagsData();
-        } catch (error) {
-            console.error('Failed to clear flag:', error);
-            toast.error(t('attendance.failedToClearFlag'));
-        } finally {
-            setIsClearing(false);
+        if (flag?.student?.id || flag?.student) {
+            const studentId = flag.student?.id || flag.student;
+            navigate(`/staff/reports/attendance/student/${studentId}`);
         }
     };
 
@@ -751,7 +605,11 @@ const StaffAttendanceReportsPage = () => {
                                 <CardContent>
                                     <div className="space-y-4">
                                         {topAbsentStudents.length > 0 ? topAbsentStudents.map((s) => (
-                                            <div key={s.id} className="flex items-center justify-between">
+                                            <div
+                                                key={s.id}
+                                                className="flex items-center justify-between p-2 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                                                onClick={() => navigate(`/staff/reports/attendance/student/${s.id}`)}
+                                            >
                                                 <div className="flex items-center gap-3">
                                                     <Avatar><AvatarImage src={s.avatar} /><AvatarFallback><User className="h-4 w-4" /></AvatarFallback></Avatar>
                                                     <div><p className="font-medium text-sm">{s.name}</p><p className="text-xs text-muted-foreground">{s.class}</p></div>
@@ -776,7 +634,11 @@ const StaffAttendanceReportsPage = () => {
                                 <CardContent>
                                     <div className="space-y-4">
                                         {topLateStudents.length > 0 ? topLateStudents.map((s) => (
-                                            <div key={s.id} className="flex items-center justify-between">
+                                            <div
+                                                key={s.id}
+                                                className="flex items-center justify-between p-2 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                                                onClick={() => navigate(`/staff/reports/attendance/student/${s.id}`)}
+                                            >
                                                 <div className="flex items-center gap-3">
                                                     <Avatar><AvatarImage src={s.avatar} /><AvatarFallback><User className="h-4 w-4" /></AvatarFallback></Avatar>
                                                     <div><p className="font-medium text-sm">{s.name}</p><p className="text-xs text-muted-foreground">{s.class}</p></div>
@@ -1003,7 +865,11 @@ const StaffAttendanceReportsPage = () => {
                                     ) : studentHighlights.length > 0 ? studentHighlights.map((s) => {
                                         const rate = s.total_sessions > 0 ? ((s.present_count + s.late_count) / s.total_sessions) * 100 : 0;
                                         return (
-                                            <div key={s.id} className="p-4 border rounded-xl space-y-3">
+                                            <div
+                                                key={s.id}
+                                                className="p-4 border rounded-xl space-y-3 cursor-pointer hover:bg-muted/50 transition-colors"
+                                                onClick={() => navigate(`/staff/reports/attendance/student/${s.id}`)}
+                                            >
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-center gap-3">
                                                         <Avatar className="h-10 w-10"><AvatarImage src={s.avatar} /><AvatarFallback><User className="h-5 w-5" /></AvatarFallback></Avatar>
@@ -1028,50 +894,6 @@ const StaffAttendanceReportsPage = () => {
                 </Tabs>
             </div>
 
-            <Dialog open={isFlagDialogOpen} onOpenChange={setIsFlagDialogOpen}>
-                <DialogContent className="max-w-md">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 font-bold"><AlertTriangle className="h-5 w-5 text-red-600" />{t('attendance.flagDetails')}</DialogTitle>
-                    </DialogHeader>
-                    {selectedFlag && (
-                        <div className="space-y-6 pt-4">
-                            <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
-                                <Avatar className="h-12 w-12 border-2 border-white"><AvatarImage src={selectedFlag.student?.profile_picture_url} /><AvatarFallback><User /></AvatarFallback></Avatar>
-                                <div><p className="font-bold text-slate-900">{selectedFlag.student?.full_name}</p><p className="text-xs text-slate-500">{selectedFlag.class_name}</p></div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4 text-xs">
-                                <div><p className="text-slate-500 mb-0.5">{t('attendance.date')}</p><p className="font-semibold">{formatDate(selectedFlag.attendance_date)}</p></div>
-                                <div><p className="text-slate-500 mb-0.5">{t('common.subject')}</p><p className="font-semibold">{selectedFlag.subject_name}</p></div>
-                            </div>
-                            <div className="space-y-4 pt-2">
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-bold">{t('attendance.clearanceReason')} *</Label>
-                                    <Select value={clearanceReason} onValueChange={setClearanceReason}>
-                                        <SelectTrigger className="h-10"><SelectValue placeholder={t('attendance.selectReason')} /></SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="medical">{t('attendance.medical')}</SelectItem>
-                                            <SelectItem value="family">{t('attendance.familyEmergency')}</SelectItem>
-                                            <SelectItem value="parent_permission">{t('attendance.parentPermission')}</SelectItem>
-                                            <SelectItem value="other">{t('attendance.other')}</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-bold">{t('attendance.notes')}</Label>
-                                    <Textarea value={clearanceNotes} onChange={(e) => setClearanceNotes(e.target.value)} rows={3} className="resize-none" />
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    <DialogFooter className="flex gap-2 sm:gap-0 mt-4">
-                        <Button variant="ghost" className="flex-1" onClick={() => setIsFlagDialogOpen(false)} disabled={isClearing}>{t('common.cancel')}</Button>
-                        <Button className="flex-1 bg-red-600 hover:bg-red-700 text-white" onClick={handleClearFlag} disabled={isClearing || !clearanceReason}>
-                            {isClearing ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
-                            {t('attendance.clearFlag')}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
         </AdminPageLayout>
     );
 };

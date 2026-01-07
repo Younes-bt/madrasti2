@@ -1,0 +1,1532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Madrasti 2.0 - Testing Progress Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .info-card {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .info-card h3 {
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+
+        .info-card p {
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+
+        .main-content {
+            padding: 30px;
+        }
+
+        .status-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .status-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            border-left: 5px solid #3498db;
+            transition: transform 0.3s ease;
+        }
+
+        .status-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .status-card.overall { border-left-color: #e74c3c; }
+        .status-card.current { border-left-color: #f39c12; }
+        .status-card.issues { border-left-color: #9b59b6; }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #ecf0f1;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+
+        .tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin: 30px 0;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .tab {
+            padding: 15px 25px;
+            background: #ecf0f1;
+            border: none;
+            border-radius: 10px 10px 0 0;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .tab:hover {
+            background: #d5dbdb;
+        }
+
+        .tab.active {
+            background: #3498db;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px 0;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .feature-section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 10px;
+            border-left: 4px solid #3498db;
+        }
+
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 15px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 2px solid transparent;
+            margin-bottom: 10px;
+        }
+
+        .feature-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+            border-color: #3498db;
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.1);
+        }
+
+        .feature-title {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.05em;
+        }
+
+        .feature-description {
+            font-size: 0.9em;
+            color: #555;
+            margin-top: 8px;
+            line-height: 1.5;
+            font-style: italic;
+        }
+
+        .feature-item details {
+            margin-top: 12px;
+            width: 100%;
+        }
+
+        .feature-item details summary {
+            cursor: pointer;
+            font-weight: 600;
+            color: #3498db;
+            padding: 5px 0;
+            border-radius: 5px;
+            outline: none;
+            transition: color 0.3s ease;
+        }
+
+        .feature-item details summary:hover {
+            color: #2980b9;
+        }
+
+        .feature-item details[open] summary {
+            margin-bottom: 8px;
+        }
+
+        .testing-steps {
+            margin-top: 8px;
+            padding: 12px;
+            background: #ffffff;
+            border-radius: 8px;
+            font-size: 0.85em;
+            white-space: pre-line;
+            border-left: 4px solid #3498db;
+            line-height: 1.6;
+            color: #444;
+        }
+
+        .feature-checkbox {
+            width: 20px;
+            height: 20px;
+            margin-right: 15px;
+            cursor: pointer;
+        }
+
+        .feature-status {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .status-not-tested { background: #bdc3c7; color: #7f8c8d; }
+        .status-passed { background: #2ecc71; color: white; }
+        .status-failed { background: #e74c3c; color: white; }
+        .status-partial { background: #f39c12; color: white; }
+        .status-progress { background: #3498db; color: white; }
+
+        .feature-text {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .notes-section {
+            margin-top: 20px;
+        }
+
+        .notes-textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 15px;
+            border: 2px solid #ecf0f1;
+            border-radius: 10px;
+            font-family: inherit;
+            resize: vertical;
+        }
+
+        .notes-textarea:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .issues-section {
+            margin-top: 30px;
+        }
+
+        .issue-priority {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .priority-critical { background: #e74c3c; color: white; }
+        .priority-high { background: #f39c12; color: white; }
+        .priority-medium { background: #f1c40f; color: #2c3e50; }
+        .priority-low { background: #95a5a6; color: white; }
+
+        .save-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 15px 30px;
+            background: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(46, 204, 113, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .save-btn:hover {
+            background: #27ae60;
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(46, 204, 113, 0.4);
+        }
+
+        .export-btn {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            padding: 12px 25px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(52, 152, 219, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .export-btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1em;
+            border: 2px solid #ecf0f1;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2em; }
+            .header-info { grid-template-columns: 1fr; }
+            .status-overview { grid-template-columns: 1fr; }
+            .feature-list { grid-template-columns: 1fr; }
+            .tabs { flex-direction: column; }
+            .save-btn, .export-btn { position: static; margin: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎓 Madrasti 2.0 Testing Progress</h1>
+            <div class="header-info">
+                <div class="info-card">
+                    <h3>Testing Started</h3>
+                    <p id="start-date">September 5, 2025</p>
+                </div>
+                <div class="info-card">
+                    <h3>Last Updated</h3>
+                    <p id="last-updated">Not started</p>
+                </div>
+                <div class="info-card">
+                    <h3>Current Tester</h3>
+                    <p contenteditable="true" id="current-tester">Your Name</p>
+                </div>
+                <div class="info-card">
+                    <h3>Environment</h3>
+                    <p contenteditable="true" id="environment">Development</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- Status Overview -->
+            <div class="status-overview">
+                <div class="status-card overall">
+                    <h3>📊 Overall Progress</h3>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="overall-progress"></div>
+                    </div>
+                    <p><span id="completed-count">0</span> of <span id="total-count">500</span> features (<span id="progress-percent">0%</span>)</p>
+                </div>
+                
+                <div class="status-card current">
+                    <h3>🎯 Current Phase</h3>
+                    <p contenteditable="true" id="current-phase">Authentication & Authorization Testing</p>
+                    <p><small>Focus: <span contenteditable="true" id="current-focus">User login and role-based access</span></small></p>
+                </div>
+                
+                <div class="status-card issues">
+                    <h3>🐛 Active Issues</h3>
+                    <p>
+                        <span id="critical-count" style="color: #e74c3c;">0</span> Critical | 
+                        <span id="high-count" style="color: #f39c12;">0</span> High | 
+                        <span id="medium-count" style="color: #f1c40f;">0</span> Medium | 
+                        <span id="low-count" style="color: #95a5a6;">0</span> Low
+                    </p>
+                </div>
+            </div>
+
+            <!-- Search -->
+            <input type="text" class="search-box" id="search-box" placeholder="🔍 Search features...">
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab active" onclick="showTab('auth')">🔐 Authentication (20)</button>
+                <button class="tab" onclick="showTab('admin')">👑 Admin (50+)</button>
+                <button class="tab" onclick="showTab('teacher')">🍎 Teacher (40+)</button>
+                <button class="tab" onclick="showTab('student')">🎓 Student (30+)</button>
+                <button class="tab" onclick="showTab('parent')">👨‍👩‍👧‍👦 Parent (25+)</button>
+                <button class="tab" onclick="showTab('staff')">💼 Staff (15+)</button>
+                <button class="tab" onclick="showTab('other')">📱 Other Features (25+)</button>
+                <button class="tab" onclick="showTab('issues')">🐛 Issues</button>
+                <button class="tab" onclick="showTab('session')">📝 Current Session</button>
+            </div>
+
+            <!-- Authentication Tab -->
+            <div class="tab-content active" id="auth-tab">
+                <div class="feature-section">
+                    <div class="section-title">🔐 Basic Authentication Flow</div>
+                    <div class="feature-list" id="auth-basic-features">
+                        <!-- Features will be populated by JavaScript -->
+                    </div>
+                </div>
+                
+                <div class="feature-section">
+                    <div class="section-title">🛡️ Permission System</div>
+                    <div class="feature-list" id="auth-permission-features">
+                        <!-- Features will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <div class="notes-section">
+                    <h3>📝 Authentication Testing Notes</h3>
+                    <textarea class="notes-textarea" id="auth-notes" placeholder="Add your observations about authentication testing here..."></textarea>
+                </div>
+            </div>
+
+            <!-- Admin Tab -->
+            <div class="tab-content" id="admin-tab">
+                <div class="feature-section">
+                    <div class="section-title">🏫 School Configuration Management</div>
+                    <div class="feature-list" id="admin-school-features"></div>
+                </div>
+                
+                <div class="feature-section">
+                    <div class="section-title">👥 User Management System</div>
+                    <div class="feature-list" id="admin-user-features"></div>
+                </div>
+
+                <div class="feature-section">
+                    <div class="section-title">🎓 Academic Structure Management</div>
+                    <div class="feature-list" id="admin-academic-features"></div>
+                </div>
+
+                <div class="notes-section">
+                    <h3>📝 Admin Testing Notes</h3>
+                    <textarea class="notes-textarea" id="admin-notes" placeholder="Add your observations about admin features testing here..."></textarea>
+                </div>
+            </div>
+
+            <!-- Teacher Tab -->
+            <div class="tab-content" id="teacher-tab">
+                <div class="feature-section">
+                    <div class="section-title">🏠 Teacher Dashboard & Daily Overview</div>
+                    <div class="feature-list" id="teacher-dashboard-features"></div>
+                </div>
+                
+                <div class="feature-section">
+                    <div class="section-title">📚 Lesson Management & Content Creation</div>
+                    <div class="feature-list" id="teacher-lesson-features"></div>
+                </div>
+
+                <div class="feature-section">
+                    <div class="section-title">📝 Assignment Creation & Management</div>
+                    <div class="feature-list" id="teacher-assignment-features"></div>
+                </div>
+
+                <div class="notes-section">
+                    <h3>📝 Teacher Testing Notes</h3>
+                    <textarea class="notes-textarea" id="teacher-notes" placeholder="Add your observations about teacher features testing here..."></textarea>
+                </div>
+            </div>
+
+            <!-- Student Tab -->
+            <div class="tab-content" id="student-tab">
+                <div class="feature-section">
+                    <div class="section-title">🎮 Student Dashboard & Gamification</div>
+                    <div class="feature-list" id="student-dashboard-features"></div>
+                </div>
+                
+                <div class="feature-section">
+                    <div class="section-title">📚 Lesson Access & Learning Materials</div>
+                    <div class="feature-list" id="student-lesson-features"></div>
+                </div>
+
+                <div class="notes-section">
+                    <h3>📝 Student Testing Notes</h3>
+                    <textarea class="notes-textarea" id="student-notes" placeholder="Add your observations about student features testing here..."></textarea>
+                </div>
+            </div>
+
+            <!-- Parent Tab -->
+            <div class="tab-content" id="parent-tab">
+                <div class="feature-section">
+                    <div class="section-title">👨‍👩‍👧‍👦 Multi-Child Management Dashboard</div>
+                    <div class="feature-list" id="parent-dashboard-features"></div>
+                </div>
+
+                <div class="notes-section">
+                    <h3>📝 Parent Testing Notes</h3>
+                    <textarea class="notes-textarea" id="parent-notes" placeholder="Add your observations about parent features testing here..."></textarea>
+                </div>
+            </div>
+
+            <!-- Staff Tab -->
+            <div class="tab-content" id="staff-tab">
+                <div class="feature-section">
+                    <div class="section-title">🏢 Administrative Operations</div>
+                    <div class="feature-list" id="staff-admin-features"></div>
+                </div>
+
+                <div class="notes-section">
+                    <h3>📝 Staff Testing Notes</h3>
+                    <textarea class="notes-textarea" id="staff-notes" placeholder="Add your observations about staff features testing here..."></textarea>
+                </div>
+            </div>
+
+            <!-- Other Features Tab -->
+            <div class="tab-content" id="other-tab">
+                <div class="feature-section">
+                    <div class="section-title">📁 File Upload & Storage</div>
+                    <div class="feature-list" id="other-file-features"></div>
+                </div>
+
+                <div class="feature-section">
+                    <div class="section-title">📱 PWA Features</div>
+                    <div class="feature-list" id="other-pwa-features"></div>
+                </div>
+
+                <div class="notes-section">
+                    <h3>📝 Other Features Testing Notes</h3>
+                    <textarea class="notes-textarea" id="other-notes" placeholder="Add your observations about file upload, PWA, and other features here..."></textarea>
+                </div>
+            </div>
+
+            <!-- Issues Tab -->
+            <div class="tab-content" id="issues-tab">
+                <div class="issues-section">
+                    <div class="issue-priority priority-critical">
+                        <span>🔴 Critical Issues</span>
+                        <span id="critical-issues-count">0</span>
+                    </div>
+                    <div id="critical-issues-list" contenteditable="true" style="margin-left: 20px; min-height: 50px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                        Click to add critical issues...
+                    </div>
+
+                    <div class="issue-priority priority-high">
+                        <span>🟠 High Priority Issues</span>
+                        <span id="high-issues-count">0</span>
+                    </div>
+                    <div id="high-issues-list" contenteditable="true" style="margin-left: 20px; min-height: 50px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                        Click to add high priority issues...
+                    </div>
+
+                    <div class="issue-priority priority-medium">
+                        <span>🟡 Medium Priority Issues</span>
+                        <span id="medium-issues-count">0</span>
+                    </div>
+                    <div id="medium-issues-list" contenteditable="true" style="margin-left: 20px; min-height: 50px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                        Click to add medium priority issues...
+                    </div>
+
+                    <div class="issue-priority priority-low">
+                        <span>🔵 Low Priority Issues</span>
+                        <span id="low-issues-count">0</span>
+                    </div>
+                    <div id="low-issues-list" contenteditable="true" style="margin-left: 20px; min-height: 50px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                        Click to add low priority issues...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Session Tab -->
+            <div class="tab-content" id="session-tab">
+                <div class="feature-section">
+                    <div class="section-title">📅 Current Testing Session</div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 20px;">
+                        <div>
+                            <strong>Session Date:</strong>
+                            <p contenteditable="true" id="session-date" style="padding: 10px; background: #f8f9fa; border-radius: 5px; margin-top: 5px;">Click to update</p>
+                        </div>
+                        <div>
+                            <strong>Duration:</strong>
+                            <p contenteditable="true" id="session-duration" style="padding: 10px; background: #f8f9fa; border-radius: 5px; margin-top: 5px;">Click to update</p>
+                        </div>
+                        <div>
+                            <strong>Browser/Device:</strong>
+                            <p contenteditable="true" id="session-browser" style="padding: 10px; background: #f8f9fa; border-radius: 5px; margin-top: 5px;">Click to update</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <strong>Today's Testing Focus:</strong>
+                        <div contenteditable="true" id="session-focus" style="margin-top: 10px; padding: 15px; background: #f8f9fa; border-radius: 10px; min-height: 100px;">
+                            Click to describe what you're testing today...
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 20px;">
+                        <strong>Session Results:</strong>
+                        <div contenteditable="true" id="session-results" style="margin-top: 10px; padding: 15px; background: #f8f9fa; border-radius: 10px; min-height: 150px;">
+                            ✅ Completed: [List successfully tested features]
+                            ❌ Failed: [List failed features with brief issue description]  
+                            ⚠️ Partial: [List partially working features]
+                            🔄 In Progress: [List features currently being tested]
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="export-btn" onclick="exportProgress()">📊 Export Progress</button>
+    <button class="save-btn" onclick="saveProgress()">💾 Save Progress</button>
+
+    <script>
+        // Feature definitions with descriptions
+        const features = {
+            authBasic: [
+                {
+                    title: 'User registration with email verification',
+                    description: 'Test creating new user accounts through the registration form. Verify that email validation works, required fields are enforced, and different user roles can be registered (if applicable).',
+                    steps: '1. Go to registration page\n2. Fill out form with valid/invalid data\n3. Submit and verify validation messages\n4. Check if user is created in database\n5. Test email verification flow (if implemented)'
+                },
+                {
+                    title: 'User login with email/password',
+                    description: 'Test the core login functionality using email and password. Verify that users can successfully authenticate with correct credentials and are rejected with incorrect ones.',
+                    steps: '1. Go to login page\n2. Try login with valid credentials for each role\n3. Try login with invalid email/password\n4. Verify appropriate error messages appear\n5. Check that successful login redirects to appropriate dashboard'
+                },
+                {
+                    title: 'JWT token generation and validation',
+                    description: 'Verify that JWT tokens are properly generated upon successful login and contain correct user information (role, permissions, etc.).',
+                    steps: '1. Login successfully\n2. Open browser dev tools → Application → Local Storage\n3. Check that access_token and refresh_token are stored\n4. Use jwt.io to decode token and verify payload\n5. Check token expiration times are correct'
+                },
+                {
+                    title: 'Token refresh mechanism',
+                    description: 'Test that expired access tokens are automatically refreshed using the refresh token, allowing uninterrupted use of the application.',
+                    steps: '1. Login and note token expiration\n2. Wait for token to expire or manually expire it\n3. Make an API request or navigate pages\n4. Verify token refresh happens automatically\n5. Check that user stays logged in'
+                },
+                {
+                    title: 'Automatic logout on token expiration',
+                    description: 'Verify that users are automatically logged out when their refresh token expires, and redirected to login page.',
+                    steps: '1. Login and manually expire both access and refresh tokens\n2. Try to navigate to protected pages\n3. Verify automatic redirect to login\n4. Check that user data is cleared from storage\n5. Verify appropriate logout message is shown'
+                },
+                {
+                    title: 'Role-based dashboard redirection after login',
+                    description: 'Test that users are automatically redirected to their appropriate dashboard based on their role (Admin→Admin Dashboard, Teacher→Teacher Dashboard, etc.).',
+                    steps: '1. Login with Admin credentials → verify redirect to /admin\n2. Login with Teacher credentials → verify redirect to /teacher\n3. Login with Student credentials → verify redirect to /student\n4. Login with Parent credentials → verify redirect to /parent\n5. Test each role has different dashboard content'
+                },
+                {
+                    title: 'Profile picture upload via Cloudinary',
+                    description: 'Test that users can upload and update their profile pictures, with files being stored on Cloudinary and properly displayed.',
+                    steps: '1. Go to profile settings\n2. Upload image file (JPG/PNG)\n3. Verify image appears in UI immediately\n4. Check network tab for Cloudinary upload\n5. Refresh page and verify image persists\n6. Test file size/type restrictions'
+                },
+                {
+                    title: 'Password reset functionality',
+                    description: 'Test the password reset workflow including email sending and password update process.',
+                    steps: '1. Go to login page and click "Forgot Password"\n2. Enter email address and submit\n3. Check for reset email (or verify API call)\n4. Follow reset link and enter new password\n5. Try logging in with new password\n6. Verify old password no longer works'
+                },
+                {
+                    title: 'Multi-language login interface (Arabic RTL, French, English)',
+                    description: 'Verify that the login interface works correctly in all supported languages, with proper RTL layout for Arabic.',
+                    steps: '1. Switch to Arabic → verify RTL layout and Arabic text\n2. Switch to French → verify French translations\n3. Switch to English → verify English text\n4. Test form validation messages in each language\n5. Verify language preference persists after refresh'
+                },
+                {
+                    title: 'Responsive login design across devices',
+                    description: 'Test that the login interface looks and works correctly on desktop, tablet, and mobile devices.',
+                    steps: '1. Test on desktop (1920x1080)\n2. Test on tablet (768px width)\n3. Test on mobile (320px width)\n4. Verify form elements are properly sized\n5. Test touch interactions on mobile\n6. Verify no horizontal scrolling needed'
+                }
+            ],
+            authPermission: [
+                {
+                    title: 'Role-based route protection in frontend',
+                    description: 'Test that users can only access pages appropriate for their role. Students cannot access teacher pages, teachers cannot access admin pages, etc.',
+                    steps: '1. Login as Student and try to access /admin, /teacher URLs\n2. Login as Teacher and try to access /admin URL\n3. Verify proper "Access Denied" messages\n4. Check that navigation menu only shows allowed items\n5. Test direct URL access attempts are blocked'
+                },
+                {
+                    title: 'API endpoint access control per role',
+                    description: 'Verify that API endpoints properly restrict access based on user roles and return appropriate error codes for unauthorized access.',
+                    steps: '1. Login as Student and try teacher-only API calls\n2. Use Postman/dev tools to make unauthorized requests\n3. Verify 403 Forbidden responses for restricted endpoints\n4. Check that error messages are clear and helpful\n5. Test with expired/invalid tokens'
+                },
+                {
+                    title: 'Object-level permissions (users can only access their data)',
+                    description: 'Test that users can only view and modify their own data, not other users\' information.',
+                    steps: '1. Login as Student A and note their assignment IDs\n2. Try to access Student B\'s assignments via URL/API\n3. Verify access is denied\n4. Test with teachers accessing other teachers\' classes\n5. Test parents can only see their own children\'s data'
+                },
+                {
+                    title: 'Admin-only operations restricted properly',
+                    description: 'Verify that administrative functions like user management, school settings are only accessible to admin users.',
+                    steps: '1. Login as non-admin user\n2. Try to access user management pages\n3. Try to modify school settings\n4. Attempt to create/delete users via API\n5. Verify all admin operations are blocked\n6. Check UI hides admin-only buttons/menus'
+                },
+                {
+                    title: 'Teacher-specific assignment ownership validation',
+                    description: 'Test that teachers can only manage assignments they created and classes they are assigned to teach.',
+                    steps: '1. Login as Teacher A\n2. Create an assignment\n3. Login as Teacher B\n4. Try to modify Teacher A\'s assignment\n5. Verify access denied\n6. Test attendance taking permissions for assigned classes only'
+                },
+                {
+                    title: 'Parent-child relationship verification',
+                    description: 'Test that parents can only access information about their own children, not other students.',
+                    steps: '1. Login as Parent A\n2. Note their child\'s student ID\n3. Try to access another student\'s grades/attendance\n4. Verify access denied\n5. Test API endpoints with different student IDs\n6. Check that child selector only shows their children'
+                },
+                {
+                    title: 'Unauthorized access attempts handled gracefully',
+                    description: 'Test that the system properly handles and displays user-friendly messages when unauthorized access is attempted.',
+                    steps: '1. Try accessing protected pages without login\n2. Try API calls with expired tokens\n3. Verify redirect to login for unauthenticated users\n4. Check error messages are user-friendly\n5. Verify no sensitive information is leaked in errors'
+                },
+                {
+                    title: 'Session timeout handling',
+                    description: 'Test that user sessions properly timeout after inactivity and require re-authentication.',
+                    steps: '1. Login and remain inactive for configured timeout period\n2. Try to perform actions after timeout\n3. Verify automatic logout and redirect to login\n4. Test that session timeout warning appears (if implemented)\n5. Check that resuming activity extends session'
+                },
+                {
+                    title: 'Concurrent session management',
+                    description: 'Test how the system handles multiple simultaneous sessions from the same user account.',
+                    steps: '1. Login on one browser/device\n2. Login with same credentials on another browser\n3. Check if first session is invalidated or both remain active\n4. Test actions from both sessions\n5. Verify expected behavior matches security requirements'
+                },
+                {
+                    title: 'Security headers and CSRF protection',
+                    description: 'Verify that proper security headers are set and CSRF protection is implemented.',
+                    steps: '1. Open dev tools → Network tab\n2. Check response headers for security headers\n3. Look for X-Frame-Options, X-Content-Type-Options, etc.\n4. Test form submissions include CSRF tokens\n5. Try making requests without proper headers'
+                }
+            ],
+            adminSchool: [
+                {
+                    title: 'View school settings',
+                    description: 'Test that admins can access and view current school configuration including basic info, contact details, and system settings.',
+                    steps: '1. Login as admin\n2. Navigate to School Settings page\n3. Verify all school information is displayed\n4. Check that settings are properly organized\n5. Test that non-admins cannot access this page'
+                },
+                {
+                    title: 'Update school basic information',
+                    description: 'Test that admins can modify school name, address, contact information and save changes successfully.',
+                    steps: '1. Go to school settings\n2. Modify school name, address, phone, email\n3. Save changes and verify success message\n4. Refresh page and confirm changes persist\n5. Test validation for required fields\n6. Test multilingual name updates'
+                },
+                {
+                    title: 'Upload and manage school logo',
+                    description: 'Test uploading school logo via Cloudinary and verify it appears throughout the system.',
+                    steps: '1. Go to school settings\n2. Upload new logo image file\n3. Verify upload progress and success\n4. Check logo appears in header/navigation\n5. Test file size and format restrictions\n6. Test logo removal functionality'
+                },
+                {
+                    title: 'Set current academic year',
+                    description: 'Test setting and changing the current academic year, affecting system-wide academic year references.',
+                    steps: '1. Go to academic year settings\n2. Create new academic year if needed\n3. Set as current academic year\n4. Verify system-wide references update\n5. Test impact on class enrollments\n6. Test year transition workflow'
+                },
+                {
+                    title: 'Configure school director assignment',
+                    description: 'Test assigning a user as school director and verify their elevated permissions.',
+                    steps: '1. Go to school settings\n2. Select a user as director\n3. Save and verify assignment\n4. Test director\'s access to admin functions\n5. Test changing director assignment\n6. Verify director appears in school info'
+                },
+                {
+                    title: 'Manage school capacity',
+                    description: 'Test setting and updating total school capacity and verify enrollment limits are enforced.',
+                    steps: '1. Set total school capacity\n2. Try enrolling students beyond capacity\n3. Verify enrollment restrictions\n4. Test capacity warnings and alerts\n5. Update capacity and test new limits'
+                },
+                {
+                    title: 'Multi-language school information',
+                    description: 'Test that school information can be entered and displayed in Arabic, French, and English.',
+                    steps: '1. Add school name in Arabic, French, English\n2. Switch language and verify correct names display\n3. Test address and description translations\n4. Verify RTL layout for Arabic content\n5. Test missing translation fallbacks'
+                }
+            ],
+            adminUser: [
+                {
+                    title: 'View all users with role-based filtering',
+                    description: 'Test the user management interface showing all users with ability to filter by role, status, and other criteria.',
+                    steps: '1. Go to user management page\n2. Verify all users are listed\n3. Test role filter (Admin, Teacher, Student, Parent)\n4. Test status filter (Active, Inactive)\n5. Test search by name/email\n6. Verify pagination works correctly'
+                },
+                {
+                    title: 'Create new user accounts for all roles',
+                    description: 'Test creating user accounts for each role type (Admin, Teacher, Student, Parent, Staff, Driver) with proper validation.',
+                    steps: '1. Click "Create User" button\n2. Test creating Admin account\n3. Test creating Teacher account\n4. Test creating Student account with enrollment\n5. Test creating Parent account with child linking\n6. Verify role-specific fields appear\n7. Test form validation and error handling'
+                },
+                {
+                    title: 'Update user profiles and contact information',
+                    description: 'Test editing existing user accounts, updating personal information, and contact details.',
+                    steps: '1. Select existing user from list\n2. Modify name, email, phone, address\n3. Update role-specific information\n4. Save changes and verify success\n5. Test validation of email uniqueness\n6. Verify changes appear in user list'
+                },
+                {
+                    title: 'Deactivate/reactivate user accounts',
+                    description: 'Test disabling and re-enabling user accounts while preserving data.',
+                    steps: '1. Select active user account\n2. Deactivate account\n3. Verify user cannot login\n4. Check data is preserved\n5. Reactivate account\n6. Verify user can login again\n7. Test bulk activation/deactivation'
+                },
+                {
+                    title: 'Reset user passwords',
+                    description: 'Test admin ability to reset passwords for any user account.',
+                    steps: '1. Select user account\n2. Click "Reset Password"\n3. Verify reset email is sent (or temporary password generated)\n4. Test user can login with new credentials\n5. Verify old password no longer works\n6. Test bulk password reset'
+                },
+                {
+                    title: 'Assign and modify user roles',
+                    description: 'Test changing user roles and verify appropriate permissions are granted/removed.',
+                    steps: '1. Select user with current role\n2. Change to different role\n3. Verify permissions change immediately\n4. Test access to role-specific features\n5. Check dashboard changes to match new role\n6. Test role change validation rules'
+                },
+                {
+                    title: 'Bulk user operations',
+                    description: 'Test performing operations on multiple users simultaneously (activation, role changes, etc.).',
+                    steps: '1. Select multiple users with checkboxes\n2. Test bulk status change (activate/deactivate)\n3. Test bulk role assignment\n4. Test bulk delete (if implemented)\n5. Verify all selected users are affected\n6. Test operation confirmation dialogs'
+                },
+                {
+                    title: 'View user activity logs',
+                    description: 'Test viewing user login history, activity logs, and system interactions.',
+                    steps: '1. Select user account\n2. View activity/audit log\n3. Check login history with timestamps\n4. Verify recent actions are logged\n5. Test filtering by date range\n6. Test export of activity data'
+                }
+            ],
+            adminAcademic: [
+                {
+                    title: 'Create educational levels',
+                    description: 'Test creating different educational levels (Primary, Middle, High School) that organize the school\'s grade structure.',
+                    steps: '1. Go to Academic Structure settings\n2. Create new educational level\n3. Set level name in multiple languages\n4. Define age ranges and requirements\n5. Save and verify level appears in system'
+                },
+                {
+                    title: 'Manage grade levels within educational levels',
+                    description: 'Test creating and managing individual grades within each educational level (1st Grade, 2nd Grade, etc.).',
+                    steps: '1. Select an educational level\n2. Add grades within that level\n3. Set grade order and requirements\n4. Test grade naming in multiple languages\n5. Verify grades appear in class creation'
+                },
+                {
+                    title: 'Create and assign school classes',
+                    description: 'Test creating individual class sections and assigning them to academic years and teachers.',
+                    steps: '1. Go to Class Management\n2. Create new class with grade and section\n3. Assign to current academic year\n4. Set class capacity\n5. Assign class teacher\n6. Verify class appears in teacher dashboard'
+                },
+                {
+                    title: 'Set class capacity limits',
+                    description: 'Test setting maximum student limits for classes and verify enrollment restrictions.',
+                    steps: '1. Edit class settings\n2. Set maximum capacity\n3. Try enrolling students beyond limit\n4. Verify enrollment is blocked\n5. Test capacity warnings and alerts'
+                },
+                {
+                    title: 'Assign class teachers',
+                    description: 'Test assigning teachers to specific classes and verify their access to class management features.',
+                    steps: '1. Select a class\n2. Assign teacher from available list\n3. Login as assigned teacher\n4. Verify teacher can access class roster\n5. Test teacher can take attendance\n6. Change teacher assignment and retest'
+                },
+                {
+                    title: 'View class enrollment statistics',
+                    description: 'Test viewing enrollment numbers, capacity utilization, and class demographics.',
+                    steps: '1. Go to enrollment overview\n2. Check student count per class\n3. View capacity utilization percentages\n4. Check demographic breakdowns\n5. Test filtering by academic year/grade\n6. Export enrollment reports'
+                },
+                {
+                    title: 'Transfer students between classes',
+                    description: 'Test moving students from one class to another while maintaining academic history.',
+                    steps: '1. Select student to transfer\n2. Choose destination class\n3. Confirm transfer\n4. Verify student appears in new class roster\n5. Check academic history is preserved\n6. Test teacher access to transferred student'
+                },
+                {
+                    title: 'Archive inactive classes',
+                    description: 'Test archiving old classes while preserving historical data and academic records.',
+                    steps: '1. Select completed/old classes\n2. Archive classes\n3. Verify classes removed from active lists\n4. Check historical data is preserved\n5. Test accessing archived class reports\n6. Verify students can still view past grades'
+                }
+            ],
+            teacherDashboard: [
+                {
+                    title: "Today's schedule display",
+                    description: 'Test that teachers see their current day class schedule with session times, subjects, and rooms.',
+                    steps: '1. Login as teacher\n2. Check dashboard shows today\'s sessions\n3. Verify correct times, subjects, classes\n4. Test navigation to different days\n5. Check upcoming session highlighting'
+                },
+                {
+                    title: 'Quick attendance taking',
+                    description: 'Test the quick attendance feature allowing teachers to mark attendance directly from dashboard.',
+                    steps: '1. Find current/upcoming session on dashboard\n2. Click "Take Attendance" button\n3. Verify student list loads\n4. Mark attendance quickly\n5. Submit and verify success'
+                },
+                {
+                    title: 'Pending assignment grading',
+                    description: 'Test that teachers see assignments requiring grading with priority indicators.',
+                    steps: '1. Check dashboard for pending assignments\n2. Verify submission counts are accurate\n3. Click to access grading interface\n4. Test sorting by due date/priority\n5. Mark assignments as graded'
+                },
+                {
+                    title: 'Student absence alerts',
+                    description: 'Test that teachers receive notifications about student absences requiring attention.',
+                    steps: '1. Mark student as absent in attendance\n2. Check if absence alert appears on dashboard\n3. Test alert priority levels\n4. Click alert to access absence details\n5. Test clearing alerts after follow-up'
+                },
+                {
+                    title: 'Class performance overview',
+                    description: 'Test dashboard widgets showing class performance metrics and trends.',
+                    steps: '1. View class performance widgets\n2. Check average grades by subject\n3. View attendance rates\n4. Test performance trend charts\n5. Click for detailed class analytics'
+                },
+                {
+                    title: 'Teaching resource shortcuts',
+                    description: 'Test quick access to frequently used teaching tools and resources.',
+                    steps: '1. Check resource shortcut buttons\n2. Test quick access to lesson materials\n3. Access assignment creation\n4. Test gradebook shortcuts\n5. Verify all links work correctly'
+                },
+                {
+                    title: 'Personal teaching calendar',
+                    description: 'Test teacher\'s personal calendar showing classes, meetings, and important dates.',
+                    steps: '1. View teaching calendar\n2. Check class sessions are displayed\n3. Add personal events/reminders\n4. Test calendar navigation\n5. Export calendar if available'
+                }
+            ],
+            teacherLesson: [
+                {
+                    title: 'Create new lessons with rich editor',
+                    description: 'Test creating lessons using the rich text editor with multimedia support, formatting options, and content organization.',
+                    steps: '1. Go to Lesson Creation page\n2. Enter lesson title in Arabic, French, English\n3. Use rich editor to add formatted text\n4. Insert images, videos, links\n5. Add mathematical formulas (if supported)\n6. Preview lesson content\n7. Save as draft or publish\n8. Verify all content displays correctly'
+                },
+                {
+                    title: 'Organize lessons by subject',
+                    description: 'Test organizing lessons into subject categories and grade levels for better curriculum management.',
+                    steps: '1. Create lessons for different subjects\n2. Assign lessons to specific subjects\n3. Set grade level appropriateness\n4. Test filtering lessons by subject\n5. Verify subject-based lesson organization\n6. Test cross-subject lesson references'
+                },
+                {
+                    title: 'Upload lesson resources',
+                    description: 'Test uploading various file types as lesson attachments including PDFs, videos, presentations, and documents.',
+                    steps: '1. Open lesson editor\n2. Upload PDF document\n3. Upload video file (MP4)\n4. Upload presentation (PPT/PDF)\n5. Upload Word document\n6. Upload image files\n7. Test file preview functionality\n8. Verify all files are accessible to students\n9. Test file download functionality'
+                },
+                {
+                    title: 'Set lesson difficulty levels',
+                    description: 'Test assigning difficulty levels (Easy, Medium, Hard) to lessons and verify appropriate student access.',
+                    steps: '1. Create lesson and set difficulty to Easy\n2. Create lesson and set difficulty to Medium\n3. Create lesson and set difficulty to Hard\n4. Test student access based on their level\n5. Verify difficulty indicators display correctly\n6. Test filtering lessons by difficulty'
+                },
+                {
+                    title: 'Lesson tagging system',
+                    description: 'Test adding tags to lessons for better categorization and searchability.',
+                    steps: '1. Create new lesson\n2. Add relevant tags (topics, skills, etc.)\n3. Create custom tags if needed\n4. Test searching lessons by tags\n5. Test filtering lessons by multiple tags\n6. Verify tag suggestions work\n7. Test removing tags from lessons'
+                },
+                {
+                    title: 'Duplicate and modify lessons',
+                    description: 'Test copying existing lessons and modifying them for different classes or academic years.',
+                    steps: '1. Select existing lesson\n2. Click duplicate/copy button\n3. Modify title and content\n4. Change target class/grade\n5. Update resources if needed\n6. Save duplicated lesson\n7. Verify both original and copy exist\n8. Test modifications don\'t affect original'
+                },
+                {
+                    title: 'Lesson sharing with colleagues',
+                    description: 'Test sharing lessons with other teachers and collaborative editing capabilities.',
+                    steps: '1. Create a lesson\n2. Share with another teacher\n3. Set sharing permissions (view/edit)\n4. Login as shared teacher\n5. Verify lesson access\n6. Test collaborative editing (if supported)\n7. Test permission restrictions\n8. Test unsharing lessons'
+                },
+                {
+                    title: 'Student access control',
+                    description: 'Test controlling which students can access specific lessons based on class, grade, or individual assignments.',
+                    steps: '1. Create lesson with class restrictions\n2. Test access by students in target class\n3. Test access by students not in class\n4. Create lesson with individual student access\n5. Test private vs public lesson access\n6. Test access date restrictions\n7. Verify proper access denied messages'
+                },
+                {
+                    title: 'Lesson analytics',
+                    description: 'Test viewing lesson engagement metrics including views, completion rates, and student feedback.',
+                    steps: '1. Publish lesson to students\n2. Have students access the lesson\n3. View lesson analytics dashboard\n4. Check view counts and duration\n5. Check completion rates\n6. View student engagement metrics\n7. Test analytics filtering by date\n8. Export analytics data'
+                },
+                {
+                    title: 'Resource library management',
+                    description: 'Test managing a library of reusable teaching resources across multiple lessons.',
+                    steps: '1. Upload resources to library\n2. Organize resources by categories\n3. Search resources by name/type\n4. Attach library resources to lessons\n5. Update resources and verify lesson updates\n6. Delete resources and check lesson impacts\n7. Test resource versioning (if supported)'
+                }
+            ],
+            teacherAssignment: [
+                {
+                    title: 'Assignment builder with multiple question types',
+                    description: 'Test creating assignments with various question types: QCM single/multiple choice, true/false, fill-in-blank, open questions, matching, and ordering.',
+                    steps: '1. Go to Assignment Creation\n2. Add QCM single choice question\n3. Add QCM multiple choice question\n4. Add true/false question\n5. Add fill-in-blank question\n6. Add short/long open questions\n7. Add matching question\n8. Add ordering question\n9. Preview assignment\n10. Test all question types work correctly'
+                },
+                {
+                    title: 'Book exercise integration',
+                    description: 'Test linking assignments to textbook exercises and allowing students to submit photos of their work.',
+                    steps: '1. Create assignment with book exercises\n2. Reference textbook pages\n3. Set up photo submission requirements\n4. Test as student: upload exercise photos\n5. Verify photos are stored correctly\n6. Test teacher review of photo submissions'
+                },
+                {
+                    title: 'Assignment settings configuration',
+                    description: 'Test configuring assignment parameters including time limits, attempts allowed, due dates, and grading settings.',
+                    steps: '1. Create new assignment\n2. Set time limit (e.g., 60 minutes)\n3. Configure number of attempts allowed\n4. Set due date and time\n5. Enable/disable late submissions\n6. Configure automatic grading settings\n7. Set point values for questions\n8. Test settings validation and save'
+                },
+                {
+                    title: 'Class and student targeting',
+                    description: 'Test assigning assignments to specific classes or individual students with different parameters.',
+                    steps: '1. Create assignment\n2. Assign to entire class\n3. Test selective student assignment\n4. Set different due dates for different students\n5. Test individual student exceptions\n6. Verify only targeted students can see assignment\n7. Test assignment visibility in student dashboards'
+                },
+                {
+                    title: 'Assignment preview and testing',
+                    description: 'Test the assignment preview functionality allowing teachers to test assignments before publishing.',
+                    steps: '1. Create assignment with multiple question types\n2. Use "Preview Assignment" feature\n3. Complete assignment as if you were a student\n4. Test all question types work correctly\n5. Verify auto-grading calculations\n6. Check time limits and navigation\n7. Test submission process\n8. Make corrections before publishing'
+                },
+                {
+                    title: 'Assignment duplication and templates',
+                    description: 'Test copying existing assignments and creating reusable templates for future use.',
+                    steps: '1. Select existing assignment\n2. Use "Duplicate" function\n3. Modify duplicated assignment\n4. Save as new assignment\n5. Create assignment template\n6. Use template to create new assignment\n7. Test template modifications\n8. Share templates with other teachers'
+                },
+                {
+                    title: 'Scheduled publishing',
+                    description: 'Test scheduling assignments to be automatically published at specific dates and times.',
+                    steps: '1. Create assignment\n2. Set publish date in future\n3. Set publish time\n4. Save scheduled assignment\n5. Verify students cannot see it before publish time\n6. Wait for publish time (or manually adjust time)\n7. Verify automatic publishing works\n8. Test notification to students upon publishing'
+                },
+                {
+                    title: 'Assignment analytics dashboard',
+                    description: 'Test viewing comprehensive analytics on assignment performance, completion rates, and student progress.',
+                    steps: '1. Publish assignment and wait for submissions\n2. Access assignment analytics\n3. View completion rates and averages\n4. Check time spent per student\n5. View question-level difficulty analysis\n6. Check student performance distribution\n7. Export analytics data\n8. Use insights to improve future assignments'
+                }
+            ],
+            studentDashboard: [
+                {
+                    title: 'Personal learning dashboard',
+                    description: 'Test student dashboard showing personalized learning progress, upcoming assignments, and gamification elements.',
+                    steps: '1. Login as student\n2. Check dashboard layout and widgets\n3. Verify upcoming assignments display\n4. Check recent grades and feedback\n5. Test quick access to lessons and homework\n6. Verify responsive design on mobile'
+                },
+                {
+                    title: 'Point and coin wallet display',
+                    description: 'Test the gamification wallet showing earned points, coins, and spending history with visual progress indicators.',
+                    steps: '1. View wallet section on dashboard\n2. Check current point/coin balance\n3. View transaction history\n4. Test point earning by completing assignments\n5. Check wallet updates in real-time\n6. Test spending points (if implemented)'
+                },
+                {
+                    title: 'Achievement badge showcase',
+                    description: 'Test display of earned badges with rarity indicators and badge requirements for unearned ones.',
+                    steps: '1. View badge collection\n2. Check earned badges display correctly\n3. View unearned badges with requirements\n4. Test badge rarity visual indicators\n5. Complete activity to earn new badge\n6. Verify badge unlock animations'
+                },
+                {
+                    title: 'Level progression tracking',
+                    description: 'Test student level system with experience points and progress visualization.',
+                    steps: '1. Check current student level\n2. View experience points progress\n3. See progress bar to next level\n4. Complete assignments to gain XP\n5. Test level up animations\n6. Verify level benefits are explained'
+                },
+                {
+                    title: 'Daily/weekly learning streaks',
+                    description: 'Test the streak system that tracks consecutive days/weeks of student learning activity.',
+                    steps: '1. Complete assignments on consecutive days\n2. Check daily streak counter increases\n3. Miss a day and verify streak resets\n4. Test weekly streak tracking\n5. Check streak rewards and bonuses\n6. Verify streak badges are awarded\n7. Test streak recovery challenges'
+                },
+                {
+                    title: 'Leaderboard participation',
+                    description: 'Test student participation in class, grade, and school-wide leaderboards with ranking systems.',
+                    steps: '1. Complete assignments to earn points\n2. Check position on class leaderboard\n3. View grade-level rankings\n4. Check school-wide leaderboard\n5. Test leaderboard filtering options\n6. Verify rank change notifications\n7. Test competitive challenges\n8. Check leaderboard privacy settings'
+                },
+                {
+                    title: 'Challenge participation',
+                    description: 'Test participation in special learning challenges and competitions with time-limited goals.',
+                    steps: '1. View available challenges\n2. Join a learning challenge\n3. Complete challenge requirements\n4. Track challenge progress\n5. Check challenge leaderboards\n6. Earn challenge-specific rewards\n7. Test challenge notifications\n8. View completed challenge history'
+                },
+                {
+                    title: 'Reward spending system',
+                    description: 'Test the virtual store where students can spend earned points/coins on rewards and benefits.',
+                    steps: '1. Access virtual store/marketplace\n2. Browse available rewards\n3. Check point/coin prices\n4. Purchase a reward item\n5. Verify points deducted correctly\n6. Check purchased items inventory\n7. Test reward activation/use\n8. View spending history'
+                }
+            ],
+            studentLesson: [
+                {
+                    title: 'Browse available lessons',
+                    description: 'Test student ability to browse and discover lessons by subject, grade, difficulty, and other criteria.',
+                    steps: '1. Access lesson library\n2. Filter lessons by subject\n3. Filter by difficulty level\n4. Sort by date/popularity\n5. Browse by grade level\n6. Check lesson thumbnails and descriptions\n7. Test pagination for large lesson lists\n8. Verify only accessible lessons are shown'
+                },
+                {
+                    title: 'Lesson content viewing',
+                    description: 'Test viewing lesson content including text, images, videos, and interactive elements.',
+                    steps: '1. Open a lesson\n2. Read text content with proper formatting\n3. View embedded images and videos\n4. Test video playback controls\n5. Navigate between lesson sections\n6. Test content zoom/font size options\n7. Check multilingual content display\n8. Test accessibility features'
+                },
+                {
+                    title: 'Download lesson resources',
+                    description: 'Test downloading lesson attachments and resources for offline study.',
+                    steps: '1. Open lesson with attachments\n2. View available downloadable resources\n3. Download PDF documents\n4. Download presentation files\n5. Test download progress indicators\n6. Verify downloaded files open correctly\n7. Test batch download of multiple resources\n8. Check download history/management'
+                },
+                {
+                    title: 'Lesson progress tracking',
+                    description: 'Test tracking of lesson completion progress and time spent studying.',
+                    steps: '1. Start reading a lesson\n2. Check progress indicator updates\n3. Pause and resume lesson\n4. Complete entire lesson\n5. Check completion status\n6. View time spent on lesson\n7. Check progress statistics\n8. Test progress syncing across devices'
+                },
+                {
+                    title: 'Bookmark favorite lessons',
+                    description: 'Test bookmarking lessons for quick access and creating personal study collections.',
+                    steps: '1. Browse lessons\n2. Bookmark a lesson\n3. Access bookmarked lessons list\n4. Create study collections\n5. Add lessons to collections\n6. Organize collections by subject\n7. Remove bookmarks\n8. Share collections (if supported)'
+                },
+                {
+                    title: 'Lesson rating and feedback',
+                    description: 'Test student ability to rate lessons and provide feedback for continuous improvement.',
+                    steps: '1. Complete a lesson\n2. Rate lesson (1-5 stars)\n3. Write text feedback/review\n4. Submit rating and feedback\n5. View own feedback history\n6. See average lesson ratings\n7. Read other student reviews (if enabled)\n8. Edit/update previous ratings'
+                },
+                {
+                    title: 'Search functionality',
+                    description: 'Test searching for lessons using keywords, topics, and advanced search filters.',
+                    steps: '1. Use basic keyword search\n2. Search by lesson title\n3. Search by content topics\n4. Use advanced search filters\n5. Search by teacher name\n6. Test search suggestions/autocomplete\n7. Save frequent searches\n8. Check search result relevance'
+                },
+                {
+                    title: 'Related lesson recommendations',
+                    description: 'Test the recommendation system that suggests related lessons based on current studies and interests.',
+                    steps: '1. Complete a lesson\n2. Check recommended lessons\n3. View "Students also studied" suggestions\n4. Test recommendation accuracy\n5. Follow recommended lesson\n6. Rate recommendation usefulness\n7. Check personalized recommendations\n8. Test recommendation notifications'
+                }
+            ],
+            parentDashboard: [
+                {
+                    title: 'Child selector interface',
+                    description: 'Test interface allowing parents with multiple children to switch between child views and access individual academic data.',
+                    steps: '1. Login as parent with multiple children\n2. Test child selector dropdown\n3. Switch between children\n4. Verify data updates for selected child\n5. Check all child names appear correctly\n6. Test with single child (selector should be hidden)'
+                },
+                {
+                    title: 'Overall family academic summary',
+                    description: 'Test comprehensive dashboard showing academic performance summary for all children in the family.',
+                    steps: '1. View family academic dashboard\n2. Check overall GPA/performance for each child\n3. Compare performance across subjects\n4. View recent assignments and grades\n5. Check attendance summaries\n6. Test performance trend analysis\n7. View upcoming assignments/tests\n8. Export family academic report'
+                },
+                {
+                    title: 'Comparative progress tracking',
+                    description: 'Test comparing academic progress between siblings and against class/grade averages.',
+                    steps: '1. Access progress comparison tools\n2. Compare children\'s performance\n3. View performance vs class average\n4. Check subject-specific comparisons\n5. View improvement trends over time\n6. Test anonymized peer comparisons\n7. Set improvement goals\n8. Track goal achievement progress'
+                },
+                {
+                    title: 'Unified notification center',
+                    description: 'Test centralized notification system for all children\'s school activities and communications.',
+                    steps: '1. Access notification center\n2. View notifications for all children\n3. Filter notifications by child\n4. Filter by notification type (grades, attendance, etc.)\n5. Mark notifications as read\n6. Set notification preferences\n7. Test real-time notification delivery\n8. Archive old notifications'
+                },
+                {
+                    title: 'Family calendar integration',
+                    description: 'Test unified calendar showing all children\'s academic events, assignments, and school activities.',
+                    steps: '1. View family academic calendar\n2. See all children\'s events in one view\n3. Check assignment due dates\n4. View school events and holidays\n5. Add personal family events\n6. Set reminders for important dates\n7. Export calendar to external apps\n8. Share calendar with family members'
+                },
+                {
+                    title: 'Emergency contact management',
+                    description: 'Test managing emergency contact information and communication preferences for family.',
+                    steps: '1. Access emergency contact settings\n2. Update contact information\n3. Set primary/secondary contacts\n4. Configure emergency notification methods\n5. Test emergency contact verification\n6. Set pickup authorization list\n7. Update medical information\n8. Test emergency contact notifications'
+                }
+            ],
+            staffAdmin: [
+                {
+                    title: 'Student enrollment processing',
+                    description: 'Test processing new student enrollments including documentation review and class assignment.',
+                    steps: '1. Access enrollment applications\n2. Review student application documents\n3. Verify required documentation\n4. Process enrollment approval/rejection\n5. Assign student to appropriate class\n6. Generate student ID and credentials\n7. Send enrollment confirmation to parents\n8. Update enrollment statistics'
+                },
+                {
+                    title: 'Academic record management',
+                    description: 'Test managing student academic records including transcripts, grades, and academic history.',
+                    steps: '1. Access student academic records\n2. View transcript and grade history\n3. Update academic information\n4. Generate official transcripts\n5. Handle grade corrections/appeals\n6. Manage academic probation status\n7. Process academic awards/recognition\n8. Archive graduated student records'
+                },
+                {
+                    title: 'Student transfer procedures',
+                    description: 'Test processing student transfers between schools including record transfers and documentation.',
+                    steps: '1. Receive transfer request\n2. Prepare transfer documentation\n3. Package academic records\n4. Coordinate with receiving school\n5. Process withdrawal procedures\n6. Update enrollment records\n7. Send transfer confirmation\n8. Archive transfer documentation'
+                },
+                {
+                    title: 'Disciplinary record maintenance',
+                    description: 'Test managing student disciplinary records and behavioral tracking systems.',
+                    steps: '1. Record disciplinary incidents\n2. Track behavioral interventions\n3. Generate disciplinary reports\n4. Coordinate with parents/guardians\n5. Monitor improvement progress\n6. Update disciplinary status\n7. Archive resolved cases\n8. Generate behavioral analytics'
+                },
+                {
+                    title: 'Document verification',
+                    description: 'Test verifying and managing student documentation including certificates, medical records, and legal documents.',
+                    steps: '1. Review submitted documents\n2. Verify document authenticity\n3. Check document expiration dates\n4. Request missing documentation\n5. Update document status\n6. Store documents securely\n7. Generate document checklists\n8. Send renewal reminders'
+                },
+                {
+                    title: 'Student information updates',
+                    description: 'Test updating student personal information, contact details, and emergency contacts.',
+                    steps: '1. Process information change requests\n2. Verify identity for updates\n3. Update student contact information\n4. Update emergency contact details\n5. Process address changes\n6. Update parent/guardian information\n7. Confirm updates with family\n8. Update system records across all modules'
+                }
+            ],
+            otherFile: [
+                {
+                    title: 'Profile picture uploads',
+                    description: 'Test uploading profile pictures with Cloudinary integration, including file validation and display.',
+                    steps: '1. Go to profile settings\n2. Click upload profile picture\n3. Select valid image file (JPG/PNG)\n4. Verify upload progress\n5. Check image appears immediately\n6. Test file size limits\n7. Test invalid file types\n8. Verify image optimization'
+                },
+                {
+                    title: 'Lesson resource uploads',
+                    description: 'Test uploading various educational resources to lessons including documents, presentations, videos, and images.',
+                    steps: '1. Create/edit lesson\n2. Upload PDF document\n3. Upload PowerPoint presentation\n4. Upload video file (MP4, AVI)\n5. Upload audio file (MP3)\n6. Upload image files (JPG, PNG)\n7. Test file preview functionality\n8. Verify students can access all resources\n9. Test batch upload of multiple files'
+                },
+                {
+                    title: 'Assignment file attachments',
+                    description: 'Test student file uploads for assignment submissions including documents, images, and project files.',
+                    steps: '1. Access assignment submission\n2. Upload Word document answer\n3. Upload PDF solution\n4. Upload image/photo of work\n5. Upload project files (multiple formats)\n6. Test file size validation\n7. Verify upload progress indicators\n8. Test teacher access to submitted files\n9. Test file download by teachers'
+                },
+                {
+                    title: 'Medical certificate uploads',
+                    description: 'Test uploading medical certificates and absence documentation through parent/student interfaces.',
+                    steps: '1. Access absence flag clearance\n2. Upload medical certificate image\n3. Upload doctor\'s note PDF\n4. Test file type validation (images/PDFs only)\n5. Add description/notes to upload\n6. Submit for staff review\n7. Test teacher/staff access to documents\n8. Verify approval/rejection workflow'
+                },
+                {
+                    title: 'Book exercise photo submissions',
+                    description: 'Test students taking and uploading photos of completed textbook exercises.',
+                    steps: '1. Access book exercise assignment\n2. Take photo using device camera\n3. Upload photo from device gallery\n4. Crop/adjust photo if needed\n5. Add exercise page reference\n6. Submit photo with exercise details\n7. Test photo quality validation\n8. Verify teacher review interface'
+                },
+                {
+                    title: 'File type validation',
+                    description: 'Test file type restrictions and validation across all upload interfaces.',
+                    steps: '1. Try uploading allowed file types\n2. Try uploading restricted file types\n3. Verify error messages for invalid types\n4. Test common file extensions (PDF, DOC, JPG, PNG, MP4)\n5. Test uncommon/dangerous file types\n6. Verify whitelist validation works\n7. Test MIME type validation\n8. Check file content validation'
+                },
+                {
+                    title: 'File size limits',
+                    description: 'Test file size restrictions and handling of large file uploads.',
+                    steps: '1. Upload files within size limits\n2. Try uploading oversized files\n3. Check file size error messages\n4. Test progress bars for large uploads\n5. Test upload cancellation\n6. Verify size limits vary by file type\n7. Test compression suggestions\n8. Check storage quota management'
+                },
+                {
+                    title: 'CDN delivery',
+                    description: 'Test Cloudinary CDN integration for fast, global file delivery and optimization.',
+                    steps: '1. Upload files and check Cloudinary URLs\n2. Test file access speed from different locations\n3. Verify automatic image optimization\n4. Test image resizing/transformation\n5. Check video streaming capabilities\n6. Test file caching behavior\n7. Verify SSL/security for file access\n8. Test backup/recovery procedures'
+                }
+            ],
+            otherPwa: [
+                {
+                    title: 'PWA installation prompt',
+                    description: 'Test the Progressive Web App installation prompt and native app-like experience.',
+                    steps: '1. Visit site on mobile browser\n2. Look for "Add to Home Screen" prompt\n3. Install the PWA\n4. Launch from home screen\n5. Verify app-like experience\n6. Test offline functionality\n7. Check push notifications work'
+                },
+                {
+                    title: 'Offline lesson access',
+                    description: 'Test accessing previously viewed lessons when device is offline.',
+                    steps: '1. View several lessons while online\n2. Disconnect from internet\n3. Try accessing previously viewed lessons\n4. Verify lesson content loads from cache\n5. Test image and video offline access\n6. Check offline indicators appear\n7. Test lesson progress tracking offline\n8. Reconnect and verify sync'
+                },
+                {
+                    title: 'Offline assignment completion',
+                    description: 'Test completing assignments while offline with sync when connection returns.',
+                    steps: '1. Start assignment while online\n2. Go offline during completion\n3. Complete assignment offline\n4. Verify answers are saved locally\n5. Test offline progress indicators\n6. Reconnect to internet\n7. Verify assignment syncs automatically\n8. Check submission confirmation'
+                },
+                {
+                    title: 'Background sync',
+                    description: 'Test background synchronization of data when device reconnects to internet.',
+                    steps: '1. Make changes while offline (grades, attendance, etc.)\n2. Queue multiple offline actions\n3. Reconnect to internet\n4. Verify background sync starts automatically\n5. Check sync progress indicators\n6. Verify all changes are synchronized\n7. Test conflict resolution\n8. Check sync status notifications'
+                },
+                {
+                    title: 'Push notifications',
+                    description: 'Test browser push notifications for grades, attendance alerts, and school announcements.',
+                    steps: '1. Enable push notifications in browser\n2. Test assignment grade notifications\n3. Test attendance absence alerts\n4. Test school announcement notifications\n5. Verify notification actions work\n6. Test notification persistence\n7. Check notification history\n8. Test unsubscribe functionality'
+                },
+                {
+                    title: 'Mobile-optimized interface',
+                    description: 'Test mobile-specific interface optimizations and touch interactions.',
+                    steps: '1. Access site on mobile device\n2. Test touch-friendly button sizes\n3. Verify mobile navigation menu\n4. Test swipe gestures\n5. Check mobile form interactions\n6. Test mobile-specific layouts\n7. Verify modal/popup mobile behavior\n8. Test landscape/portrait orientation'
+                },
+                {
+                    title: 'Responsive design',
+                    description: 'Test responsive layout adaptation across different screen sizes and devices.',
+                    steps: '1. Test on desktop (1920x1080)\n2. Test on laptop (1366x768)\n3. Test on tablet (1024x768)\n4. Test on large phone (414x896)\n5. Test on small phone (320x568)\n6. Check element scaling and layout\n7. Test navigation menu adaptation\n8. Verify text readability at all sizes'
+                },
+                {
+                    title: 'App-like navigation',
+                    description: 'Test navigation patterns that provide native app-like user experience.',
+                    steps: '1. Test smooth page transitions\n2. Check navigation timing and animations\n3. Test back button behavior\n4. Verify URL routing works properly\n5. Test deep linking functionality\n6. Check navigation state persistence\n7. Test breadcrumb navigation\n8. Verify navigation accessibility'
+                }
+            ]
+        };
+
+        // Initialize the tracker
+        function initializeTracker() {
+            populateFeatures();
+            loadSavedData();
+            updateProgress();
+            setupSearch();
+            updateTimestamp();
+        }
+
+        // Populate features in the DOM
+        function populateFeatures() {
+            Object.keys(features).forEach(category => {
+                const container = document.getElementById(category.replace(/([A-Z])/g, '-$1').toLowerCase() + '-features');
+                if (container) {
+                    container.innerHTML = features[category].map((feature, index) => 
+                        createFeatureItem(`${category}-${index}`, feature)
+                    ).join('');
+                }
+            });
+        }
+
+        // Create feature item HTML
+        function createFeatureItem(id, feature) {
+            const text = typeof feature === 'string' ? feature : feature.title;
+            const description = typeof feature === 'object' ? feature.description : '';
+            const steps = typeof feature === 'object' ? feature.steps : '';
+            
+            return `
+                <div class="feature-item" data-feature-id="${id}">
+                    <div class="feature-status status-not-tested" onclick="cycleStatus('${id}')" title="Click to change status">
+                        ?
+                    </div>
+                    <div class="feature-text">
+                        <div class="feature-title">${text}</div>
+                        ${description ? `
+                            <div class="feature-description">
+                                ${description}
+                            </div>
+                        ` : ''}
+                        ${steps ? `
+                            <details>
+                                <summary>📋 Testing Steps</summary>
+                                <div class="testing-steps">
+                                    ${steps}
+                                </div>
+                            </details>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Cycle through status options
+        function cycleStatus(featureId) {
+            const statusEl = document.querySelector(`[data-feature-id="${featureId}"] .feature-status`);
+            const currentStatus = statusEl.className.split(' ')[1];
+            
+            const statusCycle = [
+                { class: 'status-not-tested', text: '?', title: 'Not Tested' },
+                { class: 'status-passed', text: '✅', title: 'Passed' },
+                { class: 'status-failed', text: '❌', title: 'Failed' },
+                { class: 'status-partial', text: '⚠️', title: 'Partial' },
+                { class: 'status-progress', text: '🔄', title: 'In Progress' }
+            ];
+            
+            const currentIndex = statusCycle.findIndex(status => status.class === currentStatus);
+            const nextIndex = (currentIndex + 1) % statusCycle.length;
+            const nextStatus = statusCycle[nextIndex];
+            
+            statusEl.className = `feature-status ${nextStatus.class}`;
+            statusEl.textContent = nextStatus.text;
+            statusEl.title = nextStatus.title;
+            
+            updateProgress();
+            saveProgress();
+        }
+
+        // Update progress counters
+        function updateProgress() {
+            const allFeatures = document.querySelectorAll('.feature-status');
+            const totalCount = allFeatures.length;
+            
+            const statusCounts = {
+                passed: document.querySelectorAll('.status-passed').length,
+                failed: document.querySelectorAll('.status-failed').length,
+                partial: document.querySelectorAll('.status-partial').length,
+                progress: document.querySelectorAll('.status-progress').length,
+                notTested: document.querySelectorAll('.status-not-tested').length
+            };
+            
+            const completedCount = statusCounts.passed + statusCounts.failed + statusCounts.partial;
+            const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+            
+            // Update overall progress
+            document.getElementById('completed-count').textContent = completedCount;
+            document.getElementById('total-count').textContent = totalCount;
+            document.getElementById('progress-percent').textContent = progressPercent + '%';
+            document.getElementById('overall-progress').style.width = progressPercent + '%';
+            
+            // Update tab counts (simplified for brevity)
+            updateTabCounts();
+        }
+
+        // Update tab counts
+        function updateTabCounts() {
+            // This would update the numbers in tab titles
+            // Implementation simplified for brevity
+        }
+
+        // Show specific tab
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // Show selected tab
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-tab').classList.add('active');
+        }
+
+        // Setup search functionality
+        function setupSearch() {
+            document.getElementById('search-box').addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase();
+                const allFeatures = document.querySelectorAll('.feature-item');
+                
+                allFeatures.forEach(feature => {
+                    const text = feature.querySelector('.feature-text').textContent.toLowerCase();
+                    if (text.includes(searchTerm) || searchTerm === '') {
+                        feature.style.display = 'flex';
+                    } else {
+                        feature.style.display = 'none';
+                    }
+                });
+            });
+        }
+
+        // Save progress to localStorage
+        function saveProgress() {
+            const data = {
+                timestamp: new Date().toISOString(),
+                currentTester: document.getElementById('current-tester').textContent,
+                environment: document.getElementById('environment').textContent,
+                currentPhase: document.getElementById('current-phase').textContent,
+                currentFocus: document.getElementById('current-focus').textContent,
+                features: {},
+                notes: {},
+                session: {
+                    date: document.getElementById('session-date').textContent,
+                    duration: document.getElementById('session-duration').textContent,
+                    browser: document.getElementById('session-browser').textContent,
+                    focus: document.getElementById('session-focus').innerHTML,
+                    results: document.getElementById('session-results').innerHTML
+                },
+                issues: {
+                    critical: document.getElementById('critical-issues-list').innerHTML,
+                    high: document.getElementById('high-issues-list').innerHTML,
+                    medium: document.getElementById('medium-issues-list').innerHTML,
+                    low: document.getElementById('low-issues-list').innerHTML
+                }
+            };
+            
+            // Save feature statuses
+            document.querySelectorAll('.feature-item').forEach(item => {
+                const featureId = item.getAttribute('data-feature-id');
+                const status = item.querySelector('.feature-status').className.split(' ')[1];
+                data.features[featureId] = status;
+            });
+            
+            // Save notes
+            document.querySelectorAll('.notes-textarea').forEach(textarea => {
+                data.notes[textarea.id] = textarea.value;
+            });
+            
+            localStorage.setItem('madrastiTestingProgress', JSON.stringify(data));
+            
+            // Update timestamp
+            updateTimestamp();
+            
+            // Show save confirmation
+            const saveBtn = document.querySelector('.save-btn');
+            const originalText = saveBtn.textContent;
+            saveBtn.textContent = '✅ Saved!';
+            saveBtn.style.background = '#2ecc71';
+            setTimeout(() => {
+                saveBtn.textContent = originalText;
+                saveBtn.style.background = '#2ecc71';
+            }, 2000);
+        }
+
+        // Load saved data
+        function loadSavedData() {
+            const savedData = localStorage.getItem('madrastiTestingProgress');
+            if (!savedData) return;
+            
+            try {
+                const data = JSON.parse(savedData);
+                
+                // Load basic info
+                if (data.currentTester) document.getElementById('current-tester').textContent = data.currentTester;
+                if (data.environment) document.getElementById('environment').textContent = data.environment;
+                if (data.currentPhase) document.getElementById('current-phase').textContent = data.currentPhase;
+                if (data.currentFocus) document.getElementById('current-focus').textContent = data.currentFocus;
+                
+                // Load feature statuses
+                Object.keys(data.features || {}).forEach(featureId => {
+                    const featureEl = document.querySelector(`[data-feature-id="${featureId}"]`);
+                    if (featureEl) {
+                        const statusEl = featureEl.querySelector('.feature-status');
+                        const status = data.features[featureId];
+                        statusEl.className = `feature-status ${status}`;
+                        
+                        // Set appropriate text based on status
+                        const statusTexts = {
+                            'status-not-tested': '?',
+                            'status-passed': '✅',
+                            'status-failed': '❌',
+                            'status-partial': '⚠️',
+                            'status-progress': '🔄'
+                        };
+                        statusEl.textContent = statusTexts[status] || '?';
+                    }
+                });
+                
+                // Load notes
+                Object.keys(data.notes || {}).forEach(noteId => {
+                    const noteEl = document.getElementById(noteId);
+                    if (noteEl) noteEl.value = data.notes[noteId];
+                });
+                
+                // Load session data
+                if (data.session) {
+                    Object.keys(data.session).forEach(key => {
+                        const el = document.getElementById(`session-${key}`);
+                        if (el) {
+                            if (key === 'focus' || key === 'results') {
+                                el.innerHTML = data.session[key];
+                            } else {
+                                el.textContent = data.session[key];
+                            }
+                        }
+                    });
+                }
+                
+                // Load issues
+                if (data.issues) {
+                    Object.keys(data.issues).forEach(priority => {
+                        const el = document.getElementById(`${priority}-issues-list`);
+                        if (el) el.innerHTML = data.issues[priority];
+                    });
+                }
+                
+            } catch (error) {
+                console.error('Error loading saved data:', error);
+            }
+        }
+
+        // Update timestamp
+        function updateTimestamp() {
+            document.getElementById('last-updated').textContent = new Date().toLocaleString();
+        }
+
+        // Export progress as JSON
+        function exportProgress() {
+            const data = {
+                exportDate: new Date().toISOString(),
+                projectName: 'Madrasti 2.0 Testing Progress',
+                progress: JSON.parse(localStorage.getItem('madrastiTestingProgress') || '{}')
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `madrasti-testing-progress-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Auto-save every 5 minutes
+        setInterval(saveProgress, 5 * 60 * 1000);
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', initializeTracker);
+    </script>
+</body>
+</html>

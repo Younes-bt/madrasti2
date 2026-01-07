@@ -21,7 +21,7 @@ yarn-error.log*
 *.swp
 
 # Documentation (contains sensitive project info)
-docs/
+#docs/
 backend/docs/
 
 # Windows reserved device names accidentally generated

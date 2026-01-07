@@ -721,6 +721,91 @@ class AttendanceRecordViewSet(viewsets.ModelViewSet):
         
         return queryset.order_by('-attendance_session__date')
 
+    @action(detail=False, methods=['get'])
+    def summary(self, request):
+        """Get aggregate summary for attendance records based on filters"""
+        queryset = self.filter_queryset(self.get_queryset())
+        
+        from django.db.models import Count, Q
+        
+        stats = queryset.aggregate(
+            total_records=Count('id'),
+            present_count=Count('id', filter=Q(status='present')),
+            absent_count=Count('id', filter=Q(status='absent')),
+            late_count=Count('id', filter=Q(status='late')),
+            excused_count=Count('id', filter=Q(status='excused'))
+        )
+        
+        total = stats['total_records'] or 0
+        present = stats['present_count'] or 0
+        absent = stats['absent_count'] or 0
+        late = stats['late_count'] or 0
+        excused = stats['excused_count'] or 0
+        
+        presence_rate = round((present / total * 100), 1) if total > 0 else 0
+        absence_rate = round(((absent + excused) / total * 100), 1) if total > 0 else 0
+        late_rate = round((late / total * 100), 1) if total > 0 else 0
+        excused_rate = round((excused / total * 100), 1) if total > 0 else 0
+        
+        # Get unique sessions count
+        total_sessions = queryset.values('attendance_session_id').distinct().count()
+
+        # Top absent students
+        top_absent = queryset.filter(status='absent').values(
+            'student_id', 'student__first_name', 'student__last_name'
+        ).annotate(
+            count=Count('id')
+        ).order_by('-count')[:5]
+        
+        # Top late students
+        top_late = queryset.filter(status='late').values(
+            'student_id', 'student__first_name', 'student__last_name'
+        ).annotate(
+            count=Count('id')
+        ).order_by('-count')[:5]
+
+        # Teacher breakdown (for admin overview)
+        teacher_stats = queryset.values(
+            'attendance_session__teacher_id', 
+            'attendance_session__teacher__first_name', 
+            'attendance_session__teacher__last_name'
+        ).annotate(
+            total_records=Count('id'),
+            present_count=Count('id', filter=Q(status='present')),
+            absent_count=Count('id', filter=Q(status='absent')),
+            late_count=Count('id', filter=Q(status='late')),
+            excused_count=Count('id', filter=Q(status='excused'))
+        ).order_by('-total_records')[:10]
+
+        # Subject breakdown (for admin overview)
+        subject_stats = queryset.values(
+            'attendance_session__timetable_session__subject_id', 
+            'attendance_session__timetable_session__subject__name'
+        ).annotate(
+            total_records=Count('id'),
+            present_count=Count('id', filter=Q(status='present')),
+            absent_count=Count('id', filter=Q(status='absent')),
+            late_count=Count('id', filter=Q(status='late')),
+            excused_count=Count('id', filter=Q(status='excused'))
+        ).order_by('-total_records')[:10]
+
+        return Response({
+            'total_records': total,
+            'total_sessions': total_sessions,
+            'present_count': present,
+            'absent_count': absent,
+            'late_count': late,
+            'excused_count': excused,
+            'presence_rate': presence_rate,
+            'absence_rate': absence_rate,
+            'late_rate': late_rate,
+            'excused_rate': excused_rate,
+            'top_absent_students': list(top_absent),
+            'top_late_students': list(top_late),
+            'teacher_stats': list(teacher_stats),
+            'subject_stats': list(subject_stats),
+        })
+
     @action(detail=False, methods=['get'], url_path='student-statistics/(?P<student_id>[^/.]+)')
     def student_statistics(self, request, student_id=None):
         """Get attendance statistics for a specific student"""
@@ -775,7 +860,7 @@ class AttendanceRecordViewSet(viewsets.ModelViewSet):
         # Calculate percentages
         presence_rate = round((present / total * 100), 2) if total > 0 else 0
         attendance_rate = round(((present + late) / total * 100), 2) if total > 0 else 0
-        absence_rate = round((absent / total * 100), 2) if total > 0 else 0
+        absence_rate = round(((absent + excused) / total * 100), 2) if total > 0 else 0
         punctuality_rate = round((present / (present + late) * 100), 2) if (present + late) > 0 else 0
 
         # Get student info
@@ -1222,3 +1307,129 @@ class AttendanceReportsViewSet(viewsets.ViewSet):
         
         serializer = ClassAttendanceReportSerializer(report_data, many=True)
         return Response({'report': serializer.data})
+
+    @action(detail=False, methods=['get'])
+    def students_statistics(self, request):
+        """Get attendance statistics for all students based on filters"""
+        grade_id = request.query_params.get('grade_id')
+        class_id = request.query_params.get('class_id')
+        track_id = request.query_params.get('track_id')
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+        search = request.query_params.get('search')
+
+        # Build query for attendance records
+        query = Q()
+        if grade_id and grade_id != 'all':
+            query &= Q(attendance_session__timetable_session__timetable__school_class__grade_id=grade_id)
+        if class_id and class_id != 'all':
+            query &= Q(attendance_session__timetable_session__timetable__school_class_id=class_id)
+        if track_id and track_id != 'all':
+            query &= Q(attendance_session__timetable_session__timetable__school_class__track_id=track_id)
+        if start_date:
+            query &= Q(attendance_session__date__gte=start_date)
+        if end_date:
+            query &= Q(attendance_session__date__lte=end_date)
+        if search:
+            query &= (
+                Q(student__first_name__icontains=search) |
+                Q(student__last_name__icontains=search) |
+                Q(student__profile__ar_first_name__icontains=search) |
+                Q(student__profile__ar_last_name__icontains=search)
+            )
+
+        # Get records
+        records = AttendanceRecord.objects.filter(query).select_related(
+            'student', 
+            'attendance_session__timetable_session__timetable__school_class__grade',
+            'attendance_session__timetable_session__timetable__school_class__track'
+        )
+
+        # Group by student
+        student_stats = {}
+        for record in records:
+            student_id = record.student.id
+            if student_id not in student_stats:
+                student_stats[student_id] = {
+                    'student_id': student_id,
+                    'student_name': record.student.full_name,
+                    'student_ar_name': f"{record.student.profile.ar_first_name} {record.student.profile.ar_last_name}" if hasattr(record.student, 'profile') else "",
+                    'class_name': record.attendance_session.timetable_session.timetable.school_class.name,
+                    'grade_name': record.attendance_session.timetable_session.timetable.school_class.grade.name,
+                    'track_name': record.attendance_session.timetable_session.timetable.school_class.track.name if record.attendance_session.timetable_session.timetable.school_class.track else "",
+                    'total_sessions': 0,
+                    'present_count': 0,
+                    'absent_count': 0,
+                    'late_count': 0,
+                    'excused_count': 0
+                }
+            
+            student_stats[student_id]['total_sessions'] += 1
+            student_stats[student_id][f'{record.status}_count'] += 1
+        
+        # Calculate percentages
+        from decimal import Decimal
+        for stats in student_stats.values():
+            if stats['total_sessions'] > 0:
+                stats['attendance_percentage'] = round(
+                    (stats['present_count'] + stats['late_count']) / stats['total_sessions'] * 100, 2
+                )
+            else:
+                stats['attendance_percentage'] = 0
+        
+        return Response({'statistics': list(student_stats.values())})
+
+    @action(detail=False, methods=['get'])
+    def classes_statistics(self, request):
+        """Get attendance statistics for all classes based on filters"""
+        grade_id = request.query_params.get('grade_id')
+        track_id = request.query_params.get('track_id')
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+
+        # Build query
+        query = Q()
+        if grade_id and grade_id != 'all':
+            query &= Q(attendance_session__timetable_session__timetable__school_class__grade_id=grade_id)
+        if track_id and track_id != 'all':
+            query &= Q(attendance_session__timetable_session__timetable__school_class__track_id=track_id)
+        if start_date:
+            query &= Q(attendance_session__date__gte=start_date)
+        if end_date:
+            query &= Q(attendance_session__date__lte=end_date)
+        
+        # Get records
+        records = AttendanceRecord.objects.filter(query).select_related(
+            'attendance_session__timetable_session__timetable__school_class__grade'
+        )
+
+        # Group by class
+        class_stats = {}
+        for record in records:
+            class_obj = record.attendance_session.timetable_session.timetable.school_class
+            class_id = class_obj.id
+            if class_id not in class_stats:
+                class_stats[class_id] = {
+                    'class_id': class_id,
+                    'class_name': class_obj.name,
+                    'grade_name': class_obj.grade.name,
+                    'total_sessions': 0,
+                    'present_count': 0,
+                    'absent_count': 0,
+                    'late_count': 0,
+                    'excused_count': 0
+                }
+            
+            class_stats[class_id]['total_sessions'] += 1
+            class_stats[class_id][f'{record.status}_count'] += 1
+        
+        # Calculate percentages
+        for stats in class_stats.values():
+            if stats['total_sessions'] > 0:
+                stats['attendance_percentage'] = round(
+                    (stats['present_count'] + stats['late_count']) / stats['total_sessions'] * 100, 2
+                )
+            else:
+                stats['attendance_percentage'] = 0
+        
+        return Response({'statistics': list(class_stats.values())})

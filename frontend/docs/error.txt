@@ -1,0 +1,141 @@
+Create vehicle failed: 
+Object { message: "Request failed with status code 400", name: "AxiosError", code: "ERR_BAD_REQUEST", config: {…}, request: XMLHttpRequest, response: {…}, status: 400, userMessage: "Invalid request. Please check your input.", stack: "", … }
+​
+code: "ERR_BAD_REQUEST"
+​
+config: Object { timeout: 30000, xsrfCookieName: "XSRF-TOKEN", xsrfHeaderName: "X-XSRF-TOKEN", … }
+​​
+adapter: Array(3) [ "xhr", "http", "fetch" ]
+​​
+allowAbsoluteUrls: true
+​​
+baseURL: "/api/"
+​​
+data: '{"name":"Zone1","vehicle_type":"VAN","model":"Sprinter","plate_number":"42A00000","driver":9,"capacity":15,"color":"yellow","manufacture_year":2021,"last_oil_change_date":"2025-10-13","last_service_date":"2025-10-13","insurance_expiry_date":"2026-10-16","notes":"","is_active":true}'
+​​
+env: Object { FormData: FormData(), Blob: Blob() }
+​​
+headers: Object { Accept: "application/json", "Content-Type": "application/json", Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYwNjU1MjQ0LCJpYXQiOjE3NjA2NTE2NDQsImp0aSI6Ijc5NDhkNmZkNjk3MTRhMzJiMDcyMTJlOGEwZjg5ZmY4IiwidXNlcl9pZCI6IjEiLCJyb2xlIjoiQURNSU4iLCJmdWxsX25hbWUiOiIifQ.tAJlPl49ALeGMg0xVjQm8rHt83AFkDuAFi3eh8rFFzc" }
+​​
+maxBodyLength: -1
+​​
+maxContentLength: -1
+​​
+metadata: Object { startTime: Date Thu Oct 16 2025 23:13:28 GMT+0100 (GMT+01:00) }
+​​
+method: "post"
+​​
+timeout: 30000
+​​
+transformRequest: Array [ transformRequest(data, headers) ]
+​​
+transformResponse: Array [ transformResponse(data) ]
+​​
+transitional: Object { silentJSONParsing: true, forcedJSONParsing: true, clarifyTimeoutError: false }
+​​
+url: "schools/vehicles/"
+​​
+validateStatus: function validateStatus(status)
+​​
+xsrfCookieName: "XSRF-TOKEN"
+​​
+xsrfHeaderName: "X-XSRF-TOKEN"
+​​
+<prototype>: Object { … }
+​
+message: "Request failed with status code 400"
+​
+name: "AxiosError"
+​
+request: XMLHttpRequest { readyState: 4, timeout: 30000, withCredentials: false, … }
+​
+response: Object { data: {…}, status: 400, statusText: "Bad Request", … }
+​
+stack: "settle@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:1253:12\nonloadend@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:1585:13\nEventHandlerNonNull*dispatchXhrRequest@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:1595:7\nxhr_default<@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:1552:10\ndispatchRequest@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:2027:10\npromise callback*_request@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:2230:27\nrequest@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:2139:25\nhttpMethod@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:2277:19\nwrap@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:8:15\npost@http://localhost:5173/src/services/api.js:235:34\ncreateVehicle@http://localhost:5173/src/services/schools.js:647:41\nhandleSubmit@http://localhost:5173/src/pages/admin/AddVehiclePage.jsx?t=1760651642707:271:51\nexecuteDispatch@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:11736:19\nrunWithFiberInDEV@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:1487:15\nprocessDispatchQueue@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:11772:37\nnode_modules/react-dom/cjs/react-dom-client.development.js/dispatchEventForPluginEventSystem/<@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:12182:31\nbatchedUpdates$1@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:2628:44\ndispatchEventForPluginEventSystem@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:11877:25\ndispatchEvent@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:14792:46\ndispatchDiscreteEvent@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:14773:62\nEventListener.handleEvent*addTrappedEventListener@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:11842:30\nlistenToNativeEvent@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:11801:32\nnode_modules/react-dom/cjs/react-dom-client.development.js/listenToAllSupportedEvents/<@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:11812:92\nlistenToAllSupportedEvents@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:11811:27\nnode_modules/react-dom/cjs/react-dom-client.development.js/exports.createRoot@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:18025:35\n@http://localhost:5173/src/main.jsx?t=1760651642707:9:11\n"
+​
+status: 400
+​
+userMessage: "Invalid request. Please check your input."
+​
+<prototype>: Object { constructor: AxiosError(message, code, config, request, response), toJSON: toJSON(), stack: "", … }
+<anonymous code>:1:147461
+
+Failed to create vehicle 
+Object { message: "Request failed with status code 400", name: "AxiosError", code: "ERR_BAD_REQUEST", config: {…}, request: XMLHttpRequest, response: {…}, status: 400, userMessage: "Invalid request. Please check your input.", stack: "", … }
+​
+code: "ERR_BAD_REQUEST"
+​
+config: Object { timeout: 30000, xsrfCookieName: "XSRF-TOKEN", xsrfHeaderName: "X-XSRF-TOKEN", … }
+​​
+adapter: Array(3) [ "xhr", "http", "fetch" ]
+​​
+allowAbsoluteUrls: true
+​​
+baseURL: "/api/"
+​​
+data: '{"name":"Zone1","vehicle_type":"VAN","model":"Sprinter","plate_number":"42A00000","driver":9,"capacity":15,"color":"yellow","manufacture_year":2021,"last_oil_change_date":"2025-10-13","last_service_date":"2025-10-13","insurance_expiry_date":"2026-10-16","notes":"","is_active":true}'
+​​
+env: Object { FormData: FormData(), Blob: Blob() }
+​​
+headers: Object { Accept: "application/json", "Content-Type": "application/json", Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYwNjU1MjQ0LCJpYXQiOjE3NjA2NTE2NDQsImp0aSI6Ijc5NDhkNmZkNjk3MTRhMzJiMDcyMTJlOGEwZjg5ZmY4IiwidXNlcl9pZCI6IjEiLCJyb2xlIjoiQURNSU4iLCJmdWxsX25hbWUiOiIifQ.tAJlPl49ALeGMg0xVjQm8rHt83AFkDuAFi3eh8rFFzc" }
+​​
+maxBodyLength: -1
+​​
+maxContentLength: -1
+​​
+metadata: Object { startTime: Date Thu Oct 16 2025 23:13:28 GMT+0100 (GMT+01:00) }
+​​
+method: "post"
+​​
+timeout: 30000
+​​
+transformRequest: Array [ transformRequest(data, headers) ]
+​​
+transformResponse: Array [ transformResponse(data) ]
+​​
+transitional: Object { silentJSONParsing: true, forcedJSONParsing: true, clarifyTimeoutError: false }
+​​
+url: "schools/vehicles/"
+​​
+validateStatus: function validateStatus(status)
+​​
+xsrfCookieName: "XSRF-TOKEN"
+​​
+xsrfHeaderName: "X-XSRF-TOKEN"
+​​
+<prototype>: Object { … }
+​
+message: "Request failed with status code 400"
+​
+name: "AxiosError"
+​
+request: XMLHttpRequest { readyState: 4, timeout: 30000, withCredentials: false, … }
+​
+response: Object { data: {…}, status: 400, statusText: "Bad Request", … }
+​​
+config: Object { timeout: 30000, xsrfCookieName: "XSRF-TOKEN", xsrfHeaderName: "X-XSRF-TOKEN", … }
+​​
+data: Object { driver: (1) […] }
+​​
+headers: Object { "access-control-allow-credentials": "true", "access-control-allow-origin": "http://localhost:5173", allow: "GET, POST, HEAD, OPTIONS", … }
+​​
+request: XMLHttpRequest { readyState: 4, timeout: 30000, withCredentials: false, … }
+​​
+status: 400
+​​
+statusText: "Bad Request"
+​​
+<prototype>: Object { … }
+​
+stack: "settle@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:1253:12\nonloadend@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:1585:13\nEventHandlerNonNull*dispatchXhrRequest@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:1595:7\nxhr_default<@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:1552:10\ndispatchRequest@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:2027:10\npromise callback*_request@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:2230:27\nrequest@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:2139:25\nhttpMethod@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:2277:19\nwrap@http://localhost:5173/node_modules/.vite/deps/axios.js?v=3437adc7:8:15\npost@http://localhost:5173/src/services/api.js:235:34\ncreateVehicle@http://localhost:5173/src/services/schools.js:647:41\nhandleSubmit@http://localhost:5173/src/pages/admin/AddVehiclePage.jsx?t=1760651642707:271:51\nexecuteDispatch@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:11736:19\nrunWithFiberInDEV@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:1487:15\nprocessDispatchQueue@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:11772:37\nnode_modules/react-dom/cjs/react-dom-client.development.js/dispatchEventForPluginEventSystem/<@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:12182:31\nbatchedUpdates$1@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:2628:44\ndispatchEventForPluginEventSystem@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:11877:25\ndispatchEvent@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:14792:46\ndispatchDiscreteEvent@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:14773:62\nEventListener.handleEvent*addTrappedEventListener@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:11842:30\nlistenToNativeEvent@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:11801:32\nnode_modules/react-dom/cjs/react-dom-client.development.js/listenToAllSupportedEvents/<@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:11812:92\nlistenToAllSupportedEvents@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:11811:27\nnode_modules/react-dom/cjs/react-dom-client.development.js/exports.createRoot@http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3437adc7:18025:35\n@http://localhost:5173/src/main.jsx?t=1760651642707:9:11\n"
+​
+status: 400
+​
+userMessage: "Invalid request. Please check your input."
+​
+<prototype>: Object { constructor: AxiosError(message, code, config, request, response), toJSON: toJSON(), stack: "", … }
+<anonymous code>:1:147461
+    overrideMethod <anonymous code>:1
+    handleSubmit AddVehiclePage.jsx:298
+    React 13
+    <anonymous> main.jsx:9

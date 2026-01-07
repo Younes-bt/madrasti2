@@ -282,11 +282,15 @@ class AttendanceSessionModelTest(TestCase):
         session.start_session()
         
         # Mark students with different statuses
-        records = AttendanceRecord.objects.filter(attendance_session=session)
-        records[0].status = 'present'
-        records[0].save()
-        records[1].status = 'absent'
-        records[1].save()
+        AttendanceRecord.objects.filter(
+            attendance_session=session, 
+            student=self.student1
+        ).update(status='present')
+        
+        AttendanceRecord.objects.filter(
+            attendance_session=session, 
+            student=self.student2
+        ).update(status='absent')
         
         self.assertEqual(session.total_students, 2)
         self.assertEqual(session.present_count, 1)

@@ -28,7 +28,6 @@ class SchoolTimetable(models.Model):
     )
     
     class Meta:
-        unique_together = ['school_class', 'academic_year']
         ordering = ['school_class__grade__educational_level__order', 'school_class__grade__grade_number', 'school_class__section']
         verbose_name = "School Timetable"
         verbose_name_plural = "School Timetables"

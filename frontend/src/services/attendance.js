@@ -396,6 +396,21 @@ class AttendanceService {
   }
 
   /**
+   * Get Attendance Summary/Statistics
+   * @param {Object} params - Query parameters (date range, class, subject, etc.)
+   * @returns {Promise<Object>} Aggregated attendance stats
+   */
+  async getAttendanceSummary(params = {}) {
+    try {
+      const response = await apiMethods.get('attendance/records/summary/', { params });
+      return response;
+    } catch (error) {
+      console.error('Get attendance summary failed:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get Attendance Record by ID
    * @param {number} recordId - Attendance record ID
    * @returns {Promise<Object>} Attendance record data
@@ -812,6 +827,36 @@ class AttendanceService {
       return response;
     } catch (error) {
       console.error('Get daily report failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get Students Statistics (Aggregated)
+   * @param {Object} params - Query parameters (grade_id, class_id, track_id, start_date, end_date, search)
+   * @returns {Promise<Object>} Aggregated student stats
+   */
+  async getStudentsStatistics(params = {}) {
+    try {
+      const response = await apiMethods.get('attendance/reports/students_statistics/', { params });
+      return response;
+    } catch (error) {
+      console.error('Get students statistics failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get Classes Statistics (Aggregated)
+   * @param {Object} params - Query parameters (grade_id, track_id, start_date, end_date)
+   * @returns {Promise<Object>} Aggregated class stats
+   */
+  async getClassesStatistics(params = {}) {
+    try {
+      const response = await apiMethods.get('attendance/reports/classes_statistics/', { params });
+      return response;
+    } catch (error) {
+      console.error('Get classes statistics failed:', error);
       throw error;
     }
   }

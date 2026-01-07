@@ -1,0 +1,17 @@
+Parent: 
+    -> my prfile
+    -> kid profile:
+        -> timeTable
+        -> teachers
+    -> attendence: 
+        -> history
+        -> Pending
+    -> homeWork:
+        -> Pending
+        -> History
+    -> Grades
+    -> finance: (invoices)
+        -> Pending
+        -> history
+    -> communications: (Chat with teachers/staff)
+    -> events/news: (articles, news, events posted by school)

@@ -1,0 +1,75 @@
+Creating test database for alias 'default'...
+
+.........E.....
+======================================================================
+ERROR: test_only_one_active_timetable_per_class (attendance.tests.SchoolTimetableModelTest.test_only_one_active_timetable_per_class)
+Test that only one timetable can be active per class per year
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\OpiComTech\Projects\madrasti2\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+psycopg2.errors.UniqueViolation: duplicate key value violates unique constraint "attendance_schooltimetab_school_class_id_academic_b6043786_uniq"
+DETAIL:  Key (school_class_id, academic_year_id)=(11, 10) already exists.
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\OpiComTech\Projects\madrasti2\backend\attendance\tests.py", line 74, in test_only_one_active_timetable_per_class
+    timetable2 = SchoolTimetable.objects.create(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\OpiComTech\Projects\madrasti2\backend\venv\Lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\OpiComTech\Projects\madrasti2\backend\venv\Lib\site-packages\django\db\models\query.py", line 663, in create
+    obj.save(force_insert=True, using=self.db)
+  File "D:\OpiComTech\Projects\madrasti2\backend\attendance\models.py", line 47, in save
+    super().save(*args, **kwargs)
+  File "D:\OpiComTech\Projects\madrasti2\backend\venv\Lib\site-packages\django\db\models\base.py", line 902, in save
+    self.save_base(
+  File "D:\OpiComTech\Projects\madrasti2\backend\venv\Lib\site-packages\django\db\models\base.py", line 1008, in save_base
+    updated = self._save_table(
+              ^^^^^^^^^^^^^^^^^
+  File "D:\OpiComTech\Projects\madrasti2\backend\venv\Lib\site-packages\django\db\models\base.py", line 1169, in _save_table
+    results = self._do_insert(
+              ^^^^^^^^^^^^^^^^
+  File "D:\OpiComTech\Projects\madrasti2\backend\venv\Lib\site-packages\django\db\models\base.py", line 1210, in _do_insert
+    return manager._insert(
+           ^^^^^^^^^^^^^^^^
+  File "D:\OpiComTech\Projects\madrasti2\backend\venv\Lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\OpiComTech\Projects\madrasti2\backend\venv\Lib\site-packages\django\db\models\query.py", line 1868, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\OpiComTech\Projects\madrasti2\backend\venv\Lib\site-packages\django\db\models\sql\compiler.py", line 1882, in execute_sql
+    cursor.execute(sql, params)
+  File "D:\OpiComTech\Projects\madrasti2\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\OpiComTech\Projects\madrasti2\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\OpiComTech\Projects\madrasti2\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "D:\OpiComTech\Projects\madrasti2\backend\venv\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "D:\OpiComTech\Projects\madrasti2\backend\venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+django.db.utils.IntegrityError: duplicate key value violates unique constraint "attendance_schooltimetab_school_class_id_academic_b6043786_uniq"
+DETAIL:  Key (school_class_id, academic_year_id)=(11, 10) already exists.
+
+
+----------------------------------------------------------------------
+Ran 15 tests in 57.725s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...
+
+Found 15 test(s).
+Created 0 FinancialTransaction records from existing Payment records
+Created 0 FinancialTransaction records from existing GasoilRecord records
+System check identified no issues (0 silenced).
+Complete attendance workflow test passed!

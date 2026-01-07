@@ -148,6 +148,7 @@ import EditExercisePage from './pages/admin/EditExercisePage'
 import ViewExercisePage from './pages/admin/ViewExercisePage'
 import AttendanceReportsPage from './pages/admin/AttendanceReportsPage'
 import StaffAttendanceReportsPage from './pages/staff/StaffAttendanceReportsPage'
+import AdminStudentAttendanceReportPage from './pages/admin/AdminStudentAttendanceReportPage'
 import AcademicPerformanceReportsPage from './pages/admin/AcademicPerformanceReportsPage'
 import FeeSetupPage from './pages/admin/finance/FeeSetupPage'
 import InvoicesPage from './pages/admin/finance/InvoicesPage'
@@ -892,6 +893,14 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/staff/reports/attendance/student/:studentId"
+        element={
+          <ProtectedRoute requiredRoles={['STAFF']}>
+            <AdminStudentAttendanceReportPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Admin School Management Routes */}
       <Route
@@ -1475,6 +1484,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <AttendanceReportsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/reports/attendance/student/:studentId"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <AdminStudentAttendanceReportPage />
           </ProtectedRoute>
         }
       />

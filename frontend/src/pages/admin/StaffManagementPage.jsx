@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { motion, useInView, useMotionValue, useSpring, animate } from 'framer-motion';
-import { Plus, Search, Filter, Users, Mail, Phone, MoreVertical, Edit, Trash2, Eye, CheckCircle, XCircle, UserPlus, Briefcase, X } from 'lucide-react';
+import { Plus, Search, Filter, Users, Mail, Phone, MoreVertical, Edit, Trash2, CheckCircle, XCircle, UserPlus, Briefcase, X } from 'lucide-react';
 import AdminPageLayout from '../../components/admin/layout/AdminPageLayout';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -92,7 +92,7 @@ const StaffManagementPage = () => {
   const [stats, setStats] = useState({ total: 0, active: 0, inactive: 0, byPosition: {} });
   const language = i18n.language || 'en';
 
-  const fetchStaffMembers = async () => {
+  const fetchStaffMembers = React.useCallback(async () => {
     setLoading(true);
     try {
       const response = await apiMethods.get('users/users/', { params: { role: 'STAFF' } });
@@ -123,11 +123,11 @@ const StaffManagementPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
   useEffect(() => {
     fetchStaffMembers();
-  }, [t]);
+  }, [t, fetchStaffMembers]);
 
   useEffect(() => {
     let filtered = staffMembers;
@@ -188,15 +188,19 @@ const StaffManagementPage = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.3 }}
-      className="group"
+      className="group h-full"
     >
-      <Card className="h-full border-border/50 hover:border-primary/50 transition-all duration-300 hover:shadow-lg">
-        <CardContent className="p-5 h-full flex flex-col">
-          <div className="flex items-start gap-3 mb-4">
+      <Card
+        className="h-full border-border/50 hover:border-primary/50 transition-all duration-300 hover:shadow-lg rounded-2xl cursor-pointer"
+        onClick={() => handleViewStaff(staff.id)}
+      >
+        <CardContent className="p-4 md:p-6 h-full flex flex-col relative">
+          <div className="flex items-start gap-4 mb-4">
             <motion.div
               className="flex-shrink-0 relative"
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()} // Prevent card click when clicking avatar specifically if needed
             >
               <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden ring-2 ring-primary/20">
                 {staff.profile_picture_url ? (
@@ -208,55 +212,55 @@ const StaffManagementPage = () => {
                 )}
               </div>
               <div className="absolute -bottom-1 -right-1">
-                <div className={`w-4 h-4 rounded-full border-2 border-background ${staff.is_active ? 'bg-green-500' : 'bg-muted'}`} />
+                <div className={`w-3 h-3 rounded-full border-2 border-background ${staff.is_active ? 'bg-green-500' : 'bg-muted'}`} />
               </div>
             </motion.div>
 
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-base text-foreground leading-tight truncate">
+              <h3 className="text-base md:text-lg font-medium text-foreground leading-tight truncate group-hover:text-primary transition-colors">
                 {getDisplayName(staff)}
               </h3>
-              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                <Briefcase className="h-3 w-3" />
+              <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
+                <Briefcase className="h-3.5 w-3.5" />
                 {getStaffPositionLabel(t, staff.position, language)}
               </p>
-              <Badge
-                variant={staff.is_active ? "default" : "secondary"}
-                className="mt-2 text-xs"
-              >
-                {staff.is_active ? t('status.active') : t('status.inactive')}
-              </Badge>
+              <div className="mt-2">
+                <Badge
+                  variant={staff.is_active ? "default" : "secondary"}
+                  className="text-[10px] font-medium px-2 py-0 h-5"
+                >
+                  {staff.is_active ? t('status.active') : t('status.inactive')}
+                </Badge>
+              </div>
             </div>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={() => handleViewStaff(staff.id)} className="cursor-pointer">
-                  <Eye className="mr-2 h-4 w-4" />
-                  <span>{t('action.view')}</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleEditStaff(staff.id)} className="cursor-pointer">
-                  <Edit className="mr-2 h-4 w-4" />
-                  <span>{t('action.edit')}</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => handleDeleteStaff(staff.id)}
-                  className="text-destructive focus:text-destructive cursor-pointer"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  <span>{t('action.delete')}</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div onClick={(e) => e.stopPropagation()}>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={() => handleEditStaff(staff.id)} className="cursor-pointer">
+                    <Edit className="mr-2 h-4 w-4" />
+                    <span>{t('action.edit')}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => handleDeleteStaff(staff.id)}
+                    className="text-destructive focus:text-destructive cursor-pointer"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    <span>{t('action.delete')}</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
 
-          <div className="mt-auto space-y-2.5 pt-3 border-t border-border/50">
-            <div className="flex items-center text-muted-foreground group/item hover:text-foreground transition-colors">
+          <div className="mt-auto space-y-4 pt-4 border-t border-border/50">
+            <div className="flex items-center text-muted-foreground group/item hover:text-foreground transition-colors overflow-hidden">
               <Mail className="h-3.5 w-3.5 mr-2 flex-shrink-0" />
               <span className="text-xs truncate">{staff.email}</span>
             </div>
@@ -265,7 +269,7 @@ const StaffManagementPage = () => {
               <span className="text-xs">{staff.phone || '—'}</span>
             </div>
             <div className="flex items-center justify-between text-xs pt-2">
-              <span className="text-muted-foreground">Joined</span>
+              <span className="text-muted-foreground">{t('common.joined') || 'Joined'}</span>
               <span className="font-medium text-foreground">{formatDate(staff.created_at)}</span>
             </div>
           </div>
@@ -273,6 +277,7 @@ const StaffManagementPage = () => {
       </Card>
     </motion.div>
   );
+
 
   return (
     <div className="min-h-screen">
