@@ -354,6 +354,21 @@ class UsersService {
       throw error;
     }
   }
+
+  /**
+   * Get Children for a Parent
+   * @param {number} parentId - Parent User ID
+   * @returns {Promise<Object>} Object containing parent and children data
+   */
+  async getUserChildren(parentId) {
+    try {
+      const response = await apiMethods.get(`users/users/${parentId}/children/`);
+      return response;
+    } catch (error) {
+      console.error('Get user children failed:', error);
+      throw error;
+    }
+  }
 }
 
 // Create and export singleton instance

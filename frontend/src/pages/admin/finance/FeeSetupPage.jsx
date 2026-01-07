@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,9 +13,10 @@ import financeService from '@/services/finance';
 import schoolsService from '@/services/schools';
 import { toast } from 'sonner';
 import AdminPageLayout from '../../../components/admin/layout/AdminPageLayout';
+import { getLocalizedName } from '@/lib/utils';
 
 const FeeSetupPage = () => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [loading, setLoading] = useState(false);
     const [categories, setCategories] = useState([]);
     const [structures, setStructures] = useState([]);
@@ -35,9 +35,8 @@ const FeeSetupPage = () => {
 
     useEffect(() => {
         fetchInitialData();
-    }, []);
-
-    const fetchInitialData = async () => {
+    }, [fetchInitialData]);
+    const fetchInitialData = useCallback(async () => {
         setLoading(true);
         try {
             const [cats, structs, gradesData, yearsData] = await Promise.all([
@@ -56,7 +55,7 @@ const FeeSetupPage = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [t]);
 
     // ==================== CATEGORY HANDLERS ====================
     const handleCategorySubmit = async (e) => {
@@ -74,6 +73,7 @@ const FeeSetupPage = () => {
             setCategoryForm({ name: '', fee_type: 'RECURRING', description: '' });
             fetchInitialData();
         } catch (error) {
+            console.error(error);
             toast.error(t('Operation failed'));
         }
     };
@@ -85,6 +85,7 @@ const FeeSetupPage = () => {
                 toast.success(t('Category deleted'));
                 fetchInitialData();
             } catch (error) {
+                console.error(error);
                 toast.error(t('Delete failed'));
             }
         }
@@ -117,6 +118,7 @@ const FeeSetupPage = () => {
             setStructureForm({ academic_year: '', grade: '', category: '', amount: '' });
             fetchInitialData();
         } catch (error) {
+            console.error(error);
             toast.error(t('Operation failed'));
         }
     };
@@ -128,6 +130,7 @@ const FeeSetupPage = () => {
                 toast.success(t('Structure deleted'));
                 fetchInitialData();
             } catch (error) {
+                console.error(error);
                 toast.error(t('Delete failed'));
             }
         }
@@ -162,12 +165,7 @@ const FeeSetupPage = () => {
             subtitle={t('Manage fee structures and categories')}
             loading={loading && categories.length === 0}
         >
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="space-y-6"
-            >
+            <div className="space-y-6">
                 <Tabs defaultValue="structures" className="space-y-4">
                     <TabsList>
                         <TabsTrigger value="structures">{t('Fee Structures')}</TabsTrigger>
@@ -308,7 +306,7 @@ const FeeSetupPage = () => {
                                     <SelectTrigger><SelectValue placeholder={t('Select Grade')} /></SelectTrigger>
                                     <SelectContent>
                                         {grades.map(grade => (
-                                            <SelectItem key={grade.id} value={String(grade.id)}>{grade.name}</SelectItem>
+                                            <SelectItem key={grade.id} value={String(grade.id)}>{getLocalizedName(grade, i18n.language)}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
@@ -334,7 +332,7 @@ const FeeSetupPage = () => {
                         </form>
                     </DialogContent>
                 </Dialog>
-            </motion.div>
+            </div>
         </AdminPageLayout>
     );
 };

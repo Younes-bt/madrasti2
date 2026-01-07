@@ -1,36 +1,39 @@
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 
 export function EmptyState({ filterStatus, searchQuery, onClearFilters }) {
+  const { t } = useTranslation();
+
   const messages = {
     all: {
       icon: '📚',
-      title: 'لا توجد دروس متاحة',
-      description: 'لم يتم إضافة أي دروس لهذه الدورة بعد'
+      title: t('lessons.noLessonsAvailable'),
+      description: t('lessons.noLessonsAvailableDesc')
     },
     'in_progress': {
       icon: '⏳',
-      title: 'لا توجد دروس قيد التقدم',
-      description: 'ابدأ درساً جديداً للبدء في التعلم'
+      title: t('lessons.noLessonsInProgress'),
+      description: t('lessons.noLessonsInProgressDesc')
     },
     completed: {
       icon: '✅',
-      title: 'لم تكمل أي دروس بعد',
-      description: 'أكمل أول درس لترى تقدمك هنا'
+      title: t('lessons.noLessonsCompleted'),
+      description: t('lessons.noLessonsCompletedDesc')
     },
     locked: {
       icon: '🔒',
-      title: 'لا توجد دروس مغلقة',
-      description: 'جميع الدروس المتاحة مفتوحة لك'
+      title: t('lessons.noLessonsLocked'),
+      description: t('lessons.noLessonsLockedDesc')
     }
   };
 
   const message = searchQuery
     ? {
-        icon: '🔍',
-        title: 'لا توجد نتائج',
-        description: `لم نجد دروساً تطابق "${searchQuery}"`
-      }
+      icon: '🔍',
+      title: t('lessons.noResults'),
+      description: t('lessons.noResultsDesc', { query: searchQuery })
+    }
     : messages[filterStatus];
 
   return (
@@ -50,7 +53,7 @@ export function EmptyState({ filterStatus, searchQuery, onClearFilters }) {
           className="gap-2"
         >
           <X className="w-4 h-4" />
-          مسح الفلاتر
+          {t('lessons.clearFilters')}
         </Button>
       )}
     </div>

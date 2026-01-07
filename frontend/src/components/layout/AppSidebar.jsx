@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import {
   Home,
   Users,
@@ -40,12 +40,15 @@ import {
   Sparkles,
   LogOut,
   DollarSign,
-  ScrollText
+  ScrollText,
+  FlaskConical,
+  CheckSquare,
+  Briefcase,
+  TrendingUp
 } from 'lucide-react'
 import { useLanguage } from '../../hooks/useLanguage'
 import { useAuth } from '../../contexts/AuthContext'
 import { USER_ROLES, ROUTES } from '../../utils/constants'
-import { apiMethods } from '../../services/api'
 import { NavMain } from '../../components/nav-main'
 import { NavUser } from '../../components/nav-user'
 import { TeamSwitcher } from '../../components/team-switcher'
@@ -57,28 +60,9 @@ import {
   SidebarRail,
 } from "../ui/sidebar"
 
-export function AppSidebar({ onNavigate, currentPath, ...props }) {
-  const { t, currentLanguage } = useLanguage()
+export function AppSidebar({ ...props }) {
+  const { t } = useLanguage()
   const { user } = useAuth()
-  const [studentWallet, setStudentWallet] = useState(null)
-
-  // Load student wallet for STUDENT role to show total points in header
-  useEffect(() => {
-    const loadWallet = async () => {
-      try {
-        if (user?.role === USER_ROLES.STUDENT) {
-          const data = await apiMethods.get('homework/student-wallets/my_wallet/')
-          setStudentWallet(data || null)
-        } else {
-          setStudentWallet(null)
-        }
-      } catch {
-        // Non-blocking: silently ignore if wallet endpoint not available
-        setStudentWallet(null)
-      }
-    }
-    loadWallet()
-  }, [user])
 
   // Navigation items configuration based on user roles
   const navigationItems = useMemo(() => {
@@ -87,9 +71,11 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
     const dashboardLabel = isTeacher ? t('teacherHome.title', 'Home') : t('common.dashboard')
     const dashboardPath = isTeacher
       ? '/teacher'
-      : userRole
-        ? `/dashboard/${userRole.toLowerCase()}`
-        : '/'
+      : (userRole === USER_ROLES.STAFF || userRole === USER_ROLES.DRIVER)
+        ? '/staff'
+        : userRole
+          ? `/dashboard/${userRole.toLowerCase()}`
+          : '/'
 
     const baseItems = [
       {
@@ -151,6 +137,14 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
             { key: 'grading-system', label: t('adminSidebar.educationManagement.gradingSystem'), path: '/admin/education-management/grading-system' },
           ]
         },
+        // 🧪 Lab Tools
+        {
+          key: 'lab',
+          icon: FlaskConical,
+          label: t('adminSidebar.lab.title', 'Lab Tools'),
+          tooltip: t('adminSidebar.lab.tooltip', 'Interactive educational tools'),
+          path: '/lab',
+        },
         // 📊 Reports & Analytics
         {
           key: 'reports-analytics',
@@ -176,6 +170,18 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
             { key: 'fee-setup', label: 'Fee Setup', path: '/admin/finance/setup' },
             { key: 'invoices', label: 'Invoices', path: '/admin/finance/invoices' },
             { key: 'payments', label: 'Payments', path: '/admin/finance/payments' },
+          ]
+        },
+        // ✅ Tasks & Projects
+        {
+          key: 'tasks-projects',
+          icon: CheckSquare,
+          label: t('adminSidebar.tasksProjects.title', 'Tasks & Projects'),
+          tooltip: t('adminSidebar.tasksProjects.tooltip', 'Manage daily tasks and team projects'),
+          items: [
+            { key: 'daily-tasks', label: t('adminSidebar.tasksProjects.dailyTasks', 'Daily Tasks'), path: '/admin/tasks' },
+            { key: 'user-progress', label: t('adminSidebar.tasksProjects.userProgress', 'User Progress'), path: '/admin/tasks/progress' },
+            { key: 'projects', label: t('adminSidebar.tasksProjects.projects', 'Projects'), path: '/admin/projects' },
           ]
         },
         // 📢 Communications & Notifications
@@ -245,6 +251,26 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
             { key: 'exams', label: t('teacherSidebar.assignments.exams'), path: '/teacher/assignments/exams' },
             { key: 'grading', label: t('teacherSidebar.assignments.grading'), path: '/teacher/assignments/grading' },
             { key: 'assessment-tools', label: t('teacherSidebar.assignments.assessmentTools'), path: '/teacher/assignments/assessment-tools' },
+          ]
+        },
+        // 🧪 Lab Tools
+        {
+          key: 'lab',
+          icon: FlaskConical,
+          label: t('teacherSidebar.lab.title', 'Lab Tools'),
+          tooltip: t('teacherSidebar.lab.tooltip', 'Interactive educational tools'),
+          path: '/lab',
+        },
+        // ✅ Tasks & Projects
+        {
+          key: 'tasks-projects',
+          icon: CheckSquare,
+          label: t('teacherSidebar.tasksProjects.title', 'Tasks & Projects'),
+          tooltip: t('teacherSidebar.tasksProjects.tooltip', 'Manage your tasks and team projects'),
+          items: [
+            { key: 'my-tasks', label: t('teacherSidebar.tasksProjects.myTasks', 'My Tasks'), path: '/teacher/tasks' },
+            { key: 'my-progress', label: t('teacherSidebar.tasksProjects.myProgress', 'My Progress'), path: '/teacher/my-progress' },
+            { key: 'my-projects', label: t('teacherSidebar.tasksProjects.myProjects', 'My Projects'), path: '/teacher/projects' },
           ]
         },
         // 👥 Student Management
@@ -380,6 +406,14 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
             { key: 'homework-feedback', label: t('studentSidebar.homework.feedback'), path: ROUTES.STUDENT_HOMEWORK.FEEDBACK },
           ]
         },
+        // 🧪 My Lab
+        {
+          key: 'lab',
+          icon: FlaskConical,
+          label: t('studentSidebar.lab.title', 'My Lab'),
+          tooltip: t('studentSidebar.lab.tooltip', 'Interactive educational tools'),
+          path: '/lab',
+        },
         // 🏆 Achievements & Rewards
         {
           key: 'achievements',
@@ -409,98 +443,168 @@ export function AppSidebar({ onNavigate, currentPath, ...props }) {
 
       [USER_ROLES.PARENT]: [
         {
-          key: 'children',
-          icon: Users,
-          label: t('parent.children'),
-          tooltip: t('parent.children'),
-          path: '/parent/children',
+          key: 'home',
+          icon: Home,
+          label: t('common.home'),
+          tooltip: t('common.home'),
+          path: '/parent',
         },
         {
-          key: 'finance',
-          icon: DollarSign,
-          label: 'Financial Status',
-          tooltip: 'View invoices and payments',
-          path: '/parent/finance',
+          key: 'profile',
+          icon: UserCog,
+          label: t('parentHome.myProfile', 'My Profile'),
+          tooltip: t('parentHome.myProfile', 'My Profile'),
+          path: '/parent/profile',
+        },
+        {
+          key: 'kids',
+          icon: GraduationCap,
+          label: t('parentHome.kidProfile', 'Kid Profile'),
+          tooltip: t('parentHome.kidProfile', 'Kid Profile'),
+          path: '/parent/kids',
         },
         {
           key: 'attendance',
           icon: UserCheck,
-          label: t('navigation.attendance'),
-          tooltip: t('navigation.attendance'),
-          items: [
-            { key: 'attendance-overview', label: t('misc.todayOverview'), path: ROUTES.ATTENDANCE.LIST },
-            { key: 'absence-flags', label: t('attendance.chronic'), path: ROUTES.ATTENDANCE.FLAGS, badge: 2 },
-          ]
+          label: t('parentHome.attendance', 'Attendance'),
+          tooltip: t('parentHome.attendance', 'Attendance'),
+          path: '/parent/attendance',
         },
         {
           key: 'homework',
-          icon: ClipboardList,
-          label: t('navigation.homework'),
-          tooltip: t('navigation.homework'),
-          path: ROUTES.HOMEWORK.LIST,
+          icon: BookOpen,
+          label: t('parentHome.homeWork', 'Homework'),
+          tooltip: t('parentHome.homeWork', 'Homework'),
+          path: '/parent/homework',
+        },
+        {
+          key: 'grades',
+          icon: Award,
+          label: t('parentHome.grades', 'Grades'),
+          tooltip: t('parentHome.grades', 'Grades'),
+          path: '/parent/grades',
+        },
+        {
+          key: 'finance',
+          icon: DollarSign,
+          label: t('parentHome.finance', 'Finance'),
+          tooltip: t('parentHome.finance', 'Finance'),
+          path: '/parent/finance/invoices',
+        },
+        {
+          key: 'communications',
+          icon: MessageSquare,
+          label: t('parentHome.communications', 'Communications'),
+          tooltip: t('parentHome.communications', 'Communications'),
+          path: '/parent/communications',
+        },
+        {
+          key: 'news',
+          icon: Bell,
+          label: t('parentHome.news', 'Events & News'),
+          tooltip: t('parentHome.news', 'Events & News'),
+          path: '/parent/news',
+        }
+      ],
+
+      [USER_ROLES.STAFF]: (() => {
+        const position = user?.position
+        const items = []
+
+        // Accountant gets Finance access
+        if (position === 'ACCOUNTANT') {
+          items.push({
+            key: 'finance',
+            icon: DollarSign,
+            label: t('staff.finance.title', 'Finance'),
+            items: [
+              { key: 'finance-dashboard', label: 'Dashboard', path: '/admin/finance/dashboard' },
+              { key: 'invoices', label: 'Invoices', path: '/admin/finance/invoices' },
+              { key: 'expenses', label: 'Expenses', path: '/admin/finance/expenses' },
+              { key: 'payments', label: 'Payments', path: '/admin/finance/payments' },
+              { key: 'contracts', label: 'Contracts', path: '/admin/finance/contracts' },
+              { key: 'payroll', label: 'Payroll', path: '/admin/finance/payroll' },
+            ]
+          })
+        }
+
+        // Management Staff (Director, Assistant, General Supervisor) get these items
+        const managementPositions = ['DIRECTOR', 'ASSISTANT', 'GENERAL_SUPERVISOR']
+        if (managementPositions.includes(position)) {
+          // Attendance
+          items.push({
+            key: 'attendance',
+            icon: UserCheck,
+            label: t('staff.attendance.title', 'Attendance'),
+            items: [
+              { key: 'today', label: t('staff.attendance.today', 'Today'), path: '/staff/attendance/today' },
+              { key: 'history', label: t('staff.attendance.history', 'History'), path: '/staff/reports/attendance' },
+            ]
+          })
+
+          // School Management
+          items.push({
+            key: 'school-management',
+            icon: Building2,
+            label: t('staff.schoolManagement.title', 'School Management'),
+            items: [
+              { key: 'teachers', label: t('common.teachers', 'Teachers'), path: '/admin/school-management/teachers' },
+              { key: 'students', label: t('common.students', 'Students'), path: '/admin/school-management/students' },
+              { key: 'parents', label: t('adminSidebar.schoolManagement.parents'), path: '/admin/school-management/parents' },
+            ]
+          })
+
+          // Timetables
+          items.push({
+            key: 'timetables',
+            icon: Calendar,
+            label: t('staff.timetables.title', 'Timetables'),
+            path: '/admin/academic-management/timetables'
+          })
+
+          // Tasks - ONLY for Director and Assistant
+          if (position === 'DIRECTOR' || position === 'ASSISTANT') {
+            items.push({
+              key: 'tasks',
+              icon: CheckSquare,
+              label: t('staff.tasks.title', 'Tasks & Projects'),
+              path: '/staff/tasks'
+            })
+          }
+        }
+
+        // Communication for all staff
+        items.push({
+          key: 'communication',
+          icon: MessageSquare,
+          label: t('common.communication', 'Communication'),
+          items: [
+            { key: 'messages', label: t('common.messages', 'Messages'), path: '/messages' },
+            { key: 'announcements', label: t('common.announcements', 'Announcements'), path: '/announcements' },
+          ]
+        })
+
+        return items
+      })(),
+      [USER_ROLES.DRIVER]: [
+        {
+          key: 'transport',
+          icon: Car,
+          label: 'Transport',
+          tooltip: 'Manage vehicle routes and students',
+          items: [
+            { key: 'vehicles', label: 'Vehicles', path: '/admin/school-management/vehicles' },
+            { key: 'my-routes', label: 'My Routes', path: '/staff/transport/routes' },
+          ]
         },
         {
           key: 'communication',
           icon: MessageSquare,
           label: 'Communication',
-          tooltip: 'Messages and announcements',
+          tooltip: 'Direct messages',
           items: [
             { key: 'messages', label: 'Messages', path: '/messages' },
-            { key: 'announcements', label: 'Announcements', path: '/announcements' },
           ]
-        },
-        {
-          key: 'notifications',
-          icon: Bell,
-          label: t('common.notifications'),
-          tooltip: t('common.notifications'),
-          path: '/parent/notifications',
-          badge: 5
-        }
-      ],
-
-      [USER_ROLES.STAFF]: [
-        {
-          key: 'attendance',
-          icon: UserCheck,
-          label: t('attendance.title'),
-          tooltip: t('attendance.title'),
-          items: [
-            { key: 'attendance-sessions', label: t('misc.sessionsAttended'), path: ROUTES.ATTENDANCE.LIST },
-            { key: 'absence-flags', label: t('attendance.chronic'), path: ROUTES.ATTENDANCE.FLAGS },
-            { key: 'attendance-reports', label: t('navigation.reports'), path: ROUTES.ATTENDANCE.REPORTS },
-          ]
-        },
-        {
-          key: 'students',
-          icon: GraduationCap,
-          label: t('navigation.students'),
-          tooltip: t('navigation.students'),
-          path: '/staff/students',
-        },
-        {
-          key: 'reports',
-          icon: FileText,
-          label: t('navigation.reports'),
-          tooltip: t('navigation.reports'),
-          path: '/staff/reports',
-        }
-      ],
-
-      [USER_ROLES.DRIVER]: [
-        {
-          key: 'routes',
-          icon: Car,
-          label: t('navigation.routes'),
-          tooltip: t('navigation.routes'),
-          path: '/driver/routes',
-        },
-        {
-          key: 'students',
-          icon: Users,
-          label: t('navigation.students'),
-          tooltip: t('navigation.students'),
-          path: '/driver/students',
         }
       ]
     }

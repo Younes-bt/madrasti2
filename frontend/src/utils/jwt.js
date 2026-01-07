@@ -75,6 +75,7 @@ export const extractUserFromJWT = (token) => {
     first_name: decoded.first_name || '',
     last_name: decoded.last_name || '',
     role: decoded.role || 'STUDENT',
+    position: decoded.position || null,
     permissions: decoded.permissions || [],
     exp: decoded.exp,
     iat: decoded.iat

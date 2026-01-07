@@ -1,9 +1,8 @@
 import React from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useLanguage } from '../../../hooks/useLanguage'
 import { useAuth } from '../../../hooks/useAuth'
 import { DashboardLayout } from '../../layout/Layout'
-import AdminBreadcrumb from './AdminBreadcrumb'
 import { Card, CardContent } from '../../ui/card'
 import { Button } from '../../ui/button'
 import { RefreshCcw, ArrowLeft, AlertTriangle } from 'lucide-react'
@@ -19,7 +18,6 @@ const AdminPageLayout = ({
   showRefreshButton = false,
   onRefresh,
   actions = [],
-  breadcrumbItems = [],
   loading = false,
   error = null,
   className,
@@ -29,7 +27,6 @@ const AdminPageLayout = ({
 }) => {
   const { t, isRTL } = useLanguage()
   const { user } = useAuth()
-  const location = useLocation()
   const navigate = useNavigate()
 
   const handleBack = () => {
@@ -48,107 +45,9 @@ const AdminPageLayout = ({
     }
   }
 
-  // Generate breadcrumb items from URL if not provided
-  const generateBreadcrumbItems = () => {
-    if (breadcrumbItems.length > 0) {
-      return breadcrumbItems
-    }
-
-    const pathSegments = location.pathname.split('/').filter(Boolean)
-    const items = []
-
-    // Always start with Dashboard
-    items.push({
-      label: t('common.dashboard'),
-      href: '/admin',
-      icon: 'Home'
-    })
-
-    // Process path segments
-    let currentPath = ''
-    pathSegments.forEach((segment, index) => {
-      currentPath += `/${segment}`
-      
-      if (segment === 'admin') return // Skip admin segment as it's the dashboard
-      
-      // Generate label from segment
-      let label = segment
-        .split('-')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ')
-
-      // Try to get translation if available
-      try {
-        const translationKey = getTranslationKey(segment, pathSegments)
-        if (translationKey) {
-          label = t(translationKey)
-        }
-      } catch (e) {
-        // Use default label if translation not found
-      }
-
-      items.push({
-        label,
-        href: index === pathSegments.length - 1 ? null : currentPath // Last item should not be clickable
-      })
-    })
-
-    return items
-  }
-
-  // Helper function to get translation key for breadcrumbs
-  const getTranslationKey = (segment, pathSegments) => {
-    const segmentMap = {
-      'school-management': 'adminSidebar.schoolManagement.title',
-      'academic-management': 'adminSidebar.academicManagement.title',
-      'education-management': 'adminSidebar.educationManagement.title',
-      'reports': 'adminSidebar.reportsAnalytics.title',
-      'communications': 'adminSidebar.communications.title',
-      'settings': 'adminSidebar.systemSettings.title',
-      'school-details': 'adminSidebar.schoolManagement.schoolDetails',
-      'staff': 'adminSidebar.schoolManagement.teamStaff',
-      'teachers': 'adminSidebar.schoolManagement.teachers',
-      'students': 'adminSidebar.schoolManagement.students',
-      'parents': 'adminSidebar.schoolManagement.parents',
-      'rooms': 'adminSidebar.schoolManagement.rooms',
-      'vehicles': 'adminSidebar.schoolManagement.vehicles',
-      'equipment': 'adminSidebar.schoolManagement.equipment',
-      'academic-years': 'adminSidebar.academicManagement.academicYears',
-      'educational-levels': 'adminSidebar.academicManagement.educationalLevels',
-      'grades': 'adminSidebar.academicManagement.grades',
-      'classes': 'adminSidebar.academicManagement.classes',
-      'subjects': 'adminSidebar.academicManagement.subjects',
-      'timetables': 'adminSidebar.academicManagement.timetables',
-      'lessons': 'adminSidebar.educationManagement.lessonsCourses',
-      'assignments': 'adminSidebar.educationManagement.assignments',
-      'homework': 'adminSidebar.educationManagement.homework',
-      'exams': 'adminSidebar.educationManagement.exams',
-      'grading-system': 'adminSidebar.educationManagement.gradingSystem',
-      'attendance': 'adminSidebar.reportsAnalytics.attendanceReports',
-      'academic-performance': 'adminSidebar.reportsAnalytics.academicPerformance',
-      'financial': 'adminSidebar.reportsAnalytics.financialReports',
-      'announcements': 'adminSidebar.communications.announcements',
-      'email-templates': 'adminSidebar.communications.emailTemplates',
-      'parent-notifications': 'adminSidebar.communications.parentNotifications',
-      'emergency-alerts': 'adminSidebar.communications.emergencyAlerts',
-      'general': 'adminSidebar.systemSettings.generalSettings',
-      'permissions': 'adminSidebar.systemSettings.userPermissions',
-      'integrations': 'adminSidebar.systemSettings.integrationSettings',
-      'backup-restore': 'adminSidebar.systemSettings.backupRestore'
-    }
-
-    return segmentMap[segment]
-  }
-
   return (
     <DashboardLayout user={user} {...props}>
-      <div className={cn('min-h-full', className)}>
-        {/* Breadcrumb Navigation */}
-        <AdminBreadcrumb 
-          items={generateBreadcrumbItems()} 
-          className="mb-6"
-        />
-
+      <div className={cn('min-h-full px-2 py-6 sm:px-0 sm:py-0', className)}>
         {/* Page Header */}
         <div className={cn(
           'flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6',
@@ -178,7 +77,7 @@ const AdminPageLayout = ({
                   {title}
                 </h1>
               )}
-              
+
               {/* Page Subtitle */}
               {subtitle && (
                 <p className="text-muted-foreground mt-1">

@@ -13,6 +13,7 @@ import { LessonProvider, useLesson } from '../../contexts/LessonContext'
 import { StickyHeader } from '../../components/lesson/StickyHeader'
 import { StickyFooter } from '../../components/lesson/StickyFooter'
 import 'katex/dist/katex.min.css'
+import katex from 'katex'
 import {
   BookOpen,
   FileText,
@@ -67,6 +68,59 @@ const getResourceIcon = (type) => {
   }
 }
 
+// Component to render text with LaTeX expressions
+const LatexRenderer = ({ text, className = '' }) => {
+  if (!text) return null
+
+  const renderLatex = (content) => {
+    // Split by display math ($$...$$) first
+    const displayParts = content.split(/(\$\$[^$]+\$\$)/g)
+
+    return displayParts.map((part, idx) => {
+      // Check if it's display math
+      if (part.startsWith('$$') && part.endsWith('$$')) {
+        const latex = part.slice(2, -2)
+        try {
+          const html = katex.renderToString(latex, {
+            displayMode: true,
+            throwOnError: false,
+            strict: false
+          })
+          return <span key={idx} dangerouslySetInnerHTML={{ __html: html }} />
+        } catch (e) {
+          console.error('KaTeX display math error:', e)
+          return <span key={idx}>{part}</span>
+        }
+      }
+
+      // Split by inline math ($...$)
+      const inlineParts = part.split(/(\$[^$]+\$)/g)
+
+      return inlineParts.map((inlinePart, inlineIdx) => {
+        // Check if it's inline math
+        if (inlinePart.startsWith('$') && inlinePart.endsWith('$') && inlinePart.length > 2) {
+          const latex = inlinePart.slice(1, -1)
+          try {
+            const html = katex.renderToString(latex, {
+              displayMode: false,
+              throwOnError: false,
+              strict: false
+            })
+            return <span key={`${idx}-${inlineIdx}`} dangerouslySetInnerHTML={{ __html: html }} />
+          } catch (e) {
+            console.error('KaTeX inline math error:', e)
+            return <span key={`${idx}-${inlineIdx}`}>{inlinePart}</span>
+          }
+        }
+
+        return inlinePart
+      })
+    })
+  }
+
+  return <span className={className}>{renderLatex(text)}</span>
+}
+
 // Component to render blocks content with clean UI
 const BlocksContentRenderer = ({ blocksContent, language }) => {
   const isRTL = language === 'ar'
@@ -94,7 +148,7 @@ const BlocksContentRenderer = ({ blocksContent, language }) => {
             className={headingClasses[block.level || 2]}
             dir={isRTL ? 'rtl' : 'ltr'}
           >
-            {block.content?.text || ''}
+            <LatexRenderer text={block.content?.text || ''} />
           </HeadingTag>
         )
 
@@ -106,7 +160,7 @@ const BlocksContentRenderer = ({ blocksContent, language }) => {
           return (
             <div key={block.id} className="bg-indigo-50 border-r-4 border-indigo-500 p-6 rounded-lg mb-6" dir={isRTL ? 'rtl' : 'ltr'}>
               <p className="text-lg text-gray-800 leading-relaxed">
-                {block.content?.text || ''}
+                <LatexRenderer text={block.content?.text || ''} />
               </p>
             </div>
           )
@@ -118,7 +172,7 @@ const BlocksContentRenderer = ({ blocksContent, language }) => {
             className={paragraphClasses}
             dir={isRTL ? 'rtl' : 'ltr'}
           >
-            {block.content?.text || ''}
+            <LatexRenderer text={block.content?.text || ''} />
           </p>
         )
 
@@ -173,7 +227,7 @@ const BlocksContentRenderer = ({ blocksContent, language }) => {
           <ListTag key={block.id} className={listClass} dir={isRTL ? 'rtl' : 'ltr'}>
             {block.content?.items?.map((item, idx) => (
               <li key={idx} className="leading-relaxed">
-                {item}
+                <LatexRenderer text={item} />
               </li>
             ))}
           </ListTag>
@@ -197,7 +251,7 @@ const BlocksContentRenderer = ({ blocksContent, language }) => {
             className="border-l-4 border-indigo-500 pl-6 italic text-gray-700 mb-6"
             dir={isRTL ? 'rtl' : 'ltr'}
           >
-            {block.content?.text || ''}
+            <LatexRenderer text={block.content?.text || ''} />
           </blockquote>
         )
 

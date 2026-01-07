@@ -24,7 +24,8 @@ from .serializers import (
     StudentEnrollmentSerializer,
     StudentEnrollmentCreateSerializer,
     UserBasicSerializer,
-    UserUpdateSerializer
+    UserUpdateSerializer,
+    ChildSummarySerializer
 )
 
 # The RegisterView and ProfileView remain the same
@@ -308,10 +309,14 @@ class UserViewSet(viewsets.ModelViewSet):
             'teaching_classes__academic_year'  # Academic year for teacher's classes
         ).all()
 
-        # Additional filtering by role
+        # Additional filtering by role (supports comma-separated roles)
         role = self.request.query_params.get('role')
         if role:
-            queryset = queryset.filter(role=role.upper())
+            roles = [r.strip().upper() for r in role.split(',')]
+            if len(roles) > 1:
+                queryset = queryset.filter(role__in=roles)
+            else:
+                queryset = queryset.filter(role=roles[0])
 
         # Filter by profile position
         position = self.request.query_params.get('position')
@@ -467,7 +472,16 @@ class UserViewSet(viewsets.ModelViewSet):
             'student_enrollments__academic_year'
         ).filter(is_active=True)
 
-        serializer = UserUpdateSerializer(children, many=True, context={'request': request})
+        # Performance optimization: Include counts for pending homework and absences
+        from django.db.models import Count, Q, OuterRef, Subquery
+        from homework.models import Homework, Submission
+        from attendance.models import StudentAbsenceFlag
+
+        # We can't easily annotate HW counts with simple Count because it depends on class and student
+        # So we'll iterate for now or use a more complex subquery if performance issues arise.
+        # Given this is likely a small number of children, a clean loop or SerializerMethodField is safer.
+        
+        serializer = ChildSummarySerializer(children, many=True, context={'request': request})
 
         return Response({
             'parent': {

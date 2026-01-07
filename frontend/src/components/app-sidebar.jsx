@@ -24,7 +24,8 @@ import {
   School,
   ClipboardList,
   Bell,
-  ScrollText
+  ScrollText,
+  FlaskConical
 } from "lucide-react"
 
 import { NavMain } from "./nav-main"
@@ -102,6 +103,11 @@ export function AppSidebar({ ...props }) {
                 url: "/student/homework/grades",
               },
             ],
+          },
+          {
+            title: t('studentSidebar.lab', 'My Lab'),
+            url: "/lab",
+            icon: FlaskConical,
           },
           {
             title: t('studentSidebar.communication', 'Communication'),
@@ -207,6 +213,11 @@ export function AppSidebar({ ...props }) {
               url: "/admin/academic/sessions",
             },
           ],
+        },
+        {
+          title: t('sidebar.lab', 'Lab Tools'),
+          url: "/lab",
+          icon: FlaskConical,
         },
         {
           title: t('sidebar.people', 'People'),

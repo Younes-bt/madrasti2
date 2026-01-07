@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   AlertTriangle,
   ArrowDownRight,
@@ -32,6 +33,7 @@ import reportsService from '../../services/reports';
 import { schoolsService, usersService } from '../../services';
 import { useAuth } from '../../hooks/useAuth';
 import { toast } from 'sonner';
+import { getLocalizedName } from '@/lib/utils';
 
 const gradeColorMap = {
   '90-100': 'bg-emerald-500',
@@ -48,6 +50,7 @@ const academicActions = [
 ];
 
 const AcademicPerformanceReportsPage = () => {
+  const { i18n } = useTranslation();
   const [dateRange, setDateRange] = useState('this_term');
   const [classFilter, setClassFilter] = useState('all');
   const [subjectFilter, setSubjectFilter] = useState('all');
@@ -144,7 +147,7 @@ const AcademicPerformanceReportsPage = () => {
       }));
       const subjects = extractList(subjectsRes).map((s) => ({
         value: String(s.id),
-        label: s.name || s.title || `Subject ${s.id}`,
+        label: getLocalizedName(s, i18n.language) || s.title || `Subject ${s.id}`,
       }));
       const teachers = extractList(teachersRes).map((t) => ({
         value: String(t.id),
@@ -160,8 +163,8 @@ const AcademicPerformanceReportsPage = () => {
           ? ['all', { value: String(user.id), label: user.full_name || 'You' }]
           : ['all', ...teachers]
       );
-      setGradeOptions(['all', ...gradeList.map((g) => ({ value: String(g.id), label: g.name || g.code || `Grade ${g.id}` }))]);
-      setYearOptions(['all', ...yearList.map((y) => ({ value: String(y.id), label: y.year || y.name || `Year ${y.id}` }))]);
+      setGradeOptions(['all', ...gradeList.map((g) => ({ value: String(g.id), label: getLocalizedName(g, i18n.language) || g.code || `Grade ${g.id}` }))]);
+      setYearOptions(['all', ...yearList.map((y) => ({ value: String(y.id), label: getLocalizedName(y, i18n.language) || y.year || y.name || `Year ${y.id}` }))]);
     } finally {
       setFilterLoading(false);
     }
@@ -204,6 +207,7 @@ const AcademicPerformanceReportsPage = () => {
       const teacherData = teachersPayload?.teachers || [];
       setTeacherRows(isTeacher && user?.id ? teacherData.filter((t) => t.teacher_id === user.id) : teacherData);
     } catch (error) {
+      console.error(error);
       toast.error('Failed to load performance data. Please retry.');
     } finally {
       setLoading(false);

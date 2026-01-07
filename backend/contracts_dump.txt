@@ -1,0 +1,5 @@
+ID:1 Name:mariam el bair Type:FULL_TIME_MONTHLY Start:2026-01-02 End:2026-12-31 Active:True
+ID:2 Name:Salah Ahmed Type:PER_LESSON Start:2026-01-02 End:2026-12-31 Active:True
+ID:3 Name:hamza benelfassi Type:PER_LESSON Start:2026-01-02 End:2026-12-31 Active:True
+ID:4 Name:abdellah ammari Type:PART_TIME_MONTHLY Start:2026-01-02 End:2026-01-22 Active:True
+ID:5 Name:hamza benelfassi Type:FULL_TIME_MONTHLY Start:2026-01-02 End:2026-01-08 Active:True

@@ -17,7 +17,9 @@
       "WebSearch",
       "Bash(npx shadcn@latest add:*)",
       "Bash(dir:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

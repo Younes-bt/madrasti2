@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import i18n from '../../lib/i18n';
@@ -14,45 +14,8 @@ import { MultiSelect } from '../../components/ui/multi-select';
 import lessonsService from '../../services/lessons';
 import schoolsService from '../../services/schools';
 import { toast } from 'sonner';
+import { getLocalizedName } from '@/lib/utils';
 
-// Helper function to get localized subject name
-const getLocalizedSubjectName = (subject) => {
-  const currentLanguage = i18n.language;
-  switch (currentLanguage) {
-    case 'ar':
-      return subject.name_arabic || subject.name;
-    case 'fr':
-      return subject.name_french || subject.name;
-    default:
-      return subject.name;
-  }
-};
-
-// Helper function to get localized grade name
-const getLocalizedGradeName = (grade) => {
-  const currentLanguage = i18n.language;
-  switch (currentLanguage) {
-    case 'ar':
-      return grade.name_arabic || grade.name;
-    case 'fr':
-      return grade.name_french || grade.name;
-    default:
-      return grade.name;
-  }
-};
-
-// Helper function to get localized track name
-const getLocalizedTrackName = (track) => {
-  const currentLanguage = i18n.language;
-  switch (currentLanguage) {
-    case 'ar':
-      return track.name_arabic || track.name;
-    case 'fr':
-      return track.name_french || track.name;
-    default:
-      return track.name;
-  }
-};
 
 const CreateLessonPage = () => {
   const { t } = useTranslation();
@@ -78,30 +41,27 @@ const CreateLessonPage = () => {
   const [loading, setLoading] = useState(false);
   const [subjects, setSubjects] = useState([]);
   const [grades, setGrades] = useState([]);
-  const [levels, setLevels] = useState([]);
   const [tracks, setTracks] = useState([]);
 
   // Load options data
   useEffect(() => {
     loadOptions();
-  }, []);
+  }, [loadOptions]);
 
-  const loadOptions = async () => {
+  const loadOptions = useCallback(async () => {
     try {
-      const [subjectsRes, gradesRes, levelsRes] = await Promise.all([
+      const [subjectsRes, gradesRes] = await Promise.all([
         schoolsService.getSubjects(),
         schoolsService.getGrades(),
-        schoolsService.getEducationalLevels()
       ]);
 
       setSubjects(subjectsRes.results || subjectsRes);
       setGrades(gradesRes.results || gradesRes);
-      setLevels(levelsRes.results || levelsRes);
     } catch (error) {
       console.error('Error loading options:', error);
       toast.error(t('error.loadingData'));
     }
-  };
+  }, [t]);
 
   // Load tracks when grade is selected
   const loadTracksForGrade = async (gradeId) => {
@@ -121,7 +81,7 @@ const CreateLessonPage = () => {
 
   // Handle grade change to load tracks
   const handleGradeChange = (gradeId) => {
-    setFormData({...formData, grade: gradeId, tracks: []});
+    setFormData({ ...formData, grade: gradeId, tracks: [] });
     loadTracksForGrade(gradeId);
   };
 
@@ -196,7 +156,7 @@ const CreateLessonPage = () => {
                   <Input
                     id="title"
                     value={formData.title}
-                    onChange={(e) => setFormData({...formData, title: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     placeholder={t('lessons.titlePlaceholder')}
                     required
                   />
@@ -207,7 +167,7 @@ const CreateLessonPage = () => {
                   <Input
                     id="title_arabic"
                     value={formData.title_arabic}
-                    onChange={(e) => setFormData({...formData, title_arabic: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, title_arabic: e.target.value })}
                     placeholder={t('lessons.titleArabicPlaceholder')}
                   />
                 </div>
@@ -218,7 +178,7 @@ const CreateLessonPage = () => {
                 <Input
                   id="title_french"
                   value={formData.title_french}
-                  onChange={(e) => setFormData({...formData, title_french: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, title_french: e.target.value })}
                   placeholder={t('lessons.titleFrenchPlaceholder')}
                 />
               </div>
@@ -228,7 +188,7 @@ const CreateLessonPage = () => {
                 <Textarea
                   id="description"
                   value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder={t('lessons.descriptionPlaceholder')}
                   rows={3}
                 />
@@ -240,7 +200,7 @@ const CreateLessonPage = () => {
                   <Label htmlFor="subject">{t('lessons.subject')} *</Label>
                   <Select
                     value={formData.subject}
-                    onValueChange={(value) => setFormData({...formData, subject: value})}
+                    onValueChange={(value) => setFormData({ ...formData, subject: value })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder={t('lessons.selectSubject')} />
@@ -248,7 +208,7 @@ const CreateLessonPage = () => {
                     <SelectContent>
                       {subjects.map((subject) => (
                         <SelectItem key={subject.id} value={subject.id.toString()}>
-                          {getLocalizedSubjectName(subject)}
+                          {getLocalizedName(subject, i18n.language)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -267,7 +227,7 @@ const CreateLessonPage = () => {
                     <SelectContent>
                       {grades.map((grade) => (
                         <SelectItem key={grade.id} value={grade.id.toString()}>
-                          {getLocalizedGradeName(grade)}
+                          {getLocalizedName(grade, i18n.language)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -282,7 +242,7 @@ const CreateLessonPage = () => {
                   <MultiSelect
                     options={tracks.map(track => ({
                       value: track.id.toString(),
-                      label: getLocalizedTrackName(track)
+                      label: getLocalizedName(track, i18n.language)
                     }))}
                     value={formData.tracks}
                     onChange={(value) => setFormData({ ...formData, tracks: value })}
@@ -297,7 +257,7 @@ const CreateLessonPage = () => {
                   <Label htmlFor="cycle">{t('lessons.cycle')} *</Label>
                   <Select
                     value={formData.cycle}
-                    onValueChange={(value) => setFormData({...formData, cycle: value})}
+                    onValueChange={(value) => setFormData({ ...formData, cycle: value })}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -319,7 +279,7 @@ const CreateLessonPage = () => {
                     type="number"
                     min="1"
                     value={formData.order}
-                    onChange={(e) => setFormData({...formData, order: parseInt(e.target.value) || 1})}
+                    onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) || 1 })}
                   />
                 </div>
 
@@ -327,7 +287,7 @@ const CreateLessonPage = () => {
                   <Label htmlFor="difficulty">{t('lessons.difficulty')} *</Label>
                   <Select
                     value={formData.difficulty_level}
-                    onValueChange={(value) => setFormData({...formData, difficulty_level: value})}
+                    onValueChange={(value) => setFormData({ ...formData, difficulty_level: value })}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -350,7 +310,7 @@ const CreateLessonPage = () => {
                   <Textarea
                     id="objectives"
                     value={formData.objectives}
-                    onChange={(e) => setFormData({...formData, objectives: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, objectives: e.target.value })}
                     placeholder={t('lessons.objectivesPlaceholder')}
                     rows={4}
                   />
@@ -361,7 +321,7 @@ const CreateLessonPage = () => {
                   <Textarea
                     id="prerequisites"
                     value={formData.prerequisites}
-                    onChange={(e) => setFormData({...formData, prerequisites: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, prerequisites: e.target.value })}
                     placeholder={t('lessons.prerequisitesPlaceholder')}
                     rows={3}
                   />

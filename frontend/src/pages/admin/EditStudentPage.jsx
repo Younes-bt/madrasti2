@@ -9,6 +9,7 @@ import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Switch } from '../../components/ui/switch';
 import { apiMethods } from '../../services/api';
 import { toast } from 'sonner';
 
@@ -34,7 +35,9 @@ const EditStudentPage = () => {
     emergency_contact_phone: '',
     parent_name: '',
     parent_email: '',
-    parent_phone: ''
+    parent_phone: '',
+    uses_transport: false,
+    invoice_discount: 0
   });
 
   const [originalEmail, setOriginalEmail] = useState('');
@@ -47,9 +50,9 @@ const EditStudentPage = () => {
     setInitialLoading(true);
     try {
       const response = await apiMethods.get(`users/users/${studentId}/`);
-      
+
       let studentData = response.data || response;
-      
+
       // Set form data from user and profile
       setFormData({
         first_name: studentData.first_name || '',
@@ -67,12 +70,14 @@ const EditStudentPage = () => {
         emergency_contact_phone: studentData.emergency_contact_phone || studentData.profile?.emergency_contact_phone || '',
         parent_name: studentData.parent_name || studentData.profile?.parent_name || '',
         parent_email: studentData.parent_email || studentData.profile?.parent_email || '',
-        parent_phone: studentData.parent_phone || studentData.profile?.parent_phone || ''
+        parent_phone: studentData.parent_phone || studentData.profile?.parent_phone || '',
+        uses_transport: studentData.uses_transport ?? studentData.profile?.uses_transport ?? false,
+        invoice_discount: studentData.invoice_discount || studentData.profile?.invoice_discount || 0
       });
-      
+
       setOriginalEmail(studentData.email || '');
       setProfilePictureUrl(studentData.profile_picture_url || studentData.profile?.profile_picture_url || '');
-      
+
     } catch (error) {
       console.error('Failed to fetch student data:', error);
       toast.error(t('error.failedToLoadStudentData'));
@@ -168,11 +173,11 @@ const EditStudentPage = () => {
     try {
       // Prepare form data for multipart/form-data if profile picture is uploaded
       const formDataToSend = new FormData();
-      
+
       // User data
       formDataToSend.append('first_name', formData.first_name);
       formDataToSend.append('last_name', formData.last_name);
-      
+
       // Profile data
       formDataToSend.append('ar_first_name', formData.ar_first_name || '');
       formDataToSend.append('ar_last_name', formData.ar_last_name || '');
@@ -188,7 +193,9 @@ const EditStudentPage = () => {
       formDataToSend.append('parent_name', formData.parent_name || '');
       formDataToSend.append('parent_email', formData.parent_email || '');
       formDataToSend.append('parent_phone', formData.parent_phone || '');
-      
+      formDataToSend.append('uses_transport', formData.uses_transport);
+      formDataToSend.append('invoice_discount', formData.invoice_discount);
+
       // Add profile picture if uploaded
       if (profilePictureFile) {
         formDataToSend.append('profile_picture', profilePictureFile);
@@ -200,10 +207,10 @@ const EditStudentPage = () => {
         },
       });
 
-      toast.success(t('student.updateSuccess', { 
+      toast.success(t('student.updateSuccess', {
         name: `${formData.first_name} ${formData.last_name}`
       }));
-      
+
       // Navigate back to students management page
       navigate('/admin/school-management/students');
 
@@ -211,11 +218,11 @@ const EditStudentPage = () => {
       console.error('Failed to update student:', error);
       console.error('Error response:', error.response);
       console.error('Error data:', error.response?.data);
-      
+
       if (error.response?.data) {
         const errorData = error.response.data;
         console.error('Backend validation errors:', errorData);
-        
+
         if (typeof errorData === 'object') {
           // Handle field-specific errors
           const newErrors = {};
@@ -246,15 +253,15 @@ const EditStudentPage = () => {
         toast.error(t('validation.invalidImageType'));
         return;
       }
-      
+
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         toast.error(t('validation.fileTooLarge'));
         return;
       }
-      
+
       setProfilePictureFile(file);
-      
+
       // Create preview URL
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -526,6 +533,49 @@ const EditStudentPage = () => {
                   placeholder={t('student.placeholders.className')}
                   disabled={loading}
                 />
+              </div>
+
+              {/* Transport & Discount */}
+              <div className="md:col-span-2 flex flex-col space-y-4 p-4 bg-muted/30 rounded-lg border border-border/50">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="uses_transport" className="text-base">
+                      {t('student.usesTransport')}
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      {t('student.usesTransportDescription')}
+                    </p>
+                  </div>
+                  <Switch
+                    id="uses_transport"
+                    checked={formData.uses_transport}
+                    onCheckedChange={(checked) => handleInputChange('uses_transport', checked)}
+                    disabled={loading}
+                  />
+                </div>
+
+                <div className="space-y-2 pt-2 border-t">
+                  <Label htmlFor="invoice_discount">
+                    {t('student.invoiceDiscount')}
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground font-medium">MAD</span>
+                    <Input
+                      id="invoice_discount"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.invoice_discount}
+                      onChange={(e) => handleInputChange('invoice_discount', parseFloat(e.target.value) || 0)}
+                      placeholder="0.00"
+                      className="pl-12"
+                      disabled={loading}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {t('student.invoiceDiscountDescription')}
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>

@@ -47,7 +47,11 @@ INSTALLED_APPS = [
     'communication',
     'reports',
     'activity_log',
-    
+    'lab',
+    'tasks',
+    'projects',
+    'staff',  # Position-based permissions and staff management
+
     # 3rd Party Apps
     'rest_framework',
     'rest_framework_simplejwt',

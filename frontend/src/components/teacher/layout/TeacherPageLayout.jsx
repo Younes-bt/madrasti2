@@ -1,9 +1,8 @@
 import React from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useLanguage } from '../../../hooks/useLanguage'
 import { useAuth } from '../../../hooks/useAuth'
 import { DashboardLayout } from '../../layout/Layout'
-import TeacherBreadcrumb from './TeacherBreadcrumb'
 import { Card, CardContent } from '../../ui/card'
 import { Button } from '../../ui/button'
 import { RefreshCcw, ArrowLeft, AlertTriangle } from 'lucide-react'
@@ -19,7 +18,6 @@ const TeacherPageLayout = ({
   showRefreshButton = false,
   onRefresh,
   actions = [],
-  breadcrumbItems = [],
   loading = false,
   error = null,
   className,
@@ -29,7 +27,6 @@ const TeacherPageLayout = ({
 }) => {
   const { t, isRTL } = useLanguage()
   const { user } = useAuth()
-  const location = useLocation()
   const navigate = useNavigate()
 
   const handleBack = () => {
@@ -48,119 +45,9 @@ const TeacherPageLayout = ({
     }
   }
 
-  // Generate breadcrumb items from URL if not provided
-  const generateBreadcrumbItems = () => {
-    if (breadcrumbItems.length > 0) {
-      return breadcrumbItems
-    }
-
-    const pathSegments = location.pathname.split('/').filter(Boolean)
-    const items = []
-
-    // Always start with Teacher Dashboard
-    items.push({
-      label: t('teacherSidebar.dashboard'),
-      href: '/teacher',
-      icon: 'Home'
-    })
-
-    // Process path segments
-    let currentPath = ''
-    pathSegments.forEach((segment, index) => {
-      currentPath += `/${segment}`
-      
-      if (segment === 'teacher') return // Skip teacher segment as it's the dashboard
-      
-      // Generate label from segment
-      let label = segment
-        .split('-')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ')
-
-      // Try to get translation if available
-      try {
-        const translationKey = getTranslationKey(segment, pathSegments)
-        if (translationKey) {
-          label = t(translationKey)
-        }
-      } catch (e) {
-        // Use default label if translation not found
-      }
-
-      items.push({
-        label,
-        href: index === pathSegments.length - 1 ? null : currentPath // Last item should not be clickable
-      })
-    })
-
-    return items
-  }
-
-  // Helper function to get translation key for breadcrumbs
-  const getTranslationKey = (segment, pathSegments) => {
-    const segmentMap = {
-      // Profile section
-      'profile': 'teacherSidebar.profile.title',
-      'overview': 'teacherSidebar.profile.overview',
-      'my-classes': 'teacherSidebar.profile.myClasses',
-      'my-subjects': 'teacherSidebar.profile.mySubjects',
-      'my-schedule': 'teacherSidebar.profile.mySchedule',
-      
-      // Content Management section
-      'content': 'teacherSidebar.content.title',
-      'lessons': 'teacherSidebar.content.lessons',
-      'materials': 'teacherSidebar.content.materials',
-      'media-library': 'teacherSidebar.content.mediaLibrary',
-      'templates': 'teacherSidebar.content.templates',
-      
-      // Assignments & Assessment section
-      'assignments': 'teacherSidebar.assignments.title',
-      'homework': 'teacherSidebar.assignments.homework',
-      'exams': 'teacherSidebar.assignments.exams',
-      'grading': 'teacherSidebar.assignments.grading',
-      'assessment-tools': 'teacherSidebar.assignments.assessmentTools',
-      
-      // Student Management section
-      'students': 'teacherSidebar.students.title',
-      'my-students': 'teacherSidebar.students.myStudents',
-      'attendance': 'teacherSidebar.students.attendance',
-      'progress': 'teacherSidebar.students.progress',
-      'parent-communication': 'teacherSidebar.students.parentCommunication',
-      
-      // Teaching Analytics section
-      'analytics': 'teacherSidebar.analytics.title',
-      'class-performance': 'teacherSidebar.analytics.classPerformance',
-      'student-analytics': 'teacherSidebar.analytics.studentAnalytics',
-      'assignment-stats': 'teacherSidebar.analytics.assignmentStats',
-      'reports': 'teacherSidebar.analytics.reports',
-      
-      // Planning & Organization section
-      'planning': 'teacherSidebar.planning.title',
-      'lesson-planner': 'teacherSidebar.planning.lessonPlanner',
-      'calendar': 'teacherSidebar.planning.calendar',
-      'tasks': 'teacherSidebar.planning.tasks',
-      'resources': 'teacherSidebar.planning.resources',
-      
-      // Communication Hub section
-      'communication': 'teacherSidebar.communication.title',
-      'announcements': 'teacherSidebar.communication.announcements',
-      'messages': 'teacherSidebar.communication.messages',
-      'forums': 'teacherSidebar.communication.forums',
-      'notifications': 'teacherSidebar.communication.notifications'
-    }
-
-    return segmentMap[segment]
-  }
-
   return (
     <DashboardLayout user={user} {...props}>
       <div className={cn('min-h-full', className)}>
-        {/* Breadcrumb Navigation */}
-        <TeacherBreadcrumb 
-          items={generateBreadcrumbItems()} 
-          className="mb-6"
-        />
-
         {/* Page Header */}
         <div className={cn(
           'flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6',
@@ -190,7 +77,7 @@ const TeacherPageLayout = ({
                   {title}
                 </h1>
               )}
-              
+
               {/* Page Subtitle */}
               {subtitle && (
                 <p className="text-muted-foreground mt-1">

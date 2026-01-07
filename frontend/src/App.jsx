@@ -1,9 +1,22 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { LanguageProvider } from './contexts/LanguageContext'
 import { AuthProvider } from './contexts/AuthContext'
+import { LabProvider } from './contexts/LabContext'
+
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+})
 
 // Import page components
 import LoginPage from './pages/auth/LoginPage'
@@ -42,6 +55,7 @@ import TeacherLessonsPage from './pages/teacher/LessonsPage'
 import AddLessonPage from './pages/teacher/AddLessonPage'
 import EditLessonPage from './pages/teacher/EditLessonPage'
 import ViewLessonPage from './pages/teacher/ViewLessonPage'
+import { EditLessonContentPage } from './pages/teacher/EditLessonContentPage'
 import LessonExercisesPage from './pages/teacher/LessonExercisesPage'
 import LessonExerciseManagementPage from './pages/teacher/LessonExerciseManagementPage'
 import CreateLessonExercisePage from './pages/teacher/CreateLessonExercisePage'
@@ -55,8 +69,12 @@ import ViewHomeworkPage from './pages/teacher/ViewHomeworkPage'
 import ExamsPage from './pages/teacher/ExamsPage'
 import GradingPage from './pages/teacher/GradingPage'
 import GradeSubmissionPage from './pages/teacher/GradeSubmissionPage'
+import LabHomePage from './pages/lab/LabHomePage'
+import LabToolPage from './pages/lab/LabToolPage'
 import ParentDashboard from './pages/dashboard/ParentDashboard'
 import AdminDashboard from './pages/dashboard/AdminDashboard'
+import AdminHome from './pages/admin/AdminHome'
+import StaffDashboard from './pages/dashboard/StaffDashboard'
 
 // Import admin pages
 import SchoolDetailsPage from './pages/admin/SchoolDetailsPage'
@@ -129,12 +147,37 @@ import AddExercisePage from './pages/admin/AddExercisePage'
 import EditExercisePage from './pages/admin/EditExercisePage'
 import ViewExercisePage from './pages/admin/ViewExercisePage'
 import AttendanceReportsPage from './pages/admin/AttendanceReportsPage'
+import StaffAttendanceReportsPage from './pages/staff/StaffAttendanceReportsPage'
 import AcademicPerformanceReportsPage from './pages/admin/AcademicPerformanceReportsPage'
 import FeeSetupPage from './pages/admin/finance/FeeSetupPage'
 import InvoicesPage from './pages/admin/finance/InvoicesPage'
 import InvoiceDetailsPage from './pages/admin/finance/InvoiceDetailsPage'
 import PaymentsPage from './pages/admin/finance/PaymentsPage'
+import FinanceDashboard from './pages/admin/finance/FinanceDashboard'
+import ContractsPage from './pages/admin/finance/ContractsPage'
+import PayrollPage from './pages/admin/finance/PayrollPage'
+import ExpensesPage from './pages/admin/finance/ExpensesPage'
+import BudgetsPage from './pages/admin/finance/BudgetsPage'
+import TransactionsPage from './pages/admin/finance/TransactionsPage'
+import FuelAnalyticsPage from './pages/admin/finance/FuelAnalyticsPage'
 import AdminLogs from './pages/admin/log/AdminLogs'
+
+// Import task management pages
+import DailyTasksListPage from './pages/admin/tasks/DailyTasksListPage'
+import CreateDailyTaskPage from './pages/admin/tasks/CreateDailyTaskPage'
+import ViewDailyTaskPage from './pages/admin/tasks/ViewDailyTaskPage'
+import UserProgressDashboardPage from './pages/admin/tasks/UserProgressDashboardPage'
+
+// Import project management pages
+import ProjectsListPage from './pages/admin/projects/ProjectsListPage'
+import CreateProjectPage from './pages/admin/projects/CreateProjectPage'
+import ProjectDetailPage from './pages/admin/projects/ProjectDetailPage'
+
+// Import teacher task/project pages
+import MyTasksPage from './pages/teacher/tasks/MyTasksPage'
+import MyProgressPage from './pages/teacher/tasks/MyProgressPage'
+import MyProjectsPage from './pages/teacher/projects/MyProjectsPage'
+import TeacherProjectDetailPage from './pages/teacher/projects/TeacherProjectDetailPage'
 
 // Import feature pages
 import LessonsPage from './pages/lessons/LessonsPage'
@@ -145,12 +188,21 @@ import RewardsPage from './pages/rewards/RewardsPage'
 import MessagesPage from './pages/communication/MessagesPage'
 import AnnouncementsPage from './pages/communication/AnnouncementsPage'
 
-// Import Parent Finance pages
-import FinancialStatusPage from './pages/parent/finance/FinancialStatusPage'
 
 // Import auth components
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import { useAuth } from './hooks/useAuth'
+
+// Parent Pages
+import ParentHome from './pages/parent/ParentHome'
+import ParentProfilePage from './pages/parent/ParentProfilePage'
+import KidProfilePage from './pages/parent/KidProfilePage'
+import ParentAttendancePage from './pages/parent/ParentAttendancePage'
+import ParentHomeworkPage from './pages/parent/ParentHomeworkPage'
+import ParentGradesPage from './pages/parent/ParentGradesPage'
+import ParentFinancePage from './pages/parent/ParentFinancePage'
+import ParentCommunicationsPage from './pages/parent/ParentCommunicationsPage'
+import ParentNewsPage from './pages/parent/ParentNewsPage'
 
 // Dashboard redirect component - redirects to appropriate dashboard based on user role
 const DashboardRedirect = () => {
@@ -163,8 +215,8 @@ const DashboardRedirect = () => {
     'TEACHER': '/teacher',
     'STUDENT': '/student/home',
     'PARENT': '/parent',
-    'STAFF': '/admin', // Staff users go to admin dashboard
-    'DRIVER': '/admin' // Driver users go to admin dashboard
+    'STAFF': '/staff', // Staff users go to staff dashboard
+    'DRIVER': '/staff' // Driver users go to staff dashboard
   }
 
   const redirectPath = roleRoutes[user.role] || '/student'
@@ -504,6 +556,14 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/teacher/content/lessons/:lessonId/resources/:resourceId/edit"
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <EditLessonContentPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Teacher Exercise Routes */}
       <Route
@@ -641,6 +701,50 @@ const AppRoutes = () => {
         }
       />
 
+      {/* Teacher Task Routes */}
+      <Route
+        path="/teacher/tasks"
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <MyTasksPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/tasks/:taskId"
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <ViewDailyTaskPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/my-progress"
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <MyProgressPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Teacher Project Routes */}
+      <Route
+        path="/teacher/projects"
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <MyProjectsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/projects/:projectId"
+        element={
+          <ProtectedRoute requiredRoles={['TEACHER']}>
+            <TeacherProjectDetailPage />
+          </ProtectedRoute>
+        }
+      />
+
       {/* Admin Communication Routes */}
       <Route
         path="/admin/communication/messages"
@@ -664,20 +768,78 @@ const AppRoutes = () => {
         path="/parent"
         element={
           <ProtectedRoute requiredRoles={['PARENT']}>
-            <ParentDashboard />
+            <ParentHome />
           </ProtectedRoute>
         }
       />
 
-      {/* Parent Finance Routes */}
+
+      {/* New Parent Role Routes */}
       <Route
-        path="/parent/finance"
+        path="/parent/profile"
         element={
           <ProtectedRoute requiredRoles={['PARENT']}>
-            <FinancialStatusPage />
+            <ParentProfilePage />
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/parent/kids"
+        element={
+          <ProtectedRoute requiredRoles={['PARENT']}>
+            <KidProfilePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/parent/attendance"
+        element={
+          <ProtectedRoute requiredRoles={['PARENT']}>
+            <ParentAttendancePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/parent/homework"
+        element={
+          <ProtectedRoute requiredRoles={['PARENT']}>
+            <ParentHomeworkPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/parent/grades"
+        element={
+          <ProtectedRoute requiredRoles={['PARENT']}>
+            <ParentGradesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/parent/finance/invoices"
+        element={
+          <ProtectedRoute requiredRoles={['PARENT']}>
+            <ParentFinancePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/parent/communications"
+        element={
+          <ProtectedRoute requiredRoles={['PARENT']}>
+            <ParentCommunicationsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/parent/news"
+        element={
+          <ProtectedRoute requiredRoles={['PARENT']}>
+            <ParentNewsPage />
+          </ProtectedRoute>
+        }
+      />
+
 
       {/* Communication Routes - Available to all authenticated users */}
       <Route
@@ -700,8 +862,33 @@ const AppRoutes = () => {
       <Route
         path="/admin"
         element={
-          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF', 'DRIVER']}>
+          <ProtectedRoute requiredRoles={['ADMIN']}>
+            <AdminHome />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/dashboard"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN']}>
             <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/staff"
+        element={
+          <ProtectedRoute requiredRoles={['STAFF', 'DRIVER']}>
+            <StaffDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/staff/reports/attendance"
+        element={
+          <ProtectedRoute requiredRoles={['STAFF']}>
+            <StaffAttendanceReportsPage />
           </ProtectedRoute>
         }
       />
@@ -1294,6 +1481,70 @@ const AppRoutes = () => {
 
       {/* Admin Finance Routes */}
       <Route
+        path="/admin/finance/dashboard"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <FinanceDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/finance/contracts"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <ContractsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/finance/payroll"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <PayrollPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/finance/expenses"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <ExpensesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/finance/budgets"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <BudgetsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/finance/transactions"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <TransactionsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/finance/fuel"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <FuelAnalyticsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/finance/payroll"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
+            <PayrollPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/admin/finance/setup"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
@@ -1322,6 +1573,66 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'STAFF']}>
             <PaymentsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Admin Task Management Routes */}
+      <Route
+        path="/admin/tasks"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN']}>
+            <DailyTasksListPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/tasks/create"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN']}>
+            <CreateDailyTaskPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/tasks/:taskId"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN']}>
+            <ViewDailyTaskPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/tasks/progress"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN']}>
+            <UserProgressDashboardPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Admin Project Management Routes */}
+      <Route
+        path="/admin/projects"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN']}>
+            <ProjectsListPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/projects/create"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN']}>
+            <CreateProjectPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/projects/:projectId"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN']}>
+            <ProjectDetailPage />
           </ProtectedRoute>
         }
       />
@@ -1531,6 +1842,23 @@ const AppRoutes = () => {
       />
 
       <Route
+        path="/lab"
+        element={
+          <ProtectedRoute requiredRoles={['STUDENT', 'TEACHER', 'ADMIN', 'STAFF']}>
+            <LabHomePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/lab/:toolId"
+        element={
+          <ProtectedRoute requiredRoles={['STUDENT', 'TEACHER', 'ADMIN', 'STAFF']}>
+            <LabToolPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
         path="/attendance"
         element={
           <ProtectedRoute requiredRoles={['STUDENT', 'TEACHER', 'PARENT', 'ADMIN', 'STAFF', 'DRIVER']}>
@@ -1556,16 +1884,20 @@ const AppRoutes = () => {
 
 function App() {
   return (
-    <ThemeProvider>
-      <LanguageProvider>
-        <Router>
-          <AuthProvider>
-            <AppRoutes />
-            <Toaster position="top-right" richColors />
-          </AuthProvider>
-        </Router>
-      </LanguageProvider>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <LanguageProvider>
+          <Router>
+            <AuthProvider>
+              <LabProvider>
+                <AppRoutes />
+                <Toaster position="top-right" richColors />
+              </LabProvider>
+            </AuthProvider>
+          </Router>
+        </LanguageProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   )
 }
 

@@ -520,8 +520,16 @@ class HomeworkViewSet(viewsets.ModelViewSet):
             # Teachers see their own assignments
             queryset = queryset.filter(teacher=user)
         elif user.role == 'PARENT':
-            # Parents see their children's assignments
-            queryset = queryset.filter(is_published=True)  # Add parent-child logic later
+            # Parents see assignments for their children's enrolled classes
+            from users.models import StudentEnrollment
+            children_classes = StudentEnrollment.objects.filter(
+                student__parent=user,
+                is_active=True
+            ).values_list('school_class_id', flat=True)
+            queryset = queryset.filter(
+                school_class_id__in=children_classes,
+                is_published=True
+            )
         elif user.role in ['ADMIN', 'STAFF']:
             # Admin/Staff see all assignments
             queryset = queryset.all()
@@ -766,7 +774,7 @@ class SubmissionViewSet(viewsets.ModelViewSet):
             queryset = queryset.all()
         elif user.role == 'PARENT':
             # Parents see their children's submissions
-            queryset = queryset.filter(student__role='STUDENT')  # Add parent-child logic
+            queryset = queryset.filter(student__parent=user)
 
         # Filters
         homework_id = self.request.query_params.get('homework')

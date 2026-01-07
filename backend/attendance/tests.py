@@ -10,9 +10,10 @@ from django.utils import timezone
 
 from .models import (
     SchoolTimetable, TimetableSession, AttendanceSession, AttendanceRecord,
-    StudentAbsenceFlag, StudentParentRelation, StudentEnrollment,
+    StudentAbsenceFlag, StudentParentRelation,
     AttendanceNotification
 )
+from users.models import StudentEnrollment
 from schools.models import School, AcademicYear, EducationalLevel, Grade, SchoolClass, Subject, Room
 
 User = get_user_model()

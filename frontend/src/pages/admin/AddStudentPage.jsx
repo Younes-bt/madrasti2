@@ -9,11 +9,13 @@ import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Switch } from '../../components/ui/switch';
 import { apiMethods } from '../../services/api';
 import { toast } from 'sonner';
+import { getLocalizedName } from '@/lib/utils';
 
 const AddStudentPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -37,16 +39,18 @@ const AddStudentPage = () => {
     parent_name: '',
     parent_first_name: '',
     parent_last_name: '',
-    parent_phone: ''
+    parent_phone: '',
+    uses_transport: true,
+    invoice_discount: 0
   });
 
-  const [schoolName, setSchoolName] = useState('madrasti'); // Will be fetched from school config
-  
+  const [schoolName] = useState('madrasti'); // Will be fetched from school config
+
   // Enrollment data
   const [educationalLevels, setEducationalLevels] = useState([]);
   const [grades, setGrades] = useState([]);
   const [schoolClasses, setSchoolClasses] = useState([]);
-  const [academicYears, setAcademicYears] = useState([]);
+  const [, setAcademicYears] = useState([]);
   const [currentAcademicYear, setCurrentAcademicYear] = useState(null);
 
   const [errors, setErrors] = useState({});
@@ -59,26 +63,26 @@ const AddStudentPage = () => {
           apiMethods.get('schools/levels/'),
           apiMethods.get('schools/academic-years/')
         ]);
-        
+
         console.log('Levels response:', levelsResponse);
         console.log('Academic years response:', academicYearsResponse);
         console.log('Levels response type:', typeof levelsResponse, 'Is Array:', Array.isArray(levelsResponse));
         console.log('Academic years response type:', typeof academicYearsResponse, 'Is Array:', Array.isArray(academicYearsResponse));
         console.log('Levels response keys:', Object.keys(levelsResponse || {}));
         console.log('Academic years response keys:', Object.keys(academicYearsResponse || {}));
-        
-        // Extract data from paginated DRF response (results property)
-        const levelsData = levelsResponse?.results || [];
-        const academicYearsData = academicYearsResponse?.results || [];
-        
+
+        // Extract data robustly from DRF response (handles both paginated with results and non-paginated arrays)
+        const levelsData = levelsResponse?.results || (Array.isArray(levelsResponse) ? levelsResponse : []);
+        const academicYearsData = academicYearsResponse?.results || (Array.isArray(academicYearsResponse) ? academicYearsResponse : []);
+
         console.log('Processed levelsData:', levelsData);
         console.log('Processed academicYearsData:', academicYearsData);
         console.log('levelsData isArray:', Array.isArray(levelsData));
         console.log('academicYearsData isArray:', Array.isArray(academicYearsData));
-        
+
         setEducationalLevels(levelsData);
         setAcademicYears(academicYearsData);
-        
+
         // Set current academic year - ensure we have an array first
         if (academicYearsData.length > 0) {
           const currentYear = academicYearsData.find(year => year.is_current);
@@ -102,7 +106,7 @@ const AddStudentPage = () => {
         toast.error(t('error.failedToLoadData'));
       }
     };
-    
+
     fetchEnrollmentData();
   }, [t]);
 
@@ -139,7 +143,7 @@ const AddStudentPage = () => {
         setSchoolClasses([]);
       }
     };
-    
+
     fetchClasses();
   }, [formData.grade_id, formData.academic_year_id]);
 
@@ -156,6 +160,7 @@ const AddStudentPage = () => {
       }));
     }
   };
+
 
   const generateStudentId = () => {
     const currentYear = new Date().getFullYear();
@@ -196,17 +201,17 @@ const AddStudentPage = () => {
     }
 
     // Phone validation (if provided)
-    if (formData.phone && !/^[\+]?[0-9\-\(\)\s]+$/.test(formData.phone)) {
+    if (formData.phone && !/^[+]?[0-9()-\s]+$/.test(formData.phone)) {
       newErrors.phone = t('validation.phoneInvalid');
     }
 
     // Parent phone validation (if provided)
-    if (formData.parent_phone && !/^[\+]?[0-9\-\(\)\s]+$/.test(formData.parent_phone)) {
+    if (formData.parent_phone && !/^[+]?[0-9()-\s]+$/.test(formData.parent_phone)) {
       newErrors.parent_phone = t('validation.phoneInvalid');
     }
 
     // Emergency phone validation (if provided)
-    if (formData.emergency_contact_phone && !/^[\+]?[0-9\-\(\)\s]+$/.test(formData.emergency_contact_phone)) {
+    if (formData.emergency_contact_phone && !/^[+]?[0-9()-\s]+$/.test(formData.emergency_contact_phone)) {
       newErrors.emergency_contact_phone = t('validation.phoneInvalid');
     }
 
@@ -242,7 +247,7 @@ const AddStudentPage = () => {
     try {
       // Generate student ID if not provided
       const studentId = formData.student_id || generateStudentId();
-      
+
       // Generate email using initials + lastname approach
       const initial = formData.first_name ? formData.first_name[0].toLowerCase() : '';
       const cleanLastName = formData.last_name
@@ -250,17 +255,17 @@ const AddStudentPage = () => {
         .replace(/\s+/g, '') // Remove all spaces
         .replace(/[^a-z0-9]/g, '') // Remove any non-alphanumeric characters
         .trim();
-      
+
       const cleanSchoolName = schoolName
         .toLowerCase()
         .replace(/\s+/g, '') // Remove all spaces
         .replace(/[^a-z0-9]/g, '') // Remove any non-alphanumeric characters
         .trim();
-      
-      const generatedEmail = initial && cleanLastName ? 
+
+      const generatedEmail = initial && cleanLastName ?
         `${initial}.${cleanLastName}@${cleanSchoolName}-students.com` :
         `${cleanLastName}@${cleanSchoolName}-students.com`;
-      
+
       // Prepare data for API
       const apiData = {
         email: generatedEmail,
@@ -285,22 +290,24 @@ const AddStudentPage = () => {
         ...(formData.parent_name && { parent_name: formData.parent_name }),
         ...(formData.parent_first_name && { parent_first_name: formData.parent_first_name }),
         ...(formData.parent_last_name && { parent_last_name: formData.parent_last_name }),
-        ...(formData.parent_phone && { parent_phone: formData.parent_phone })
+        ...(formData.parent_phone && { parent_phone: formData.parent_phone }),
+        uses_transport: formData.uses_transport,
+        invoice_discount: formData.invoice_discount
       };
 
-      const response = await apiMethods.post('users/register/', apiData);
+      await apiMethods.post('users/register/', apiData);
 
       const selectedClass = schoolClasses.find(c => c.id === parseInt(formData.school_class_id));
-      
+
       toast.success(
-        t('student.createSuccess', { 
+        t('student.createSuccess', {
           name: `${formData.first_name} ${formData.last_name}`,
           email: generatedEmail,
           studentId: studentId,
           className: selectedClass ? selectedClass.name : ''
         })
       );
-      
+
       // Navigate back to students management page
       navigate('/admin/school-management/students');
 
@@ -309,13 +316,13 @@ const AddStudentPage = () => {
       console.error('Error response:', error.response);
       console.error('Error data:', error.response?.data);
       console.error('Error status:', error.response?.status);
-      
+
       // Only treat as creation failure if we get 4xx status codes
       if (error.response?.status >= 400 && error.response?.status < 500) {
         if (error.response?.data) {
           const errorData = error.response.data;
           console.error('Backend validation errors:', errorData);
-          
+
           if (typeof errorData === 'object') {
             // Handle field-specific errors
             const newErrors = {};
@@ -500,8 +507,8 @@ const AddStudentPage = () => {
                         .toLowerCase()
                         .replace(/\s+/g, '')
                         .replace(/[^a-z0-9]/g, '');
-                      
-                      return initial && cleanLastName ? 
+
+                      return initial && cleanLastName ?
                         `${initial}.${cleanLastName}@${cleanSchoolName}-students.com` :
                         cleanLastName ? `${cleanLastName}@${cleanSchoolName}-students.com` : '';
                     })()}
@@ -577,7 +584,7 @@ const AddStudentPage = () => {
                     {educationalLevels.length > 0 ? (
                       educationalLevels.map((level) => (
                         <SelectItem key={level.id} value={level.id.toString()}>
-                          {level.name}
+                          {getLocalizedName(level, i18n.language)}
                         </SelectItem>
                       ))
                     ) : (
@@ -596,8 +603,8 @@ const AddStudentPage = () => {
                 <Label htmlFor="grade" className="required">
                   {t('student.grade')}
                 </Label>
-                <Select 
-                  value={formData.grade_id} 
+                <Select
+                  value={formData.grade_id}
                   onValueChange={(value) => handleInputChange('grade_id', value)}
                   disabled={!formData.educational_level_id}
                 >
@@ -608,7 +615,7 @@ const AddStudentPage = () => {
                     {grades.length > 0 ? (
                       grades.map((grade) => (
                         <SelectItem key={grade.id} value={grade.id.toString()}>
-                          {grade.name}
+                          {getLocalizedName(grade, i18n.language)}
                         </SelectItem>
                       ))
                     ) : (
@@ -627,8 +634,8 @@ const AddStudentPage = () => {
                 <Label htmlFor="school_class" className="required">
                   {t('student.schoolClass')}
                 </Label>
-                <Select 
-                  value={formData.school_class_id} 
+                <Select
+                  value={formData.school_class_id}
                   onValueChange={(value) => handleInputChange('school_class_id', value)}
                   disabled={!formData.grade_id}
                 >
@@ -699,6 +706,49 @@ const AddStudentPage = () => {
                 <p className="text-xs text-gray-500">
                   {t('student.placeholders.studentNumber')}
                 </p>
+              </div>
+
+              {/* Transport & Discount */}
+              <div className="flex flex-col space-y-4 p-4 bg-muted/30 rounded-lg border border-border/50">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="uses_transport" className="text-base">
+                      {t('student.usesTransport')}
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      {t('student.usesTransportDescription')}
+                    </p>
+                  </div>
+                  <Switch
+                    id="uses_transport"
+                    checked={formData.uses_transport}
+                    onCheckedChange={(checked) => handleInputChange('uses_transport', checked)}
+                    disabled={loading}
+                  />
+                </div>
+
+                <div className="space-y-2 pt-2 border-t">
+                  <Label htmlFor="invoice_discount">
+                    {t('student.invoiceDiscount')}
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground font-medium">MAD</span>
+                    <Input
+                      id="invoice_discount"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.invoice_discount}
+                      onChange={(e) => handleInputChange('invoice_discount', parseFloat(e.target.value) || 0)}
+                      placeholder="0.00"
+                      className="pl-12"
+                      disabled={loading}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {t('student.invoiceDiscountDescription')}
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -797,8 +847,8 @@ const AddStudentPage = () => {
                         .toLowerCase()
                         .replace(/\s+/g, '')
                         .replace(/[^a-z0-9]/g, '');
-                      
-                      return parentInitial && cleanParentLastName ? 
+
+                      return parentInitial && cleanParentLastName ?
                         `${parentInitial}.${cleanParentLastName}@${cleanSchoolName}-parents.com` :
                         cleanParentLastName ? `${cleanParentLastName}@${cleanSchoolName}-parents.com` : '';
                     })()}

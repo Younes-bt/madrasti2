@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import i18n from '../../lib/i18n';
-import { motion, useInView, useMotionValue, useSpring, animate } from 'framer-motion';
+import { motion as Motion, useInView, useMotionValue, useSpring, animate } from 'framer-motion';
 import {
   Plus,
   Search,
@@ -34,19 +34,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import lessonsService from '../../services/lessons';
 import schoolsService from '../../services/schools';
 import { toast } from 'sonner';
+import { getLocalizedName, getLocalizedTitle } from '@/lib/utils';
 
-// Helper function to get localized lesson title
-const getLocalizedLessonTitle = (lesson) => {
-  const currentLanguage = i18n.language;
-  switch (currentLanguage) {
-    case 'ar':
-      return lesson.title_arabic || lesson.title;
-    case 'fr':
-      return lesson.title_french || lesson.title;
-    default:
-      return lesson.title;
-  }
-};
 
 const AnimatedCounter = ({ from = 0, to, duration = 2, className = "" }) => {
   const ref = useRef()
@@ -76,7 +65,7 @@ const AnimatedCounter = ({ from = 0, to, duration = 2, className = "" }) => {
 }
 
 const GlowingCard = ({ children, className = "", glowColor = "blue" }) => (
-  <motion.div
+  <Motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     whileHover={{ y: -5, transition: { duration: 0.2 } }}
@@ -86,21 +75,21 @@ const GlowingCard = ({ children, className = "", glowColor = "blue" }) => (
     <div className="relative bg-card border rounded-xl backdrop-blur-sm">
       {children}
     </div>
-  </motion.div>
+  </Motion.div>
 )
 
-const StatCard = ({ icon: Icon, label, value, colorClass, description, glowColor }) => (
+const StatCard = ({ icon: CardIcon, label, value, colorClass, description, glowColor }) => (
   <GlowingCard glowColor={glowColor}>
     <CardContent className="p-4 sm:p-6">
       <div className="flex items-center space-x-3 sm:space-x-4">
-        <motion.div
+        <Motion.div
           className={`p-2 sm:p-3 rounded-full bg-gradient-to-br from-${glowColor}-500 to-${glowColor}-600 text-white shadow-lg flex-shrink-0`}
           whileHover={{ scale: 1.1, rotate: 5 }}
           whileTap={{ scale: 0.95 }}
           transition={{ type: "spring", stiffness: 400, damping: 10 }}
         >
-          <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
-        </motion.div>
+          <CardIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+        </Motion.div>
         <div className="flex-1 space-y-1 min-w-0">
           <p className="text-xs sm:text-sm text-muted-foreground truncate">{label}</p>
           <div className={`text-lg sm:text-3xl font-bold ${colorClass}`}>
@@ -146,7 +135,7 @@ const LessonsManagementPage = () => {
     loadData();
     loadGrades();
     loadSubjects();
-  }, [currentPage, searchTerm, selectedGrade, selectedTrack, selectedSubject, selectedCycle]);
+  }, [loadData, loadGrades, loadSubjects]);
 
   // Load tracks when grade changes
   useEffect(() => {
@@ -156,9 +145,9 @@ const LessonsManagementPage = () => {
       setTracks([]);
       setSelectedTrack('all');
     }
-  }, [selectedGrade]);
+  }, [selectedGrade, loadTracksForGrade]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const params = {
@@ -192,9 +181,9 @@ const LessonsManagementPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, searchTerm, selectedGrade, selectedTrack, selectedSubject, selectedCycle, t]);
 
-  const loadGrades = async () => {
+  const loadGrades = useCallback(async () => {
     try {
       const gradesRes = await schoolsService.getGrades();
       setGrades(gradesRes.results || gradesRes);
@@ -202,9 +191,9 @@ const LessonsManagementPage = () => {
       console.error('Error loading grades:', error);
       toast.error(t('error.loadingData'));
     }
-  };
+  }, [t]);
 
-  const loadTracksForGrade = async (gradeId) => {
+  const loadTracksForGrade = useCallback(async (gradeId) => {
     try {
       const tracksRes = await schoolsService.getTracksForGrade(gradeId);
       setTracks(tracksRes.results || tracksRes);
@@ -212,9 +201,9 @@ const LessonsManagementPage = () => {
       console.error('Error loading tracks:', error);
       toast.error(t('error.loadingData'));
     }
-  };
+  }, [t]);
 
-  const loadSubjects = async () => {
+  const loadSubjects = useCallback(async () => {
     try {
       const subjectsRes = await schoolsService.getSubjects();
       setSubjects(subjectsRes.results || subjectsRes);
@@ -222,7 +211,7 @@ const LessonsManagementPage = () => {
       console.error('Error loading subjects:', error);
       toast.error(t('error.loadingData'));
     }
-  };
+  }, [t]);
 
   const handleEdit = (lesson) => {
     navigate(`/admin/education-management/lessons/${lesson.id}/edit`);
@@ -329,7 +318,7 @@ const LessonsManagementPage = () => {
                       <SelectItem value="all">{t('lessons.allGrades')}</SelectItem>
                       {grades.map((grade) => (
                         <SelectItem key={grade.id} value={grade.id.toString()}>
-                          {grade.name}
+                          {getLocalizedName(grade, i18n.language)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -347,7 +336,7 @@ const LessonsManagementPage = () => {
                       <SelectItem value="all">{t('lessons.allTracks')}</SelectItem>
                       {tracks.map((track) => (
                         <SelectItem key={track.id} value={track.id.toString()}>
-                          {track.name}
+                          {getLocalizedName(track, i18n.language)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -361,7 +350,7 @@ const LessonsManagementPage = () => {
                       <SelectItem value="all">{t('lessons.allSubjects')}</SelectItem>
                       {subjects.map((subject) => (
                         <SelectItem key={subject.id} value={subject.id.toString()}>
-                          {subject.name}
+                          {getLocalizedName(subject, i18n.language)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -418,7 +407,7 @@ const LessonsManagementPage = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex-1 space-y-2">
                         <div className="flex items-center gap-3">
-                          <h3 className="font-semibold text-lg">{getLocalizedLessonTitle(lesson)}</h3>
+                          <h3 className="font-semibold text-lg">{getLocalizedTitle(lesson, i18n.language)}</h3>
                           <Badge
                             variant={lesson.is_active ? "success" : "secondary"}
                             className="shrink-0"
@@ -436,16 +425,16 @@ const LessonsManagementPage = () => {
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <GraduationCap className="h-4 w-4" />
-                            {lesson.subject_name}
+                            {getLocalizedName(lesson.subject_details, i18n.language) || lesson.subject_name}
                           </span>
                           <span className="flex items-center gap-1">
                             <Users className="h-4 w-4" />
-                            {lesson.grade_name}
+                            {getLocalizedName(lesson.grade_details, i18n.language) || lesson.grade_name}
                           </span>
                           {lesson.tracks && lesson.tracks.length > 0 && (
                             <span className="flex items-center gap-1">
                               <Award className="h-4 w-4" />
-                              {lesson.tracks.map(t => t.name).join(', ')}
+                              {lesson.tracks.map(t => getLocalizedName(t, i18n.language)).join(', ')}
                             </span>
                           )}
                           <span className="flex items-center gap-1">
@@ -552,7 +541,7 @@ const LessonsManagementPage = () => {
             <DialogHeader>
               <DialogTitle>{t('lessons.confirmDelete')}</DialogTitle>
               <DialogDescription>
-                {t('lessons.deleteDescription', { title: selectedLesson ? getLocalizedLessonTitle(selectedLesson) : '' })}
+                {t('lessons.deleteDescription', { title: selectedLesson ? getLocalizedTitle(selectedLesson, i18n.language) : '' })}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter className="gap-2">

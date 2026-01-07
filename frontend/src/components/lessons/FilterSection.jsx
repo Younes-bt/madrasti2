@@ -1,4 +1,5 @@
 import { Search } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Input } from '../ui/input';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 import { cn } from '../../lib/utils';
@@ -10,19 +11,21 @@ export function FilterSection({
   onSearchChange,
   isRTL
 }) {
+  const { t } = useTranslation();
+
   return (
     <div className="container mx-auto max-w-6xl px-4 py-6">
       {/* Status Filter Tabs */}
       <div className="mb-4">
         <label className="text-sm font-medium text-neutral-700 mb-2 block">
-          عرض:
+          {t('lessons.show')}
         </label>
         <Tabs value={activeFilter} onValueChange={onFilterChange}>
           <TabsList className="w-full justify-start bg-neutral-100 p-1">
-            <TabsTrigger value="all">● الكل</TabsTrigger>
-            <TabsTrigger value="in_progress">⏳ قيد التقدم</TabsTrigger>
-            <TabsTrigger value="completed">✅ مكتملة</TabsTrigger>
-            <TabsTrigger value="locked">🔒 مغلقة</TabsTrigger>
+            <TabsTrigger value="all">● {t('lessons.all')}</TabsTrigger>
+            <TabsTrigger value="in_progress">⏳ {t('lessons.inProgress')}</TabsTrigger>
+            <TabsTrigger value="completed">✅ {t('common.completed', 'مكتملة')}</TabsTrigger>
+            <TabsTrigger value="locked">🔒 {t('lessons.locked')}</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -36,7 +39,7 @@ export function FilterSection({
         <Input
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="ابحث عن درس باسمه أو رقمه..."
+          placeholder={t('lessons.searchLessons')}
           className={cn(isRTL ? 'pr-10' : 'pl-10', 'py-6 text-base')}
         />
       </div>

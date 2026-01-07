@@ -28,7 +28,7 @@ const AdminDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setDashboardData(prev => ({ ...prev, loading: true, error: null }))
-      
+
       const endpoints = [
         '/api/schools/analytics/overview/',
         '/api/users/stats/',
@@ -36,7 +36,7 @@ const AdminDashboard = () => {
         '/api/homework/analytics/school_performance/'
       ]
 
-      const requests = endpoints.map(endpoint => 
+      const requests = endpoints.map(endpoint =>
         fetch(`${process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000'}${endpoint}`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
@@ -76,7 +76,7 @@ const AdminDashboard = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">
-              {t('common.welcome')}, {user?.first_name} - {t('admin.systemAdministrator')}
+              {t('common.welcome')}, {user?.first_name || user?.full_name || t('admin.admin')} - {t('admin.systemAdministrator')}
             </h1>
             <p className="text-muted-foreground">
               {t('admin.dashboardDescription')}
@@ -137,7 +137,7 @@ const AdminDashboard = () => {
         {/* Main Dashboard */}
         <div className="flex flex-col gap-6">
           {/* System Overview Widget */}
-          <SystemOverview 
+          <SystemOverview
             data={dashboardData.systemOverview}
             userStats={dashboardData.userStats}
             attendanceData={dashboardData.attendanceReport}
@@ -146,28 +146,28 @@ const AdminDashboard = () => {
 
           {/* Statistics Row */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <SchoolStatistics 
+            <SchoolStatistics
               data={dashboardData.homeworkAnalytics}
               loading={dashboardData.loading}
             />
-            <SystemHealth 
+            <SystemHealth
               data={dashboardData.systemOverview}
               loading={dashboardData.loading}
             />
           </div>
 
           {/* User Management Section */}
-          <UserManagement 
+          <UserManagement
             userStats={dashboardData.userStats}
             loading={dashboardData.loading}
           />
 
           {/* Actions and Activity Row */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <QuickActions 
+            <QuickActions
               onRefresh={refreshData}
             />
-            <RecentActivity 
+            <RecentActivity
               data={dashboardData}
               loading={dashboardData.loading}
             />

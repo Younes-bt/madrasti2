@@ -1,8 +1,10 @@
 import { Flame } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 import { Progress } from '../ui/progress';
 
 export function HeroSection({ summary, onContinue }) {
+  const { t } = useTranslation();
   const {
     total_lessons = 0,
     completed_lessons = 0,
@@ -19,24 +21,24 @@ export function HeroSection({ summary, onContinue }) {
         <div className="mb-6">
           <h1 className="text-3xl md:text-4xl font-bold mb-2 flex items-center gap-3">
             <span className="text-4xl">📚</span>
-            دروسي
+            {t('lessons.myLessons')}
           </h1>
           <p className="text-primary-100 text-lg">
-            تتبع تقدمك واستمر في رحلة التعلم
+            {t('lessons.heroSubtitle')}
           </p>
         </div>
 
         {/* Overall Progress */}
         <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 mb-6 border border-white/20">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-lg font-semibold">التقدم الكلي</span>
+            <span className="text-lg font-semibold">{t('lessons.overallProgress')}</span>
             <span className="text-2xl font-bold">
               {completed_lessons}/{total_lessons}
             </span>
           </div>
           <Progress value={completion_percentage} className="h-3 bg-white/20" />
           <p className="text-sm text-primary-100 mt-2">
-            {Math.round(completion_percentage)}% مكتمل
+            {t('lessons.completedPercent', { percent: Math.round(completion_percentage) })}
           </p>
         </div>
 
@@ -45,19 +47,19 @@ export function HeroSection({ summary, onContinue }) {
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-5 text-center border border-white/20">
             <div className="text-4xl mb-3">🎯</div>
             <div className="text-3xl font-bold mb-1">{completed_lessons}</div>
-            <div className="text-sm text-primary-100">درس مكتمل</div>
+            <div className="text-sm text-primary-100">{t('lessons.completedLesson')}</div>
           </div>
 
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-5 text-center border border-white/20">
             <div className="text-4xl mb-3">⏱️</div>
             <div className="text-3xl font-bold mb-1">{study_time_hours}</div>
-            <div className="text-sm text-primary-100">ساعات تعلم</div>
+            <div className="text-sm text-primary-100">{t('lessons.learningHours')}</div>
           </div>
 
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-5 text-center border border-white/20">
             <div className="text-4xl mb-3">🏆</div>
             <div className="text-3xl font-bold mb-1">{total_points}</div>
-            <div className="text-sm text-primary-100">نقطة مكتسبة</div>
+            <div className="text-sm text-primary-100">{t('lessons.pointsEarnedTitle')}</div>
           </div>
         </div>
 
@@ -69,7 +71,7 @@ export function HeroSection({ summary, onContinue }) {
             onClick={() => onContinue(next_lesson_id)}
           >
             <Flame className="w-6 h-6 text-orange-500" />
-            استمر من حيث توقفت
+            {t('lessons.continueWhereYouLeftOff')}
           </Button>
         )}
       </div>

@@ -47,26 +47,81 @@ User = get_user_model()
 # =====================================
 
 class IsTeacherOrAdmin(permissions.BasePermission):
-    """Permission for teachers and admins"""
+    """Permission for teachers, admins, and management staff (Director, Assistant, Supervisor)"""
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role in ['TEACHER', 'ADMIN']
+        if not request.user.is_authenticated:
+            return False
+        
+        # Allow ADMIN and TEACHER
+        if request.user.role in ['TEACHER', 'ADMIN']:
+            return True
+        
+        # Allow management staff (DIRECTOR, ASSISTANT, GENERAL_SUPERVISOR)
+        if request.user.role == 'STAFF' and hasattr(request.user, 'profile'):
+            management_positions = ['DIRECTOR', 'ASSISTANT', 'GENERAL_SUPERVISOR']
+            if request.user.profile.position in management_positions:
+                return True
+        
+        return False
 
 class IsStudentOwnerOrTeacherOrAdmin(permissions.BasePermission):
-    """Permission for student owners, teachers, and admins"""
+    """Permission for student owners, parents, teachers, admins, and management staff"""
     def has_permission(self, request, view):
         return request.user.is_authenticated
     
     def has_object_permission(self, request, view, obj):
+        # Allow ADMIN and TEACHER full access
         if request.user.role in ['TEACHER', 'ADMIN']:
             return True
+        
+        # Allow management staff
+        if request.user.role == 'STAFF' and hasattr(request.user, 'profile'):
+            management_positions = ['DIRECTOR', 'ASSISTANT', 'GENERAL_SUPERVISOR']
+            if request.user.profile.position in management_positions:
+                return True
+        
+        # Get student
+        student = getattr(obj, 'student', None)
+        if isinstance(obj, User) and obj.role == 'STUDENT':
+            student = obj
+        
+        if not student:
+            return False
+
+        # Students can only view their own records
         if request.user.role == 'STUDENT':
-            return obj.student == request.user
+            return student == request.user
+            
+        # Parents can view their children's records
+        if request.user.role == 'PARENT':
+            # Check direct link
+            if student.parent == request.user:
+                return True
+            # Check relationship table
+            return StudentParentRelation.objects.filter(
+                student=student, parent=request.user, is_active=True
+            ).exists()
+        
         return False
 
 class IsParentOrTeacherOrAdmin(permissions.BasePermission):
-    """Permission for parents, teachers, and admins"""
+    """Permission for parents, teachers, admins, and management staff"""
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role in ['PARENT', 'TEACHER', 'ADMIN']
+        if not request.user.is_authenticated:
+            return False
+        
+        # Allow PARENT, TEACHER, ADMIN
+        if request.user.role in ['PARENT', 'TEACHER', 'ADMIN']:
+            return True
+        
+        # Allow management staff
+        if request.user.role == 'STAFF' and hasattr(request.user, 'profile'):
+            management_positions = ['DIRECTOR', 'ASSISTANT', 'GENERAL_SUPERVISOR']
+            if request.user.profile.position in management_positions:
+                return True
+        
+        return False
+
 
 # =====================================
 # TIMETABLE VIEWSETS
@@ -472,28 +527,105 @@ class AttendanceSessionViewSet(viewsets.ModelViewSet):
         })
     
     def _send_absence_notifications(self, session):
-        """Send notifications to parents for absent students"""
+        """Send notifications to admins, supervisors, students, and parents for absent students"""
+        from communication.models import Notification
+        
         absent_records = session.attendance_records.filter(status='absent')
+        if not absent_records.exists():
+            return
+
+        subject_name = session.timetable_session.subject.name
+        session_date = session.date
+        
+        # Get Admins and General Supervisors
+        staff_recipients = User.objects.filter(
+            Q(role='ADMIN') | Q(role='STAFF', profile__position='GENERAL_SUPERVISOR'),
+            is_active=True
+        ).distinct()
         
         for record in absent_records:
-            # Get parent relationships
+            student_name = record.student.full_name
+            title = f"Absence Alert: {student_name}"
+            message = f"the student {student_name} is absent in the session :{subject_name}"
+            
+            # 1. Notify Admins and General Supervisors
+            for staff in staff_recipients:
+                Notification.objects.create(
+                    recipient=staff,
+                    title=title,
+                    message=message,
+                    notification_type=Notification.Type.SYSTEM,
+                    related_object_id=record.id,
+                    related_object_type='attendance_record'
+                )
+            
+            # 2. Notify the Student
+            if record.student.is_active:
+                Notification.objects.create(
+                    recipient=record.student,
+                    title="Absence Alert",
+                    message=f"You were marked absent in the session :{subject_name} on {session_date}",
+                    notification_type=Notification.Type.SYSTEM,
+                    related_object_id=record.id,
+                    related_object_type='attendance_record'
+                )
+
+            # 3. Notify Parents
             parent_relations = StudentParentRelation.objects.filter(
                 student=record.student,
                 is_active=True,
                 notify_absence=True
             ).select_related('parent')
             
+            # Keep track of parents already notified to avoid duplicates
+            notified_parent_ids = set()
+
             for relation in parent_relations:
-                # Create notification
+                # Create legacy AttendanceNotification (for specific reports/history)
                 AttendanceNotification.objects.create(
                     recipient=relation.parent,
                     student=record.student,
                     notification_type='absence',
-                    title=f"إخطار غياب - Absence Alert: {record.student.full_name}",
-                    message=f"تم تسجيل غياب {record.student.full_name} في حصة {session.timetable_session.subject.name} بتاريخ {session.date}",
+                    title=f"إخطار غياب - Absence Alert: {student_name}",
+                    message=f"تم تسجيل غياب {student_name} في حصة {subject_name} بتاريخ {session_date}",
                     attendance_record=record
                 )
+                
+                # Create communication.Notification for the bell icon
+                Notification.objects.create(
+                    recipient=relation.parent,
+                    title=title,
+                    message=message,
+                    notification_type=Notification.Type.SYSTEM,
+                    related_object_id=record.id,
+                    related_object_type='attendance_record'
+                )
+                notified_parent_ids.add(relation.parent.id)
 
+            # Fallback: Notify the parent linked directly to the student if not already notified
+            if record.student.parent and record.student.parent.id not in notified_parent_ids:
+                parent = record.student.parent
+                
+                # Create legacy AttendanceNotification (for specific reports/history)
+                AttendanceNotification.objects.create(
+                    recipient=parent,
+                    student=record.student,
+                    notification_type='absence',
+                    title=f"إخطار غياب - Absence Alert: {student_name}",
+                    message=f"تم تسجيل غياب {student_name} في حصة {subject_name} بتاريخ {session_date}",
+                    attendance_record=record
+                )
+                
+                # Create communication.Notification for the bell icon
+                Notification.objects.create(
+                    recipient=parent,
+                    title=title,
+                    message=message,
+                    notification_type=Notification.Type.SYSTEM,
+                    related_object_id=record.id,
+                    related_object_type='attendance_record'
+                )
+    
 # =====================================
 # ATTENDANCE RECORD VIEWSET
 # =====================================
@@ -518,6 +650,16 @@ class AttendanceRecordViewSet(viewsets.ModelViewSet):
         # Students can only see their own records
         if self.request.user.role == 'STUDENT':
             queryset = queryset.filter(student=self.request.user)
+        
+        # Parents can see their children's records
+        elif self.request.user.role == 'PARENT':
+            child_ids = StudentParentRelation.objects.filter(
+                parent=self.request.user, is_active=True
+            ).values_list('student_id', flat=True)
+            
+            queryset = queryset.filter(
+                Q(student_id__in=child_ids) | Q(student__parent=self.request.user)
+            )
         
         # Filter by student
         student_id = self.request.query_params.get('student_id')
@@ -589,6 +731,19 @@ class AttendanceRecordViewSet(viewsets.ModelViewSet):
         start_date = request.query_params.get('start_date')
         end_date = request.query_params.get('end_date')
         subject_id = request.query_params.get('subject_id')
+
+        # Check permissions for parents
+        if request.user.role == 'PARENT':
+            is_parent = StudentParentRelation.objects.filter(
+                student_id=student_id, parent=request.user, is_active=True
+            ).exists() or User.objects.filter(id=student_id, parent=request.user).exists()
+            
+            if not is_parent:
+                return Response({'error': 'Access denied to this student\'s data'}, 
+                              status=status.HTTP_403_FORBIDDEN)
+        elif request.user.role == 'STUDENT' and str(request.user.id) != str(student_id):
+            return Response({'error': 'You can only view your own statistics'}, 
+                          status=status.HTTP_403_FORBIDDEN)
 
         # Build queryset
         queryset = AttendanceRecord.objects.filter(student_id=student_id)
@@ -738,7 +893,7 @@ class AttendanceRecordViewSet(viewsets.ModelViewSet):
 class StudentAbsenceFlagViewSet(viewsets.ModelViewSet):
     """ViewSet for student absence flags"""
     queryset = StudentAbsenceFlag.objects.all()
-    permission_classes = [IsTeacherOrAdmin]
+    permission_classes = [IsParentOrTeacherOrAdmin]
     serializer_class = StudentAbsenceFlagSerializer
     
     def get_queryset(self):
@@ -747,6 +902,19 @@ class StudentAbsenceFlagViewSet(viewsets.ModelViewSet):
             'attendance_record__attendance_session__timetable_session__timetable__school_class',
             'cleared_by'
         )
+        
+        # Parents can see their children's flags
+        if self.request.user.role == 'PARENT':
+            child_ids = StudentParentRelation.objects.filter(
+                parent=self.request.user, is_active=True
+            ).values_list('student_id', flat=True)
+            
+            queryset = queryset.filter(
+                Q(student_id__in=child_ids) | Q(student__parent=self.request.user)
+            )
+        # Students can see their own flags
+        elif self.request.user.role == 'STUDENT':
+            queryset = queryset.filter(student=self.request.user)
         
         # Filter by student
         student_id = self.request.query_params.get('student_id')
@@ -906,7 +1074,7 @@ class AttendanceNotificationViewSet(viewsets.ReadOnlyModelViewSet):
 
 class AttendanceReportsViewSet(viewsets.ViewSet):
     """ViewSet for attendance reports and statistics"""
-    permission_classes = [IsTeacherOrAdmin]
+    permission_classes = [IsParentOrTeacherOrAdmin]
     
     @action(detail=False, methods=['get'])
     def class_statistics(self, request):
@@ -972,6 +1140,19 @@ class AttendanceReportsViewSet(viewsets.ViewSet):
         if not student_id:
             return Response({'error': 'student_id is required'}, 
                           status=status.HTTP_400_BAD_REQUEST)
+        
+        # Check permissions for parents and students
+        if request.user.role == 'PARENT':
+            is_parent = StudentParentRelation.objects.filter(
+                student_id=student_id, parent=request.user, is_active=True
+            ).exists() or User.objects.filter(id=student_id, parent=request.user).exists()
+            
+            if not is_parent:
+                return Response({'error': 'Access denied to this student\'s history'}, 
+                              status=status.HTTP_403_FORBIDDEN)
+        elif request.user.role == 'STUDENT' and str(request.user.id) != str(student_id):
+            return Response({'error': 'You can only view your own history'}, 
+                          status=status.HTTP_403_FORBIDDEN)
         
         # Build query
         query = Q(student_id=student_id)

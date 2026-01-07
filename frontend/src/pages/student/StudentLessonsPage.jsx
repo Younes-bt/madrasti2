@@ -4,8 +4,6 @@ import { DashboardLayout } from '../../components/layout/Layout';
 import { useLanguage } from '../../hooks/useLanguage';
 import { useAuth } from '../../hooks/useAuth';
 import lessonsService from '../../services/lessons';
-import usersService from '../../services/users';
-import schoolsService from '../../services/schools';
 import {
   HeroSection,
   FilterSection,
@@ -15,12 +13,10 @@ import {
   Pagination
 } from '../../components/lessons';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
   SelectTrigger,
   SelectValue,
 } from '../../components/ui/select';
+import { getLocalizedName, getLocalizedTitle } from '@/lib/utils';
 
 const StudentLessonsPage = () => {
   const { t, isRTL, currentLanguage } = useLanguage();
@@ -29,7 +25,6 @@ const StudentLessonsPage = () => {
 
   // State
   const [loading, setLoading] = useState(true);
-  const [studentGrade, setStudentGrade] = useState(null);
   const [subjects, setSubjects] = useState([]);
   const [lessons, setLessons] = useState([]);
   const [summary, setSummary] = useState(null);
@@ -49,42 +44,9 @@ const StudentLessonsPage = () => {
     return () => clearTimeout(handler);
   }, [searchTerm]);
 
-  // Load profile and grade
-  useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        const [profileResponse, gradesResponse] = await Promise.all([
-          usersService.getProfile(),
-          schoolsService.getGrades({ page_size: 1000 }),
-        ]);
-
-        const gradesList = gradesResponse?.results || [];
-        const normalize = (value) => (value || '').toString().trim().toLowerCase();
-
-        const candidateNames = [
-          normalize(profileResponse?.grade),
-          normalize(profileResponse?.grade_name_arabic),
-          normalize(profileResponse?.grade_name_french),
-        ].filter(Boolean);
-
-        const matchedGrade = gradesList.find((grade) => {
-          const gradeNames = [
-            normalize(grade?.name),
-            normalize(grade?.name_arabic),
-            normalize(grade?.name_french),
-          ].filter(Boolean);
-          return gradeNames.some((gradeName) => candidateNames.includes(gradeName));
-        });
-
-        setStudentGrade(matchedGrade || null);
-      } catch (err) {
-        console.error('Failed to load profile:', err);
-        setError(t('errors.loadData', 'Unable to load your lessons.'));
-      }
-    };
-
-    loadProfile();
-  }, [t]);
+  // The previous useEffect for loading profile and grade is removed
+  // because studentGrade is no longer used and the profile data
+  // was not used elsewhere in this component.
 
 
   // Reset page when filters change
@@ -130,37 +92,12 @@ const StudentLessonsPage = () => {
     loadLessons();
   }, [selectedSubject, debouncedSearch, currentPage, t]);
 
-  // Get localized lesson title
-  const getLocalizedLessonTitle = (lesson) => {
-    if (!lesson) return '';
-    switch (currentLanguage) {
-      case 'ar':
-        return lesson.title_arabic || lesson.title;
-      case 'fr':
-        return lesson.title_french || lesson.title;
-      default:
-        return lesson.title;
-    }
-  };
-
-  // Get localized subject name
-  const getLocalizedSubjectName = (subject) => {
-    if (!subject) return '';
-    switch (currentLanguage) {
-      case 'ar':
-        return subject.name_arabic || subject.name;
-      case 'fr':
-        return subject.name_french || subject.name;
-      default:
-        return subject.name;
-    }
-  };
 
   // Add title to each lesson (for LessonCard)
   const lessonsWithLocalizedTitles = useMemo(() => {
     return lessons.map(lesson => ({
       ...lesson,
-      title: getLocalizedLessonTitle(lesson)
+      title: getLocalizedTitle(lesson, currentLanguage)
     }));
   }, [lessons, currentLanguage]);
 
@@ -178,7 +115,7 @@ const StudentLessonsPage = () => {
   const handleLessonClick = (lesson) => {
     // TODO: Re-enable availability check later
     // if (!lesson.is_locked) {
-      navigate(`/student/lessons/${lesson.id}`);
+    navigate(`/student/lessons/${lesson.id}`);
     // }
   };
 
@@ -239,7 +176,7 @@ const StudentLessonsPage = () => {
                   </SelectItem>
                   {subjects.map((subject) => (
                     <SelectItem key={subject.id} value={subject.id.toString()}>
-                      {getLocalizedSubjectName(subject)}
+                      {getLocalizedName(subject, currentLanguage)}
                     </SelectItem>
                   ))}
                 </SelectContent>

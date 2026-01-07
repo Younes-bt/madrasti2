@@ -1,10 +1,12 @@
 import { Lock, PlayCircle, Clock, CheckCircle, BarChart3, Trophy, BookOpen } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Progress } from '../ui/progress';
 import { Badge } from '../ui/badge';
 
 export function LessonCard({ lesson, onLessonClick }) {
+  const { t } = useTranslation();
   const { id, title, difficulty_level, progress, is_locked } = lesson;
 
   // Determine status
@@ -19,41 +21,41 @@ export function LessonCard({ lesson, onLessonClick }) {
   const statusConfig = {
     locked: {
       icon: Lock,
-      label: 'مغلق',
+      label: t('lessons.locked'),
       bgColor: 'bg-neutral-100',
       textColor: 'text-neutral-600',
       borderColor: 'border-neutral-200',
-      actionLabel: 'مغلق',
+      actionLabel: t('lessons.locked'),
       actionDisabled: true,
       actionVariant: 'outline'
     },
     'not_started': {
       icon: PlayCircle,
-      label: 'لم يبدأ',
+      label: t('lessons.notStarted'),
       bgColor: 'bg-info-50',
       textColor: 'text-info-700',
       borderColor: 'border-info-200',
-      actionLabel: 'ابدأ الدرس',
+      actionLabel: t('lessons.startLesson'),
       actionDisabled: false,
       actionVariant: 'default'
     },
     'in_progress': {
       icon: Clock,
-      label: 'قيد التقدم',
+      label: t('lessons.inProgress'),
       bgColor: 'bg-warning-50',
       textColor: 'text-warning-700',
       borderColor: 'border-warning-300',
-      actionLabel: 'استمر في التعلم',
+      actionLabel: t('lessons.continueLearning'),
       actionDisabled: false,
       actionVariant: 'default'
     },
     completed: {
       icon: CheckCircle,
-      label: 'مكتمل',
+      label: t('lessons.completed'),
       bgColor: 'bg-success-50',
       textColor: 'text-success-700',
       borderColor: 'border-success-200',
-      actionLabel: 'راجع الدرس',
+      actionLabel: t('lessons.reviewLesson'),
       actionDisabled: false,
       actionVariant: 'outline'
     }
@@ -64,9 +66,9 @@ export function LessonCard({ lesson, onLessonClick }) {
 
   // Difficulty styling
   const difficultyConfig = {
-    'easy': { label: 'سهل', color: 'text-success-600', bg: 'bg-success-50' },
-    'medium': { label: 'متوسط', color: 'text-warning-600', bg: 'bg-warning-50' },
-    'hard': { label: 'صعب', color: 'text-error-600', bg: 'bg-error-50' }
+    'easy': { label: t('lessons.easy'), color: 'text-success-600', bg: 'bg-success-50' },
+    'medium': { label: t('lessons.medium'), color: 'text-warning-600', bg: 'bg-warning-50' },
+    'hard': { label: t('lessons.hard'), color: 'text-error-600', bg: 'bg-error-50' }
   };
   const diffStyle = difficultyConfig[difficulty_level] || { label: difficulty_level, color: 'text-neutral-600', bg: 'bg-neutral-50' };
 
@@ -98,7 +100,7 @@ export function LessonCard({ lesson, onLessonClick }) {
           <div className="mb-4">
             <Progress value={completionPercentage} className="h-2.5" />
             <div className="flex items-center justify-between mt-2">
-              <p className="text-sm text-neutral-600">التقدم</p>
+              <p className="text-sm text-neutral-600">{t('lessons.progressLabel')}</p>
               <p className="text-sm font-bold text-warning-700" dir="ltr">
                 {Math.round(completionPercentage)}%
               </p>
@@ -112,7 +114,7 @@ export function LessonCard({ lesson, onLessonClick }) {
             <div className="flex items-center gap-2">
               <Trophy className="w-5 h-5 text-warning-500" />
               <span className="text-sm font-bold text-neutral-900">
-                +{Math.round(pointsEarned)} نقطة
+                +{Math.round(pointsEarned)} {t('lessons.points')}
               </span>
             </div>
             <div className="flex items-center gap-2">

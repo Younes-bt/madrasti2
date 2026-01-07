@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import i18n from '../../lib/i18n';
 import {
   Plus,
   Search,
   MoreVertical,
-  Eye,
   Edit,
   Trash2,
   GraduationCap,
@@ -37,22 +36,26 @@ import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar'
 import { apiMethods } from '../../services/api';
 import communicationService from '../../services/communication';
 import { toast } from 'sonner';
+import { getLocalizedName } from '@/lib/utils';
 
-const StatCard = ({ icon: Icon, label, value, colorClass, description }) => (
-  <Card>
-    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-      <CardTitle className="text-sm font-medium">{label}</CardTitle>
-      <Icon className={`h-4 w-4 text-muted-foreground ${colorClass}`} />
-    </CardHeader>
-    <CardContent>
-      <div className={`text-2xl font-bold ${colorClass}`}>{value}</div>
-      <p className="text-xs text-muted-foreground">{description}</p>
-    </CardContent>
-  </Card>
-);
+const StatCard = (props) => {
+  const { icon: CardIcon, label, value, colorClass, description } = props;
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{label}</CardTitle>
+        <CardIcon className={`h-4 w-4 text-muted-foreground ${colorClass}`} />
+      </CardHeader>
+      <CardContent>
+        <div className={`text-2xl font-bold ${colorClass}`}>{value}</div>
+        <p className="text-xs text-muted-foreground">{description}</p>
+      </CardContent>
+    </Card>
+  );
+};
 
 const StudentsManagementPage = () => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [enrollments, setEnrollments] = useState([]);
@@ -80,7 +83,7 @@ const StudentsManagementPage = () => {
   const [messageContent, setMessageContent] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
 
-  const fetchEducationalData = async () => {
+  const fetchEducationalData = useCallback(async () => {
     try {
       const [structureData, classesData] = await Promise.all([
         apiMethods.get('users/bulk-import/status/'),
@@ -99,7 +102,7 @@ const StudentsManagementPage = () => {
       console.error('Failed to fetch educational data:', error);
       toast.error(t('error.failedToLoadEducationalData'));
     }
-  };
+  }, [t]);
 
   const fetchEnrollments = useCallback(async () => {
     setLoading(true);
@@ -137,18 +140,15 @@ const StudentsManagementPage = () => {
 
   const fetchStats = useCallback(async () => {
     try {
-      // Get total count from pagination
       const totalParams = new URLSearchParams();
       if (levelFilter) totalParams.append('school_class__grade__educational_level', levelFilter);
       if (gradeFilter) totalParams.append('school_class__grade', gradeFilter);
       if (classFilter) totalParams.append('school_class', classFilter);
       if (debouncedSearchQuery) totalParams.append('search', debouncedSearchQuery);
 
-      // Get active count
       const activeParams = new URLSearchParams(totalParams);
       activeParams.append('is_active', 'true');
 
-      // Get inactive count  
       const inactiveParams = new URLSearchParams(totalParams);
       inactiveParams.append('is_active', 'false');
 
@@ -169,17 +169,15 @@ const StudentsManagementPage = () => {
     }
   }, [levelFilter, gradeFilter, classFilter, debouncedSearchQuery]);
 
-
   useEffect(() => {
     fetchEducationalData();
-  }, []);
+  }, [fetchEducationalData]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery);
-      setCurrentPage(1); // Reset to first page on new search
+      setCurrentPage(1);
     }, 500);
-
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
@@ -224,7 +222,6 @@ const StudentsManagementPage = () => {
 
   const handleSendMessageSubmit = async () => {
     if (!messageContent.trim() || !selectedStudentForMessage) return;
-
     setSendingMessage(true);
     try {
       const conversation = await communicationService.startDirectConversation(selectedStudentForMessage.id);
@@ -232,7 +229,6 @@ const StudentsManagementPage = () => {
         conversation: conversation.id,
         content: messageContent.trim()
       });
-
       toast.success(t('Message sent successfully'));
       setIsMessageModalOpen(false);
       setMessageContent('');
@@ -257,9 +253,7 @@ const StudentsManagementPage = () => {
 
   const PaginationControls = () => {
     if (!pagination || pagination.count <= 20) return null;
-
     const totalPages = Math.ceil(pagination.count / 20);
-
     return (
       <div className="flex items-center justify-between px-2 mt-4">
         <div className="text-sm text-muted-foreground">
@@ -287,9 +281,6 @@ const StudentsManagementPage = () => {
               {t('common.of')} {totalPages}
             </p>
           </div>
-          <div className="flex items-center justify-center text-sm font-medium">
-            {t('common.page_of', { currentPage, totalPages })}
-          </div>
           <div className="flex items-center space-x-2">
             <Button
               variant="outline"
@@ -297,7 +288,6 @@ const StudentsManagementPage = () => {
               onClick={() => setCurrentPage(prev => prev - 1)}
               disabled={!pagination?.previous}
             >
-              <span className="sr-only">{t('common.previous')}</span>
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <Button
@@ -306,7 +296,6 @@ const StudentsManagementPage = () => {
               onClick={() => setCurrentPage(prev => prev + 1)}
               disabled={!pagination?.next}
             >
-              <span className="sr-only">{t('common.next')}</span>
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
@@ -316,250 +305,230 @@ const StudentsManagementPage = () => {
   };
 
   return (
-    <div>
-      <AdminPageLayout
-        title={t('admin.studentsManagement.title')}
-        subtitle={t('admin.studentsManagement.subtitle')}
-        actions={[
-          <Button key="add-student" onClick={handleAddStudent} className="gap-2">
-            <Plus className="h-4 w-4" />{t('action.addStudent')}
-          </Button>,
-          <Button key="bulk-import" onClick={handleBulkImportStudents} variant="outline" className="gap-2">
-            <Upload className="h-4 w-4" />{t('action.bulkImport')}
-          </Button>
-        ]}
-        loading={loading}
+    <AdminPageLayout
+      title={t('admin.studentsManagement.title')}
+      subtitle={t('admin.studentsManagement.subtitle')}
+      actions={[
+        <Button key="add-student" onClick={handleAddStudent} className="gap-2">
+          <Plus className="h-4 w-4" />{t('action.addStudent')}
+        </Button>,
+        <Button key="bulk-import" onClick={handleBulkImportStudents} variant="outline" className="gap-2">
+          <Upload className="h-4 w-4" />{t('action.bulkImport')}
+        </Button>
+      ]}
+      loading={loading}
+    >
+      <div
+        className="space-y-6"
       >
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="space-y-6"
-        >
-          {/* Statistics Section */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <StatCard
-              icon={GraduationCap}
-              label={t('admin.studentsManagement.stats.totalStudents')}
-              value={stats.total}
-              colorClass="text-blue-500"
-              description={t('admin.studentsManagement.stats.totalStudentsDescription')}
-            />
-            <StatCard
-              icon={CheckCircle}
-              label={t('admin.studentsManagement.stats.activeStudents')}
-              value={stats.active}
-              colorClass="text-green-500"
-              description={t('admin.studentsManagement.stats.activeStudentsDescription')}
-            />
-            <StatCard
-              icon={XCircle}
-              label={t('admin.studentsManagement.stats.inactiveStudents')}
-              value={stats.inactive}
-              colorClass="text-red-500"
-              description={t('admin.studentsManagement.stats.inactiveStudentsDescription')}
-            />
-          </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <StatCard
+            icon={GraduationCap}
+            label={t('admin.studentsManagement.stats.totalStudents')}
+            value={stats.total}
+            colorClass="text-blue-500"
+            description={t('admin.studentsManagement.stats.totalStudentsDescription')}
+          />
+          <StatCard
+            icon={CheckCircle}
+            label={t('admin.studentsManagement.stats.activeStudents')}
+            value={stats.active}
+            colorClass="text-green-500"
+            description={t('admin.studentsManagement.stats.activeStudentsDescription')}
+          />
+          <StatCard
+            icon={XCircle}
+            label={t('admin.studentsManagement.stats.inactiveStudents')}
+            value={stats.inactive}
+            colorClass="text-red-500"
+            description={t('admin.studentsManagement.stats.inactiveStudentsDescription')}
+          />
+        </div>
 
-          {/* Search, Filter, and Table Section */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex flex-col sm:flex-row items-center gap-4 mb-4">
-                <div className="relative w-full sm:max-w-sm">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder={t('admin.studentsManagement.searchPlaceholder')}
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full sm:w-auto ml-auto">
-                  <Select value={levelFilter} onValueChange={handleFilterChange(setLevelFilter)}>
-                    <SelectTrigger>
-                      <Library className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <SelectValue placeholder={t('common.level')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{t('common.allLevels')}</SelectItem>
-                      {educationalStructure.levels.map(level => (
-                        <SelectItem key={level.id} value={level.id.toString()}>{level.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select value={gradeFilter} onValueChange={handleFilterChange(setGradeFilter)} disabled={!levelFilter}>
-                    <SelectTrigger>
-                      <Building className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <SelectValue placeholder={t('common.grade')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{t('common.allGrades')}</SelectItem>
-                      {gradesForSelectedLevel.map(grade => (
-                        <SelectItem key={grade.id} value={grade.id.toString()}>{grade.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select value={classFilter} onValueChange={handleFilterChange(setClassFilter)} disabled={!gradeFilter}>
-                    <SelectTrigger>
-                      <Users2 className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <SelectValue placeholder={t('common.class')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{t('common.allClasses')}</SelectItem>
-                      {classesForSelectedGrade.map(cls => (
-                        <SelectItem key={cls.id} value={cls.id.toString()}>{cls.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex flex-col sm:flex-row items-center gap-4 mb-4">
+              <div className="relative w-full sm:max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder={t('admin.studentsManagement.searchPlaceholder')}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
               </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full sm:w-auto ml-auto">
+                <Select value={levelFilter} onValueChange={handleFilterChange(setLevelFilter)}>
+                  <SelectTrigger>
+                    <Library className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <SelectValue placeholder={t('common.level')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t('common.allLevels')}</SelectItem>
+                    {educationalStructure.levels.map(level => (
+                      <SelectItem key={level.id} value={level.id.toString()}>{getLocalizedName(level, i18n.language)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={gradeFilter} onValueChange={handleFilterChange(setGradeFilter)} disabled={!levelFilter}>
+                  <SelectTrigger>
+                    <Building className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <SelectValue placeholder={t('common.grade')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t('common.allGrades')}</SelectItem>
+                    {gradesForSelectedLevel.map(grade => (
+                      <SelectItem key={grade.id} value={grade.id.toString()}>{getLocalizedName(grade, i18n.language)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={classFilter} onValueChange={handleFilterChange(setClassFilter)} disabled={!gradeFilter}>
+                  <SelectTrigger>
+                    <Users2 className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <SelectValue placeholder={t('common.class')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t('common.allClasses')}</SelectItem>
+                    {classesForSelectedGrade.map(cls => (
+                      <SelectItem key={cls.id} value={cls.id.toString()}>{getLocalizedName(cls, i18n.language)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t('common.student')}</TableHead>
+                    <TableHead>{t('common.studentId')}</TableHead>
+                    <TableHead>{t('common.class')}</TableHead>
+                    <TableHead>{t('common.status')}</TableHead>
+                    <TableHead>{t('common.enrolledOn')}</TableHead>
+                    <TableHead>{t('common.actions')}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
                     <TableRow>
-                      <TableHead>{t('common.student')}</TableHead>
-                      <TableHead className="hidden sm:table-cell">{t('common.studentId')}</TableHead>
-                      <TableHead className="hidden md:table-cell">{t('common.class')}</TableHead>
-                      <TableHead>{t('common.status')}</TableHead>
-                      <TableHead className="hidden lg:table-cell">{t('common.enrolledOn')}</TableHead>
-                      <TableHead><span className="sr-only">{t('common.actions')}</span></TableHead>
+                      <TableCell colSpan={6} className="h-24 text-center">
+                        {t('common.loading')}
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {loading ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="h-24 text-center">
-                          {t('common.loading')}
-                        </TableCell>
-                      </TableRow>
-                    ) : enrollments.length > 0 ? (
-                      enrollments.map(({ id, student, student_number, school_class_name, is_active, enrollment_date }) => (
-                        <TableRow
-                          key={id}
-                          className="cursor-pointer hover:bg-muted/50 transition-colors"
-                          onClick={() => handleViewStudent(student.id)}
-                        >
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              <Avatar className="h-9 w-9">
-                                <AvatarImage src={student.profile_picture_url} alt={getDisplayName(student)} />
-                                <AvatarFallback>
-                                  {(student.first_name?.[0] || '') + (student.last_name?.[0] || '')}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="font-medium">{getDisplayName(student)}</div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="hidden sm:table-cell">{student_number || 'N/A'}</TableCell>
-                          <TableCell className="hidden md:table-cell">{school_class_name || '—'}</TableCell>
-                          <TableCell>
-                            <Badge variant={is_active ? 'default' : 'outline'} className={is_active ? 'bg-green-100 text-green-800' : ''}>
-                              {is_active ? t('status.active') : t('status.inactive')}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="hidden lg:table-cell">{formatDate(enrollment_date)}</TableCell>
-                          <TableCell onClick={(e) => e.stopPropagation()}>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                  <span className="sr-only">{t('action.openMenu')}</span>
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEditStudent(student.id); }}>
-                                  <Edit className="mr-2 h-4 w-4" /><span>{t('action.edit')}</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleSendMessage(student); }}>
-                                  <MessageSquare className="mr-2 h-4 w-4" /><span>{t('action.sendMessage') || 'Send Message'}</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDeleteStudent(student.id); }} className="text-red-600">
-                                  <Trash2 className="mr-2 h-4 w-4" /><span>{t('action.delete')}</span>
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={6} className="h-48">
-                          <div className="flex flex-col items-center justify-center space-y-4">
-                            <FileWarning className="h-12 w-12 text-muted-foreground" />
-                            <h3 className="text-lg font-semibold">{t('admin.studentsManagement.noStudentsFound')}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              {searchQuery || levelFilter || gradeFilter || classFilter
-                                ? t('admin.studentsManagement.noStudentsMatchingFilters')
-                                : t('admin.studentsManagement.noStudentsYet')
-                              }
-                            </p>
-                            <Button size="sm" onClick={handleAddStudent}>
-                              <UserPlus className="mr-2 h-4 w-4" />
-                              {t('action.addStudent')}
-                            </Button>
+                  ) : enrollments.length > 0 ? (
+                    enrollments.map(({ id, student, student_number, school_class_name, is_active, enrollment_date }) => (
+                      <TableRow
+                        key={id}
+                        className="cursor-pointer hover:bg-muted/50 transition-colors"
+                        onClick={() => handleViewStudent(student.id)}
+                      >
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-9 w-9">
+                              <AvatarImage src={student.profile_picture_url} alt={getDisplayName(student)} />
+                              <AvatarFallback>
+                                {(student.first_name?.[0] || '') + (student.last_name?.[0] || '')}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="font-medium">{getDisplayName(student)}</div>
                           </div>
                         </TableCell>
+                        <TableCell>{student_number || 'N/A'}</TableCell>
+                        <TableCell>{school_class_name || '—'}</TableCell>
+                        <TableCell>
+                          <Badge variant={is_active ? 'default' : 'outline'} className={is_active ? 'bg-green-100 text-green-800' : ''}>
+                            {is_active ? t('status.active') : t('status.inactive')}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{formatDate(enrollment_date)}</TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEditStudent(student.id); }}>
+                                <Edit className="mr-2 h-4 w-4" /><span>{t('action.edit')}</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleSendMessage(student); }}>
+                                <MessageSquare className="mr-2 h-4 w-4" /><span>{t('action.sendMessage') || 'Send Message'}</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDeleteStudent(student.id); }} className="text-red-600">
+                                <Trash2 className="mr-2 h-4 w-4" /><span>{t('action.delete')}</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
                       </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-          <PaginationControls />
-
-          {/* Send Message Modal */}
-          <Dialog open={isMessageModalOpen} onOpenChange={setIsMessageModalOpen}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>
-                  {t('Send Message to')} {selectedStudentForMessage ? getDisplayName(selectedStudentForMessage) : ''}
-                </DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">{t('Message')}</label>
-                  <textarea
-                    value={messageContent}
-                    onChange={(e) => setMessageContent(e.target.value)}
-                    placeholder={t('Type your message...')}
-                    className="w-full min-h-[120px] p-3 border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-primary"
-                    disabled={sendingMessage}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setIsMessageModalOpen(false)}
-                  disabled={sendingMessage}
-                >
-                  {t('Cancel')}
-                </Button>
-                <Button
-                  onClick={handleSendMessageSubmit}
-                  disabled={!messageContent.trim() || sendingMessage}
-                >
-                  {sendingMessage ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {t('Sending...')}
-                    </>
+                    ))
                   ) : (
-                    <>
-                      <Send className="mr-2 h-4 w-4" />
-                      {t('Send Message')}
-                    </>
+                    <TableRow>
+                      <TableCell colSpan={6} className="h-48 text-center">
+                        <div className="flex flex-col items-center justify-center space-y-4">
+                          <FileWarning className="h-12 w-12 text-muted-foreground" />
+                          <h3 className="text-lg font-semibold">{t('admin.studentsManagement.noStudentsFound')}</h3>
+                          <Button size="sm" onClick={handleAddStudent}>
+                            <UserPlus className="mr-2 h-4 w-4" />
+                            {t('action.addStudent')}
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
                   )}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog >
-        </motion.div>
-      </AdminPageLayout>
-    </div >
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+        <PaginationControls />
+
+        <Dialog open={isMessageModalOpen} onOpenChange={setIsMessageModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {t('Send Message to')} {selectedStudentForMessage ? getDisplayName(selectedStudentForMessage) : ''}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">{t('Message')}</label>
+                <textarea
+                  value={messageContent}
+                  onChange={(e) => setMessageContent(e.target.value)}
+                  placeholder={t('Type your message...')}
+                  className="w-full min-h-[120px] p-3 border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+                  disabled={sendingMessage}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsMessageModalOpen(false)}
+                disabled={sendingMessage}
+              >
+                {t('Cancel')}
+              </Button>
+              <Button
+                onClick={handleSendMessageSubmit}
+                disabled={!messageContent.trim() || sendingMessage}
+              >
+                {sendingMessage ? t('Sending...') : (
+                  <>
+                    <Send className="mr-2 h-4 w-4" />
+                    {t('Send Message')}
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </AdminPageLayout>
   );
 };
 

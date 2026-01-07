@@ -279,6 +279,9 @@ class StudentAbsenceFlagSerializer(serializers.ModelSerializer):
     student = UserBasicSerializer(read_only=True)
     cleared_by = UserBasicSerializer(read_only=True)
     clearance_reason_display = serializers.CharField(source='get_clearance_reason_display', read_only=True)
+    
+    # Flag type - exposes the attendance record status (absent/late/etc)
+    flag_type = serializers.CharField(source='attendance_record.status', read_only=True)
 
     # Attendance details
     attendance_date = serializers.DateField(source='attendance_record.attendance_session.date', read_only=True)
@@ -291,7 +294,7 @@ class StudentAbsenceFlagSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentAbsenceFlag
         fields = [
-            'id', 'student', 'attendance_date', 'session_start_time', 'session_end_time',
+            'id', 'student', 'flag_type', 'attendance_date', 'session_start_time', 'session_end_time',
             'subject_name', 'teacher_name', 'class_name',
             'is_cleared', 'created_at', 'cleared_at', 'cleared_by',
             'clearance_reason', 'clearance_reason_display', 'clearance_notes',

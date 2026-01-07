@@ -28,7 +28,8 @@ import {
   Clock,
   Award,
   X,
-  ExternalLink
+  ExternalLink,
+  Edit
 } from 'lucide-react'
 import lessonsService from '../../services/lessons'
 import { exerciseService } from '../../services/exercises'
@@ -540,12 +541,17 @@ const LessonInformationModal = ({ open, onClose, lesson, language }) => {
 // ========================================
 const ResourcesModal = ({ open, onClose, lesson, language }) => {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const isRTL = language === 'ar'
 
   const resources = useMemo(() => {
     if (!lesson?.resources) return []
     return lesson.resources
   }, [lesson])
+
+  const handleEditContent = (resource) => {
+    navigate(`/teacher/content/lessons/${lesson.id}/resources/${resource.id}/edit`)
+  }
 
   if (!lesson) return null
 
@@ -601,16 +607,30 @@ const ResourcesModal = ({ open, onClose, lesson, language }) => {
                           </div>
                         </div>
                       </div>
-                      {(resource.file_url || resource.external_url) && (
-                        <Button
-                          size="sm"
-                          onClick={() => window.open(resource.file_url || resource.external_url, '_blank')}
-                          className="gap-2 shrink-0"
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                          {t('common.open', 'فتح')}
-                        </Button>
-                      )}
+                      <div className="flex items-center gap-2 shrink-0">
+                        {resource.resource_type === 'blocks' && (
+                          <Button
+                            size="sm"
+                            onClick={() => handleEditContent(resource)}
+                            className="gap-2"
+                            variant="default"
+                          >
+                            <Edit className="h-4 w-4" />
+                            {t('common.edit', 'تعديل')} {t('lessons.content', 'المحتوى')}
+                          </Button>
+                        )}
+                        {(resource.file_url || resource.external_url) && (
+                          <Button
+                            size="sm"
+                            onClick={() => window.open(resource.file_url || resource.external_url, '_blank')}
+                            className="gap-2"
+                            variant="outline"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                            {t('common.open', 'فتح')}
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )

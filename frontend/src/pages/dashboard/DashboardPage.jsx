@@ -37,7 +37,7 @@ const DashboardPage = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 px-2 py-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
             {t('common.dashboard')}

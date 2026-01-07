@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,9 +29,10 @@ import financeService from '@/services/finance';
 import schoolsService from '@/services/schools';
 import { toast } from 'sonner';
 import AdminPageLayout from '../../../components/admin/layout/AdminPageLayout';
+import { getLocalizedName } from '@/lib/utils';
 
 const InvoicesPage = () => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [invoices, setInvoices] = useState([]);
@@ -56,7 +56,7 @@ const InvoicesPage = () => {
     // Filters
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('ALL');
-    const [monthFilter, setMonthFilter] = useState('');
+    const [monthFilter, setMonthFilter] = useState('ALL');
 
     // Payment Dialog
     const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
@@ -68,19 +68,7 @@ const InvoicesPage = () => {
         notes: ''
     });
 
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setCurrentPage(1);
-            fetchInvoices(1);
-        }, 500);
-        return () => clearTimeout(timer);
-    }, [searchQuery, statusFilter, monthFilter]);
-
-    useEffect(() => {
-        fetchInvoices(currentPage);
-    }, [currentPage]);
-
-    const fetchInvoices = async (page = currentPage) => {
+    const fetchInvoices = useCallback(async (page = currentPage) => {
         setLoading(true);
         try {
             const params = {
@@ -89,24 +77,45 @@ const InvoicesPage = () => {
             };
             if (searchQuery) params.search = searchQuery;
             if (statusFilter !== 'ALL') params.status = statusFilter;
-            if (monthFilter) params.month = monthFilter;
+            if (monthFilter && monthFilter !== 'ALL') params.month = monthFilter;
 
             const invData = await financeService.getInvoices(params);
-            setInvoices(invData.results || []);
-            setTotalPages(Math.ceil((invData.count || 0) / pageSize));
+            const results = invData.results || [];
+            const totalCount = invData.count || 0;
+            const calculatedTotalPages = Math.ceil(totalCount / pageSize);
+
+            setInvoices(results);
+            setTotalPages(calculatedTotalPages);
+
+            // If current page is beyond total pages and we got empty results, go back to last valid page
+            if (results.length === 0 && totalCount > 0 && page > calculatedTotalPages) {
+                setCurrentPage(calculatedTotalPages);
+            }
         } catch (error) {
             console.error("Error fetching invoices:", error);
-            toast.error(t('Failed to load invoices'));
+            toast.error(t('finance.invoices.failedToLoadInvoices'));
+            // Reset to page 1 on error
+            if (currentPage !== 1) {
+                setCurrentPage(1);
+            }
         } finally {
             setLoading(false);
         }
-    };
+    }, [currentPage, searchQuery, statusFilter, monthFilter, pageSize, t]);
 
     useEffect(() => {
-        fetchInitialData();
-    }, []);
+        const timer = setTimeout(() => {
+            setCurrentPage(1);
+            fetchInvoices(1);
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchQuery, statusFilter, monthFilter, fetchInvoices]);
 
-    const fetchInitialData = async () => {
+    useEffect(() => {
+        fetchInvoices(currentPage);
+    }, [currentPage, fetchInvoices]);
+
+    const fetchInitialData = useCallback(async () => {
         try {
             const [gradesData, yearsData] = await Promise.all([
                 schoolsService.getGrades(),
@@ -122,19 +131,23 @@ const InvoicesPage = () => {
         } catch (error) {
             console.error("Error fetching initial data:", error);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        fetchInitialData();
+    }, [fetchInitialData]);
 
     const handleBulkGenerate = async (e) => {
         e.preventDefault();
         setLoading(true);
         try {
             const response = await financeService.generateBulkInvoices(bulkForm);
-            toast.success(response.message || t('Invoices generated successfully'));
+            toast.success(response.message || t('finance.invoices.invoicesGeneratedSuccessfully'));
             setIsBulkDialogOpen(false);
             fetchInvoices(1);
         } catch (error) {
             console.error(error);
-            toast.error(t('Failed to generate invoices'));
+            toast.error(t('finance.invoices.failedToGenerateInvoices'));
         } finally {
             setLoading(false);
         }
@@ -165,14 +178,14 @@ const InvoicesPage = () => {
                 invoice: selectedInvoice.id,
                 ...paymentForm
             });
-            toast.success(t('Payment recorded successfully'));
+            toast.success(t('finance.invoices.paymentRecordedSuccessfully'));
             setIsPaymentDialogOpen(false);
             setSelectedInvoice(null);
             setPaymentForm({ amount: '', method: 'CASH', transaction_id: '', notes: '' });
             fetchInvoices(currentPage);
         } catch (error) {
             console.error(error);
-            toast.error(t('Failed to record payment'));
+            toast.error(t('finance.invoices.failedToRecordPayment'));
         } finally {
             setLoading(false);
         }
@@ -180,11 +193,11 @@ const InvoicesPage = () => {
 
     const getStatusBadge = (status) => {
         switch (status) {
-            case 'PAID': return <Badge className="bg-green-500">{t('Paid')}</Badge>;
-            case 'PARTIALLY_PAID': return <Badge className="bg-yellow-500">{t('Partial')}</Badge>;
-            case 'OVERDUE': return <Badge className="bg-red-500">{t('Overdue')}</Badge>;
-            case 'ISSUED': return <Badge className="bg-blue-500">{t('Issued')}</Badge>;
-            default: return <Badge variant="outline">{t('Draft')}</Badge>;
+            case 'PAID': return <Badge className="bg-green-500">{t('finance.status.paid')}</Badge>;
+            case 'PARTIALLY_PAID': return <Badge className="bg-yellow-500">{t('finance.status.partial')}</Badge>;
+            case 'OVERDUE': return <Badge className="bg-red-500">{t('finance.status.overdue')}</Badge>;
+            case 'ISSUED': return <Badge className="bg-blue-500">{t('finance.status.issued')}</Badge>;
+            default: return <Badge variant="outline">{t('finance.status.draft')}</Badge>;
         }
     };
 
@@ -242,33 +255,28 @@ const InvoicesPage = () => {
 
     return (
         <AdminPageLayout
-            title={t('Invoices')}
-            subtitle={t('Manage and track student invoices')}
+            title={t('finance.invoices.title')}
+            subtitle={t('finance.invoices.subtitle')}
             actions={[
                 <Button key="bulk" variant="outline" onClick={() => setIsBulkDialogOpen(true)}>
-                    <Layers className="mr-2 h-4 w-4" /> {t('Bulk Generate')}
+                    <Layers className="mr-2 h-4 w-4" /> {t('finance.invoices.bulkGenerate')}
                 </Button>,
                 <Button key="new">
-                    <Plus className="mr-2 h-4 w-4" /> {t('New Invoice')}
+                    <Plus className="mr-2 h-4 w-4" /> {t('finance.invoices.newInvoice')}
                 </Button>
             ]}
             loading={loading && invoices.length === 0}
         >
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="space-y-6"
-            >
+            <div className="space-y-6">
                 <Card>
                     <CardHeader>
                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                            <CardTitle>{t('Recent Invoices')}</CardTitle>
+                            <CardTitle>{t('finance.invoices.recentInvoices')}</CardTitle>
                             <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
                                 <div className="relative w-full sm:w-64">
                                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                                     <Input
-                                        placeholder={t('Search by name or invoice #')}
+                                        placeholder={t('finance.invoices.searchPlaceholder')}
                                         className="pl-8"
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -276,34 +284,48 @@ const InvoicesPage = () => {
                                 </div>
                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                                     <SelectTrigger className="w-full sm:w-[150px]">
-                                        <SelectValue placeholder={t('Status')} />
+                                        <SelectValue placeholder={t('finance.invoices.status')} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="ALL">{t('All Statuses')}</SelectItem>
-                                        <SelectItem value="ISSUED">{t('Issued')}</SelectItem>
-                                        <SelectItem value="PAID">{t('Paid')}</SelectItem>
-                                        <SelectItem value="PARTIALLY_PAID">{t('Partial')}</SelectItem>
-                                        <SelectItem value="OVERDUE">{t('Overdue')}</SelectItem>
-                                        <SelectItem value="DRAFT">{t('Draft')}</SelectItem>
+                                        <SelectItem value="ALL">{t('common.allStatuses')}</SelectItem>
+                                        <SelectItem value="ISSUED">{t('finance.status.issued')}</SelectItem>
+                                        <SelectItem value="PAID">{t('finance.status.paid')}</SelectItem>
+                                        <SelectItem value="PARTIALLY_PAID">{t('finance.status.partial')}</SelectItem>
+                                        <SelectItem value="OVERDUE">{t('finance.status.overdue')}</SelectItem>
+                                        <SelectItem value="DRAFT">{t('finance.status.draft')}</SelectItem>
                                     </SelectContent>
                                 </Select>
-                                <Input
-                                    type="month"
-                                    className="w-full sm:w-[160px]"
-                                    value={monthFilter}
-                                    onChange={(e) => setMonthFilter(e.target.value)}
-                                />
-                                {(searchQuery || statusFilter !== 'ALL' || monthFilter) && (
+                                <Select value={monthFilter} onValueChange={setMonthFilter}>
+                                    <SelectTrigger className="w-full sm:w-[160px]">
+                                        <SelectValue placeholder={t('finance.invoices.selectMonth')} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="ALL">{t('finance.invoices.allMonths')}</SelectItem>
+                                        {(() => {
+                                            const months = [];
+                                            const currentDate = new Date();
+                                            for (let i = 0; i < 12; i++) {
+                                                const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+                                                // Use local date values to avoid timezone issues
+                                                const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                                                const label = date.toLocaleDateString(undefined, { year: 'numeric', month: 'long' });
+                                                months.push(<SelectItem key={value} value={value}>{label}</SelectItem>);
+                                            }
+                                            return months;
+                                        })()}
+                                    </SelectContent>
+                                </Select>
+                                {(searchQuery || statusFilter !== 'ALL' || monthFilter !== 'ALL') && (
                                     <Button
                                         variant="ghost"
                                         onClick={() => {
                                             setSearchQuery('');
                                             setStatusFilter('ALL');
-                                            setMonthFilter('');
+                                            setMonthFilter('ALL');
                                         }}
                                         className="px-2 lg:px-3"
                                     >
-                                        {t('Reset')}
+                                        {t('common.reset')}
                                     </Button>
                                 )}
                             </div>
@@ -313,14 +335,14 @@ const InvoicesPage = () => {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>{t('Invoice #')}</TableHead>
-                                    <TableHead>{t('Student')}</TableHead>
-                                    <TableHead>{t('Month')}</TableHead>
-                                    <TableHead>{t('Amount')}</TableHead>
-                                    <TableHead>{t('Paid')}</TableHead>
-                                    <TableHead>{t('Status')}</TableHead>
-                                    <TableHead>{t('Due Date')}</TableHead>
-                                    <TableHead className="text-right">{t('Actions')}</TableHead>
+                                    <TableHead>{t('finance.invoices.invoiceNumber')}</TableHead>
+                                    <TableHead>{t('finance.invoices.student')}</TableHead>
+                                    <TableHead>{t('finance.invoices.month')}</TableHead>
+                                    <TableHead>{t('finance.invoices.amount')}</TableHead>
+                                    <TableHead>{t('finance.invoices.paid')}</TableHead>
+                                    <TableHead>{t('finance.invoices.status')}</TableHead>
+                                    <TableHead>{t('finance.invoices.dueDate')}</TableHead>
+                                    <TableHead className="text-right">{t('finance.invoices.actions')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -343,12 +365,12 @@ const InvoicesPage = () => {
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuItem onClick={() => handleViewDetails(inv.id)}>
                                                         <Eye className="mr-2 h-4 w-4" />
-                                                        {t('View Details')}
+                                                        {t('finance.invoices.viewDetails')}
                                                     </DropdownMenuItem>
                                                     {inv.status !== 'PAID' && (
                                                         <DropdownMenuItem onClick={() => handleRecordPayment(inv)}>
                                                             <DollarSign className="mr-2 h-4 w-4" />
-                                                            {t('Record Payment')}
+                                                            {t('finance.invoices.recordPayment')}
                                                         </DropdownMenuItem>
                                                     )}
                                                 </DropdownMenuContent>
@@ -359,7 +381,7 @@ const InvoicesPage = () => {
                                 {invoices.length === 0 && (
                                     <TableRow>
                                         <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                                            {t('No invoices found')}
+                                            {t('finance.invoices.noInvoicesFound')}
                                         </TableCell>
                                     </TableRow>
                                 )}
@@ -395,43 +417,43 @@ const InvoicesPage = () => {
                 <Dialog open={isBulkDialogOpen} onOpenChange={setIsBulkDialogOpen}>
                     <DialogContent>
                         <DialogHeader>
-                            <DialogTitle>{t('Generate Monthly Invoices')}</DialogTitle>
+                            <DialogTitle>{t('finance.invoices.generateMonthlyInvoices')}</DialogTitle>
                         </DialogHeader>
                         <form onSubmit={handleBulkGenerate} className="space-y-4">
                             <div className="space-y-2">
-                                <Label>{t('Academic Year')}</Label>
+                                <Label>{t('finance.invoices.academicYear')}</Label>
                                 <Select value={String(bulkForm.academic_year_id)} onValueChange={(val) => setBulkForm({ ...bulkForm, academic_year_id: val })}>
-                                    <SelectTrigger><SelectValue placeholder={t('Select Year')} /></SelectTrigger>
+                                    <SelectTrigger><SelectValue placeholder={t('finance.invoices.selectYear')} /></SelectTrigger>
                                     <SelectContent>
                                         {academicYears.map(year => (
-                                            <SelectItem key={year.id} value={String(year.id)}>{year.year} {year.is_current ? '(Current)' : ''}</SelectItem>
+                                            <SelectItem key={year.id} value={String(year.id)}>{year.year} {year.is_current ? `(${t('common.current')})` : ''}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label>{t('Grade')}</Label>
+                                <Label>{t('finance.invoices.grade')}</Label>
                                 <Select value={String(bulkForm.grade_id)} onValueChange={(val) => setBulkForm({ ...bulkForm, grade_id: val })}>
-                                    <SelectTrigger><SelectValue placeholder={t('Select Grade')} /></SelectTrigger>
+                                    <SelectTrigger><SelectValue placeholder={t('finance.invoices.selectGrade')} /></SelectTrigger>
                                     <SelectContent>
                                         {grades.map(grade => (
-                                            <SelectItem key={grade.id} value={String(grade.id)}>{grade.name}</SelectItem>
+                                            <SelectItem key={grade.id} value={String(grade.id)}>{getLocalizedName(grade, i18n.language)}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label>{t('For Month')}</Label>
+                                <Label>{t('finance.invoices.forMonth')}</Label>
                                 <Input type="date" value={bulkForm.month} onChange={(e) => setBulkForm({ ...bulkForm, month: e.target.value })} required />
                             </div>
                             <div className="space-y-2">
-                                <Label>{t('Due Date')}</Label>
+                                <Label>{t('finance.invoices.dueDate')}</Label>
                                 <Input type="date" value={bulkForm.due_date} onChange={(e) => setBulkForm({ ...bulkForm, due_date: e.target.value })} required />
                             </div>
                             <DialogFooter>
                                 <Button type="submit" disabled={loading}>
                                     {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                    {t('Generate')}
+                                    {t('finance.invoices.generate')}
                                 </Button>
                             </DialogFooter>
                         </form>
@@ -441,16 +463,16 @@ const InvoicesPage = () => {
                 <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
                     <DialogContent>
                         <DialogHeader>
-                            <DialogTitle>{t('Record Payment')}</DialogTitle>
+                            <DialogTitle>{t('finance.invoices.recordPayment')}</DialogTitle>
                             {selectedInvoice && (
                                 <p className="text-sm text-muted-foreground">
-                                    {t('Invoice')}: INV-{selectedInvoice.id} - {selectedInvoice.student_name}
+                                    {t('finance.invoices.invoice')}: INV-{selectedInvoice.id} - {selectedInvoice.student_name}
                                 </p>
                             )}
                         </DialogHeader>
                         <form onSubmit={handlePaymentSubmit} className="space-y-4">
                             <div className="space-y-2">
-                                <Label>{t('Amount (DH)')}</Label>
+                                <Label>{t('finance.invoices.amountDH')}</Label>
                                 <Input
                                     type="number"
                                     step="0.01"
@@ -460,27 +482,27 @@ const InvoicesPage = () => {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label>{t('Payment Method')}</Label>
+                                <Label>{t('finance.invoices.paymentMethod')}</Label>
                                 <Select value={paymentForm.method} onValueChange={(val) => setPaymentForm({ ...paymentForm, method: val })}>
                                     <SelectTrigger><SelectValue /></SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="CASH">{t('Cash')}</SelectItem>
-                                        <SelectItem value="CHECK">{t('Check')}</SelectItem>
-                                        <SelectItem value="TRANSFER">{t('Bank Transfer')}</SelectItem>
-                                        <SelectItem value="OTHER">{t('Other')}</SelectItem>
+                                        <SelectItem value="CASH">{t('finance.invoices.cash')}</SelectItem>
+                                        <SelectItem value="CHECK">{t('finance.invoices.check')}</SelectItem>
+                                        <SelectItem value="TRANSFER">{t('finance.invoices.bankTransfer')}</SelectItem>
+                                        <SelectItem value="OTHER">{t('finance.invoices.other')}</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label>{t('Transaction ID / Check #')}</Label>
+                                <Label>{t('finance.invoices.transactionId')}</Label>
                                 <Input
                                     value={paymentForm.transaction_id}
                                     onChange={(e) => setPaymentForm({ ...paymentForm, transaction_id: e.target.value })}
-                                    placeholder={t('Optional')}
+                                    placeholder={t('finance.invoices.optional')}
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label>{t('Notes')}</Label>
+                                <Label>{t('finance.invoices.notes')}</Label>
                                 <Input
                                     value={paymentForm.notes}
                                     onChange={(e) => setPaymentForm({ ...paymentForm, notes: e.target.value })}
@@ -489,13 +511,13 @@ const InvoicesPage = () => {
                             <DialogFooter>
                                 <Button type="submit" disabled={loading}>
                                     {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                    {t('Record Payment')}
+                                    {t('finance.invoices.recordPayment')}
                                 </Button>
                             </DialogFooter>
                         </form>
                     </DialogContent>
                 </Dialog>
-            </motion.div>
+            </div>
         </AdminPageLayout>
     );
 };

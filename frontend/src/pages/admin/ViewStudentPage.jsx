@@ -357,6 +357,21 @@ const ViewStudentPage = () => {
                   label={t('common.enrollmentDate')}
                   value={formatDate(studentData.enrollment_date || studentData.created_at)}
                 />
+
+                <InfoItem
+                  icon={<Clock className="h-4 w-4" />}
+                  label={t('student.usesTransport')}
+                  value={studentData.uses_transport ? t('common.yes') : t('common.no')}
+                />
+
+                {studentData.invoice_discount > 0 && (
+                  <InfoItem
+                    icon={<AlertTriangle className="h-4 w-4" />}
+                    label={t('student.invoiceDiscount')}
+                    value={`${studentData.invoice_discount} MAD`}
+                  />
+                )}
+
               </CardContent>
             </Card>
 
@@ -623,98 +638,98 @@ const ViewStudentPage = () => {
                       </CardContent>
                     </Card>
 
-                {/* Average Score */}
-                <Card className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800/50">
-                  <CardContent className="pt-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-green-700 dark:text-green-400">{t('progress.avgScore')}</p>
-                        <p className="text-2xl font-bold text-green-800 dark:text-green-300">{progressData.overall_average_score}%</p>
-                        <p className="text-xs text-green-600 dark:text-green-500">
-                          {t('progress.acrossAllLessons')}
-                        </p>
-                      </div>
-                      <BarChart3 className="h-8 w-8 text-green-600 dark:text-green-400" />
-                    </div>
-                  </CardContent>
-                </Card>
+                    {/* Average Score */}
+                    <Card className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800/50">
+                      <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-green-700 dark:text-green-400">{t('progress.avgScore')}</p>
+                            <p className="text-2xl font-bold text-green-800 dark:text-green-300">{progressData.overall_average_score}%</p>
+                            <p className="text-xs text-green-600 dark:text-green-500">
+                              {t('progress.acrossAllLessons')}
+                            </p>
+                          </div>
+                          <BarChart3 className="h-8 w-8 text-green-600 dark:text-green-400" />
+                        </div>
+                      </CardContent>
+                    </Card>
 
-                {/* Accuracy */}
-                <Card className="bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800/50">
-                  <CardContent className="pt-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-purple-700 dark:text-purple-400">{t('progress.accuracy')}</p>
-                        <p className="text-2xl font-bold text-purple-800 dark:text-purple-300">{progressData.overall_accuracy_percentage}%</p>
-                        <p className="text-xs text-purple-600 dark:text-purple-500">
-                          {t('progress.correctAnswers')}
-                        </p>
-                      </div>
-                      <TrendingUp className="h-8 w-8 text-purple-600 dark:text-purple-400" />
-                    </div>
-                  </CardContent>
-                </Card>
+                    {/* Accuracy */}
+                    <Card className="bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800/50">
+                      <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-purple-700 dark:text-purple-400">{t('progress.accuracy')}</p>
+                            <p className="text-2xl font-bold text-purple-800 dark:text-purple-300">{progressData.overall_accuracy_percentage}%</p>
+                            <p className="text-xs text-purple-600 dark:text-purple-500">
+                              {t('progress.correctAnswers')}
+                            </p>
+                          </div>
+                          <TrendingUp className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+                        </div>
+                      </CardContent>
+                    </Card>
 
-                {/* Total Exercises */}
-                <Card className="bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800/50">
-                  <CardContent className="pt-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-orange-700 dark:text-orange-400">{t('progress.totalExercises')}</p>
-                        <p className="text-2xl font-bold text-orange-800 dark:text-orange-300">{progressData.total_exercises}</p>
-                        <p className="text-xs text-orange-600 dark:text-orange-500">
-                          {progressData.total_subjects} {t('progress.subjects')}
-                        </p>
-                      </div>
-                      <BookOpen className="h-8 w-8 text-orange-600 dark:text-orange-400" />
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Progress Breakdown */}
-              <div className="space-y-4">
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-green-600 dark:text-green-400">{t('progress.completed')}</span>
-                    <span className="text-sm font-medium text-green-600 dark:text-green-400">
-                      {progressData.lessons_completed} ({progressData.total_lessons > 0 ? ((progressData.lessons_completed / progressData.total_lessons) * 100).toFixed(1) : 0}%)
-                    </span>
+                    {/* Total Exercises */}
+                    <Card className="bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800/50">
+                      <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-orange-700 dark:text-orange-400">{t('progress.totalExercises')}</p>
+                            <p className="text-2xl font-bold text-orange-800 dark:text-orange-300">{progressData.total_exercises}</p>
+                            <p className="text-xs text-orange-600 dark:text-orange-500">
+                              {progressData.total_subjects} {t('progress.subjects')}
+                            </p>
+                          </div>
+                          <BookOpen className="h-8 w-8 text-orange-600 dark:text-orange-400" />
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
-                  <Progress
-                    value={progressData.total_lessons > 0 ? (progressData.lessons_completed / progressData.total_lessons) * 100 : 0}
-                    className="h-3"
-                  />
-                </div>
 
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-blue-600 dark:text-blue-400">{t('progress.inProgress')}</span>
-                    <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                      {progressData.lessons_in_progress} ({progressData.total_lessons > 0 ? ((progressData.lessons_in_progress / progressData.total_lessons) * 100).toFixed(1) : 0}%)
-                    </span>
-                  </div>
-                  <Progress
-                    value={progressData.total_lessons > 0 ? (progressData.lessons_in_progress / progressData.total_lessons) * 100 : 0}
-                    className="h-3"
-                    indicatorClassName="bg-blue-500"
-                  />
-                </div>
+                  {/* Progress Breakdown */}
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-green-600 dark:text-green-400">{t('progress.completed')}</span>
+                        <span className="text-sm font-medium text-green-600 dark:text-green-400">
+                          {progressData.lessons_completed} ({progressData.total_lessons > 0 ? ((progressData.lessons_completed / progressData.total_lessons) * 100).toFixed(1) : 0}%)
+                        </span>
+                      </div>
+                      <Progress
+                        value={progressData.total_lessons > 0 ? (progressData.lessons_completed / progressData.total_lessons) * 100 : 0}
+                        className="h-3"
+                      />
+                    </div>
 
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('progress.notStarted')}</span>
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                      {progressData.lessons_not_started} ({progressData.total_lessons > 0 ? ((progressData.lessons_not_started / progressData.total_lessons) * 100).toFixed(1) : 0}%)
-                    </span>
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-blue-600 dark:text-blue-400">{t('progress.inProgress')}</span>
+                        <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                          {progressData.lessons_in_progress} ({progressData.total_lessons > 0 ? ((progressData.lessons_in_progress / progressData.total_lessons) * 100).toFixed(1) : 0}%)
+                        </span>
+                      </div>
+                      <Progress
+                        value={progressData.total_lessons > 0 ? (progressData.lessons_in_progress / progressData.total_lessons) * 100 : 0}
+                        className="h-3"
+                        indicatorClassName="bg-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('progress.notStarted')}</span>
+                        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                          {progressData.lessons_not_started} ({progressData.total_lessons > 0 ? ((progressData.lessons_not_started / progressData.total_lessons) * 100).toFixed(1) : 0}%)
+                        </span>
+                      </div>
+                      <Progress
+                        value={progressData.total_lessons > 0 ? (progressData.lessons_not_started / progressData.total_lessons) * 100 : 0}
+                        className="h-3"
+                        indicatorClassName="bg-gray-400"
+                      />
+                    </div>
                   </div>
-                  <Progress
-                    value={progressData.total_lessons > 0 ? (progressData.lessons_not_started / progressData.total_lessons) * 100 : 0}
-                    className="h-3"
-                    indicatorClassName="bg-gray-400"
-                  />
-                </div>
-              </div>
                 </>
               ) : (
                 <div className="text-center py-12">

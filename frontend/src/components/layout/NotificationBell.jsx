@@ -111,6 +111,15 @@ const NotificationBell = () => {
             navigate(homeworkPath, {
                 state: { homeworkId: homeworkId }
             });
+        } else if (notification.notification_type === 'SYSTEM' && notification.related_object_type === 'attendance_record') {
+            const isAdmin = user?.role === 'ADMIN';
+            const isStaff = user?.role === 'STAFF';
+
+            if (isAdmin) {
+                navigate('/admin/reports/attendance', { state: { activeTab: 'flags' } });
+            } else if (isStaff) {
+                navigate('/staff/reports/attendance', { state: { activeTab: 'flags' } });
+            }
         }
     };
 

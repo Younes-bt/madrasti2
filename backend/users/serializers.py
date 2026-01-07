@@ -2,6 +2,7 @@
 
 from rest_framework import serializers
 from .models import User, Profile, StudentEnrollment
+from attendance.models import StudentParentRelation
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
@@ -98,6 +99,8 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     academic_year_id = serializers.IntegerField(required=False, allow_null=True)
     enrollment_date = serializers.DateField(required=False, allow_null=True)
     student_number = serializers.CharField(required=False, allow_blank=True)
+    uses_transport = serializers.BooleanField(required=False, default=False)
+    invoice_discount = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, default=0)
     
     # Parent information fields (used to create parent account when creating student)
     parent_name = serializers.CharField(required=False, allow_blank=True)
@@ -115,6 +118,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             'department', 'position', 'school_subject', 'teachable_grades', 'hire_date',
             # Student enrollment fields
             'school_class_id', 'academic_year_id', 'enrollment_date', 'student_number',
+            'uses_transport', 'invoice_discount',
             # Parent information fields
             'parent_name', 'parent_first_name', 'parent_last_name', 'parent_phone'
         ]
@@ -200,6 +204,10 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             if field in validated_data:
                 enrollment_data[field] = validated_data.pop(field)
         
+        # Additional enrollment fields
+        enrollment_data['uses_transport'] = validated_data.get('uses_transport', False)
+        enrollment_data['invoice_discount'] = validated_data.get('invoice_discount', 0)
+        
         # Separate parent data
         parent_data = {}
         parent_fields = ['parent_name', 'parent_first_name', 'parent_last_name', 'parent_phone']
@@ -262,6 +270,8 @@ class UserRegisterSerializer(serializers.ModelSerializer):
                 academic_year_id=enrollment_data['academic_year_id'],
                 enrollment_date=enrollment_data.get('enrollment_date', date.today()),
                 student_number=enrollment_data.get('student_number', ''),
+                uses_transport=enrollment_data.get('uses_transport', False),
+                invoice_discount=enrollment_data.get('invoice_discount', 0),
                 is_active=True
             )
         
@@ -298,6 +308,13 @@ class UserRegisterSerializer(serializers.ModelSerializer):
                 # Link student to existing parent
                 user.parent = existing_parent
                 user.save()
+                
+                # Create StudentParentRelation
+                StudentParentRelation.objects.get_or_create(
+                    student=user,
+                    parent=existing_parent,
+                    defaults={'relationship_type': 'father', 'is_primary_contact': True}
+                )
             else:
                 # Generate unique parent email using the helper function
                 parent_email = self._generate_unique_email(parent_first_name, parent_last_name, 'PARENT')
@@ -319,6 +336,13 @@ class UserRegisterSerializer(serializers.ModelSerializer):
                 # Link student to new parent
                 user.parent = parent_user
                 user.save()
+
+                # Create StudentParentRelation
+                StudentParentRelation.objects.get_or_create(
+                    student=user,
+                    parent=parent_user,
+                    defaults={'relationship_type': 'father', 'is_primary_contact': True}
+                )
         
         return user
 
@@ -363,18 +387,24 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     hire_date = serializers.DateField(required=False, allow_null=True)
     salary = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, allow_null=True)
     profile_picture_url = serializers.SerializerMethodField()
+    
+    full_name = serializers.ReadOnlyField()
+    
+    # Enrollment fields for students
+    uses_transport = serializers.BooleanField(required=False)
+    invoice_discount = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
 
     class Meta:
         model = User
         fields = [
-            'id', 'email', 'first_name', 'last_name', 'role', 'is_active',
+            'id', 'email', 'first_name', 'last_name', 'full_name', 'role', 'is_active',
             'created_at', 'updated_at',
             # Profile fields
             'ar_first_name', 'ar_last_name', 'phone', 'date_of_birth', 'address',
             'profile_picture', 'profile_picture_url', 'bio',
             'emergency_contact_name', 'emergency_contact_phone',
             'linkedin_url', 'twitter_url', 'department', 'position', 'school_subject', 'teachable_grades',
-            'hire_date', 'salary'
+            'hire_date', 'salary', 'uses_transport', 'invoice_discount'
         ]
         read_only_fields = ('id', 'email', 'role', 'is_active', 'created_at', 'updated_at', 'profile_picture_url')
 
@@ -402,10 +432,21 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                     value = None
                 profile_data[field] = value
         
-        # Update user fields
         for attr, value in validated_data.items():
+            if attr in ['uses_transport', 'invoice_discount']:
+                continue
             setattr(instance, attr, value)
         instance.save()
+
+        # Update enrollment fields if this is a student
+        if instance.role == User.Role.STUDENT:
+            enrollment = instance.student_enrollments.filter(is_active=True).first()
+            if enrollment:
+                if 'uses_transport' in validated_data:
+                    enrollment.uses_transport = validated_data['uses_transport']
+                if 'invoice_discount' in validated_data:
+                    enrollment.invoice_discount = validated_data['invoice_discount']
+                enrollment.save()
         
         # Update profile fields
         if profile_data:
@@ -490,6 +531,26 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         except Profile.DoesNotExist:
             pass
         
+        if instance.role == User.Role.STUDENT:
+            enrollment = instance.student_enrollments.filter(is_active=True).first()
+            if enrollment:
+                data.update({
+                    'uses_transport': enrollment.uses_transport,
+                    'invoice_discount': enrollment.invoice_discount,
+                    'student_number': enrollment.student_number,
+                    'is_enrolled': True,
+                    'school_class_id': enrollment.school_class.id if enrollment.school_class else None,
+                    'grade_id': enrollment.school_class.grade.id if enrollment.school_class and enrollment.school_class.grade else None,
+                    'academic_year_id': enrollment.academic_year.id if enrollment.academic_year else None,
+                    'enrollment_date': enrollment.enrollment_date,
+                })
+            else:
+                data.update({
+                    'uses_transport': False,
+                    'invoice_discount': 0,
+                    'is_enrolled': False
+                })
+
         # Include parent information for students
         if instance.role == User.Role.STUDENT and instance.parent:
             parent = instance.parent
@@ -527,6 +588,8 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                     'enrollment_date': current_enrollment.enrollment_date,
                     'student_id': current_enrollment.student_number,
                     'academic_year': current_enrollment.academic_year.year,
+                    'uses_transport': current_enrollment.uses_transport,
+                    'invoice_discount': current_enrollment.invoice_discount,
                 })
             else:
                 # Set empty academic fields if no enrollment found
@@ -648,6 +711,10 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         # Add custom claims
         token['role'] = user.role
         token['full_name'] = user.full_name
+        try:
+            token['position'] = user.profile.position
+        except:
+            token['position'] = None
         return token
 
 
@@ -666,7 +733,7 @@ class StudentEnrollmentSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'student', 'school_class', 'school_class_name',
             'academic_year', 'academic_year_name', 'enrollment_date',
-            'is_active', 'student_number', 'created_at'
+            'is_active', 'student_number', 'uses_transport', 'invoice_discount', 'created_at'
         ]
 
 
@@ -679,3 +746,42 @@ class StudentEnrollmentCreateSerializer(serializers.ModelSerializer):
             'student', 'school_class', 'academic_year', 'enrollment_date',
             'student_number'
         ]
+
+
+class ChildSummarySerializer(UserUpdateSerializer):
+    """
+    Serializer for child summary information in parent dashboard.
+    Includes pending homework and uncleared absence counts.
+    """
+    pending_homework_count = serializers.SerializerMethodField()
+    uncleared_absence_count = serializers.SerializerMethodField()
+
+    class Meta(UserUpdateSerializer.Meta):
+        fields = UserUpdateSerializer.Meta.fields + ['pending_homework_count', 'uncleared_absence_count']
+
+    def get_pending_homework_count(self, obj):
+        try:
+            from homework.models import Homework, Submission
+            enrollment = obj.student_enrollments.filter(is_active=True).first()
+            if not enrollment or not enrollment.school_class:
+                return 0
+            
+            # Count published homework for this class that doesn't have a submission from this student
+            return Homework.objects.filter(
+                school_class=enrollment.school_class,
+                is_published=True
+            ).exclude(
+                submissions__student=obj
+            ).count()
+        except ImportError:
+            return 0
+
+    def get_uncleared_absence_count(self, obj):
+        try:
+            from attendance.models import StudentAbsenceFlag
+            return StudentAbsenceFlag.objects.filter(
+                student=obj, 
+                is_cleared=False
+            ).count()
+        except ImportError:
+            return 0

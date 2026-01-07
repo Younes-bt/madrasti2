@@ -7,8 +7,8 @@ import { LanguageContext } from '../../contexts/LanguageContext'
 import { APP_CONFIG } from '../../utils/constants'
 import { cn } from '../../lib/utils'
 
-const Footer = ({ 
-  className, 
+const Footer = ({
+  className,
   variant = 'default', // default, compact, minimal
   showSocial = true,
   showContact = true,
@@ -16,7 +16,6 @@ const Footer = ({
   schoolInfo = null,
 }) => {
   const { language } = useContext(LanguageContext)
-  const isRTL = language === 'ar'
   const currentYear = new Date().getFullYear()
 
   // Default school info if not provided
@@ -34,19 +33,19 @@ const Footer = ({
     about: {
       title: { ar: 'حول النظام', en: 'About System', fr: 'À propos' },
       links: [
-        { 
+        {
           label: { ar: 'عن مدرستي', en: 'About Madrasti', fr: 'À propos de Madrasti' },
           href: '/about',
         },
-        { 
+        {
           label: { ar: 'الميزات', en: 'Features', fr: 'Fonctionnalités' },
           href: '/features',
         },
-        { 
+        {
           label: { ar: 'الأسعار', en: 'Pricing', fr: 'Tarifs' },
           href: '/pricing',
         },
-        { 
+        {
           label: { ar: 'المساعدة', en: 'Help Center', fr: 'Centre d\'aide' },
           href: '/help',
         },
@@ -55,15 +54,15 @@ const Footer = ({
     legal: {
       title: { ar: 'القانونية', en: 'Legal', fr: 'Légal' },
       links: [
-        { 
+        {
           label: { ar: 'سياسة الخصوصية', en: 'Privacy Policy', fr: 'Politique de confidentialité' },
           href: '/privacy',
         },
-        { 
+        {
           label: { ar: 'شروط الخدمة', en: 'Terms of Service', fr: 'Conditions d\'utilisation' },
           href: '/terms',
         },
-        { 
+        {
           label: { ar: 'سياسة الكوكيز', en: 'Cookie Policy', fr: 'Politique des cookies' },
           href: '/cookies',
         },
@@ -72,19 +71,19 @@ const Footer = ({
     support: {
       title: { ar: 'الدعم', en: 'Support', fr: 'Support' },
       links: [
-        { 
+        {
           label: { ar: 'اتصل بنا', en: 'Contact Us', fr: 'Nous contacter' },
           href: '/contact',
         },
-        { 
+        {
           label: { ar: 'الوثائق', en: 'Documentation', fr: 'Documentation' },
           href: '/docs',
         },
-        { 
+        {
           label: { ar: 'أسئلة شائعة', en: 'FAQ', fr: 'FAQ' },
           href: '/faq',
         },
-        { 
+        {
           label: { ar: 'حالة النظام', en: 'System Status', fr: 'État du système' },
           href: '/status',
         },
@@ -105,21 +104,21 @@ const Footer = ({
         'bg-background border-t py-4',
         className
       )}>
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-2 sm:px-4">
           <div className="flex flex-col md:flex-row items-center justify-between space-y-2 md:space-y-0">
             <div className="flex items-center space-x-2 rtl:space-x-reverse text-sm text-muted-foreground">
               <span>© {currentYear} {APP_CONFIG.NAME}</span>
               <span>•</span>
               <span>
-                {language === 'ar' ? 'صنع بـ' : 
-                 language === 'fr' ? 'Fait avec' : 
-                 'Made with'}
+                {language === 'ar' ? 'صنع بـ' :
+                  language === 'fr' ? 'Fait avec' :
+                    'Made with'}
               </span>
               <Heart className="h-3 w-3 text-red-500" />
               <span>
-                {language === 'ar' ? 'بواسطة' : 
-                 language === 'fr' ? 'par' : 
-                 'by'} {APP_CONFIG.AUTHOR}
+                {language === 'ar' ? 'بواسطة' :
+                  language === 'fr' ? 'par' :
+                    'by'} {APP_CONFIG.AUTHOR}
               </span>
             </div>
             <div className="text-sm text-muted-foreground">
@@ -137,7 +136,7 @@ const Footer = ({
         'bg-background border-t py-6',
         className
       )}>
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-2 sm:px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* School Info */}
             <div>
@@ -165,12 +164,12 @@ const Footer = ({
               <div>
                 <h3 className="font-semibold text-sm mb-3">
                   {language === 'ar' ? 'روابط مهمة' :
-                   language === 'fr' ? 'Liens utiles' :
-                   'Quick Links'}
+                    language === 'fr' ? 'Liens utiles' :
+                      'Quick Links'}
                 </h3>
                 <div className="space-y-2">
                   {footerLinks.support.links.slice(0, 3).map((link, index) => (
-                    <a 
+                    <a
                       key={index}
                       href={link.href}
                       className="block text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -189,15 +188,15 @@ const Footer = ({
               </div>
               <div className="flex items-center space-x-1 rtl:space-x-reverse text-sm text-muted-foreground">
                 <span>
-                  {language === 'ar' ? 'صنع بـ' : 
-                   language === 'fr' ? 'Fait avec' : 
-                   'Made with'}
+                  {language === 'ar' ? 'صنع بـ' :
+                    language === 'fr' ? 'Fait avec' :
+                      'Made with'}
                 </span>
                 <Heart className="h-3 w-3 text-red-500" />
                 <span>
-                  {language === 'ar' ? 'بواسطة' : 
-                   language === 'fr' ? 'par' : 
-                   'by'} {APP_CONFIG.AUTHOR}
+                  {language === 'ar' ? 'بواسطة' :
+                    language === 'fr' ? 'par' :
+                      'by'} {APP_CONFIG.AUTHOR}
                 </span>
               </div>
             </div>
@@ -213,7 +212,7 @@ const Footer = ({
       'bg-background border-t',
       className
     )}>
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-2 sm:px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* School Information */}
           <div className="space-y-4">
@@ -225,13 +224,13 @@ const Footer = ({
               </div>
               <h3 className="font-bold text-lg">{school.name}</h3>
             </div>
-            
+
             <p className="text-sm text-muted-foreground">
-              {language === 'ar' 
+              {language === 'ar'
                 ? 'نظام شامل لإدارة المدارس يوفر أحدث التقنيات لتحسين العملية التعليمية.'
                 : language === 'fr'
-                ? 'Système complet de gestion scolaire offrant les dernières technologies pour améliorer le processus éducatif.'
-                : 'Comprehensive school management system providing cutting-edge technology to enhance the educational process.'
+                  ? 'Système complet de gestion scolaire offrant les dernières technologies pour améliorer le processus éducatif.'
+                  : 'Comprehensive school management system providing cutting-edge technology to enhance the educational process.'
               }
             </p>
 
@@ -256,9 +255,9 @@ const Footer = ({
                 {school.website && (
                   <div className="flex items-center space-x-2 rtl:space-x-reverse text-sm text-muted-foreground">
                     <Globe className="h-4 w-4 flex-shrink-0" />
-                    <a 
-                      href={school.website} 
-                      target="_blank" 
+                    <a
+                      href={school.website}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="hover:text-foreground transition-colors flex items-center"
                     >
@@ -280,7 +279,7 @@ const Footer = ({
               <ul className="space-y-2">
                 {section.links.map((link, index) => (
                   <li key={index}>
-                    <a 
+                    <a
                       href={link.href}
                       className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                     >
@@ -302,8 +301,8 @@ const Footer = ({
               <span>© {currentYear} {APP_CONFIG.NAME}.</span>
               <span>
                 {language === 'ar' ? 'جميع الحقوق محفوظة' :
-                 language === 'fr' ? 'Tous droits réservés' :
-                 'All rights reserved'}
+                  language === 'fr' ? 'Tous droits réservés' :
+                    'All rights reserved'}
               </span>
             </div>
             <Badge variant="outline" className="text-xs">
@@ -314,15 +313,15 @@ const Footer = ({
           <div className="flex items-center space-x-4 rtl:space-x-reverse">
             <div className="flex items-center space-x-1 rtl:space-x-reverse text-sm text-muted-foreground">
               <span>
-                {language === 'ar' ? 'صنع بـ' : 
-                 language === 'fr' ? 'Fait avec' : 
-                 'Made with'}
+                {language === 'ar' ? 'صنع بـ' :
+                  language === 'fr' ? 'Fait avec' :
+                    'Made with'}
               </span>
               <Heart className="h-3 w-3 text-red-500" />
               <span>
-                {language === 'ar' ? 'بواسطة' : 
-                 language === 'fr' ? 'par' : 
-                 'by'} {APP_CONFIG.AUTHOR}
+                {language === 'ar' ? 'بواسطة' :
+                  language === 'fr' ? 'par' :
+                    'by'} {APP_CONFIG.AUTHOR}
               </span>
             </div>
 

@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import i18n from '../../lib/i18n';
-import { motion, useInView, useMotionValue, useSpring, animate } from 'framer-motion';
+import { useInView, useMotionValue, useSpring, animate } from 'framer-motion';
 import {
   Plus,
   Search,
@@ -36,22 +36,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '../../components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { exerciseService } from '../../services/exercises';
-import lessonsService from '../../services/lessons';
 import schoolsService from '../../services/schools';
 import { toast } from 'sonner';
+import { getLocalizedName, getLocalizedTitle } from '@/lib/utils';
 
-// Helper function to get localized exercise title
-const getLocalizedExerciseTitle = (exercise) => {
-  const currentLanguage = i18n.language;
-  switch (currentLanguage) {
-    case 'ar':
-      return exercise.title_arabic || exercise.title;
-    case 'fr':
-      return exercise.title_french || exercise.title;
-    default:
-      return exercise.title;
-  }
-};
 
 // Animated counter component
 const AnimatedCounter = ({ value, duration = 2000 }) => {
@@ -81,7 +69,6 @@ const ExercisesManagementPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [exercises, setExercises] = useState([]);
-  const [lessons, setLessons] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [grades, setGrades] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -102,11 +89,7 @@ const ExercisesManagementPage = () => {
     averageScore: 0
   });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       // Fetch exercises
@@ -128,12 +111,6 @@ const ExercisesManagementPage = () => {
         });
       }
 
-      // Fetch lessons for filtering
-      const lessonsResult = await lessonsService.getLessons();
-      if (lessonsResult.success) {
-        setLessons(lessonsResult.data);
-      }
-
       // Fetch subjects and grades
       const [subjectsResult, gradesResult] = await Promise.all([
         schoolsService.getSubjects(),
@@ -149,7 +126,11 @@ const ExercisesManagementPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleDeleteExercise = async () => {
     if (!exerciseToDelete) return;
@@ -192,15 +173,15 @@ const ExercisesManagementPage = () => {
 
   // Filter exercises
   const filteredExercises = exercises.filter(exercise => {
-    const matchesSearch = getLocalizedExerciseTitle(exercise).toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         exercise.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = getLocalizedTitle(exercise, i18n.language).toLowerCase().includes(searchTerm.toLowerCase()) ||
+      exercise.description?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesSubject = subjectFilter === 'all' || exercise.lesson?.subject?.id?.toString() === subjectFilter;
     const matchesGrade = gradeFilter === 'all' || exercise.lesson?.subject?.grade?.id?.toString() === gradeFilter;
     const matchesDifficulty = difficultyFilter === 'all' || exercise.difficulty_level === difficultyFilter;
     const matchesFormat = formatFilter === 'all' || exercise.exercise_format === formatFilter;
     const matchesStatus = statusFilter === 'all' ||
-                         (statusFilter === 'active' && exercise.is_active && exercise.is_published) ||
-                         (statusFilter === 'inactive' && (!exercise.is_active || !exercise.is_published));
+      (statusFilter === 'active' && exercise.is_active && exercise.is_published) ||
+      (statusFilter === 'inactive' && (!exercise.is_active || !exercise.is_published));
 
     return matchesSearch && matchesSubject && matchesGrade && matchesDifficulty && matchesFormat && matchesStatus;
   });
@@ -235,11 +216,7 @@ const ExercisesManagementPage = () => {
 
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-          >
+          <div>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">{t('exercises.stats.total')}</CardTitle>
@@ -252,13 +229,9 @@ const ExercisesManagementPage = () => {
                 <p className="text-xs text-muted-foreground">{t('exercises.stats.totalDescription')}</p>
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
+          <div>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">{t('exercises.stats.active')}</CardTitle>
@@ -271,13 +244,9 @@ const ExercisesManagementPage = () => {
                 <p className="text-xs text-muted-foreground">{t('exercises.stats.activeDescription')}</p>
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-          >
+          <div>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">{t('exercises.stats.completions')}</CardTitle>
@@ -290,13 +259,9 @@ const ExercisesManagementPage = () => {
                 <p className="text-xs text-muted-foreground">{t('exercises.stats.completionsDescription')}</p>
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-          >
+          <div>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">{t('exercises.stats.averageScore')}</CardTitle>
@@ -309,7 +274,7 @@ const ExercisesManagementPage = () => {
                 <p className="text-xs text-muted-foreground">{t('exercises.stats.averageScoreDescription')}</p>
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
         </div>
 
         {/* Filters */}
@@ -339,7 +304,7 @@ const ExercisesManagementPage = () => {
                   <SelectItem value="all">{t('exercises.filters.allSubjects')}</SelectItem>
                   {subjects.map(subject => (
                     <SelectItem key={subject.id} value={subject.id.toString()}>
-                      {subject.name}
+                      {getLocalizedName(subject, i18n.language)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -353,7 +318,7 @@ const ExercisesManagementPage = () => {
                   <SelectItem value="all">{t('exercises.filters.allGrades')}</SelectItem>
                   {grades.map(grade => (
                     <SelectItem key={grade.id} value={grade.id.toString()}>
-                      {grade.name}
+                      {getLocalizedName(grade, i18n.language)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -425,7 +390,7 @@ const ExercisesManagementPage = () => {
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
                           {getFormatIcon(exercise.exercise_format)}
-                          <h3 className="text-lg font-semibold">{getLocalizedExerciseTitle(exercise)}</h3>
+                          <h3 className="text-lg font-semibold">{getLocalizedTitle(exercise, i18n.language)}</h3>
                           <Badge variant={getDifficultyBadgeVariant(exercise.difficulty_level)}>
                             {t(`exercises.difficulty.${exercise.difficulty_level}`)}
                           </Badge>
@@ -502,7 +467,7 @@ const ExercisesManagementPage = () => {
             <DialogHeader>
               <DialogTitle>{t('exercises.deleteDialog.title')}</DialogTitle>
               <DialogDescription>
-                {t('exercises.deleteDialog.description', { title: exerciseToDelete ? getLocalizedExerciseTitle(exerciseToDelete) : '' })}
+                {t('exercises.deleteDialog.description', { title: exerciseToDelete ? getLocalizedTitle(exerciseToDelete, i18n.language) : '' })}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
@@ -516,7 +481,7 @@ const ExercisesManagementPage = () => {
           </DialogContent>
         </Dialog>
       </div>
-    </AdminPageLayout>
+    </AdminPageLayout >
   );
 };
 

@@ -126,6 +126,7 @@ class Profile(models.Model):
         MAINTENANCE = 'MAINTENANCE', _('Maintenance Staff')
         SUPPORT = 'SUPPORT', _('Support Staff')
         DRIVER = 'DRIVER', _('Driver')
+        GENERAL_SUPERVISOR = 'GENERAL_SUPERVISOR', _('General Supervisor')
         OTHER = 'OTHER', _('Other')
 
     POSITION_LABELS = {
@@ -188,6 +189,11 @@ class Profile(models.Model):
             'en': 'Driver',
             'fr': 'Chauffeur',
             'ar': 'سائق'
+        },
+        Position.GENERAL_SUPERVISOR: {
+            'en': 'General Supervisor',
+            'fr': 'Surveillant Général',
+            'ar': 'الحارس العام'
         },
         Position.OTHER: {
             'en': 'Other',
@@ -332,6 +338,17 @@ class StudentEnrollment(models.Model):
     
     # Student number/ID for the class
     student_number = models.CharField(max_length=20, blank=True, help_text="Student number in this class")
+    uses_transport = models.BooleanField(default=False, verbose_name=_('Uses Transport'))
+    invoice_discount = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        default=0, 
+        verbose_name=_('Invoice Discount'),
+        help_text=_('Discount amount to be applied to the total invoice amount')
+    )
+
+
+
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

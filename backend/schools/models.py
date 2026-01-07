@@ -413,10 +413,19 @@ class VehicleMaintenanceRecord(models.Model):
 
 class GasoilRecord(models.Model):
     """Tracks vehicle fuel (gasoil) refills."""
+    class PaymentMethod(models.TextChoices):
+        CASH = 'CASH', 'Cash'
+        VOUCHER = 'VOUCHER', 'Voucher (Bone)'
+
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, related_name='gasoil_records')
     refuel_date = models.DateField()
     liters = models.DecimalField(max_digits=8, decimal_places=2, help_text="Number of liters filled")
     amount = models.DecimalField(max_digits=10, decimal_places=2, help_text="Total amount paid for the refill")
+    payment_method = models.CharField(
+        max_length=10,
+        choices=PaymentMethod.choices,
+        default=PaymentMethod.CASH
+    )
     fuel_station = models.CharField(max_length=255, blank=True, help_text="Where the vehicle was refueled")
     receipt_number = models.CharField(max_length=120, blank=True, help_text="Optional receipt or reference number")
     notes = models.TextField(blank=True)

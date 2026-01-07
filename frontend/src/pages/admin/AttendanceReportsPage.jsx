@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLocation } from 'react-router-dom';
 import {
   BarChart3,
   Users,
@@ -371,7 +372,8 @@ const filterClassesByCriteria = (classes = [], filters = {}) => {
 
 const AttendanceReportsPage = () => {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState('overview');
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState(location.state?.activeTab || 'overview');
 
   const [overviewLoading, setOverviewLoading] = useState(true);
   const [studentLoading, setStudentLoading] = useState(false);
@@ -430,34 +432,8 @@ const AttendanceReportsPage = () => {
   const [grades, setGrades] = useState([]);
   const [tracks, setTracks] = useState([]);
 
-  useEffect(() => {
-    fetchDropdownData();
-  }, []);
 
-  useEffect(() => {
-    // Avoid referencing callback before initialization; depend on filter values instead
-    fetchOverviewData();
-  }, [overviewDateRange, overviewClassId, overviewSubjectId, overviewTeacherId]);
-
-  useEffect(() => {
-    if (activeTab === 'students') {
-      fetchStudentData();
-    }
-  }, [activeTab, studentDateRange, studentGradeId, studentClassId, studentTrackId]);
-
-  useEffect(() => {
-    if (activeTab === 'classes') {
-      fetchClassData();
-    }
-  }, [activeTab, classDateRange, classGradeId, classTrackId]);
-
-  useEffect(() => {
-    if (activeTab === 'flags') {
-      fetchFlagsData();
-    }
-  }, [activeTab]);
-
-  const fetchDropdownData = async () => {
+  const fetchDropdownData = useCallback(async () => {
     try {
       const [classesRes, subjectsRes, teachersRes, gradesRes, tracksRes] = await Promise.all([
         apiMethods.get('schools/classes/').catch((err) => {
@@ -500,7 +476,7 @@ const AttendanceReportsPage = () => {
       console.error('Failed to fetch dropdown data:', error);
       toast.error(t('attendance.failedToLoadFilters', 'Failed to load filter options'));
     }
-  };
+  }, [t]);
 
   const calculateOverallStatsFromRecords = (records = []) => {
     const stats = {
@@ -604,10 +580,10 @@ const AttendanceReportsPage = () => {
       const params = {
         ...buildDateRangeParams(studentDateRange),
       };
-
       if (studentGradeId !== 'all') params.grade_id = studentGradeId;
       if (studentClassId !== 'all') params.class_id = studentClassId;
       if (studentTrackId !== 'all') params.track_id = studentTrackId;
+
       const recordsRes = await attendanceService.getAttendanceRecords(params).catch((err) => {
         console.error('Student records fetch error:', err);
         return { results: [] };
@@ -629,9 +605,9 @@ const AttendanceReportsPage = () => {
       const params = {
         ...buildDateRangeParams(classDateRange),
       };
-
       if (classGradeId !== 'all') params.grade_id = classGradeId;
       if (classTrackId !== 'all') params.track_id = classTrackId;
+
       const recordsRes = await attendanceService.getAttendanceRecords(params).catch((err) => {
         console.error('Class records fetch error:', err);
         return { results: [] };
@@ -650,12 +626,13 @@ const AttendanceReportsPage = () => {
   const fetchFlagsData = useCallback(async () => {
     setFlagsLoading(true);
     try {
-      const flagsRes = await attendanceService.getAbsenceFlags({ is_cleared: false }).catch((err) => {
-        console.error('Flags fetch error:', err);
-        return { results: [] };
-      });
-
-      const flags = Array.isArray(flagsRes) ? flagsRes : flagsRes?.results || flagsRes?.pending_flags || [];
+      const flagsRes = await attendanceService
+        .getAbsenceFlags({ is_cleared: false })
+        .catch((err) => {
+          console.error('Flags fetch error:', err);
+          return { results: [] };
+        });
+      const flags = Array.isArray(flagsRes) ? flagsRes : flagsRes?.results || [];
       setPendingFlags(flags);
     } catch (error) {
       console.error('Failed to fetch absence flags:', error);
@@ -664,6 +641,33 @@ const AttendanceReportsPage = () => {
       setFlagsLoading(false);
     }
   }, [t]);
+
+  useEffect(() => {
+    fetchDropdownData();
+  }, [fetchDropdownData]);
+
+  useEffect(() => {
+    fetchOverviewData();
+  }, [fetchOverviewData]);
+
+  useEffect(() => {
+    if (activeTab === 'students') {
+      fetchStudentData();
+    }
+  }, [activeTab, fetchStudentData]);
+
+  useEffect(() => {
+    if (activeTab === 'classes') {
+      fetchClassData();
+    }
+  }, [activeTab, fetchClassData]);
+
+  useEffect(() => {
+    if (activeTab === 'flags') {
+      fetchFlagsData();
+    }
+  }, [activeTab, fetchFlagsData]);
+
 
   const filteredStudentStats = useMemo(
     () => filterStudentsByCriteria(studentStatsCache, studentFilters),
@@ -745,20 +749,6 @@ const AttendanceReportsPage = () => {
 
   const isInitialOverviewLoad = overviewLoading && !overallStats;
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'present':
-        return 'bg-green-100 text-green-800';
-      case 'absent':
-        return 'bg-red-100 text-red-800';
-      case 'late':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'excused':
-        return 'bg-blue-100 text-blue-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   const formatDate = (dateString) => {
     if (!dateString) return '-';
@@ -1442,7 +1432,7 @@ const AttendanceReportsPage = () => {
               <CardContent>
                 <div className="space-y-3">
                   {subjectStats.length > 0 ? (
-                    subjectStats.map((subject, index) => (
+                    subjectStats.map((subject) => (
                       <div key={subject.id} className="p-4 border rounded-lg">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-3">

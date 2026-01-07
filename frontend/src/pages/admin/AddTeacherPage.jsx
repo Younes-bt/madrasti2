@@ -106,17 +106,18 @@ const AddTeacherPage = () => {
     }));
   };
 
-  // Helper function to get localized grade name
-  const getLocalizedGradeName = (grade) => {
+  // Helper function to get localized name
+  const getItemName = (item) => {
+    if (!item) return '';
     const currentLanguage = i18n.language;
 
     switch (currentLanguage) {
       case 'ar':
-        return grade.name_arabic || grade.name;
+        return item.name_arabic || item.name || '';
       case 'fr':
-        return grade.name_french || grade.name;
+        return item.name_french || item.name || '';
       default:
-        return grade.name;
+        return item.name || '';
     }
   };
 
@@ -174,16 +175,16 @@ const AddTeacherPage = () => {
         .replace(/\s+/g, '') // Remove all spaces
         .replace(/[^a-z0-9]/g, '') // Remove any non-alphanumeric characters
         .trim();
-      
+
       const cleanSchoolName = schoolName
         .toLowerCase()
         .replace(/\s+/g, '') // Remove all spaces
         .replace(/[^a-z0-9]/g, '') // Remove any non-alphanumeric characters
         .trim();
-      
+
       const generatedEmail = `${cleanLastName}@${cleanSchoolName}-teachers.com`;
-      
-      
+
+
       // Prepare data for API
       const apiData = {
         email: generatedEmail,
@@ -207,12 +208,12 @@ const AddTeacherPage = () => {
       const response = await apiMethods.post('users/register/', apiData);
 
       toast.success(
-        t('teacher.createSuccess', { 
+        t('teacher.createSuccess', {
           name: `${formData.first_name} ${formData.last_name}`,
           email: generatedEmail
         })
       );
-      
+
       // Navigate back to teachers management page
       navigate('/admin/school-management/teachers');
 
@@ -221,13 +222,13 @@ const AddTeacherPage = () => {
       console.error('Error response:', error.response);
       console.error('Error data:', error.response?.data);
       console.error('Error status:', error.response?.status);
-      
+
       // Only treat as creation failure if we get 4xx status codes
       if (error.response?.status >= 400 && error.response?.status < 500) {
         if (error.response?.data) {
           const errorData = error.response.data;
           console.error('Backend validation errors:', errorData);
-          
+
           if (typeof errorData === 'object') {
             // Handle field-specific errors
             const newErrors = {};
@@ -401,7 +402,7 @@ const AddTeacherPage = () => {
                           </SelectItem>
                           {subjects.map((subject) => (
                             <SelectItem key={subject.id} value={subject.id.toString()}>
-                              {subject.name}
+                              {getItemName(subject)}
                             </SelectItem>
                           ))}
                         </>
@@ -445,7 +446,7 @@ const AddTeacherPage = () => {
                               htmlFor={`grade-${grade.id}`}
                               className="text-sm font-normal cursor-pointer text-foreground"
                             >
-                              {getLocalizedGradeName(grade)}
+                              {getItemName(grade)}
                             </Label>
                           </div>
                         ))}

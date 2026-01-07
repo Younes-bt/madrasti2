@@ -10,10 +10,13 @@ import LoadingSpinner from '../shared/LoadingSpinner'
 import LanguageSwitcher from '../shared/LanguageSwitcher'
 import ThemeToggle from '../shared/ThemeToggle'
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '../ui/sidebar'
-import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink } from '../ui/breadcrumb'
 import { Separator } from '../ui/separator'
 import { cn } from '../../lib/utils'
 import NotificationBell from './NotificationBell'
+import { AppNavbar } from './AppNavbar'
+
+// Layout configuration - set to true to use Navbar, false to use Sidebar
+const USE_NAVBAR = true;
 
 const Layout = ({
   children,
@@ -158,7 +161,38 @@ const Layout = ({
     )
   }
 
-  // Layout with new shadcn sidebar
+  if (USE_NAVBAR) {
+    return (
+      <div className={cn(
+        'min-h-screen bg-background flex flex-col',
+        isRTL && 'rtl',
+        className
+      )} dir={isRTL ? 'rtl' : 'ltr'}>
+        <AppNavbar />
+
+        {/* Main Content */}
+        <main className={cn('flex-1 flex flex-col', contentClassName)}>
+          <div className="flex-1 overflow-auto py-2 sm:p-4">
+            <PageErrorBoundary>
+              <div className={cn("container mx-auto")}>
+                {children}
+              </div>
+            </PageErrorBoundary>
+          </div>
+
+          {/* Footer */}
+          {showFooter && (
+            <Footer
+              variant={footerVariant}
+              schoolInfo={user?.school_info}
+            />
+          )}
+        </main>
+      </div>
+    )
+  }
+
+  // Layout with new shadcn sidebar (Activated if USE_NAVBAR is false)
   return (
     <div className={className} dir="ltr">
       <SidebarProvider defaultOpen={true}>
@@ -177,24 +211,15 @@ const Layout = ({
             <header className="flex h-14 shrink-0 items-center gap-2 border-b px-2 sm:px-4" dir="ltr">
               <SidebarTrigger className="-ml-1" />
               <Separator orientation="vertical" className="h-4" />
-              <Breadcrumb>
-                <BreadcrumbList>
-                  <BreadcrumbItem className="hidden sm:block">
-                    <BreadcrumbLink href="#">
-                      {user?.school_info?.name || 'Madrasti 2.0'}
-                    </BreadcrumbLink>
-                  </BreadcrumbItem>
-                </BreadcrumbList>
-              </Breadcrumb>
               <div className="ml-auto flex items-center gap-2">
                 <NotificationBell />
               </div>
             </header>
 
             {/* Content Area */}
-            <div className="flex-1 overflow-auto p-2 sm:p-4">
+            <div className="flex-1 overflow-auto py-2 sm:p-4">
               <PageErrorBoundary>
-                <div className={cn("container px-2 sm:px-4", isRTL ? "!ml-auto !mr-0" : "mx-auto")}>
+                <div className={cn("container", isRTL ? "!ml-auto !mr-0" : "mx-auto")}>
                   {children}
                 </div>
               </PageErrorBoundary>

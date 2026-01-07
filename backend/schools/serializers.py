@@ -16,10 +16,20 @@ from .models import (
     SubjectGrade,
     AcademicYear
 )
+class AcademicYearSerializer(serializers.ModelSerializer):
+    display_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AcademicYear
+        fields = ('id', 'year', 'start_date', 'end_date', 'is_current', 'display_name')
+
+    def get_display_name(self, obj):
+        return str(obj)
 
 class SchoolSerializer(serializers.ModelSerializer):
     logo_url = serializers.SerializerMethodField()
     director_details = serializers.SerializerMethodField()
+    current_academic_year_details = AcademicYearSerializer(source='current_academic_year', read_only=True)
 
     class Meta:
         model = School
@@ -48,6 +58,7 @@ class SchoolSerializer(serializers.ModelSerializer):
             'region',
             'postal_code',
             'current_academic_year',
+            'current_academic_year_details',
             'director',
             'director_details',
             'created_at',
@@ -70,11 +81,6 @@ class SchoolSerializer(serializers.ModelSerializer):
                 'full_name': full_name or obj.director.get_full_name() or obj.director.email,
             }
         return None
-
-class AcademicYearSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = AcademicYear
-        fields = ('id', 'year', 'start_date', 'end_date', 'is_current')
 
 class SubjectSerializer(serializers.ModelSerializer):
     class Meta:
@@ -202,6 +208,7 @@ class GasoilRecordSerializer(serializers.ModelSerializer):
             'refuel_date',
             'liters',
             'amount',
+            'payment_method',
             'fuel_station',
             'receipt_number',
             'notes',

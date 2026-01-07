@@ -101,12 +101,16 @@ class LessonViewSet(viewsets.ModelViewSet):
                 return queryset.none()
 
             student_class = enrollment.school_class
+            track = student_class.track
 
-            # Show all active lessons for the student's grade by default
-            queryset = queryset.filter(
-                grade=student_class.grade,
-                is_active=True
-            )
+            # Show all active lessons for the student's grade AND track
+            lessons_filter = Q(grade=student_class.grade, is_active=True)
+
+            # Only filter by track if the class has a track assigned
+            if track:
+                lessons_filter &= Q(tracks=track)
+
+            queryset = queryset.filter(lessons_filter)
 
         # TEACHERS: Filter by assigned subject and grades
         elif user.role == 'TEACHER':
@@ -446,11 +450,19 @@ class LessonViewSet(viewsets.ModelViewSet):
             })
 
         grade = enrollment.school_class.grade
+        student_class = enrollment.school_class
+        track = student_class.track
 
         # Query lessons (optimized with select_related/prefetch_related)
+        # Filter by grade AND track to ensure students only see lessons for their specific track
+        lessons_filter = Q(grade=grade, is_active=True)
+
+        # Only filter by track if the class has a track assigned
+        if track:
+            lessons_filter &= Q(tracks=track)
+
         lessons = Lesson.objects.filter(
-            grade=grade,
-            is_active=True
+            lessons_filter
         ).select_related('subject', 'grade', 'category').prefetch_related('resources')
 
         # Apply filters from query params
@@ -514,7 +526,6 @@ class LessonViewSet(viewsets.ModelViewSet):
 
         # Get lesson availability for student's class
         from .models import LessonAvailability
-        student_class = enrollment.school_class
         availability_map = {
             avail.lesson_id: avail.is_published
             for avail in LessonAvailability.objects.filter(
@@ -565,10 +576,13 @@ class LessonViewSet(viewsets.ModelViewSet):
         except StudentWallet.DoesNotExist:
             total_points = 0
 
-        # Get all lesson IDs for summary calculation
+        # Get all lesson IDs for summary calculation (with same track filter)
+        all_lessons_filter = Q(grade=grade, is_active=True)
+        if track:
+            all_lessons_filter &= Q(tracks=track)
+
         all_lesson_ids = Lesson.objects.filter(
-            grade=grade,
-            is_active=True
+            all_lessons_filter
         ).values_list('id', flat=True)
 
         # Get progress for ALL lessons

@@ -2,7 +2,6 @@ import React, { useContext, useState } from 'react'
 import { Menu, Bell, Search, User, Settings, LogOut, ChevronDown } from 'lucide-react'
 import { Button } from '../ui/button'
 import { SidebarTrigger } from '../ui/sidebar'
-import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator } from '../ui/breadcrumb'
 import { Input } from '../ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { Badge } from '../ui/badge'
@@ -16,26 +15,22 @@ import {
   DialogTrigger,
 } from '../ui/dialog'
 import { LanguageContext } from '../../contexts/LanguageContext'
-import { ThemeContext } from '../../contexts/ThemeContext'
 import LanguageSwitcher from '../shared/LanguageSwitcher'
 import ThemeToggle from '../shared/ThemeToggle'
 import { APP_CONFIG, USER_ROLES } from '../../utils/constants'
 import { cn } from '../../lib/utils'
 
 const Header = ({
-  onMenuClick,
-  isSidebarOpen = false,
   showSearch = true,
   showNotifications = true,
   className,
   user = null,
   notifications = [],
-  onNotificationClick = () => {},
-  onProfileClick = () => {},
-  onLogout = () => {},
+  onNotificationClick = () => { },
+  onProfileClick = () => { },
+  onLogout = () => { },
 }) => {
-  const { language, t } = useContext(LanguageContext)
-  const { theme } = useContext(ThemeContext)
+  const { language } = useContext(LanguageContext)
   const [searchQuery, setSearchQuery] = useState('')
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
@@ -89,28 +84,8 @@ const Header = ({
             'mr-2',
             isRTL && 'mr-0 ml-2'
           )} />
-          
+
           <Separator orientation="vertical" className="mr-2 h-4" />
-          
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem className="hidden sm:block">
-                <BreadcrumbLink href="#">
-                  {APP_CONFIG.NAME}
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator className="hidden sm:block" />
-              <BreadcrumbItem>
-                <BreadcrumbLink href="#">
-                  {user ? getRoleDisplayName(user.role) : (
-                    language === 'ar' ? 'لوحة التحكم' :
-                    language === 'fr' ? 'Tableau de bord' :
-                    'Dashboard'
-                  )}
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
         </div>
 
         {/* Search bar */}
@@ -125,8 +100,8 @@ const Header = ({
                 type="search"
                 placeholder={
                   language === 'ar' ? 'البحث...' :
-                  language === 'fr' ? 'Rechercher...' :
-                  'Search...'
+                    language === 'fr' ? 'Rechercher...' :
+                      'Search...'
                 }
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -148,7 +123,7 @@ const Header = ({
               <Search className="h-4 w-4" />
             </Button>
           )}
-          
+
           {/* Settings dropdown for mobile */}
           <Dialog className="xs:hidden">
             <DialogTrigger asChild>
@@ -160,25 +135,25 @@ const Header = ({
             <DialogContent className="max-w-xs">
               <DialogHeader>
                 <DialogTitle>
-                  {language === 'ar' ? 'الإعدادات' : 
-                   language === 'fr' ? 'Paramètres' : 
-                   'Settings'}
+                  {language === 'ar' ? 'الإعدادات' :
+                    language === 'fr' ? 'Paramètres' :
+                      'Settings'}
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm">
-                    {language === 'ar' ? 'اللغة' : 
-                     language === 'fr' ? 'Langue' : 
-                     'Language'}
+                    {language === 'ar' ? 'اللغة' :
+                      language === 'fr' ? 'Langue' :
+                        'Language'}
                   </span>
                   <LanguageSwitcher />
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm">
-                    {language === 'ar' ? 'المظهر' : 
-                     language === 'fr' ? 'Thème' : 
-                     'Theme'}
+                    {language === 'ar' ? 'المظهر' :
+                      language === 'fr' ? 'Thème' :
+                        'Theme'}
                   </span>
                   <ThemeToggle />
                 </div>
@@ -203,37 +178,36 @@ const Header = ({
                 <Button variant="ghost" size="sm" className="relative h-8 w-8 p-0">
                   <Bell className="h-4 w-4" />
                   {unreadNotifications > 0 && (
-                    <Badge 
-                      variant="destructive" 
+                    <Badge
+                      variant="destructive"
                       className="absolute -top-1 -right-1 h-4 w-4 text-xs p-0 flex items-center justify-center min-w-4"
                     >
                       {unreadNotifications > 9 ? '9+' : unreadNotifications}
                     </Badge>
                   )}
                   <span className="sr-only">
-                    {language === 'ar' ? 'الإشعارات' : 
-                     language === 'fr' ? 'Notifications' : 
-                     'Notifications'}
+                    {language === 'ar' ? 'الإشعارات' :
+                      language === 'fr' ? 'Notifications' :
+                        'Notifications'}
                   </span>
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-md">
                 <DialogHeader>
                   <DialogTitle>
-                    {language === 'ar' ? 'الإشعارات' : 
-                     language === 'fr' ? 'Notifications' : 
-                     'Notifications'}
+                    {language === 'ar' ? 'الإشعارات' :
+                      language === 'fr' ? 'Notifications' :
+                        'Notifications'}
                   </DialogTitle>
                   <DialogDescription>
-                    {notifications.length === 0 
+                    {notifications.length === 0
                       ? (language === 'ar' ? 'لا توجد إشعارات جديدة' :
-                         language === 'fr' ? 'Aucune nouvelle notification' :
-                         'No new notifications')
-                      : `${notifications.length} ${
-                          language === 'ar' ? 'إشعارات' :
-                          language === 'fr' ? 'notifications' :
+                        language === 'fr' ? 'Aucune nouvelle notification' :
+                          'No new notifications')
+                      : `${notifications.length} ${language === 'ar' ? 'إشعارات' :
+                        language === 'fr' ? 'notifications' :
                           'notifications'
-                        }`
+                      }`
                     }
                   </DialogDescription>
                 </DialogHeader>
@@ -243,8 +217,8 @@ const Header = ({
                       <Bell className="h-12 w-12 mx-auto mb-4 opacity-50" />
                       <p>
                         {language === 'ar' ? 'لا توجد إشعارات' :
-                         language === 'fr' ? 'Aucune notification' :
-                         'No notifications'}
+                          language === 'fr' ? 'Aucune notification' :
+                            'No notifications'}
                       </p>
                     </div>
                   ) : (
@@ -326,9 +300,9 @@ const Header = ({
                     </div>
                   </div>
                 </DialogHeader>
-                
+
                 <Separator />
-                
+
                 <div className="space-y-1">
                   <Button
                     variant="ghost"
@@ -340,22 +314,22 @@ const Header = ({
                   >
                     <User className="mr-2 h-4 w-4 rtl:mr-0 rtl:ml-2" />
                     {language === 'ar' ? 'الملف الشخصي' :
-                     language === 'fr' ? 'Profil' :
-                     'Profile'}
+                      language === 'fr' ? 'Profil' :
+                        'Profile'}
                   </Button>
-                  
+
                   <Button
                     variant="ghost"
                     className="w-full justify-start"
                   >
                     <Settings className="mr-2 h-4 w-4 rtl:mr-0 rtl:ml-2" />
                     {language === 'ar' ? 'الإعدادات' :
-                     language === 'fr' ? 'Paramètres' :
-                     'Settings'}
+                      language === 'fr' ? 'Paramètres' :
+                        'Settings'}
                   </Button>
-                  
+
                   <Separator />
-                  
+
                   <Button
                     variant="ghost"
                     className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
@@ -366,8 +340,8 @@ const Header = ({
                   >
                     <LogOut className="mr-2 h-4 w-4 rtl:mr-0 rtl:ml-2" />
                     {language === 'ar' ? 'تسجيل الخروج' :
-                     language === 'fr' ? 'Se déconnecter' :
-                     'Sign out'}
+                      language === 'fr' ? 'Se déconnecter' :
+                        'Sign out'}
                   </Button>
                 </div>
               </DialogContent>
@@ -378,8 +352,8 @@ const Header = ({
           {!user && (
             <Button size="sm">
               {language === 'ar' ? 'تسجيل الدخول' :
-               language === 'fr' ? 'Se connecter' :
-               'Sign in'}
+                language === 'fr' ? 'Se connecter' :
+                  'Sign in'}
             </Button>
           )}
         </div>

@@ -11,6 +11,7 @@ export const STAFF_POSITION_OPTIONS = [
   { value: 'MAINTENANCE', translationKey: 'staff.positions.MAINTENANCE' },
   { value: 'SUPPORT', translationKey: 'staff.positions.SUPPORT' },
   { value: 'DRIVER', translationKey: 'staff.positions.DRIVER' },
+  { value: 'GENERAL_SUPERVISOR', translationKey: 'staff.positions.GENERAL_SUPERVISOR' },
   { value: 'OTHER', translationKey: 'staff.positions.OTHER' }
 ]
 
@@ -47,6 +48,7 @@ const FALLBACK_LABELS = {
     MAINTENANCE: 'Maintenance Staff',
     SUPPORT: 'Support Staff',
     DRIVER: 'Driver',
+    GENERAL_SUPERVISOR: 'General Supervisor',
     OTHER: 'Other',
     UNKNOWN: 'Staff'
   },
@@ -63,6 +65,7 @@ const FALLBACK_LABELS = {
     MAINTENANCE: 'Équipe de maintenance',
     SUPPORT: 'Personnel de soutien',
     DRIVER: 'Chauffeur',
+    GENERAL_SUPERVISOR: 'Surveillant Général',
     OTHER: 'Autre',
     UNKNOWN: 'Personnel'
   },
@@ -79,6 +82,7 @@ const FALLBACK_LABELS = {
     MAINTENANCE: 'فريق الصيانة',
     SUPPORT: 'طاقم الدعم',
     DRIVER: 'سائق',
+    GENERAL_SUPERVISOR: 'الحارس العام',
     OTHER: 'أخرى',
     UNKNOWN: 'موظف'
   }
