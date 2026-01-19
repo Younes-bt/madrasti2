@@ -197,12 +197,13 @@ import { useAuth } from './hooks/useAuth'
 // Parent Pages
 import ParentHome from './pages/parent/ParentHome'
 import ParentProfilePage from './pages/parent/ParentProfilePage'
+import EditParentProfilePage from './pages/parent/EditParentProfilePage'
 import KidProfilePage from './pages/parent/KidProfilePage'
 import ParentAttendancePage from './pages/parent/ParentAttendancePage'
 import ParentHomeworkPage from './pages/parent/ParentHomeworkPage'
 import ParentGradesPage from './pages/parent/ParentGradesPage'
 import ParentFinancePage from './pages/parent/ParentFinancePage'
-import ParentCommunicationsPage from './pages/parent/ParentCommunicationsPage'
+import ParentMessagesPage from './pages/parent/ParentMessagesPage'
 import ParentNewsPage from './pages/parent/ParentNewsPage'
 
 // Dashboard redirect component - redirects to appropriate dashboard based on user role
@@ -785,6 +786,14 @@ const AppRoutes = () => {
         }
       />
       <Route
+        path="/parent/profile/edit"
+        element={
+          <ProtectedRoute requiredRoles={['PARENT']}>
+            <EditParentProfilePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/parent/kids"
         element={
           <ProtectedRoute requiredRoles={['PARENT']}>
@@ -828,7 +837,7 @@ const AppRoutes = () => {
         path="/parent/communications"
         element={
           <ProtectedRoute requiredRoles={['PARENT']}>
-            <ParentCommunicationsPage />
+            <ParentMessagesPage />
           </ProtectedRoute>
         }
       />

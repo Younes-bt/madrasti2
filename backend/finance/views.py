@@ -26,7 +26,7 @@ from .serializers import (
 )
 from .utils import calculate_work_stats
 from .permissions import IsFinanceAdmin, CanViewPayroll, CanManageContracts, CanApproveExpenses
-from .filters import FinancialTransactionFilter, ExpenseRecordFilter
+from .filters import FinancialTransactionFilter, ExpenseRecordFilter, PaymentFilter
 from .pagination import CustomPageNumberPagination
 from users.models import User
 from schools.models import Grade, AcademicYear
@@ -192,7 +192,22 @@ class InvoiceViewSet(viewsets.ModelViewSet):
 class PaymentViewSet(viewsets.ModelViewSet):
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
-    permission_classes = [IsAdminOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = PaymentFilter
+    search_fields = ['invoice__id', 'transaction_id']
+    ordering_fields = ['date', 'amount']
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == 'ADMIN' or user.role == 'STAFF':
+            return Payment.objects.all().order_by('-id')
+        elif user.role == 'PARENT':
+            # Return payments for all children
+            return Payment.objects.filter(invoice__student__parent=user).order_by('-id')
+        elif user.role == 'STUDENT':
+            return Payment.objects.filter(invoice__student=user).order_by('-id')
+        return Payment.objects.none()
 
     def perform_create(self, serializer):
         serializer.save(recorded_by=self.request.user)

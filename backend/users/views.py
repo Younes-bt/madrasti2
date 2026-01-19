@@ -382,6 +382,68 @@ class UserViewSet(viewsets.ModelViewSet):
         })
 
     @action(detail=False, methods=['get'])
+    def my_students(self, request):
+        """Get all students enrolled in classes taught by the current teacher"""
+        if request.user.role != 'TEACHER':
+            return Response({'error': 'Only teachers can access this endpoint'}, status=403)
+
+        from schools.models import SchoolClass
+        from attendance.models import TimetableSession
+        
+        # 1. Get classes taught by this teacher via Timetable
+        class_ids = TimetableSession.objects.filter(
+            teacher=request.user,
+            is_active=True
+        ).values_list('timetable__school_class_id', flat=True).distinct()
+        
+        classes = SchoolClass.objects.filter(id__in=class_ids)
+
+        # 2. Get active enrollments for these classes
+        enrollments = StudentEnrollment.objects.filter(
+            school_class__in=classes,
+            is_active=True
+        ).select_related(
+            'student', 
+            'student__profile',
+            'school_class',
+            'school_class__grade',
+            'school_class__grade__educational_level'
+        ).order_by('student__last_name', 'student__first_name')
+
+        # 3. Process students (handle duplicates if student is in multiple classes of the teacher)
+        # We want to list students, and maybe show which class they are in.
+        # Since a student might be in multiple classes taught by the same teacher (unlikely in primary/secondary but possible),
+        # we'll return a list of student objects, each containing a list of classes they are enrolled in with this teacher.
+        
+        students_map = {}
+        
+        for enrollment in enrollments:
+            student_id = enrollment.student.id
+            if student_id not in students_map:
+                student = enrollment.student
+                students_map[student_id] = {
+                    'id': student.id,
+                    'full_name': student.full_name,
+                    'email': student.email,
+                    'avatar': student.profile.profile_picture_url if hasattr(student, 'profile') else None,
+                    'gender': student.profile.gender if hasattr(student, 'profile') else None,
+                    'phone': student.profile.phone if hasattr(student, 'profile') else None,
+                    'classes': []
+                }
+            
+            # Add class info
+            students_map[student_id]['classes'].append({
+                'id': enrollment.school_class.id,
+                'name': enrollment.school_class.name,
+                'grade': enrollment.school_class.grade.name
+            })
+        
+        return Response({
+            'students': list(students_map.values()),
+            'count': len(students_map)
+        })
+
+    @action(detail=False, methods=['get'])
     def my_teachable_classes(self, request):
         """Get all classes that match teacher's subject and teachable grades (for assignment purposes)"""
         if request.user.role != 'TEACHER':
@@ -494,6 +556,30 @@ class UserViewSet(viewsets.ModelViewSet):
             'total_children': children.count()
         })
 
+    @action(detail=True, methods=['get'], url_path='teachers')
+    def teachers(self, request, pk=None):
+        """Get all teachers for a specific student"""
+        student = self.get_object()
+
+        if student.role != User.Role.STUDENT:
+            return Response(
+                {'error': 'User is not a student'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Get the student's active enrollment
+        enrollment = student.student_enrollments.filter(is_active=True).select_related('school_class').first()
+        if not enrollment or not enrollment.school_class:
+            return Response({'teachers': []})
+
+        # Reuse SchoolClassSerializer logic to get teachers
+        from schools.serializers import SchoolClassSerializer
+        # We only need the teachers field from the serializer
+        class_serializer = SchoolClassSerializer(enrollment.school_class, context={'request': request})
+        teachers = class_serializer.data.get('teachers', [])
+
+        return Response({'teachers': teachers})
+
 
 # =====================================
 # STUDENT ENROLLMENT VIEWSET
@@ -521,6 +607,95 @@ class StudentEnrollmentViewSet(viewsets.ModelViewSet):
         if self.action == 'create':
             return StudentEnrollmentCreateSerializer
         return StudentEnrollmentSerializer
+
+    @action(detail=False, methods=['get'])
+    def stats(self, request):
+        """
+        Return aggregated statistics for student enrollments.
+        Returns total count, active/inactive counts, gender distribution, and level distribution.
+        """
+        from django.db.models import Count, Q
+        
+        # Get base queryset (filtered by permissions implicitly via get_queryset not fully applied here, 
+        # but we should respect general filtering if needed. For now, stats are global or per school context)
+        # Ideally, we should filter by the user's scope if multi-tenant. 
+        # Assuming current implementation expects all students visible to admin/teacher.
+        
+        # Get base queryset
+        queryset = self.filter_queryset(self.get_queryset())
+        
+        # Clear ordering to ensure proper grouping for ALL aggregations
+        queryset = queryset.order_by()
+        
+        # Total and Active/Inactive
+        total_students = queryset.count()
+        active_students = queryset.filter(is_active=True).count()
+        inactive_students = total_students - active_students
+        
+        # Gender Distribution (using student__profile__gender)
+        # Note: Gender is stored in Profile model linked to User (student)
+        gender_stats = queryset.values('student__profile__gender').annotate(count=Count('id'))
+        males = 0
+        females = 0
+        for item in gender_stats:
+            gender = item.get('student__profile__gender')
+            if gender == 'MALE':
+                males += item['count']
+            elif gender == 'FEMALE':
+                females += item['count']
+        
+        # Calculate unknown gender count to ensure numbers match up
+        unknown_gender = total_students - males - females
+        
+        # Level Distribution
+        # Group by educational level
+        level_stats = queryset.values(
+            'school_class__grade__educational_level__id',
+            'school_class__grade__educational_level__name',
+            'school_class__grade__educational_level__name_arabic',
+            'school_class__grade__educational_level__name_french'
+        ).annotate(count=Count('id'))
+        
+        level_counts = []
+        for item in level_stats:
+            if item['school_class__grade__educational_level__id']:
+                level_counts.append({
+                    'id': item['school_class__grade__educational_level__id'],
+                    'name': item['school_class__grade__educational_level__name'],
+                    'name_arabic': item['school_class__grade__educational_level__name_arabic'],
+                    'name_french': item['school_class__grade__educational_level__name_french'],
+                    'count': item['count']
+                })
+
+        # Grade Distribution
+        grade_stats = queryset.values(
+            'school_class__grade__id',
+            'school_class__grade__name',
+            'school_class__grade__name_arabic',
+            'school_class__grade__name_french'
+        ).annotate(count=Count('id')).order_by('school_class__grade__educational_level__order', 'school_class__grade__grade_number')
+        
+        grade_counts = []
+        for item in grade_stats:
+            if item['school_class__grade__id']:
+                grade_counts.append({
+                    'id': item['school_class__grade__id'],
+                    'name': item['school_class__grade__name'],
+                    'name_arabic': item['school_class__grade__name_arabic'],
+                    'name_french': item['school_class__grade__name_french'],
+                    'count': item['count']
+                })
+        
+        return Response({
+            'total': total_students,
+            'active': active_students,
+            'inactive': inactive_students,
+            'males': males,
+            'females': females,
+            'unknown': unknown_gender,
+            'levelCounts': level_counts,
+            'gradeCounts': grade_counts
+        })
 
 
 # =====================================
@@ -561,67 +736,134 @@ class StudentBulkImportView(APIView):
                     class_name = school_class.name
                     academic_year = academic_year_obj.year
                 except:
-                    pass  # Use default template if IDs are invalid
+                    pass
             
-            # Create simplified template without educational structure fields
-            template_data = {
-                'Student First Name': ['Ahmed', 'Fatima', ''],
-                'Student Last Name': ['Smith', 'Johnson', ''],
-                'Arabic First Name': ['أحمد', 'فاطمة', ''],
-                'Arabic Last Name': ['سميث', 'جونسون', ''],
-                'Student Phone': ['', '', ''],
-                'Date of Birth': ['2010-05-15', '2009-12-03', ''],
-                'Address': ['123 Main St, City', '456 Oak Ave, Town', ''],
-                'Parent First Name': ['Mohamed', 'Hassan', ''],
-                'Parent Last Name': ['Smith', 'Johnson', ''],
-                'Parent Phone': ['', '', ''],
-                'Emergency Contact Name': ['Uncle Ali', 'Aunt Sarah', ''],
-                'Emergency Contact Phone': ['', '', ''],
-                'Notes': ['Good student', 'Excellent in math', '']
+            # Create Excel file
+            import openpyxl
+            buffer = io.BytesIO()
+            wb = openpyxl.Workbook()
+            ws = wb.active
+            ws.title = "Students"
+            
+            from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
+            
+            # Styles
+            header_fill = PatternFill(start_color="E0E0E0", end_color="E0E0E0", fill_type="solid")
+            header_font = Font(bold=True, size=11)
+            centered = Alignment(horizontal="center", vertical="center", wrap_text=True)
+            thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+            
+            # Helper to set border
+            def set_border(cell):
+                cell.border = thin_border
+                cell.alignment = centered
+
+            # 1. Add Note in Row 3 (Merged cells, Right Aligned as per screenshot)
+            # Alignment seems to be above the last few columns. With shift, Note is at N.
+            ws.merge_cells('J3:M3')
+            ws['J3'] = "ملاحظة : الجنس : M / F"
+            ws['J3'].alignment = Alignment(horizontal="right", vertical="center")
+            ws['J3'].font = Font(bold=True)
+
+            ws.merge_cells('G4:M4')
+            ws['G4'] = "قم بحذف معطيات السطر الأول (المثال) وقم بملء البيانات بالطريقة التالية :"
+            ws['G4'].alignment = Alignment(horizontal="right", vertical="center")
+            ws['G4'].font = Font(bold=True)
+
+            # 2. Define Headers
+            # Row 6: Arabic Headers
+            arabic_headers = [
+                'الاسم الشخصي بالفرنسية',    # B: First Name French
+                'الاسم العائلي بالفرنسية',    # C: Last Name French
+                'الاسم الشخصي بالعربية',      # D: First Name Arabic
+                'الاسم العائلي بالعربية',      # E: Last Name Arabic
+                'الجنس',                      # F: Gender
+                'تاريخ الازدياد',             # G: DOB
+                'رقم الهاتف',                 # H: Phone
+                'العنوان',                    # I: Address
+                'اسم ولي الامر',              # J: Parent First Name
+                'الاسم العائلي لولي الامر',   # K: Parent Last Name
+                'هاتف ولي الامر',             # L: Parent Phone
+                'رقم الطوارئ',                # M: Emergency Phone
+                'ملاحظات'                     # N: Notes
+            ]
+            
+            # Row 7: French/English Headers (matching screenshot IDs)
+            french_headers = [
+                'Prenom',
+                'Nom',
+                'Arabic prenom',
+                'Arabic nom',
+                'Genre',
+                'Date de naissance',
+                'Phone',
+                'Adress',
+                'Prenom du Parent',
+                'Nom du parent',
+                'Phone du parent',
+                'Emegency Phone',
+                'Note'
+            ]
+            
+            # Write Row 6 (Arabic) - Start at Column 2
+            for col_idx, text in enumerate(arabic_headers, 2):
+                cell = ws.cell(row=6, column=col_idx, value=text)
+                cell.fill = header_fill
+                cell.font = header_font
+                set_border(cell)
+                
+            # Write Row 7 (French) - Start at Column 2
+            for col_idx, text in enumerate(french_headers, 2):
+                cell = ws.cell(row=7, column=col_idx, value=text)
+                cell.fill = header_fill
+                cell.font = header_font
+                set_border(cell)
+
+            # 3. Sample Data (Row 8) - Start at Column 2
+            sample_row = [
+                'Younes', 'El bettate', 'يونس', 'البتات', 'M', '1992-05-15', '0600000000', '123 Main St', 
+                'Mohamed', 'El bettate', '0611111111', '0622222222', 'Bon eleve'
+            ]
+            for col_idx, value in enumerate(sample_row, 2):
+                cell = ws.cell(row=8, column=col_idx, value=value)
+                set_border(cell)
+
+            # Set column widths
+            # A is empty/narrow. B-N match the data.
+            # Adjusted widths to "fit screen" better
+            column_widths_map = {
+                1: 8,   # A: Empty
+                2: 13,  # B: Prenom
+                3: 13,  # C: Nom
+                4: 13,  # D: Ar prenom
+                5: 13,  # E: Ar nom
+                6: 13,  # F: Genre
+                7: 13,  # G: Date
+                8: 13,  # H: Phone
+                9: 25,  # I: Adress (Wider)
+                10: 13, # J: Parent First
+                11: 13, # K: Parent Last
+                12: 13, # L: Parent Phone
+                13: 13, # M: Emergency Phone
+                14: 25  # N: Note
             }
             
-            df = pd.DataFrame(template_data)
+            for col_idx, width in column_widths_map.items():
+                col_letter = openpyxl.utils.get_column_letter(col_idx)
+                ws.column_dimensions[col_letter].width = width
+
+            # Add Metadata/Instructions Sheet (hidden or secondary)
+            ws_meta = wb.create_sheet("Info")
+            ws_meta.append(['Property', 'Value'])
+            ws_meta.append(['Level', level_name])
+            ws_meta.append(['Grade', grade_name])
+            ws_meta.append(['Class', class_name])
+            ws_meta.append(['Academic Year', academic_year])
             
-            # Create Excel file in memory
-            buffer = io.BytesIO()
-            with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-                # Write main data sheet
-                df.to_excel(writer, sheet_name='Students', index=False)
-                
-                # Add instructions sheet with educational structure info
-                instructions_data = {
-                    'Instructions': [
-                        '1. Fill in the student information in the "Students" sheet',
-                        '2. Required fields: Student First Name, Student Last Name, Arabic names',
-                        '3. Educational structure is pre-selected (see below)',
-                        '4. Parent information will create parent accounts automatically',
-                        '5. Date format: YYYY-MM-DD (e.g., 2010-05-15)',
-                        '6. Phone format: +1234567890 or any valid format',
-                        '7. Delete sample rows before uploading',
-                        '8. Save file and upload back to the system',
-                        '9. System will validate and show preview before import',
-                        '10. All students will be enrolled in the same class'
-                    ],
-                    'Details': [
-                        'Sample data is provided in first 2 rows',
-                        'All names are required for account creation',
-                        f'Level: {level_name}' if level_name else 'Educational structure not selected',
-                        f'Grade: {grade_name}' if grade_name else 'Please select educational structure first',
-                        f'Class: {class_name}' if class_name else 'Please select educational structure first',
-                        f'Academic Year: {academic_year}' if academic_year else 'Please select educational structure first',
-                        'Parents with same email will not be duplicated',
-                        'Use format: 2010-05-15 (year-month-day)',
-                        'Must be .xlsx format (Excel 2007+)',
-                        'Errors will be shown with row numbers'
-                    ]
-                }
-                
-                instructions = pd.DataFrame(instructions_data)
-                instructions.to_excel(writer, sheet_name='Instructions', index=False)
-            
+            wb.save(buffer)
             buffer.seek(0)
             
-            # Create response with Excel file
+            # Create response
             response = HttpResponse(
                 buffer.getvalue(),
                 content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -642,7 +884,6 @@ class StudentBulkImportView(APIView):
             # Debug: Log the incoming request
             import logging
             logger = logging.getLogger(__name__)
-            logger.error(f"BULK IMPORT DEBUG: Method={request.method}, Preview param={request.data.get('preview')}")
             
             # Check if file was uploaded
             if 'file' not in request.FILES:
@@ -675,17 +916,19 @@ class StudentBulkImportView(APIView):
             
             # Read Excel file
             try:
-                df = pd.read_excel(uploaded_file, sheet_name='Students')
+                df = pd.read_excel(uploaded_file, sheet_name='Students', header=6)
+                # Filter out completely empty rows
+                df = df.dropna(how='all')
+                # Filter out rows where the mandatory fields are empty (simple check)
+                if not df.empty:
+                     df = df[df['Prenom'].notna()]
             except Exception as e:
-                return Response(
-                    {'error': f'Failed to read Excel file: {str(e)}'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+                return Response({'error': f'Failed to read Excel file: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
             
             # Validate required columns (simplified - no educational structure columns)
             required_columns = [
-                'Student First Name', 'Student Last Name', 
-                'Arabic First Name', 'Arabic Last Name'
+                'Prenom', 'Nom', 
+                'Arabic prenom', 'Arabic nom'
             ]
             
             missing_columns = [col for col in required_columns if col not in df.columns]
@@ -815,7 +1058,7 @@ class StudentBulkImportView(APIView):
         for index, row in df.iterrows():
             try:
                 # Skip empty rows
-                if pd.isna(row['Student First Name']) or pd.isna(row['Student Last Name']):
+                if pd.isna(row.get('Prenom')) or pd.isna(row.get('Nom')):
                     continue
                 
                 results['processed_rows'] += 1
@@ -823,14 +1066,37 @@ class StudentBulkImportView(APIView):
 
                 # --- Basic Row Validation ---
                 row_errors = []
-                required_fields = {'Student First Name': 'Student first name', 'Student Last Name': 'Student last name', 'Arabic First Name': 'Arabic first name', 'Arabic Last Name': 'Arabic last name'}
+                # Map Excel columns to internal variable names
+                col_map = {
+                    'first_name': 'Prenom',
+                    'last_name': 'Nom',
+                    'ar_first_name': 'Arabic prenom',
+                    'ar_last_name': 'Arabic nom',
+                    'gender': 'Genre',
+                    'dob': 'Date de naissance',
+                    'phone': 'Phone',
+                    'address': 'Adress', # Typo "Adress" in template to match screenshot
+                    'parent_first': 'Prenom du Parent',
+                    'parent_last': 'Nom du parent',
+                    'parent_phone': 'Phone du parent',
+                    'emergency_phone': 'Emegency Phone', # Typo matches template
+                    'note': 'Note'
+                }
+
+                required_fields = {
+                    col_map['first_name']: 'First name', 
+                    col_map['last_name']: 'Last name', 
+                    col_map['ar_first_name']: 'Arabic first name', 
+                    col_map['ar_last_name']: 'Arabic last name'
+                }
+                
                 for field, display_name in required_fields.items():
                     if pd.isna(row.get(field)) or str(row.get(field)).strip() == '':
                         row_errors.append(f'{display_name} is required.')
                 
-                if not pd.isna(row.get('Date of Birth')):
-                    try: pd.to_datetime(row['Date of Birth'])
-                    except: row_errors.append('Invalid date format for Date of Birth. Use YYYY-MM-DD.')
+                if not pd.isna(row.get(col_map['dob'])):
+                    try: pd.to_datetime(row[col_map['dob']])
+                    except: row_errors.append('Invalid date format. Use YYYY-MM-DD.')
                 
                 if row_errors:
                     results['errors'].append({'row': row_number, 'error': ' '.join(row_errors)})
@@ -839,13 +1105,21 @@ class StudentBulkImportView(APIView):
 
                 # --- Prepare Student Data ---
                 from datetime import date
-                student_first_name = str(row['Student First Name']).strip()
-                student_last_name = str(row['Student Last Name']).strip()
+                student_first_name = str(row[col_map['first_name']]).strip()
+                student_last_name = str(row[col_map['last_name']]).strip()
                 
                 # Generate final, unique email before validation
                 student_email = self._generate_unique_email_for_import(
                     student_first_name, student_last_name, 'STUDENT', generated_emails_in_batch
                 )
+
+                # Parse Gender
+                gender_raw = str(row.get(col_map['gender'], '')).strip().upper()
+                gender_val = None
+                if gender_raw in ['M', 'MALE', 'HOMME']:
+                    gender_val = 'MALE'
+                elif gender_raw in ['F', 'FEMALE', 'FEMME']:
+                    gender_val = 'FEMALE'
 
                 student_data = {
                     'email': student_email,
@@ -853,26 +1127,33 @@ class StudentBulkImportView(APIView):
                     'first_name': student_first_name,
                     'last_name': student_last_name,
                     'role': 'STUDENT',
-                    'ar_first_name': str(row['Arabic First Name']).strip(),
-                    'ar_last_name': str(row['Arabic Last Name']).strip(),
+                    'ar_first_name': str(row[col_map['ar_first_name']]).strip(),
+                    'ar_last_name': str(row[col_map['ar_last_name']]).strip(),
                     'enrollment_date': date.today(),
+                    'gender': gender_val
                 }
                 
                 if educational_structure:
                     student_data['school_class_id'] = educational_structure['class_id']
                     student_data['academic_year_id'] = educational_structure['academic_year_id']
                 
-                optional_fields = {
-                    'phone': 'Student Phone', 'address': 'Address', 'bio': 'Notes',
-                    'emergency_contact_name': 'Emergency Contact Name', 'emergency_contact_phone': 'Emergency Contact Phone',
-                    'parent_first_name': 'Parent First Name', 'parent_last_name': 'Parent Last Name', 'parent_phone': 'Parent Phone'
+                # Map optional fields
+                optional_mapping = {
+                    'phone': col_map['phone'], 
+                    'address': col_map['address'], 
+                    'bio': col_map['note'],
+                    'emergency_contact_phone': col_map['emergency_phone'],
+                    'parent_first_name': col_map['parent_first'], 
+                    'parent_last_name': col_map['parent_last'], 
+                    'parent_phone': col_map['parent_phone']
                 }
-                for field, column in optional_fields.items():
+                
+                for field, column in optional_mapping.items():
                     if column in row and not pd.isna(row[column]):
                         student_data[field] = str(row[column]).strip()
                 
-                if 'Date of Birth' in row and not pd.isna(row['Date of Birth']):
-                    student_data['date_of_birth'] = pd.to_datetime(row['Date of Birth']).date()
+                if col_map['dob'] in row and not pd.isna(row[col_map['dob']]):
+                    student_data['date_of_birth'] = pd.to_datetime(row[col_map['dob']]).date()
                 # --- End Data Preparation ---
 
                 if preview_mode:
@@ -891,8 +1172,8 @@ class StudentBulkImportView(APIView):
                     preview_item = {
                         'row_number': row_number,
                         'student_name': f"{student_first_name} {student_last_name}",
-                        'arabic_name': f"{row['Arabic First Name']} {row['Arabic Last Name']}",
-                        'parent_name': f"{row.get('Parent First Name', '')} {row.get('Parent Last Name', '')}".strip(),
+                        'arabic_name': f"{row[col_map['ar_first_name']]} {row[col_map['ar_last_name']]}",
+                        'parent_name': f"{row.get(col_map['parent_first'], '')} {row.get(col_map['parent_last'], '')}".strip(),
                         'predicted_student_email': student_email,
                         'predicted_parent_email': predicted_parent_email or 'No parent data provided'
                     }
@@ -953,7 +1234,7 @@ class StudentBulkImportView(APIView):
         for index, row in df.iterrows():
             try:
                 # Skip empty rows
-                if pd.isna(row['Student First Name']) or pd.isna(row['Student Last Name']):
+                if pd.isna(row.get('Prenom')) or pd.isna(row.get('Nom')):
                     continue
                 
                 results['processed_rows'] += 1
@@ -966,29 +1247,61 @@ class StudentBulkImportView(APIView):
 
                 # --- Basic Row Validation ---
                 row_errors = []
-                required_fields = {'Student First Name': 'Student first name', 'Student Last Name': 'Student last name', 'Arabic First Name': 'Arabic first name', 'Arabic Last Name': 'Arabic last name'}
+                # Map Excel columns to internal variable names
+                # Updated to match the new 2-row header format where we read the French row (Row 7)
+                col_map = {
+                    'first_name': 'Prenom',
+                    'last_name': 'Nom',
+                    'ar_first_name': 'Arabic prenom',
+                    'ar_last_name': 'Arabic nom',
+                    'gender': 'Genre',
+                    'dob': 'Date de naissance',
+                    'phone': 'Phone',
+                    'address': 'Adress', # Typo "Adress" in template to match screenshot
+                    'parent_first': 'Prenom du Parent',
+                    'parent_last': 'Nom du parent',
+                    'parent_phone': 'Phone du parent',
+                    'emergency_phone': 'Emegency Phone', # Typo matches template
+                    'note': 'Note'
+                }
+
+                required_fields = {
+                    col_map['first_name']: 'First name', 
+                    col_map['last_name']: 'Last name', 
+                    col_map['ar_first_name']: 'Arabic first name', 
+                    col_map['ar_last_name']: 'Arabic last name'
+                }
+                
                 for field, display_name in required_fields.items():
                     if pd.isna(row.get(field)) or str(row.get(field)).strip() == '':
                         row_errors.append(f'{display_name} is required.')
                 
-                if not pd.isna(row.get('Date of Birth')):
-                    try: pd.to_datetime(row['Date of Birth'])
-                    except: row_errors.append('Invalid date format for Date of Birth. Use YYYY-MM-DD.')
+                if not pd.isna(row.get(col_map['dob'])):
+                    try: pd.to_datetime(row[col_map['dob']])
+                    except: row_errors.append('Invalid date format. Use YYYY-MM-DD.')
                 
                 if row_errors:
                     results['errors'].append({'row': row_number, 'error': ' '.join(row_errors)})
                     continue
                 # --- End Basic Validation ---
-
+                
                 # --- Prepare Student Data ---
                 from datetime import date
-                student_first_name = str(row['Student First Name']).strip()
-                student_last_name = str(row['Student Last Name']).strip()
+                student_first_name = str(row[col_map['first_name']]).strip()
+                student_last_name = str(row[col_map['last_name']]).strip()
                 
                 # Generate final, unique email before validation
                 student_email = self._generate_unique_email_for_import(
                     student_first_name, student_last_name, 'STUDENT', generated_emails_in_batch
                 )
+
+                # Parse Gender
+                gender_raw = str(row.get(col_map['gender'], '')).strip().upper()
+                gender_val = None
+                if gender_raw in ['M', 'MALE', 'HOMME']:
+                    gender_val = 'MALE'
+                elif gender_raw in ['F', 'FEMALE', 'FEMME']:
+                    gender_val = 'FEMALE'
 
                 student_data = {
                     'email': student_email,
@@ -996,26 +1309,33 @@ class StudentBulkImportView(APIView):
                     'first_name': student_first_name,
                     'last_name': student_last_name,
                     'role': 'STUDENT',
-                    'ar_first_name': str(row['Arabic First Name']).strip(),
-                    'ar_last_name': str(row['Arabic Last Name']).strip(),
+                    'ar_first_name': str(row[col_map['ar_first_name']]).strip(),
+                    'ar_last_name': str(row[col_map['ar_last_name']]).strip(),
                     'enrollment_date': date.today(),
+                    'gender': gender_val
                 }
                 
                 if educational_structure:
                     student_data['school_class_id'] = educational_structure['class_id']
                     student_data['academic_year_id'] = educational_structure['academic_year_id']
                 
-                optional_fields = {
-                    'phone': 'Student Phone', 'address': 'Address', 'bio': 'Notes',
-                    'emergency_contact_name': 'Emergency Contact Name', 'emergency_contact_phone': 'Emergency Contact Phone',
-                    'parent_first_name': 'Parent First Name', 'parent_last_name': 'Parent Last Name', 'parent_phone': 'Parent Phone'
+                # Map optional fields
+                optional_mapping = {
+                    'phone': col_map['phone'], 
+                    'address': col_map['address'], 
+                    'bio': col_map['note'],
+                    'emergency_contact_phone': col_map['emergency_phone'],
+                    'parent_first_name': col_map['parent_first'], 
+                    'parent_last_name': col_map['parent_last'], 
+                    'parent_phone': col_map['parent_phone']
                 }
-                for field, column in optional_fields.items():
+                
+                for field, column in optional_mapping.items():
                     if column in row and not pd.isna(row[column]):
                         student_data[field] = str(row[column]).strip()
                 
-                if 'Date of Birth' in row and not pd.isna(row['Date of Birth']):
-                    student_data['date_of_birth'] = pd.to_datetime(row['Date of Birth']).date()
+                if col_map['dob'] in row and not pd.isna(row[col_map['dob']]):
+                    student_data['date_of_birth'] = pd.to_datetime(row[col_map['dob']]).date()
                 # --- End Data Preparation ---
 
                 # Final Import: Validate and Save

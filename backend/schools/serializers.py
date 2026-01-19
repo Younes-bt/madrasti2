@@ -397,6 +397,8 @@ class SchoolClassSerializer(serializers.ModelSerializer):
     grade_name = serializers.StringRelatedField(source='grade')
     track_id = serializers.IntegerField(source='track.id', read_only=True)
     track_name = serializers.CharField(source='track.name', read_only=True)
+    track_arabic = serializers.CharField(source='track.name_arabic', read_only=True)
+    track_french = serializers.CharField(source='track.name_french', read_only=True)
     track_code = serializers.CharField(source='track.code', read_only=True)
     academic_year = serializers.PrimaryKeyRelatedField(queryset=AcademicYear.objects.all())
     academic_year_name = serializers.StringRelatedField(source='academic_year', read_only=True)
@@ -409,20 +411,57 @@ class SchoolClassSerializer(serializers.ModelSerializer):
     class Meta:
         model = SchoolClass
         fields = ('id', 'name', 'grade', 'grade_id', 'grade_name', 'track', 'track_id',
-                 'track_name', 'track_code', 'academic_year', 'academic_year_name', 'section', 'teachers',
+                 'track_name', 'track_arabic', 'track_french', 'track_code', 'academic_year', 'academic_year_name', 'section', 'teachers',
                  'teachers_count', 'students_count')
 
     def get_teachers(self, obj):
-        """Get basic teacher information"""
-        return [
-            {
+        """Get information for both assigned class teachers and subject teachers from timetable"""
+        from django.apps import apps
+        TimetableSession = apps.get_model('attendance', 'TimetableSession')
+        
+        # 1. Start with teachers directly assigned to the class (usually supervisors)
+        teachers_data = {}
+        
+        for teacher in obj.teachers.all():
+            teachers_data[teacher.id] = {
                 'id': teacher.id,
                 'name': teacher.full_name,
                 'email': teacher.email,
-                'subject': teacher.profile.school_subject.name if teacher.profile.school_subject else None
+                'subject': teacher.profile.school_subject.name if hasattr(teacher, 'profile') and teacher.profile.school_subject else None,
+                'subject_arabic': teacher.profile.school_subject.name_arabic if hasattr(teacher, 'profile') and teacher.profile.school_subject else None,
+                'subject_french': teacher.profile.school_subject.name_french if hasattr(teacher, 'profile') and teacher.profile.school_subject else None
             }
-            for teacher in obj.teachers.all()
-        ]
+            
+        # 2. Add teachers from the active timetable sessions
+        # We look for sessions belonging to this class's active timetable
+        timetable_sessions = TimetableSession.objects.filter(
+            timetable__school_class=obj,
+            timetable__is_active=True,
+            is_active=True
+        ).select_related('teacher', 'teacher__profile', 'teacher__profile__school_subject', 'subject')
+        
+        for session in timetable_sessions:
+            teacher = session.teacher
+            if teacher.id not in teachers_data:
+                # Use the subject from the timetable session as it's more accurate for that specific class
+                subject_name = session.subject.name
+                
+                teachers_data[teacher.id] = {
+                    'id': teacher.id,
+                    'name': teacher.full_name,
+                    'email': teacher.email,
+                    'subject': session.subject.name,
+                    'subject_arabic': session.subject.name_arabic,
+                    'subject_french': session.subject.name_french
+                }
+            else:
+                # If they are already there but have no subject, try to fill it from the session
+                if not teachers_data[teacher.id]['subject']:
+                    teachers_data[teacher.id]['subject'] = session.subject.name
+                    teachers_data[teacher.id]['subject_arabic'] = session.subject.name_arabic
+                    teachers_data[teacher.id]['subject_french'] = session.subject.name_french
+
+        return list(teachers_data.values())
 
     def get_teachers_count(self, obj):
         """Get the number of teachers assigned to this class"""

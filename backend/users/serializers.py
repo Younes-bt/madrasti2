@@ -93,6 +93,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     school_subject = serializers.IntegerField(required=False, allow_null=True)
     teachable_grades = serializers.ListField(child=serializers.IntegerField(), required=False, allow_empty=True)
     hire_date = serializers.DateField(required=False, allow_null=True)
+    gender = serializers.ChoiceField(choices=Profile.Gender.choices, required=False, allow_blank=True, allow_null=True)
     
     # Student enrollment fields (only used if role is STUDENT)
     school_class_id = serializers.IntegerField(required=False, allow_null=True)
@@ -111,11 +112,11 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'email', 'password', 'first_name', 'last_name', 'role',
+            'id', 'email', 'password', 'first_name', 'last_name', 'role',
             # Profile fields
             'ar_first_name', 'ar_last_name', 'phone', 'date_of_birth', 'address', 'bio',
             'emergency_contact_name', 'emergency_contact_phone',
-            'department', 'position', 'school_subject', 'teachable_grades', 'hire_date',
+            'department', 'position', 'school_subject', 'teachable_grades', 'hire_date', 'gender',
             # Student enrollment fields
             'school_class_id', 'academic_year_id', 'enrollment_date', 'student_number',
             'uses_transport', 'invoice_discount',
@@ -186,7 +187,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         profile_fields = [
             'ar_first_name', 'ar_last_name', 'phone', 'date_of_birth', 'address', 'bio',
             'emergency_contact_name', 'emergency_contact_phone',
-            'department', 'position', 'school_subject', 'teachable_grades', 'hire_date'
+            'department', 'position', 'school_subject', 'teachable_grades', 'hire_date', 'gender'
         ]
         
         for field in profile_fields:
@@ -389,6 +390,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     profile_picture_url = serializers.SerializerMethodField()
     
     full_name = serializers.ReadOnlyField()
+    ar_full_name = serializers.ReadOnlyField()
     
     # Enrollment fields for students
     uses_transport = serializers.BooleanField(required=False)
@@ -397,7 +399,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'id', 'email', 'first_name', 'last_name', 'full_name', 'role', 'is_active',
+            'id', 'email', 'first_name', 'last_name', 'full_name', 'ar_full_name', 'role', 'is_active',
             'created_at', 'updated_at',
             # Profile fields
             'ar_first_name', 'ar_last_name', 'phone', 'date_of_birth', 'address',
@@ -527,6 +529,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                 ],
                 'hire_date': profile.hire_date,
                 'salary': profile.salary,
+                'ar_full_name': profile.ar_full_name,
             })
         except Profile.DoesNotExist:
             pass
@@ -557,12 +560,14 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             try:
                 parent_profile = parent.profile
                 data.update({
+                    'parent_id': parent.id,
                     'parent_name': f"{parent.first_name} {parent.last_name}".strip(),
                     'parent_email': parent.email,
                     'parent_phone': parent_profile.phone,
                 })
             except Profile.DoesNotExist:
                 data.update({
+                    'parent_id': parent.id,
                     'parent_name': f"{parent.first_name} {parent.last_name}".strip(),
                     'parent_email': parent.email,
                     'parent_phone': None,
@@ -570,6 +575,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         else:
             # Set empty parent fields for non-students or students without parents
             data.update({
+                'parent_id': None,
                 'parent_name': None,
                 'parent_email': None,
                 'parent_phone': None,
@@ -582,36 +588,45 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             if current_enrollment:
                 data.update({
                     'grade': current_enrollment.school_class.grade.name,
-                    'grade_name_arabic': getattr(current_enrollment.school_class.grade, 'name_arabic', None),
-                    'grade_name_french': getattr(current_enrollment.school_class.grade, 'name_french', None),
+                    'grade_arabic': getattr(current_enrollment.school_class.grade, 'name_arabic', None),
+                    'grade_french': getattr(current_enrollment.school_class.grade, 'name_french', None),
                     'class_name': current_enrollment.school_class.name,
                     'enrollment_date': current_enrollment.enrollment_date,
                     'student_id': current_enrollment.student_number,
                     'academic_year': current_enrollment.academic_year.year,
                     'uses_transport': current_enrollment.uses_transport,
                     'invoice_discount': current_enrollment.invoice_discount,
+                    'track_name': current_enrollment.school_class.track.name if current_enrollment.school_class and current_enrollment.school_class.track else None,
+                    'track_arabic': current_enrollment.school_class.track.name_arabic if current_enrollment.school_class and current_enrollment.school_class.track else None,
+                    'track_french': current_enrollment.school_class.track.name_french if current_enrollment.school_class and current_enrollment.school_class.track else None,
                 })
             else:
                 # Set empty academic fields if no enrollment found
                 data.update({
                     'grade': None,
-                    'grade_name_arabic': None,
-                    'grade_name_french': None,
+                    'grade_arabic': None,
+                    'grade_french': None,
                     'class_name': None,
                     'enrollment_date': None,
                     'student_id': None,
                     'academic_year': None,
+                    'track_name': None,
+                    'track_arabic': None,
+                    'track_french': None,
                 })
         else:
             # Set empty academic fields for non-students
             data.update({
                 'grade': None,
-                'grade_name_arabic': None,
-                'grade_name_french': None,
+                'grade_arabic': None,
+                'grade_french': None,
                 'class_name': None,
                 'enrollment_date': None,
                 'student_id': None,
                 'academic_year': None,
+                'track_name': None,
+                'track_arabic': None,
+                'track_french': None,
             })
         
         return data
@@ -728,10 +743,17 @@ class StudentEnrollmentSerializer(serializers.ModelSerializer):
     school_class_name = serializers.CharField(source='school_class.name', read_only=True)
     academic_year_name = serializers.CharField(source='academic_year.year', read_only=True)
     
+    grade_name = serializers.CharField(source='school_class.grade.name', read_only=True)
+    level_name = serializers.CharField(source='school_class.grade.educational_level.name', read_only=True)
+    grade_id = serializers.IntegerField(source='school_class.grade.id', read_only=True)
+    level_id = serializers.IntegerField(source='school_class.grade.educational_level.id', read_only=True)
+    class_id = serializers.IntegerField(source='school_class.id', read_only=True)
+
     class Meta:
         model = StudentEnrollment
         fields = [
             'id', 'student', 'school_class', 'school_class_name',
+            'grade_name', 'level_name', 'grade_id', 'level_id', 'class_id',
             'academic_year', 'academic_year_name', 'enrollment_date',
             'is_active', 'student_number', 'uses_transport', 'invoice_discount', 'created_at'
         ]
@@ -755,9 +777,10 @@ class ChildSummarySerializer(UserUpdateSerializer):
     """
     pending_homework_count = serializers.SerializerMethodField()
     uncleared_absence_count = serializers.SerializerMethodField()
+    student_enrollments = StudentEnrollmentSerializer(many=True, read_only=True)
 
     class Meta(UserUpdateSerializer.Meta):
-        fields = UserUpdateSerializer.Meta.fields + ['pending_homework_count', 'uncleared_absence_count']
+        fields = UserUpdateSerializer.Meta.fields + ['pending_homework_count', 'uncleared_absence_count', 'student_enrollments']
 
     def get_pending_homework_count(self, obj):
         try:

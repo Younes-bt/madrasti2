@@ -494,6 +494,13 @@ class HomeworkViewSet(viewsets.ModelViewSet):
         elif self.action in ['create', 'update', 'partial_update']:
             return HomeworkCreateSerializer
         return HomeworkDetailSerializer
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        student_id = self.request.query_params.get('student_id')
+        if student_id:
+            context['student_id'] = student_id
+        return context
     
     def get_queryset(self):
         user = self.request.user
@@ -521,15 +528,29 @@ class HomeworkViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(teacher=user)
         elif user.role == 'PARENT':
             # Parents see assignments for their children's enrolled classes
+            student_id = self.request.query_params.get('student_id')
             from users.models import StudentEnrollment
-            children_classes = StudentEnrollment.objects.filter(
-                student__parent=user,
-                is_active=True
-            ).values_list('school_class_id', flat=True)
-            queryset = queryset.filter(
-                school_class_id__in=children_classes,
-                is_published=True
-            )
+            
+            if student_id:
+                # Security check: ensure student is parent's child
+                student_classes = StudentEnrollment.objects.filter(
+                    student_id=student_id,
+                    student__parent=user,
+                    is_active=True
+                ).values_list('school_class_id', flat=True)
+                queryset = queryset.filter(
+                    school_class_id__in=student_classes,
+                    is_published=True
+                )
+            else:
+                children_classes = StudentEnrollment.objects.filter(
+                    student__parent=user,
+                    is_active=True
+                ).values_list('school_class_id', flat=True)
+                queryset = queryset.filter(
+                    school_class_id__in=children_classes,
+                    is_published=True
+                )
         elif user.role in ['ADMIN', 'STAFF']:
             # Admin/Staff see all assignments
             queryset = queryset.all()
@@ -575,7 +596,7 @@ class HomeworkViewSet(viewsets.ModelViewSet):
         submissions = Submission.objects.filter(homework=homework)
         
         stats = {
-            'total_students': homework.school_class.students.count() if hasattr(homework.school_class, 'students') else 0,
+            'total_students': homework.school_class.student_enrollments.count(),
             'submitted_count': submissions.filter(status__in=['submitted', 'auto_graded', 'manually_graded']).count(),
             'pending_count': submissions.filter(status__in=['draft', 'in_progress']).count(),
             'late_count': submissions.filter(is_late=True).count(),

@@ -365,7 +365,22 @@ class UsersService {
       const response = await apiMethods.get(`users/users/${parentId}/children/`);
       return response;
     } catch (error) {
-      console.error('Get user children failed:', error);
+      console.error('Update child info failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get Teachers for a Student (Parent view)
+   * @param {number} studentId - Student ID
+   * @returns {Promise<Object>} List of teachers
+   */
+  async getTeachersForStudent(studentId) {
+    try {
+      const response = await apiMethods.get(`users/users/${studentId}/teachers/`);
+      return response;
+    } catch (error) {
+      console.error('Get teachers for student failed:', error);
       throw error;
     }
   }

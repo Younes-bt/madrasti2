@@ -424,10 +424,58 @@ export function AppNavbar() {
             ],
             [USER_ROLES.PARENT]: [
                 {
+                    key: 'home',
+                    icon: Home,
+                    label: t('common.home'),
+                    path: '/parent',
+                },
+                {
+                    key: 'profile',
+                    icon: UserCog,
+                    label: t('parentHome.myProfile', 'My Profile'),
+                    path: '/parent/profile',
+                },
+                {
+                    key: 'kids',
+                    icon: GraduationCap,
+                    label: t('parentHome.kidProfile', 'Kid Profile'),
+                    path: '/parent/kids',
+                },
+                {
+                    key: 'attendance',
+                    icon: UserCheck,
+                    label: t('parentHome.attendance', 'Attendance'),
+                    path: '/parent/attendance',
+                },
+                {
+                    key: 'homework',
+                    icon: BookOpen,
+                    label: t('parentHome.homeWork', 'Homework'),
+                    path: '/parent/homework',
+                },
+                {
+                    key: 'grades',
+                    icon: Award,
+                    label: t('parentHome.grades', 'Grades'),
+                    path: '/parent/grades',
+                },
+                {
                     key: 'finance',
                     icon: DollarSign,
-                    label: t('parentHome.financialStatus'),
-                    path: '/parent/finance',
+                    label: t('parentHome.finance', 'Finance'),
+                    path: '/parent/finance/invoices',
+                },
+                {
+                    key: 'communications',
+                    icon: MessageSquare,
+                    label: t('parentHome.communications', 'Communications'),
+                    path: '/parent/communications',
+                },
+                {
+                    key: 'news',
+                    icon: Bell,
+                    label: t('parentHome.news', 'Events & News'),
+                    path: '/parent/news',
                 }
             ],
             [USER_ROLES.STAFF]: (() => {

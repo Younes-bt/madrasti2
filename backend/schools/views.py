@@ -49,7 +49,13 @@ class SchoolConfigViewSet(viewsets.ModelViewSet):
     """
     queryset = School.objects.all()
     serializer_class = SchoolSerializer
-    permission_classes = [permissions.IsAdminUser] # Only admins can change config
+    # Allow any user (even unauthenticated) to view config for login screen branding
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            self.permission_classes = [permissions.AllowAny]
+        else:
+            self.permission_classes = [permissions.IsAdminUser]
+        return super().get_permissions()
     http_method_names = ['get', 'put', 'patch', 'head', 'options']
     parser_classes = (MultiPartParser, FormParser, JSONParser)
 

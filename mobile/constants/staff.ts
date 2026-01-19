@@ -1,0 +1,88 @@
+export const STAFF_POSITION_OPTIONS = [
+    { value: 'DIRECTOR', translationKey: 'staff.positions.DIRECTOR' },
+    { value: 'ASSISTANT', translationKey: 'staff.positions.ASSISTANT' },
+    { value: 'IT_SUPPORT', translationKey: 'staff.positions.IT_SUPPORT' },
+    { value: 'ACCOUNTANT', translationKey: 'staff.positions.ACCOUNTANT' },
+    { value: 'HR_COORDINATOR', translationKey: 'staff.positions.HR_COORDINATOR' },
+    { value: 'COUNSELOR', translationKey: 'staff.positions.COUNSELOR' },
+    { value: 'LIBRARIAN', translationKey: 'staff.positions.LIBRARIAN' },
+    { value: 'NURSE', translationKey: 'staff.positions.NURSE' },
+    { value: 'SECURITY', translationKey: 'staff.positions.SECURITY' },
+    { value: 'MAINTENANCE', translationKey: 'staff.positions.MAINTENANCE' },
+    { value: 'SUPPORT', translationKey: 'staff.positions.SUPPORT' },
+    { value: 'DRIVER', translationKey: 'staff.positions.DRIVER' },
+    { value: 'GENERAL_SUPERVISOR', translationKey: 'staff.positions.GENERAL_SUPERVISOR' },
+    { value: 'OTHER', translationKey: 'staff.positions.OTHER' }
+];
+
+export const FALLBACK_LABELS = {
+    en: {
+        DIRECTOR: 'Director',
+        ASSISTANT: 'Assistant',
+        IT_SUPPORT: 'IT Support Specialist',
+        ACCOUNTANT: 'Accountant',
+        HR_COORDINATOR: 'HR Coordinator',
+        COUNSELOR: 'School Counselor',
+        LIBRARIAN: 'Librarian',
+        NURSE: 'School Nurse',
+        SECURITY: 'Security Officer',
+        MAINTENANCE: 'Maintenance Staff',
+        SUPPORT: 'Support Staff',
+        DRIVER: 'Driver',
+        GENERAL_SUPERVISOR: 'General Supervisor',
+        OTHER: 'Other',
+        UNKNOWN: 'Staff'
+    },
+    fr: {
+        DIRECTOR: 'Directeur',
+        ASSISTANT: 'Assistant',
+        IT_SUPPORT: "Spécialiste support informatique",
+        ACCOUNTANT: 'Comptable',
+        HR_COORDINATOR: 'Coordinateur RH',
+        COUNSELOR: 'Conseiller scolaire',
+        LIBRARIAN: 'Bibliothécaire',
+        NURSE: 'Infirmier scolaire',
+        SECURITY: 'Agent de sécurité',
+        MAINTENANCE: 'Équipe de maintenance',
+        SUPPORT: 'Personnel de soutien',
+        DRIVER: 'Chauffeur',
+        GENERAL_SUPERVISOR: 'Surveillant Général',
+        OTHER: 'Autre',
+        UNKNOWN: 'Personnel'
+    },
+    ar: {
+        DIRECTOR: 'المدير',
+        ASSISTANT: 'مساعد إداري',
+        IT_SUPPORT: 'أخصائي دعم تقني',
+        ACCOUNTANT: 'محاسب',
+        HR_COORDINATOR: 'منسق الموارد البشرية',
+        COUNSELOR: 'مستشار تربوي',
+        LIBRARIAN: 'أمين المكتبة',
+        NURSE: 'ممرضة المدرسة',
+        SECURITY: 'مسؤول أمن',
+        MAINTENANCE: 'فريق الصيانة',
+        SUPPORT: 'طاقم الدعم',
+        DRIVER: 'سائق',
+        GENERAL_SUPERVISOR: 'الحارس العام',
+        OTHER: 'أخرى',
+        UNKNOWN: 'موظف'
+    }
+};
+
+export const getStaffPositionLabel = (t: any, value: string, language: string = 'en') => {
+    if (!value) return 'Staff'; // Simple fallback
+
+    // Try translation first
+    const translationKey = `staff.positions.${value}`;
+    const translated = t(translationKey, { defaultValue: translationKey });
+
+    if (translated && translated !== translationKey) {
+        return translated;
+    }
+
+    // Fallback to hardcoded labels
+    const langCode = language.split('-')[0];
+    const labels: any = FALLBACK_LABELS; // cast to any to avoid indexing issues
+    const langLabels = labels[langCode] || labels['en'];
+    return langLabels[value] || labels['en'][value] || 'Staff';
+};

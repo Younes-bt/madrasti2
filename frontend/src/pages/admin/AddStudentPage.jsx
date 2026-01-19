@@ -40,6 +40,7 @@ const AddStudentPage = () => {
     parent_first_name: '',
     parent_last_name: '',
     parent_phone: '',
+    gender: '',
     uses_transport: true,
     invoice_discount: 0
   });
@@ -220,6 +221,10 @@ const AddStudentPage = () => {
       newErrors.date_of_birth = t('validation.dateOfBirthInvalid');
     }
 
+    if (!formData.gender) {
+      newErrors.gender = t('validation.genderRequired');
+    }
+
     // Parent first and last names required for automatic parent account creation
     if (!formData.parent_first_name) {
       newErrors.parent_first_name = t('validation.parentFirstNameRequired');
@@ -284,6 +289,7 @@ const AddStudentPage = () => {
         ...(formData.phone && { phone: formData.phone }),
         ...(formData.date_of_birth && { date_of_birth: formData.date_of_birth }),
         ...(formData.address && { address: formData.address }),
+        gender: formData.gender,
         ...(formData.bio && { bio: formData.bio }),
         ...(formData.emergency_contact_name && { emergency_contact_name: formData.emergency_contact_name }),
         ...(formData.emergency_contact_phone && { emergency_contact_phone: formData.emergency_contact_phone }),
@@ -558,6 +564,24 @@ const AddStudentPage = () => {
                 </div>
                 {errors.date_of_birth && (
                   <p className="text-sm text-red-600">{errors.date_of_birth}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="gender" className="required">
+                  {t('student.gender')}
+                </Label>
+                <Select value={formData.gender} onValueChange={(value) => handleInputChange('gender', value)}>
+                  <SelectTrigger className={errors.gender ? 'border-red-500' : ''}>
+                    <SelectValue placeholder={t('student.placeholders.gender')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="MALE">{t('student.male')}</SelectItem>
+                    <SelectItem value="FEMALE">{t('student.female')}</SelectItem>
+                  </SelectContent>
+                </Select>
+                {errors.gender && (
+                  <p className="text-sm text-red-600">{errors.gender}</p>
                 )}
               </div>
             </CardContent>

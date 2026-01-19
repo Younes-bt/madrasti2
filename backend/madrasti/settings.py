@@ -18,7 +18,7 @@ SECRET_KEY = 'django-insecure-55nk-r$5k0x0p8llf6=4*dy2^#!ar9*$6w0gx*-#&hmo0iqwpe
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '0.0.0.0', 'testserver']
+ALLOWED_HOSTS = ['*']  # Allow all hosts for development (mobile testing)
 
 # Application definition
 INSTALLED_APPS = [

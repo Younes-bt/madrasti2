@@ -978,7 +978,7 @@ class AttendanceRecordViewSet(viewsets.ModelViewSet):
 class StudentAbsenceFlagViewSet(viewsets.ModelViewSet):
     """ViewSet for student absence flags"""
     queryset = StudentAbsenceFlag.objects.all()
-    permission_classes = [IsParentOrTeacherOrAdmin]
+    permission_classes = [IsStudentOwnerOrTeacherOrAdmin]
     serializer_class = StudentAbsenceFlagSerializer
     
     def get_queryset(self):

@@ -17,7 +17,8 @@ import {
   Phone,
   User,
   BookOpen,
-  GraduationCap
+  GraduationCap,
+  AlertCircle
 } from 'lucide-react';
 import AdminPageLayout from '../../components/admin/layout/AdminPageLayout';
 import { Button } from '../../components/ui/button';
@@ -52,7 +53,7 @@ const AddTimetablePage = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  
+
   const [formData, setFormData] = useState({
     educational_level: '',
     grade: '',
@@ -77,6 +78,8 @@ const AddTimetablePage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSession, setSelectedSession] = useState(null);
   const [modalSessionData, setModalSessionData] = useState(null);
+  const [conflictError, setConflictError] = useState(null);
+  const [isConflictModalOpen, setIsConflictModalOpen] = useState(false);
 
   // Add Teacher Modal State
   const [isAddTeacherModalOpen, setIsAddTeacherModalOpen] = useState(false);
@@ -210,13 +213,13 @@ const AddTimetablePage = () => {
   };
 
   const updatePeriod = (periodNumber, field, value) => {
-    setTimeSlots(timeSlots.map(slot => 
-      slot.period === periodNumber 
+    setTimeSlots(timeSlots.map(slot =>
+      slot.period === periodNumber
         ? { ...slot, [field]: value }
         : slot
     ));
-    
-    setSessions(sessions.map(session => 
+
+    setSessions(sessions.map(session =>
       session.session_order === periodNumber
         ? { ...session, [`${field}_time`]: value }
         : session
@@ -274,16 +277,17 @@ const AddTimetablePage = () => {
     }
   };
 
-  // Helper function to get localized grade name
-  const getLocalizedGradeName = (grade) => {
+  // Helper function to get localized name
+  const getLocalizedName = (obj) => {
+    if (!obj) return '';
     const currentLanguage = i18n.language;
     switch (currentLanguage) {
       case 'ar':
-        return grade.name_arabic || grade.name;
+        return obj.name_arabic || obj.ar_name || obj.name;
       case 'fr':
-        return grade.name_french || grade.name;
+        return obj.name_french || obj.fr_name || obj.name;
       default:
-        return grade.name;
+        return obj.name;
     }
   };
 
@@ -417,8 +421,17 @@ const AddTimetablePage = () => {
     } catch (error) {
       console.error('Failed to create timetable:', error);
       let errorMessage = t('timetables.createError');
+
       if (error.response?.data) {
         const apiErrors = error.response.data;
+
+        // Handle rich conflict error
+        if (apiErrors.conflict_error) {
+          setConflictError(apiErrors);
+          setIsConflictModalOpen(true);
+          return;
+        }
+
         if (typeof apiErrors === 'string') {
           errorMessage = apiErrors;
         } else if (apiErrors.detail) {
@@ -451,12 +464,17 @@ const AddTimetablePage = () => {
     }
   };
 
+  const handleCloseConflictModal = () => {
+    setIsConflictModalOpen(false);
+    setConflictError(null);
+  };
+
   const generateTemplate = () => {
     const commonSessions = [];
     const basicSubjects = subjects.slice(0, 6);
     const basicTeachers = teachers.slice(0, 6);
     const teacherSchedule = {}; // Track teacher availability to avoid conflicts
-    
+
     weekDays.slice(0, 5).forEach((day, dayIndex) => {
       timeSlots.slice(0, 6).forEach((slot, slotIndex) => {
         if (basicSubjects[slotIndex % basicSubjects.length] && basicTeachers[slotIndex % basicTeachers.length]) {
@@ -466,14 +484,14 @@ const AddTimetablePage = () => {
             const teacherIndex = (slotIndex + i) % basicTeachers.length;
             const teacher = basicTeachers[teacherIndex];
             const teacherKey = `${teacher.id}_${day.value}_${slot.start}_${slot.end}`;
-            
+
             if (!teacherSchedule[teacherKey]) {
               availableTeacher = teacher;
               teacherSchedule[teacherKey] = true;
               break;
             }
           }
-          
+
           // Only create session if we found an available teacher
           if (availableTeacher) {
             commonSessions.push({
@@ -491,7 +509,7 @@ const AddTimetablePage = () => {
         }
       });
     });
-    
+
     setSessions(commonSessions);
     toast.success(t('timetables.templateGenerated'));
   };
@@ -505,7 +523,7 @@ const AddTimetablePage = () => {
   };
 
   const getSessionForSlot = (dayValue, period) => {
-    return sessions.find(session => 
+    return sessions.find(session =>
       session.day_of_week === dayValue && session.session_order === period
     );
   };
@@ -513,32 +531,32 @@ const AddTimetablePage = () => {
   const handleOpenModal = (day, slot) => {
     const existingSession = getSessionForSlot(day.value, slot.period);
     if (existingSession) {
-        setSelectedSession(existingSession);
-        // Fetch teachers for the existing session's subject
-        fetchTeachersBySubject(existingSession.subject);
+      setSelectedSession(existingSession);
+      // Fetch teachers for the existing session's subject
+      fetchTeachersBySubject(existingSession.subject);
     } else {
-        setSelectedSession({
-            id: Date.now(),
-            day_of_week: day.value,
-            session_order: slot.period,
-            start_time: slot.start,
-            end_time: slot.end,
-            subject: '',
-            teacher: '',
-            room: 'none',
-            notes: '',
-            isNew: true
-        });
-        // Initialize with all teachers when no subject is selected
-        setFilteredTeachers(teachers);
+      setSelectedSession({
+        id: Date.now(),
+        day_of_week: day.value,
+        session_order: slot.period,
+        start_time: slot.start,
+        end_time: slot.end,
+        subject: '',
+        teacher: '',
+        room: 'none',
+        notes: '',
+        isNew: true
+      });
+      // Initialize with all teachers when no subject is selected
+      setFilteredTeachers(teachers);
     }
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
-      setIsModalOpen(false);
-      setSelectedSession(null);
-      setModalSessionData(null);
+    setIsModalOpen(false);
+    setSelectedSession(null);
+    setModalSessionData(null);
   };
 
   // Function to fetch teachers filtered by subject
@@ -549,13 +567,13 @@ const AddTimetablePage = () => {
         return;
       }
 
-      const response = await apiMethods.get('users/users/', { 
-        params: { 
+      const response = await apiMethods.get('users/users/', {
+        params: {
           role: 'TEACHER',
           subject_id: subjectId
-        } 
+        }
       });
-      
+
       let teachersData = response.results || (Array.isArray(response) ? response : response.data?.results || response.data || []);
       setFilteredTeachers(teachersData);
     } catch (error) {
@@ -567,37 +585,37 @@ const AddTimetablePage = () => {
   };
 
   const handleModalInputChange = (field, value) => {
-      setModalSessionData(prev => ({ ...prev, [field]: value }));
-      
-      // If subject changes, reset teacher and fetch filtered teachers
-      if (field === 'subject') {
-          setModalSessionData(prev => ({ ...prev, subject: value, teacher: '' }));
-          fetchTeachersBySubject(value);
-      }
+    setModalSessionData(prev => ({ ...prev, [field]: value }));
+
+    // If subject changes, reset teacher and fetch filtered teachers
+    if (field === 'subject') {
+      setModalSessionData(prev => ({ ...prev, subject: value, teacher: '' }));
+      fetchTeachersBySubject(value);
+    }
   };
 
   const handleSaveSession = () => {
-      if (!modalSessionData.subject || !modalSessionData.teacher) {
-          toast.error(t('timetables.validation.subjectAndTeacherRequired'));
-          return;
-      }
+    if (!modalSessionData.subject || !modalSessionData.teacher) {
+      toast.error(t('timetables.validation.subjectAndTeacherRequired'));
+      return;
+    }
 
-      if (modalSessionData.isNew) {
-          const { isNew, ...newSession } = modalSessionData;
-          setSessions(prev => [...prev, newSession]);
-      } else {
-          setSessions(prev => prev.map(s => s.id === modalSessionData.id ? modalSessionData : s));
-      }
-      handleCloseModal();
-      toast.success(t('timetables.sessionSaved'));
+    if (modalSessionData.isNew) {
+      const { isNew, ...newSession } = modalSessionData;
+      setSessions(prev => [...prev, newSession]);
+    } else {
+      setSessions(prev => prev.map(s => s.id === modalSessionData.id ? modalSessionData : s));
+    }
+    handleCloseModal();
+    toast.success(t('timetables.sessionSaved'));
   };
 
   const handleRemoveSession = () => {
-      if (modalSessionData && !modalSessionData.isNew) {
-          removeSession(modalSessionData.id);
-      }
-      handleCloseModal();
-      toast.info(t('timetables.sessionRemoved'));
+    if (modalSessionData && !modalSessionData.isNew) {
+      removeSession(modalSessionData.id);
+    }
+    handleCloseModal();
+    toast.info(t('timetables.sessionRemoved'));
   };
 
   // Add Teacher Modal Functions
@@ -780,21 +798,18 @@ const AddTimetablePage = () => {
       <div className="max-w-full mx-auto">
         <div className="flex items-center justify-center mb-8">
           <div className="flex items-center space-x-4">
-            <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 font-semibold transition-all ${
-              currentStep >= 1
-                ? 'bg-blue-600 dark:bg-blue-500 border-blue-600 dark:border-blue-500 text-white'
-                : 'border-border bg-muted text-muted-foreground'
-            }`}>
+            <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 font-semibold transition-all ${currentStep >= 1
+              ? 'bg-blue-600 dark:bg-blue-500 border-blue-600 dark:border-blue-500 text-white'
+              : 'border-border bg-muted text-muted-foreground'
+              }`}>
               1
             </div>
-            <div className={`w-16 h-1 rounded transition-all ${
-              currentStep >= 2 ? 'bg-blue-600 dark:bg-blue-500' : 'bg-border'
-            }`}></div>
-            <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 font-semibold transition-all ${
-              currentStep >= 2
-                ? 'bg-blue-600 dark:bg-blue-500 border-blue-600 dark:border-blue-500 text-white'
-                : 'border-border bg-muted text-muted-foreground'
-            }`}>
+            <div className={`w-16 h-1 rounded transition-all ${currentStep >= 2 ? 'bg-blue-600 dark:bg-blue-500' : 'bg-border'
+              }`}></div>
+            <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 font-semibold transition-all ${currentStep >= 2
+              ? 'bg-blue-600 dark:bg-blue-500 border-blue-600 dark:border-blue-500 text-white'
+              : 'border-border bg-muted text-muted-foreground'
+              }`}>
               2
             </div>
           </div>
@@ -803,260 +818,259 @@ const AddTimetablePage = () => {
         <div className="space-y-6">
           {currentStep === 1 && (
             <div className="space-y-6">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3 }}
-              className="space-y-6"
-            >
-              <Card className="border-border/50 hover:border-border transition-all duration-300 hover:shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/40">
-                      <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-6"
+              >
+                <Card className="border-border/50 hover:border-border transition-all duration-300 hover:shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/40">
+                        <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <span className="text-foreground">{t('timetables.basicInformation')}</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="educational_level" className="text-sm font-medium">
+                          {t('schools.educationalLevel')} <span className="text-red-500">*</span>
+                        </Label>
+                        <Select
+                          value={formData.educational_level || undefined}
+                          onValueChange={handleLevelChange}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={t('schools.selectEducationalLevel')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {educationalLevels.map((level) => (
+                              <SelectItem key={level.id} value={level.id.toString()}>
+                                {getLocalizedName(level)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="grade" className="text-sm font-medium">
+                          {t('schools.grade')} <span className="text-red-500">*</span>
+                        </Label>
+                        <Select
+                          value={formData.grade || undefined}
+                          onValueChange={handleGradeChange}
+                          disabled={!formData.educational_level}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={
+                              formData.educational_level
+                                ? t('schools.selectGrade')
+                                : t('schools.selectLevelFirst')
+                            } />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {grades.map((grade) => (
+                              <SelectItem key={grade.id} value={grade.id.toString()}>
+                                {getLocalizedName(grade)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                    <span className="text-foreground">{t('timetables.basicInformation')}</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="educational_level" className="text-sm font-medium">
-                        {t('schools.educationalLevel')} <span className="text-red-500">*</span>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="school_class" className="text-sm font-medium">
+                          {t('classes.class')} <span className="text-red-500">*</span>
+                        </Label>
+                        <Select
+                          value={formData.school_class || undefined}
+                          onValueChange={(value) => handleInputChange('school_class', value)}
+                          disabled={!formData.grade}
+                        >
+                          <SelectTrigger className={errors.school_class ? 'border-red-500' : ''}>
+                            <SelectValue placeholder={
+                              formData.grade
+                                ? t('classes.selectClass')
+                                : t('schools.selectGradeFirst')
+                            } />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {classes.map((cls) => (
+                              <SelectItem key={cls.id} value={cls.id.toString()}>
+                                {cls.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {errors.school_class && (
+                          <p className="text-sm text-red-600">{errors.school_class}</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="academic_year" className="text-sm font-medium">
+                          {t('classes.academicYear')} <span className="text-red-500">*</span>
+                        </Label>
+                        <Select
+                          value={formData.academic_year || undefined}
+                          onValueChange={(value) => handleInputChange('academic_year', value)}
+                        >
+                          <SelectTrigger className={errors.academic_year ? 'border-red-500' : ''}>
+                            <SelectValue placeholder={t('classes.selectAcademicYear')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {academicYears.map((year) => (
+                              <SelectItem key={year.id} value={year.id.toString()}>
+                                {year.year} {year.is_current ? `(${t('common.current')})` : ''}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {errors.academic_year && (
+                          <p className="text-sm text-red-600">{errors.academic_year}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="is_active"
+                        checked={formData.is_active}
+                        onCheckedChange={(checked) => handleInputChange('is_active', checked)}
+                      />
+                      <Label htmlFor="is_active" className="text-sm font-medium">
+                        {t('timetables.setAsActive')}
                       </Label>
-                      <Select
-                        value={formData.educational_level || undefined}
-                        onValueChange={handleLevelChange}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('schools.selectEducationalLevel')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {educationalLevels.map((level) => (
-                            <SelectItem key={level.id} value={level.id.toString()}>
-                              {level.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
                     </div>
+                  </CardContent>
+                </Card>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="grade" className="text-sm font-medium">
-                        {t('schools.grade')} <span className="text-red-500">*</span>
+
+                <Card className="border-border/50 hover:border-border transition-all duration-300 hover:shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/40">
+                        <Clock className="h-5 w-5 text-green-600 dark:text-green-400" />
+                      </div>
+                      <span className="text-foreground">{t('timetables.periodConfiguration') || 'Period Configuration'}</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="space-y-4">
+                      <Label className="text-sm font-medium">
+                        {t('timetables.selectTemplate') || 'Select Schedule Template'}
                       </Label>
-                      <Select
-                        value={formData.grade || undefined}
-                        onValueChange={handleGradeChange}
-                        disabled={!formData.educational_level}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={
-                            formData.educational_level
-                              ? t('schools.selectGrade')
-                              : t('schools.selectLevelFirst')
-                          } />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {grades.map((grade) => (
-                            <SelectItem key={grade.id} value={grade.id.toString()}>
-                              {grade.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="school_class" className="text-sm font-medium">
-                        {t('classes.class')} <span className="text-red-500">*</span>
-                      </Label>
-                      <Select
-                        value={formData.school_class || undefined}
-                        onValueChange={(value) => handleInputChange('school_class', value)}
-                        disabled={!formData.grade}
-                      >
-                        <SelectTrigger className={errors.school_class ? 'border-red-500' : ''}>
-                          <SelectValue placeholder={
-                            formData.grade
-                              ? t('classes.selectClass')
-                              : t('schools.selectGradeFirst')
-                          } />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {classes.map((cls) => (
-                            <SelectItem key={cls.id} value={cls.id.toString()}>
-                              {cls.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {errors.school_class && (
-                        <p className="text-sm text-red-600">{errors.school_class}</p>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="academic_year" className="text-sm font-medium">
-                        {t('classes.academicYear')} <span className="text-red-500">*</span>
-                      </Label>
-                      <Select
-                        value={formData.academic_year || undefined}
-                        onValueChange={(value) => handleInputChange('academic_year', value)}
-                      >
-                        <SelectTrigger className={errors.academic_year ? 'border-red-500' : ''}>
-                          <SelectValue placeholder={t('classes.selectAcademicYear')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {academicYears.map((year) => (
-                            <SelectItem key={year.id} value={year.id.toString()}>
-                              {year.year} {year.is_current ? `(${t('common.current')})` : ''}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {errors.academic_year && (
-                        <p className="text-sm text-red-600">{errors.academic_year}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="is_active"
-                      checked={formData.is_active}
-                      onCheckedChange={(checked) => handleInputChange('is_active', checked)}
-                    />
-                    <Label htmlFor="is_active" className="text-sm font-medium">
-                      {t('timetables.setAsActive')}
-                    </Label>
-                  </div>
-                </CardContent>
-              </Card>
-
-
-              <Card className="border-border/50 hover:border-border transition-all duration-300 hover:shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/40">
-                      <Clock className="h-5 w-5 text-green-600 dark:text-green-400" />
-                    </div>
-                    <span className="text-foreground">{t('timetables.periodConfiguration') || 'Period Configuration'}</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-4">
-                    <Label className="text-sm font-medium">
-                      {t('timetables.selectTemplate') || 'Select Schedule Template'}
-                    </Label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                      {Object.entries(periodTemplates).map(([key, template]) => (
-                        <Card
-                          key={key}
-                          className={`cursor-pointer transition-all border-2 hover:shadow-md ${
-                            selectedTemplate === key
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {Object.entries(periodTemplates).map(([key, template]) => (
+                          <Card
+                            key={key}
+                            className={`cursor-pointer transition-all border-2 hover:shadow-md ${selectedTemplate === key
                               ? 'border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20'
                               : 'border-border/50 hover:border-border'
-                          }`}
-                          onClick={() => applyTemplate(key)}
-                        >
-                          <CardContent className="p-4">
-                            <div className="text-sm font-medium mb-2 text-foreground">{template.name}</div>
-                            <div className="text-xs text-muted-foreground">{template.description}</div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-sm font-medium">
-                        {t('timetables.customizePeriods') || 'Customize Periods'} ({timeSlots.length} {t('timetables.periods') || 'periods'})
-                      </Label>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowPeriodConfig(!showPeriodConfig)}
-                        >
-                          {showPeriodConfig ? t('common.hide') : t('common.show')}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={addPeriod}
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          {t('timetables.addPeriod') || 'Add Period'}
-                        </Button>
-                      </div>
-                    </div>
-
-                    {showPeriodConfig && (
-                      <div className="space-y-3 max-h-60 overflow-y-auto border border-border rounded-lg p-4 bg-muted/20">
-                        {timeSlots.map((slot) => (
-                          <div key={slot.period} className="flex items-center gap-4 p-3 bg-background border border-border rounded-lg hover:border-primary/50 transition-colors">
-                            <Badge variant="outline" className="font-medium">P{slot.period}</Badge>
-
-                            <div className="flex items-center gap-2">
-                              <Label className="text-xs text-muted-foreground">Start:</Label>
-                              <Input
-                                type="time"
-                                value={slot.start}
-                                onChange={(e) => updatePeriod(slot.period, 'start', e.target.value)}
-                                className="w-24 h-9 bg-background"
-                              />
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                              <Label className="text-xs text-muted-foreground">End:</Label>
-                              <Input
-                                type="time"
-                                value={slot.end}
-                                onChange={(e) => updatePeriod(slot.period, 'end', e.target.value)}
-                                className="w-24 h-9 bg-background"
-                              />
-                            </div>
-
-                            {timeSlots.length > 1 && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => removePeriod(slot.period)}
-                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
+                              }`}
+                            onClick={() => applyTemplate(key)}
+                          >
+                            <CardContent className="p-4">
+                              <div className="text-sm font-medium mb-2 text-foreground">{template.name}</div>
+                              <div className="text-xs text-muted-foreground">{template.description}</div>
+                            </CardContent>
+                          </Card>
                         ))}
                       </div>
-                    )}
-
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                      {timeSlots.slice(0, 8).map((slot) => (
-                        <Badge key={slot.period} variant="secondary" className="text-xs">
-                          P{slot.period}: {slot.start}-{slot.end}
-                        </Badge>
-                      ))}
-                      {timeSlots.length > 8 && (
-                        <Badge variant="secondary" className="text-xs">
-                          +{timeSlots.length - 8} more
-                        </Badge>
-                      )}
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <div className="flex justify-end">
-                <Button onClick={handleNextStep}>
-                  {t('common.next')} <ArrowLeft className="h-4 w-4 ml-2 rotate-180" />
-                </Button>
-              </div>
-            </motion.div>
+
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-medium">
+                          {t('timetables.customizePeriods') || 'Customize Periods'} ({timeSlots.length} {t('timetables.periods') || 'periods'})
+                        </Label>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowPeriodConfig(!showPeriodConfig)}
+                          >
+                            {showPeriodConfig ? t('common.hide') : t('common.show')}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={addPeriod}
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            {t('timetables.addPeriod') || 'Add Period'}
+                          </Button>
+                        </div>
+                      </div>
+
+                      {showPeriodConfig && (
+                        <div className="space-y-3 max-h-60 overflow-y-auto border border-border rounded-lg p-4 bg-muted/20">
+                          {timeSlots.map((slot) => (
+                            <div key={slot.period} className="flex items-center gap-4 p-3 bg-background border border-border rounded-lg hover:border-primary/50 transition-colors">
+                              <Badge variant="outline" className="font-medium">P{slot.period}</Badge>
+
+                              <div className="flex items-center gap-2">
+                                <Label className="text-xs text-muted-foreground">Start:</Label>
+                                <Input
+                                  type="time"
+                                  value={slot.start}
+                                  onChange={(e) => updatePeriod(slot.period, 'start', e.target.value)}
+                                  className="w-24 h-9 bg-background"
+                                />
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <Label className="text-xs text-muted-foreground">End:</Label>
+                                <Input
+                                  type="time"
+                                  value={slot.end}
+                                  onChange={(e) => updatePeriod(slot.period, 'end', e.target.value)}
+                                  className="w-24 h-9 bg-background"
+                                />
+                              </div>
+
+                              {timeSlots.length > 1 && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => removePeriod(slot.period)}
+                                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        {timeSlots.slice(0, 8).map((slot) => (
+                          <Badge key={slot.period} variant="secondary" className="text-xs">
+                            P{slot.period}: {slot.start}-{slot.end}
+                          </Badge>
+                        ))}
+                        {timeSlots.length > 8 && (
+                          <Badge variant="secondary" className="text-xs">
+                            +{timeSlots.length - 8} more
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <div className="flex justify-end">
+                  <Button onClick={handleNextStep}>
+                    {t('common.next')} <ArrowLeft className="h-4 w-4 ml-2 rotate-180" />
+                  </Button>
+                </div>
+              </motion.div>
             </div>
           )}
 
@@ -1115,7 +1129,7 @@ const AddTimetablePage = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="overflow-x-auto">
-                    <div style={{minWidth: `${timeSlots.length * 120 + 150}px`}}>
+                    <div style={{ minWidth: `${timeSlots.length * 120 + 150}px` }}>
                       <div style={gridStyle} className="mb-4">
                         <div className="p-3 bg-muted/50 dark:bg-muted/30 rounded text-center font-medium text-sm flex items-center justify-center text-foreground">
                           {t('calendar.day')}
@@ -1138,7 +1152,7 @@ const AddTimetablePage = () => {
 
                           {timeSlots.map((slot) => {
                             const session = getSessionForSlot(day.value, slot.period);
-                            
+
                             return (
                               <div key={slot.period} className="min-h-[80px] p-1">
                                 {session ? (
@@ -1146,7 +1160,7 @@ const AddTimetablePage = () => {
                                     <div className="p-2 border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/30 rounded h-full relative hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors group">
                                       <div className="text-xs space-y-1">
                                         <div className="font-medium text-blue-900 dark:text-blue-100">
-                                          {subjects.find(s => s.id.toString() === session.subject)?.name || 'Subject'}
+                                          {getLocalizedName(subjects.find(s => s.id.toString() === session.subject)) || 'Subject'}
                                         </div>
                                         <div className="text-blue-600 dark:text-blue-300">
                                           {teachers.find(t => t.id.toString() === session.teacher)?.full_name || 'Teacher'}
@@ -1180,7 +1194,7 @@ const AddTimetablePage = () => {
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   {t('common.previous')}
                 </Button>
-                
+
                 <Button
                   onClick={handleSubmit}
                   disabled={loading || sessions.length === 0}
@@ -1229,7 +1243,7 @@ const AddTimetablePage = () => {
                     <SelectContent>
                       {subjects.map((subject) => (
                         <SelectItem key={subject.id} value={subject.id.toString()}>
-                          {subject.name}
+                          {getLocalizedName(subject)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -1446,7 +1460,7 @@ const AddTimetablePage = () => {
                       <SelectItem value="none">{t('teacher.selectSubject')}</SelectItem>
                       {subjects.map((subject) => (
                         <SelectItem key={subject.id} value={subject.id.toString()}>
-                          {subject.name}
+                          {getLocalizedName(subject)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -1473,7 +1487,7 @@ const AddTimetablePage = () => {
                               htmlFor={`new-grade-${grade.id}`}
                               className="text-sm font-normal cursor-pointer text-foreground"
                             >
-                              {getLocalizedGradeName(grade)}
+                              {getLocalizedName(grade)}
                             </Label>
                           </div>
                         ))}
@@ -1581,6 +1595,77 @@ const AddTimetablePage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Conflict Modal */}
+      <Dialog open={isConflictModalOpen} onOpenChange={setIsConflictModalOpen}>
+        <DialogContent className="sm:max-w-[500px] border-destructive/50">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertCircle className="h-5 w-5" />
+              {t('timetables.conflictDetected') || 'Schedule Conflict Detected'}
+            </DialogTitle>
+            <DialogDescription>
+              {(Array.isArray(conflictError?.type) ? conflictError.type[0] : conflictError?.type) === 'teacher_conflict'
+                ? t('timetables.teacherConflictMessage', { teacher: conflictError.details?.teacher_name })
+                : (Array.isArray(conflictError?.type) ? conflictError.type[0] : conflictError?.type) === 'room_conflict'
+                  ? t('timetables.roomConflictMessage', { room: conflictError.details?.room_name })
+                  : (Array.isArray(conflictError?.message) ? conflictError.message[0] : conflictError?.message)
+              }
+            </DialogDescription>
+          </DialogHeader>
+
+          {conflictError?.details && (
+            <div className="bg-destructive/10 p-4 rounded-lg border border-destructive/20 space-y-3">
+              <div className="font-medium text-destructive-foreground mb-2">
+                {t('timetables.conflictDetails') || 'Conflict Details'}:
+              </div>
+
+              <div className="space-y-2 text-sm">
+                {(Array.isArray(conflictError.type) ? conflictError.type[0] : conflictError.type) === 'teacher_conflict' && (
+                  <div className="flex justify-between border-b border-destructive/10 pb-2">
+                    <span className="text-muted-foreground">{t('timetables.teacher')}:</span>
+                    <span className="font-medium">{conflictError.details?.teacher_name}</span>
+                  </div>
+                )}
+                {(Array.isArray(conflictError.type) ? conflictError.type[0] : conflictError.type) === 'room_conflict' && (
+                  <div className="flex justify-between border-b border-destructive/10 pb-2">
+                    <span className="text-muted-foreground">{t('timetables.room')}:</span>
+                    <span className="font-medium">{conflictError.details?.room_name}</span>
+                  </div>
+                )}
+
+                <div className="flex justify-between border-b border-destructive/10 pb-2">
+                  <span className="text-muted-foreground">{t('timetables.day')}:</span>
+                  <span className="font-medium">{conflictError.details.day}</span>
+                </div>
+
+                <div className="flex justify-between border-b border-destructive/10 pb-2">
+                  <span className="text-muted-foreground">{t('timetables.time')}:</span>
+                  <span className="font-medium" dir="ltr">
+                    {conflictError.details.conflict_start} - {conflictError.details.conflict_end}
+                  </span>
+                </div>
+
+                <div className="flex justify-between border-b border-destructive/10 pb-2">
+                  <span className="text-muted-foreground">{t('timetables.class')}:</span>
+                  <span className="font-medium">{conflictError.details.conflict_class}</span>
+                </div>
+
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{t('timetables.subject')}:</span>
+                  <span className="font-medium">{conflictError.details.conflict_subject}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button onClick={handleCloseConflictModal} variant="outline" className="border-destructive/50 text-destructive hover:bg-destructive/10">
+              {t('common.close')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </AdminPageLayout>
   );
 };

@@ -12,8 +12,12 @@ class CommunicationService {
     return response.data;
   }
 
-  async startDirectConversation(userId) {
-    const response = await api.post('/communication/conversations/start_direct/', { user_id: userId });
+  async startDirectConversation(userId, relatedStudentId = null) {
+    const payload = { user_id: userId };
+    if (relatedStudentId) {
+      payload.related_student_id = relatedStudentId;
+    }
+    const response = await api.post('/communication/conversations/start_direct/', payload);
     return response.data;
   }
 

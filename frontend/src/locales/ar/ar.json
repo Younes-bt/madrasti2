@@ -42,6 +42,10 @@
     "address": "العنوان",
     "bio": "نبذة تعريفية",
     "role": "الدور",
+    "gender": "الجنس",
+    "selectGender": "اختر الجنس",
+    "male": "ذكر",
+    "female": "أنثى",
     "downloading": "جاري التحميل...",
     "processing": "جاري المعالجة...",
     "importing": "جاري الاستيراد...",
@@ -99,7 +103,6 @@
     "overview": "نظرة عامة",
     "academicYear": "السنة الدراسية",
     "parentName": "اسم ولي الأمر",
-    "studentID": "رقم الطالب",
     "academicInfo": "المعلومات الأكاديمية",
     "personalInfo": "المعلومات الشخصية",
     "parentInfo": "معلومات ولي الأمر",
@@ -114,7 +117,87 @@
     "clickToOpen": "انقر للفتح",
     "selectAnOption": "اختر قسماً للإدارة",
     "messages": "الرسائل",
-    "announcements": "الإعلانات"
+    "announcements": "الإعلانات",
+    "track": "المسلك",
+    "emergencyPhone": "هاتف الطوارئ",
+    "medicalNotes": "ملاحظات طبية",
+    "noBio": "لا توجد نبذة متوفرة.",
+    "noTeachers": "لم يتم العثور على معلمين",
+    "noTeachersDesc": "معلومات المعلمين غير متوفرة لهذا الفصل بعد.",
+    "message": "رسالة",
+    "conversations": "المحادثات",
+    "noConversations": "لا توجد محادثات بعد",
+    "noConversationsDesc": "ابدأ محادثة جديدة للتواصل مع المعلمين.",
+    "startConversation": "ابدأ محادثة",
+    "typeMessage": "اكتب رسالتك...",
+    "sendMessage": "إرسال رسالة",
+    "selectConversation": "اختر محادثة",
+    "selectConversationDesc": "اختر محادثة من القائمة أو ابدأ محادثة جديدة",
+    "startNewConversation": "بدء محادثة جديدة",
+    "noMessages": "لا توجد رسائل بعد. ابدأ المحادثة!",
+    "chat": "دردشة"
+  },
+  "communication": {
+    "title": "الرسائل",
+    "subtitle": "تواصل مع معلمي أطفالك",
+    "chooseChild": "اختر الطفل",
+    "chooseTeacher": "اختر المعلم",
+    "messageAbout": "رسالة بخصوص {{name}}",
+    "newConversation": "محادثة جديدة",
+    "selectChildToMessage": "اختر طفلاً لبدء محادثة مع معلميه",
+    "noTeachersForChild": "لم يتم العثور على معلمين لهذا الطفل",
+    "selectChild": "اختر الطفل",
+    "selectUser": "اختر المستخدم",
+    "startChat": "بدء الدردشة"
+  },
+  "finance": {
+    "financialHub": "المركز المالي",
+    "financialHubDesc": "إدارة الرسوم المدرسية وتتبع المدفوعات لأطفالك",
+    "invoices": "الفواتير",
+    "paymentHistory": "سجل المدفوعات",
+    "allChildren": "كل الأبناء",
+    "selectChild": "اختر الابن",
+    "filterBy": "تصفية حسب",
+    "totalBalance": "إجمالي الرصيد",
+    "totalPaid": "إجمالي المدفوع",
+    "nextDueDate": "تاريخ الاستحقاق القادم",
+    "nextDue": "تاريخ الاستحقاق القادم",
+    "earliestDeadline": "أقرب موعد نهائي",
+    "consolidatedPayments": "المدفوعات المجمعة",
+    "amountToBePaid": "المبلغ المستحق",
+    "unpaidAmount": "المبلغ المستحق",
+    "paidAmountDesc": "المدفوعات المجمعة",
+    "upcomingPayment": "أقرب موعد نهائي",
+    "noPendingInvoices": "تم كل شيء!",
+    "noUpcomingDeadlines": "لا توجد مواعيد نهائية قادمة",
+    "allCaughtUp": "أنت على اطلاع بكل شيء!",
+    "paid": "مدفوع",
+    "partiallyPaid": "مدفوع جزئياً",
+    "overdue": "متأخر",
+    "issued": "صادرة",
+    "id": "رقم",
+    "student": "الطالب",
+    "month": "شهر الفوترة",
+    "amount": "المبلغ",
+    "balance": "الرصيد",
+    "status": "الحالة",
+    "dueDate": "تاريخ الاستحقاق",
+    "noInvoices": "لم يتم العثور على فواتير.",
+    "paymentId": "رقم الدفع",
+    "date": "التاريخ",
+    "method": "الطريقة",
+    "invoice": "الفاتورة",
+    "reference": "المرجع",
+    "verified": "مؤكد",
+    "pending": "قيد الانتظار",
+    "failed": "فشل",
+    "noPayments": "لم يتم العثور على مدفوعات",
+    "invoiceDetails": "تفاصيل الفاتورة",
+    "items": "عناصر الفاتورة",
+    "totalAmount": "المبلغ الإجمالي",
+    "paidAmount": "المبلغ المدفوع",
+    "remainingBalance": "الرصيد المتبقي",
+    "notes": "ملاحظات"
   },
   "parentHome": {
     "readyToManage": "بوابة أولياء الأمور",
@@ -123,7 +206,25 @@
     "helperText": "الوصول إلى معلومات أبنائك وحالتك المالية في مكان واحد.",
     "financialStatus": "الوضعية المالية",
     "accessModule": "الولوج إلى الوحدة",
-    "open": "فتح"
+    "open": "فتح",
+    "noKidsFound": "لم يتم العثور على ملفات للأبناء",
+    "noKidsDescription": "يبدو أنه لا يوجد طلاب مرتبطون بحسابك بعد. يرجى الاتصال بإدارة المدرسة.",
+    "kidProfileSubtitle": "عرض وإدارة معلومات طفلك",
+    "homeWork": "الفروض المنزلية"
+  },
+  "parentHomework": {
+    "title": "الفروض - {{name}}",
+    "subtitle": "تتبع الفروض والتقدم الأكاديمي",
+    "overdue": "متأخر",
+    "pending": "قيد الانتظار",
+    "completed": "مكتمل",
+    "grades": "نقاطي",
+    "noHomework": "لم يتم العثور على فروض حالياً",
+    "dueDate": "تاريخ الاستحقاق: {{date}}",
+    "submittedAt": "تم التسليم في: {{date}}",
+    "score": "النقطة: {{score}} / {{total}}",
+    "pendingGrading": "في انتظار التصحيح",
+    "viewSubmission": "عرض التسليم"
   },
   "parentAttendance": {
     "title": "الغياب والتاخير - {{name}}",
@@ -280,7 +381,8 @@
     "couldNotFindStaff": "تعذر العثور على الموظف المطلوب.",
     "unexpected": "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى في وقت لاحق.",
     "failedToLoadProgressData": "فشل تحميل بيانات التقدم",
-    "noProgressData": "لا توجد بيانات تقدم متاحة"
+    "noProgressData": "لا توجد بيانات تقدم متاحة",
+    "failedToLoadChildren": "فشل تحميل معلومات الأبناء."
   },
   "action": {
     "view": "عرض",
@@ -310,7 +412,9 @@
     "deactivate": "إلغاء التفعيل",
     "pageOf": "الصفحة {{current}} من {{total}}",
     "editProfile": "تعديل الملف الشخصي",
-    "bulkImport": "الاستيراد بالجملة"
+    "bulkImport": "الاستيراد بالجملة",
+    "contactTeacher": "اتصل بالمعلمين",
+    "updateInfo": "طلب تحديث المعلومات"
   },
   "lessons": {
     "title": "العنوان",
@@ -599,6 +703,9 @@
     "section": "الشعبة",
     "academicYear": "السنة الدراسية",
     "enrollmentDate": "تاريخ التسجيل",
+    "gender": "الجنس",
+    "male": "ذكر",
+    "female": "أنثى",
     "studentNumber": "رقم الطالب في الفصل",
     "className": "اسم الفصل",
     "generatedEmail": "البريد الإلكتروني المُنشأ",
@@ -658,7 +765,8 @@
       "parentFirstName": "أدخل الاسم الأول لولي الأمر",
       "parentLastName": "أدخل اسم العائلة لولي الأمر",
       "parentEmail": "أدخل بريد ولي الأمر الإلكتروني (مطلوب لإنشاء الحساب)",
-      "parentPhone": "أدخل هاتف ولي الأمر"
+      "parentPhone": "أدخل هاتف ولي الأمر",
+      "gender": "اختر الجنس"
     },
     "students": "الطلاب",
     "dashboard": {
@@ -872,6 +980,7 @@
     "phoneInvalid": "يرجى إدخال رقم هاتف صحيح",
     "dateOfBirthInvalid": "تاريخ الميلاد لا يمكن أن يكون في المستقبل",
     "hireDateInvalid": "تاريخ التعيين لا يمكن أن يكون في المستقبل",
+    "genderRequired": "الجنس مطلوب",
     "salaryInvalid": "يرجى إدخال مبلغ راتب صحيح",
     "urlInvalid": "يرجى إدخال رابط صحيح",
     "invalidImageType": "يرجى اختيار ملف صورة صحيح",
@@ -1208,6 +1317,17 @@
       "sessionConflict": "هذا الوقت محجوز بالفعل",
       "teacherConflict": "هذا المدرس لديه حصة في هذا الوقت"
     },
+    "conflictDetected": "تم اكتشاف تعارض في الجدول",
+    "conflictDetails": "تفاصيل التعارض",
+    "time": "الوقت",
+    "teacherConflictMessage": "المعلم {{teacher}} لديه تعارض.",
+    "roomConflictMessage": "القاعة {{room}} مشغولة بالفعل.",
+    "classConflictMessage": "هذا القسم لديه حصة بالفعل في هذه الفترة ({{day}}, P{{period}}).",
+    "class": "القسم",
+    "subject": "المادة",
+    "teacher": "المدرس",
+    "room": "القاعة",
+    "day": "اليوم",
     "periodConfiguration": "إعداد الحصص",
     "selectTemplate": "اختيار قالب الجدول",
     "customizePeriods": "تخصيص الحصص",
@@ -4081,5 +4201,21 @@
     "touchAnyCard": "اضغط على أي بطاقة",
     "open": "فتح",
     "tapToStart": "الدخول للوحدة"
+  },
+  "parentMenu": {
+    "kidProfile": "ملف الابن"
+  },
+  "tabs": {
+    "overview": "نظرة عامة",
+    "academic": "المعلومات الأكاديمية",
+    "teachers": "المعلمون"
+  },
+  "section": {
+    "personalInfo": "المعلومات الشخصية",
+    "emergencyInfo": "معلومات الطوارئ",
+    "academicDetails": "التفاصيل الأكاديمية"
+  },
+  "validation": {
+    "genderRequired": "الجنس مطلوب"
   }
 }

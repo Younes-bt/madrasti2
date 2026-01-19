@@ -1,26 +1,16 @@
-import React from 'react';
-import { useTranslation } from 'react-i18next';
-import { DashboardLayout } from '../../components/layout/Layout';
-import { useAuth } from '../../hooks/useAuth';
+```javascript
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const ParentCommunicationsPage = () => {
-    const { t } = useTranslation();
-    const { user } = useAuth();
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    navigate('/parent/messages', { replace: true });
+  }, [navigate]);
 
-    return (
-        <DashboardLayout user={user}>
-            <div className="mx-auto max-w-7xl p-6 md:p-8 space-y-6">
-                <div className="flex flex-col gap-2">
-                    <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
-                        {t('parentHome.communications', 'Communications')}
-                    </h1>
-                    <p className="text-lg text-slate-500 font-medium">
-                        {t('common.underConstruction', 'This page is under construction.')}
-                    </p>
-                </div>
-            </div>
-        </DashboardLayout>
-    );
+  return null;
 };
 
 export default ParentCommunicationsPage;
+```

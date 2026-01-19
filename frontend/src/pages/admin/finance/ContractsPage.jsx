@@ -160,17 +160,35 @@ const ContractsPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
+
+        // Prepare data for submission - sanitize empty strings
+        const submissionData = {
+            ...formData,
+            // Convert empty strings to null for nullable dates
+            end_date: formData.end_date || null,
+            // Convert empty strings/null to 0 for numeric fields
+            transportation_allowance: formData.transportation_allowance || 0,
+            housing_allowance: formData.housing_allowance || 0,
+            other_allowances: formData.other_allowances || 0,
+            social_security_rate: formData.social_security_rate || 0,
+            tax_exemption_amount: formData.tax_exemption_amount || 0,
+            // Handle optional numeric fields for variable contracts
+            hours_per_week: formData.hours_per_week || null,
+            lessons_per_week: formData.lessons_per_week || null
+        };
+
         try {
             if (isEditing) {
-                await financeService.updateContract(selectedContract.id, formData);
+                await financeService.updateContract(selectedContract.id, submissionData);
                 toast.success(t('finance.payroll.contractUpdated', 'Contract updated successfully'));
             } else {
-                await financeService.createContract(formData);
+                await financeService.createContract(submissionData);
                 toast.success(t('finance.payroll.contractCreated', 'Contract created successfully'));
             }
             setIsDialogOpen(false);
             fetchContracts();
         } catch (error) {
+            console.error(error);
             toast.error(error.message || t('finance.payroll.failedToSaveContract', 'Failed to save contract'));
         } finally {
             setLoading(false);

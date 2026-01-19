@@ -41,6 +41,10 @@
     "address": "Address",
     "bio": "Bio",
     "role": "Role",
+    "gender": "Gender",
+    "selectGender": "Select Gender",
+    "male": "Male",
+    "female": "Female",
     "downloading": "Downloading...",
     "processing": "Processing...",
     "importing": "Importing...",
@@ -90,7 +94,6 @@
     "overview": "Overview",
     "academicYear": "Academic Year",
     "parentName": "Parent Name",
-    "studentID": "Student ID",
     "academicInfo": "Academic Information",
     "personalInfo": "Personal Information",
     "parentInfo": "Parent Information",
@@ -132,7 +135,87 @@
     "clickToOpen": "Click to open",
     "selectAnOption": "Choose a section to manage",
     "messages": "Messages",
-    "announcements": "Announcements"
+    "announcements": "Announcements",
+    "track": "Track/Stream",
+    "emergencyPhone": "Emergency Phone",
+    "medicalNotes": "Medical Notes",
+    "noBio": "No bio available.",
+    "noTeachers": "No teachers found",
+    "noTeachersDesc": "Teacher information is not available for this class yet.",
+    "message": "Message",
+    "conversations": "Conversations",
+    "noConversations": "No conversations yet",
+    "noConversationsDesc": "Start a new conversation to communicate with teachers.",
+    "startConversation": "Start a conversation",
+    "typeMessage": "Type your message...",
+    "sendMessage": "Send Message",
+    "selectConversation": "Select a conversation",
+    "selectConversationDesc": "Choose a conversation from the list or start a new one",
+    "startNewConversation": "Start New Conversation",
+    "noMessages": "No messages yet. Start the conversation!",
+    "chat": "Chat"
+  },
+  "communication": {
+    "title": "Messages",
+    "subtitle": "Communicate with your children's teachers",
+    "chooseChild": "Choose Child",
+    "chooseTeacher": "Choose Teacher",
+    "messageAbout": "Message about {{name}}",
+    "newConversation": "New Conversation",
+    "selectChildToMessage": "Select a child to start a conversation with their teachers",
+    "noTeachersForChild": "No teachers found for this child",
+    "selectChild": "Select Child",
+    "selectUser": "Select User",
+    "startChat": "Start Chat"
+  },
+  "finance": {
+    "financialHub": "Financial Hub",
+    "financialHubDesc": "Manage school fees and track payments for your children",
+    "invoices": "Invoices",
+    "paymentHistory": "Payment History",
+    "allChildren": "All Children",
+    "selectChild": "Select Child",
+    "filterBy": "Filter By",
+    "totalBalance": "Total Balance",
+    "totalPaid": "Total Paid",
+    "nextDueDate": "Next Due Date",
+    "nextDue": "Next Due Date",
+    "earliestDeadline": "Earliest deadline",
+    "consolidatedPayments": "Consolidated payments",
+    "amountToBePaid": "Amount to be paid",
+    "unpaidAmount": "Amount to be paid",
+    "paidAmountDesc": "Consolidated payments",
+    "upcomingPayment": "Earliest deadline",
+    "noPendingInvoices": "All cleared!",
+    "noUpcomingDeadlines": "No upcoming deadlines",
+    "allCaughtUp": "You're all caught up!",
+    "paid": "Paid",
+    "partiallyPaid": "Partially Paid",
+    "overdue": "Overdue",
+    "issued": "Issued",
+    "id": "ID",
+    "student": "Student",
+    "month": "Billing Month",
+    "amount": "Amount",
+    "balance": "Balance",
+    "status": "Status",
+    "dueDate": "Due Date",
+    "noInvoices": "No invoices found.",
+    "paymentId": "Payment ID",
+    "date": "Date",
+    "method": "Method",
+    "invoice": "Invoice",
+    "reference": "Reference",
+    "verified": "Verified",
+    "pending": "Pending",
+    "failed": "Failed",
+    "noPayments": "No payments found",
+    "invoiceDetails": "Invoice Details",
+    "items": "Invoice Items",
+    "totalAmount": "Total Amount",
+    "paidAmount": "Paid Amount",
+    "remainingBalance": "Remaining Balance",
+    "notes": "Notes"
   },
   "parentHome": {
     "readyToManage": "Parent Portal",
@@ -141,7 +224,25 @@
     "helperText": "Access your children's information and financial status in one place.",
     "financialStatus": "Financial Status",
     "accessModule": "Access module",
-    "open": "Open"
+    "open": "Open",
+    "noKidsFound": "No children profiles found",
+    "noKidsDescription": "It looks like there are no students linked to your account yet. Please contact the school administration.",
+    "kidProfileSubtitle": "View and manage your child's information",
+    "homeWork": "Homework"
+  },
+  "parentHomework": {
+    "title": "Homework - {{name}}",
+    "subtitle": "Track homework and academic progress",
+    "overdue": "Overdue",
+    "pending": "Pending",
+    "completed": "Completed",
+    "grades": "My Grades",
+    "noHomework": "No homework found for now",
+    "dueDate": "Due: {{date}}",
+    "submittedAt": "Submitted: {{date}}",
+    "score": "Score: {{score}} / {{total}}",
+    "pendingGrading": "Pending Grading",
+    "viewSubmission": "View Submission"
   },
   "parentAttendance": {
     "title": "Attendance - {{name}}",
@@ -184,7 +285,8 @@
     "invalidPhoneNumber": "Invalid phone number format",
     "pleaseFixErrors": "Please fix the errors before saving",
     "failedToLoadProgressData": "Failed to load progress data",
-    "noProgressData": "No progress data available"
+    "noProgressData": "No progress data available",
+    "failedToLoadChildren": "Failed to load children information."
   },
   "lessons": {
     "title": "Title",
@@ -371,7 +473,9 @@
     "updating": "Updating...",
     "details": "Details",
     "editProfile": "Edit Profile",
-    "bulkImport": "Bulk Import"
+    "bulkImport": "Bulk Import",
+    "contactTeacher": "Contact Teachers",
+    "updateInfo": "Request Info Update"
   },
   "status": {
     "active": "Active",
@@ -483,6 +587,9 @@
     "section": "Section",
     "academicYear": "Academic Year",
     "enrollmentDate": "Enrollment Date",
+    "gender": "Gender",
+    "male": "Male",
+    "female": "Female",
     "studentNumber": "Student Number",
     "className": "Class Name",
     "generatedEmail": "Generated Email",
@@ -542,7 +649,8 @@
       "parentFirstName": "Enter parent first name",
       "parentLastName": "Enter parent last name",
       "parentEmail": "Enter parent email address",
-      "parentPhone": "Enter parent phone number"
+      "parentPhone": "Enter parent phone number",
+      "gender": "Select Gender"
     },
     "students": "Students",
     "dashboard": {
@@ -982,6 +1090,7 @@
     "parentFirstNameRequired": "Parent first name is required for account creation",
     "parentLastNameRequired": "Parent last name is required for account creation",
     "parentEmailRequired": "Parent email is required for account creation",
+    "genderRequired": "Gender is required",
     "serverValidationError": "There was a problem with the data you submitted. Please check the fields and try again.",
     "pleaseFixErrors": "Please fix the errors before submitting."
   },
@@ -1310,6 +1419,17 @@
   },
   "timetables": {
     "timetables": "Timetables",
+    "conflictDetected": "Schedule Conflict Detected",
+    "conflictDetails": "Conflict Details",
+    "time": "Time",
+    "teacherConflictMessage": "Teacher {{teacher}} has a conflict.",
+    "roomConflictMessage": "Room {{room}} is already occupied.",
+    "classConflictMessage": "This class already has a session in this period ({{day}}, P{{period}}).",
+    "class": "Class",
+    "subject": "Subject",
+    "teacher": "Teacher",
+    "room": "Room",
+    "day": "Day",
     "addTimetable": "Add Timetable",
     "editTimetable": "Edit Timetable",
     "viewTimetable": "View Timetable",
@@ -4085,5 +4205,18 @@
       "inReview": "In Review",
       "completed": "Completed"
     }
+  },
+  "parentMenu": {
+    "kidProfile": "Kid's Profile"
+  },
+  "tabs": {
+    "overview": "Overview",
+    "academic": "Academic Info",
+    "teachers": "Teachers"
+  },
+  "section": {
+    "personalInfo": "Personal Information",
+    "emergencyInfo": "Emergency Information",
+    "academicDetails": "Academic Details"
   }
 }

@@ -129,6 +129,10 @@ class Profile(models.Model):
         GENERAL_SUPERVISOR = 'GENERAL_SUPERVISOR', _('General Supervisor')
         OTHER = 'OTHER', _('Other')
 
+    class Gender(models.TextChoices):
+        MALE = 'MALE', _('Male')
+        FEMALE = 'FEMALE', _('Female')
+
     POSITION_LABELS = {
         Position.DIRECTOR: {
             'en': 'Director',
@@ -210,6 +214,13 @@ class Profile(models.Model):
     phone = models.CharField(max_length=15, blank=True, null=True, verbose_name=_('Phone Number'))
     date_of_birth = models.DateField(blank=True, null=True, verbose_name=_('Date of Birth'))
     address = models.TextField(blank=True, null=True, verbose_name=_('Address'))
+    gender = models.CharField(
+        max_length=10,
+        choices=Gender.choices,
+        blank=False,
+        null=True,
+        verbose_name=_('Gender')
+    )
     
     # Profile media
     profile_picture = CloudinaryField('image', blank=True, null=True)

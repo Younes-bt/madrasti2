@@ -1,0 +1,573 @@
+{
+    "settings": {
+        "title": "الإعدادات",
+        "subtitle": "قم بتكوين نظام إدارة المدرسة الخاص بك",
+        "appearance": {
+            "title": "المظهر",
+            "theme": "السمة",
+            "light": "فاتح",
+            "dark": "داكن",
+            "system": "النظام"
+        },
+        "language": {
+            "title": "اللغة",
+            "select": "اختر اللغة",
+            "english": "English",
+            "arabic": "العربية",
+            "french": "Français"
+        },
+        "account": {
+            "title": "الحساب",
+            "signOut": "تسجيل الخروج",
+            "signOutConfirm": "هل أنت متأكد أنك تريد تسجيل الخروج؟"
+        }
+    },
+    "auth": {
+        "welcome": "نظام إدارة مدرسية احترافي",
+        "emailPlaceholder": "name@example.com",
+        "passwordPlaceholder": "••••••••",
+        "forgotPassword": "هل نسيت كلمة المرور؟",
+        "login": "تسجيل الدخول",
+        "loginFailed": "فشل تسجيل الدخول",
+        "error": {
+            "missingCredentials": "الرجاء إدخال البريد الإلكتروني وكلمة المرور",
+            "loginFailed": "فشل تسجيل الدخول. يرجى التحقق من بيانات الاعتماد الخاصة بك.",
+            "error": "خطأ",
+            "createStaffFailed": "فشل إنشاء الموظف",
+            "pleaseFixErrors": "يرجى تصحيح الأخطاء في النموذج"
+        },
+        "firstLoginTitle": "مرحباً بك في {{appName}}!",
+        "firstLoginDescription": "نحن سعداء بانضمامك إلينا. لضمان أمان حسابك وسهولة التعرف عليك من قبل زملائك، دعنا نخصص لحظات بسيطة لتحديث ملفك الشخصي وكلمة المرور.",
+        "securityFirst": "الأمان أولاً",
+        "firstLoginWhySecurity": "كلمات المرور الافتراضية غير آمنة. قم بحماية حسابك بكلمة مرور قوية.",
+        "completeProfile": "أكمل ملفك الشخصي",
+        "firstLoginWhatDo": "أضف معلوماتك الشخصية لتخصيص تجربتك.",
+        "getStarted": "لنبدأ",
+        "firstLoginAfter": "بمجرد الانتهاء، سيتم إعادة توجيهك إلى لوحة التحكم الخاصة بك.",
+        "setupProgress": "تقدم الإعداد",
+        "profileCompleted": "اكتمل الملف الشخصي",
+        "passwordChanged": "تم تغيير كلمة المرور",
+        "passwordChangedSuccess": "تم تغيير كلمة المرور بنجاح. الرجاء تسجيل الدخول بكلمة المرور الجديدة.",
+        "currentPassword": "كلمة المرور الحالية",
+        "newPassword": "كلمة المرور الجديدة",
+        "confirmPassword": "تأكيد كلمة المرور الجديدة"
+    },
+    "admin": {
+        "dashboard": {
+            "title": "الرئيسية",
+            "search": "بحث",
+            "administrator": "مسؤول النظام",
+            "modules": {
+                "mySchool": {
+                    "title": "مدرستي",
+                    "description": "معلومات المدرسة والموظفين"
+                },
+                "academic": {
+                    "title": "الشؤون الأكاديمية",
+                    "description": "الجداول والدرجات"
+                },
+                "education": {
+                    "title": "التعليم",
+                    "description": "الدروس والامتحانات"
+                },
+                "lab": {
+                    "title": "المختبر",
+                    "description": "تجارب افتراضية"
+                },
+                "reports": {
+                    "title": "التقارير",
+                    "description": "الإحصائيات والتحليلات"
+                },
+                "finance": {
+                    "title": "المالية",
+                    "description": "الرسوم والرواتب"
+                }
+            }
+        },
+        "school": {
+            "title": "مدرستي",
+            "description": "معلومات المدرسة والموظفين",
+            "modules": {
+                "details": "تفاصيل المدرسة",
+                "staff": "الفريق/الموظفين",
+                "teachers": "المدرسون",
+                "students": "الطلاب",
+                "parents": "أولياء الأمور",
+                "rooms": "القاعات",
+                "transport": "النقل",
+                "equipment": "المعدات"
+            },
+            "detailsPage": {
+                "verified": "مؤسسة معتمدة",
+                "established": "تأسست في",
+                "contact": "الاتصال والتواصل",
+                "phone": "الهاتف",
+                "fixPhone": "الهاتف الثابت",
+                "whatsapp": "واتساب",
+                "email": "البريد الإلكتروني",
+                "website": "الموقع الإلكتروني",
+                "address": "العنوان",
+                "legal": "المعلومات القانونية",
+                "schoolCode": "رمز المدرسة",
+                "rcCode": "السجل التجاري",
+                "pattent": "رقم البراءة",
+                "academic": {
+                    "title": "معلومات أكاديمية",
+                    "year": "السنة الدراسية",
+                    "director": "المدير",
+                    "capacity": "الطاقة الاستيعابية",
+                    "students": "طالب"
+                },
+                "social": "التواصل الاجتماعي"
+            }
+        }
+    },
+    "adminHome": {
+        "welcomeUser": "مرحباً، {{name}}",
+        "schoolName": "مدرسة",
+        "quickActions": "إجراءات سريعة",
+        "online": "متصل",
+        "offline": "غير متصل"
+    },
+    "teacherHome": {
+        "teacherLabel": "معلم",
+        "myProfile": "ملفي الشخصي",
+        "profileDesc": "إدارة معلوماتك الشخصية",
+        "myStudents": "طلابي",
+        "studentsDesc": "عرض وإدارة الطلاب",
+        "myClasses": "فصولي",
+        "classesDesc": "نظرة عامة على فصولك",
+        "myLessons": "دروسي",
+        "lessonsDesc": "المواد الدراسية والخطط",
+        "myHomework": "الواجبات",
+        "homeworkDesc": "الواجبات والدرجات",
+        "myExercises": "تمارين",
+        "exercisesDesc": "أسئلة تدريبية واختبارات",
+        "myTimetable": "جدول الحصص",
+        "timetableDesc": "جدولك الأسبوعي",
+        "myAttendance": "الحضور",
+        "attendanceDesc": "تتبع حضور الطلاب",
+        "myMessages": "الرسائل",
+        "messagesDesc": "محادثة مع الطلاب/أولياء الأمور",
+        "myAnnouncements": "إعلانات",
+        "announcementsDesc": "نشر التحديثات",
+        "readyToTeach": "جاهز للتدريس",
+        "open": "فتح",
+        "tapToStart": "اضغط للبدء"
+    },
+    "roles": {
+        "parent": "ولي الأمر",
+        "student": "طالب",
+        "teacher": "معلم",
+        "admin": "مدير",
+        "staff": "موظف"
+    },
+    "status": {
+        "active": "نشط",
+        "inactive": "غير نشط"
+    },
+    "common": {
+        "cancel": "إلغاء",
+        "confirm": "تأكيد",
+        "save": "حفظ",
+        "search": "بحث",
+        "all": "الكل",
+        "noResults": "لا توجد نتائج",
+        "call": "إتصال",
+        "email": "البريد الإلكتروني",
+        "password": "كلمة المرور",
+        "phone": "الهاتف",
+        "address": "العنوان",
+        "joined": "انضم",
+        "firstName": "الاسم الشخصي",
+        "lastName": "الاسم العائلي",
+        "arabicFirstName": "الاسم الشخصي (بالعربية)",
+        "arabicLastName": "الاسم العائلي (بالعربية)",
+        "dateOfBirth": "تاريخ الازدياد",
+        "bio": "نبذة",
+        "success": "نجاح",
+        "goBack": "رجوع",
+        "dob": "تاريخ الازدياد",
+        "next": "التالي",
+        "skip": "تخطي",
+        "select": "اختر",
+        "ok": "حسناً",
+        "filters": "الفلاتر",
+        "apply": "تطبيق",
+        "clearAll": "مسح الكل",
+        "active": "نشط",
+        "status": "الحالة",
+        "level": "المستوى التعليمي",
+        "grade": "الصف",
+        "class": "الفصل",
+        "selectLevel": "اختر المستوى",
+        "selectGrade": "اختر الصف",
+        "selectClass": "اختر الفصل",
+        "noClass": "بدون فصل",
+        "unknown": "غير معروف",
+        "viewProfile": "عرض الملف الشخصي",
+        "fullName": "الاسم الكامل",
+        "seats": "مقاعد",
+        "totalClasses": "إجمالي الفصول",
+        "week": "أسبوع",
+        "noNotes": "لا توجد ملاحظات متاحة",
+        "additionalInfo": "معلومات إضافية"
+    },
+    "students": {
+        "subtitle": "إدارة قائمة الطلاب",
+        "totalStudents": "إجمالي الطلاب",
+        "genderDistribution": "التوزيع حسب الجنس",
+        "byLevel": "الطلاب حسب المستوى",
+        "byGrade": "الطلاب حسب الصف",
+        "boys": "الذكور",
+        "girls": "الإناث",
+        "profile": "ملف الطالب",
+        "academicInfo": "المعلومات الأكاديمية",
+        "studentNumber": "رقم الطالب",
+        "enrollmentDate": "تاريخ التسجيل",
+        "personalInfo": "المعلومات الشخصية",
+        "birthDate": "تاريخ الميلاد",
+        "student": "طالب"
+    },
+    "parent": {
+        "profile": "ملف الولي",
+        "children": "الأبناء",
+        "noChildren": "لا يوجد أبناء مرتبطين بهذا الولي",
+        "noKidsTitle": "لا يوجد أبناء مرتبطين",
+        "noKidsMessage": "لم نجد أي طلاب مرتبطين بحسابك. يرجى الاتصال بالمدرسة لربط أبنائك."
+    },
+    "parentHome": {
+        "parentLabel": "ولي الأمر",
+        "myProfile": "ملفي الشخصي",
+        "profileDesc": "عرض معلوماتك الشخصية",
+        "myKids": "أبنائي",
+        "kidsDesc": "متابعة أبنائك",
+        "communication": "التواصل",
+        "communicationDesc": "الرسائل والإعلانات",
+        "payments": "الدفعات",
+        "paymentsDesc": "الرسوم والفواتير",
+        "events": "الفعاليات",
+        "eventsDesc": "التقويم والفعاليات المدرسية",
+        "tabs": {
+            "home": "الرئيسية",
+            "kids": "الأبناء",
+            "messages": "الرسائل",
+            "settings": "الإعدادات"
+        }
+    },
+    "studentHome": {
+        "studentLabel": "طالب",
+        "myProfile": "ملفي الشخصي",
+        "profileDesc": "عرض معلوماتك الشخصية",
+        "myTimetable": "جدولي الدراسي",
+        "timetableDesc": "عرض جدولك الأسبوعي",
+        "myAttendance": "حضوري",
+        "attendanceDesc": "تتبع حضورك",
+        "myLessons": "دروسي",
+        "lessonsDesc": "الوصول إلى المواد الدراسية",
+        "myHomework": "واجباتي",
+        "homeworkDesc": "عرض الواجبات والدرجات",
+        "tabs": {
+            "home": "الرئيسية",
+            "study": "الدراسة",
+            "social": "التواصل",
+            "profile": "الملف الشخصي"
+        }
+    },
+    "studentAttendanceReport": {
+        "subtitle": "تتبع حضورك، وتعرف على الأنماط، وابق على اطلاع بمسؤولياتك.",
+        "absenceFlagTitle": "تم الكشف عن شارة غياب معلقة",
+        "noAbsenceFlagTitle": "لا توجد شارات غياب معلقة",
+        "absenceFlagDescription": "يرجى الاتصال بالإدارة في أقرب وقت ممكن لتسوية وضعية الغياب.",
+        "noAbsenceFlagDescription": "عمل رائع! لا توجد شارات معلقة في سجل الحضور الخاص بك.",
+        "distributionTitle": "توزيع الحضور",
+        "distributionSubtitle": "نظرة عامة على عدد مرات الحضور، التأخير، الغياب، أو الغياب المبرر.",
+        "momentumTitle": "الزخم الشهري",
+        "momentumSubtitle": "أداء الحضور خلال الأشهر الستة الماضية.",
+        "subjectBreakdownTitle": "تفاصيل حسب المادة",
+        "subjectBreakdownSubtitle": "نقاط قوتك والمجالات التي قد تحتاج إلى تحسينها.",
+        "recentActivityTitle": "النشاط الأخير",
+        "recentActivitySubtitle": "آخر الجلسات المسجلة وحالاتها.",
+        "noMonthlyData": "نحتاج إلى المزيد من البيانات لإظهار الاتجاه الشهري.",
+        "noSubjectData": "ستظهر الرؤى الخاصة بكل مادة بمجرد تسجيل المزيد من الحضور.",
+        "noRecentActivity": "بمجرد حضور الجلسات، ستظهر هنا."
+    },
+    "attendance": {
+        "present": "حاضر",
+        "absent": "غائب",
+        "late": "متأخر",
+        "excused": "مبرر",
+        "presenceRate": "معدل الحضور",
+        "absenceRate": "معدل الغياب",
+        "lateRate": "معدل التأخير",
+        "attendanceRate": "نسبة المواظبة",
+        "totalSessions": "إجمالي الجلسات",
+        "sessions": "جلسات",
+        "markedSessions": "جلسات مسجلة",
+        "pendingFlags": "شارات معلقة"
+    },
+    "filters": {
+        "moreComingSoon": "المزيد من خيارات التصفية قريباً..."
+    },
+    "kids": {
+        "profile": "الملف الشخصي",
+        "profileDesc": "عرض التفاصيل",
+        "timetable": "الجدول الدراسي",
+        "timetableDesc": "الجدول الأسبوعي",
+        "attendance": "الحضور",
+        "attendanceDesc": "تتبع الحضور",
+        "homework": "الواجبات",
+        "homeworkDesc": "الواجبات والدرجات",
+        "report": "التقرير",
+        "reportDesc": "التقدم الأكاديمي"
+    },
+    "tabs": {
+        "overview": "نظرة عامة",
+        "students": "الطلاب",
+        "personalInfo": "المعلومات الشخصية",
+        "contactDetails": "معلومات الاتصال",
+        "linkedChildren": "الأبناء",
+        "academic": "الأكاديمي",
+        "teachers": "المعلمون"
+    },
+    "staff": {
+        "profile": "ملف الموظف",
+        "contactInfo": "معلومات الاتصال",
+        "professionalInfo": "المعلومات المهنية",
+        "employeeId": "الرقم الوظيفي",
+        "role": "الدور في النظام",
+        "position": {
+            "unknown": "منصب غير معروف",
+            "DIRECTOR": "المدير",
+            "ASSISTANT": "مساعد إداري",
+            "IT_SUPPORT": "أخصائي دعم تقني",
+            "ACCOUNTANT": "محاسب",
+            "HR_COORDINATOR": "منسق الموارد البشرية",
+            "COUNSELOR": "مستشار تربوي",
+            "LIBRARIAN": "أمين المكتبة",
+            "NURSE": "ممرضة المدرسة",
+            "SECURITY": "مسؤول أمن",
+            "MAINTENANCE": "فريق الصيانة",
+            "SUPPORT": "طاقم الدعم",
+            "DRIVER": "سائق",
+            "GENERAL_SUPERVISOR": "الحارس العام",
+            "OTHER": "أخرى",
+            "UNKNOWN": "موظف"
+        },
+        "addNewStaff": "إضافة موظف جديد",
+        "addNewStaffDescription": "إنشاء حساب موظف جديد",
+        "basicInformation": "المعلومات الأساسية",
+        "accountInformation": "معلومات الحساب",
+        "additionalInformation": "معلومات إضافية",
+        "accountDetails": "تفاصيل الحساب",
+        "passwordChangeInfo": "يمكن للمستخدم تغيير كلمة المرور هذه عند تسجيل الدخول لأول مرة.",
+        "selectPosition": "اختر المنصب",
+        "generatedEmail": "البريد الإلكتروني المولد",
+        "emailGeneratedInfo": "سيتم استخدام هذا البريد الإلكتروني لتسجيل الدخول",
+        "emailWillBeGenerated": "سيتم إنشاء البريد الإلكتروني تلقائيًا...",
+        "emergencyContactName": "اسم جهة اتصال الطوارئ",
+        "emergencyContactPhone": "هاتف جهة اتصال الطوارئ",
+        "createSuccess": "تم إنشاء الموظف بنجاح",
+        "placeholders": {
+            "firstName": "أدخل الاسم الشخصي",
+            "lastName": "أدخل الاسم العائلي",
+            "arabicFirstName": "الاسم الشخصي",
+            "arabicLastName": "الاسم العائلي",
+            "phone": "+1234567890",
+            "address": "العنوان الكامل",
+            "bio": "سيرة ذاتية قصيرة...",
+            "emergencyContactName": "اسم جهة اتصال الطوارئ",
+            "emergencyContactPhone": "هاتف جهة اتصال الطوارئ"
+        }
+    },
+    "teachers": {
+        "profile": "ملف المعلم",
+        "teacher": "معلم",
+        "contactInfo": "معلومات الاتصال",
+        "professionalInfo": "المعلومات المهنية",
+        "employeeId": "الرقم الوظيفي",
+        "role": "الدور في النظام",
+        "subject": "المادة",
+        "filterBySubject": "تصفية حسب المادة",
+        "teachableGrades": "المستويات التدريسية",
+        "myClasses": "فصولي",
+        "emergencyContact": "جهة اتصال الطوارئ",
+        "emergencyContactName": "اسم جهة الاتصال",
+        "emergencyContactPhone": "هاتف جهة الاتصال",
+        "salary": "الراتب",
+        "hireDate": "تاريخ التوظيف",
+        "students": "طلاب",
+        "subjects": "مواد",
+        "weeklyHours": "ساعات أسبوعية",
+        "subjectsTaught": "المواد المدرسة",
+        "noClassesAssigned": "لم يتم تعيين فصول",
+        "socialMediaLinks": "وسائل التواصل الاجتماعي",
+        "contract": "معلومات العقد",
+        "contractType": "نوع العقد",
+        "contractNumber": "رقم العقد",
+        "startDate": "تاريخ البدء",
+        "endDate": "تاريخ الانتهاء",
+        "baseSalary": "الراتب الأساسي",
+        "transportationAllowance": "بدل النقل",
+        "housingAllowance": "بدل السكن",
+        "otherAllowances": "بدلات أخرى",
+        "noContract": "لا يوجد عقد نشط",
+        "noClassesFound": "لم يتم العثور على فصول",
+        "noClassesMessage": "ليس لديك أي فصول مسندة إليك في جدول الحصص الحالي."
+    },
+    "validation": {
+        "firstNameRequired": "الاسم الشخصي مطلوب",
+        "lastNameRequired": "الاسم العائلي مطلوب",
+        "arabicFirstNameRequired": "الاسم الشخصي بالعربية مطلوب",
+        "arabicLastNameRequired": "الاسم العائلي بالعربية مطلوب",
+        "positionRequired": "المنصب مطلوب",
+        "phoneInvalid": "صيغة الهاتف غير صالحة",
+        "dateOfBirthInvalid": "تاريخ الازدياد غير صالح"
+    },
+    "teacher": {
+        "profile": {
+            "title": "ملفي الشخصي",
+            "personalInfo": "المعلومات الشخصية",
+            "professionalInfo": "المعلومات المهنية",
+            "position": "الوظيفة",
+            "department": "القسم",
+            "employeeId": "رقم الموظف",
+            "status": "الحالة"
+        },
+        "tabs": {
+            "home": "الرئيسية",
+            "schedule": "الجدول",
+            "messages": "الرسائل",
+            "settings": "الإعدادات"
+        },
+        "addNewTeacher": "إضافة معلم جديد",
+        "basicInformation": "المعلومات الأساسية",
+        "basicInfo": "المعلومات الأساسية",
+        "schoolSubject": "المادة الدراسية",
+        "teachableGrades": "المستويات التدريسية"
+    },
+    "finance": {
+        "contractType": "نوع العقد",
+        "contractNumber": "رقم العقد",
+        "startDate": "تاريخ البدء",
+        "endDate": "تاريخ الانتهاء",
+        "baseSalary": "الراتب الأساسي (درهم)",
+        "transportation": "النقل",
+        "housing": "السكن",
+        "others": "أخرى"
+    },
+    "rooms": {
+        "title": "إدارة القاعات",
+        "subtitle": "إدارة الفصول والمختبرات",
+        "totalRooms": "إجمالي القاعات",
+        "classrooms": "فصول دراسية",
+        "labs": "مختبرات",
+        "capacity": "السعة الإجمالية",
+        "roomCode": "رمز القاعة",
+        "search": "البحث عن القاعات...",
+        "types": {
+            "classroom": "فصل دراسي",
+            "lab": "مختبر",
+            "computer": "قاعة حاسوب",
+            "library": "مكتبة",
+            "gym": "قاعة رياضة",
+            "art": "قاعة فنون",
+            "music": "قاعة موسيقى",
+            "other": "أخرى"
+        },
+        "stats": {
+            "total": "إجمالي القاعات",
+            "capacity": "السعة",
+            "classrooms": "فصول"
+        },
+        "noRooms": "لم يتم العثور على قاعات",
+        "filterType": "تصفية حسب النوع",
+        "roomDetails": "تفاصيل القاعة",
+        "roomInformation": "معلومات القاعة",
+        "information": "المعلومات",
+        "basicInformation": "معلومات أساسية",
+        "name": "اسم القاعة",
+        "roomType": "نوع القاعة",
+        "persons": "أشخاص",
+        "utilizationInfo": "معلومات الاستخدام",
+        "maxCapacity": "السعة القصوى",
+        "isClassroom": "قاعة دراسية",
+        "note": "ملاحظة",
+        "roomNote": "تستخدم هذه المعلومات للتخطيط والجدولة.",
+        "equipmentSection": {
+            "title": "المعدات المخصصة",
+            "subtitle": "العناصر المخصصة حاليًا لهذه القاعة",
+            "manage": "إدارة المعدات",
+            "loading": "جاري تحميل المعدات...",
+            "view": "عرض",
+            "empty": "لا توجد معدات مخصصة لهذه القاعة بعد"
+        }
+    },
+    "media": {
+        "roomImages": "صور القاعة",
+        "totalImages": "إجمالي الصور",
+        "featured": "مميزة",
+        "gallery": "معرض الصور",
+        "addImages": "إضافة صور",
+        "noImages": "لا توجد صور متاحة",
+        "loading": "جاري تحميل الصور...",
+        "imageOptions": "خيارات الصورة",
+        "setAsFeatured": "تعيين كصورة رئيسية",
+        "download": "تنزيل",
+        "delete": "حذف",
+        "failedToSetFeatured": "فشل تعيين الصورة كصورة رئيسية"
+    },
+    "section": {
+        "identity": "معلومات الهوية",
+        "communication": "التواصل والشبكات الاجتماعية",
+        "emergency": "جهة اتصال الطوارئ",
+        "personalInfo": "المعلومات الشخصية",
+        "academicDetails": "التفاصيل الأكاديمية",
+        "emergencyInfo": "معلومات الطوارئ"
+    },
+    "classes": {
+        "viewClass": "تفاصيل الفصل",
+        "basicInformation": "المعلومات الأساسية",
+        "className": "اسم الفصل",
+        "section": "القسم",
+        "grade": "الصف",
+        "academicYear": "السنة الدراسية",
+        "enrollment": "التسجيلات",
+        "noStudentsEnrolled": "لا يوجد طلاب مسجلين في هذا الفصل",
+        "class": "الفصل"
+    },
+    "timetables": {
+        "mySchedule": "جدولي الدراسي",
+        "pdfGenerated": "تم إنشاء ملف PDF",
+        "generatingPdf": "جاري إنشاء ملف PDF...",
+        "noSessionsTitle": "لا توجد حصص اليوم",
+        "noSessionsDescription": "استمتع بوقت فراغك! تحقق من الأيام الأخرى لمعرفة جدولك القادم.",
+        "period": "فترة",
+        "totalSessions": "إجمالي الحصص",
+        "weeklyHours": "الساعات الأسبوعية",
+        "subjects": "المواد",
+        "rooms": "القاعات"
+    },
+    "calendar": {
+        "monday": "الاثنين",
+        "tuesday": "الثلاثاء",
+        "wednesday": "الأربعاء",
+        "thursday": "الخميس",
+        "friday": "الجمعة",
+        "saturday": "السبت",
+        "sunday": "الأحد",
+        "day": "يوم",
+        "short": {
+            "monday": "ن",
+            "tuesday": "ث",
+            "wednesday": "ر",
+            "thursday": "خ",
+            "friday": "ج",
+            "saturday": "س",
+            "sunday": "ح"
+        }
+    },
+    "error": {
+        "failedToExport": "فشل تصدير ملف PDF"
+    }
+}

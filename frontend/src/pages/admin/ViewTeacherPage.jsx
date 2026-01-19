@@ -25,6 +25,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { Badge } from '../../components/ui/badge';
 import { apiMethods } from '../../services/api';
 import attendanceService from '../../services/attendance';
+import financeService from '@/services/finance';
 import { toast } from 'sonner';
 
 const ViewTeacherPage = () => {
@@ -34,6 +35,7 @@ const ViewTeacherPage = () => {
   const [loading, setLoading] = useState(true);
   const [teacherData, setTeacherData] = useState(null);
   const [teacherClasses, setTeacherClasses] = useState([]);
+  const [contract, setContract] = useState(null);
   const [loadingClasses, setLoadingClasses] = useState(false);
 
   // Fetch teacher data
@@ -149,10 +151,30 @@ const ViewTeacherPage = () => {
     }
   };
 
+  const fetchContract = async () => {
+    if (!teacherId) return;
+    try {
+      // Fetch only active contracts for this employee
+      const response = await financeService.getContracts({
+        employee: teacherId,
+        is_active: true
+      });
+
+      const contracts = response.results || response;
+      if (contracts && contracts.length > 0) {
+        // Use the most recent active contract
+        setContract(contracts[0]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch contract:', error);
+    }
+  };
+
   useEffect(() => {
     if (teacherId) {
       fetchTeacherData();
       fetchTeacherClasses();
+      fetchContract();
     }
   }, [teacherId]);
 
@@ -411,7 +433,6 @@ const ViewTeacherPage = () => {
                   />
                 )}
 
-                {/* Teachable Grades */}
                 {(teacherData.teachable_grades && teacherData.teachable_grades.length > 0) && (
                   <div className="flex items-start gap-3 p-3">
                     <div className="flex-shrink-0 mt-1 text-muted-foreground">
@@ -433,22 +454,55 @@ const ViewTeacherPage = () => {
                     </div>
                   </div>
                 )}
-
-                <InfoItem
-                  icon={<Calendar className="h-4 w-4" />}
-                  label={t('teacher.hireDate')}
-                  value={formatDate(teacherData.hire_date)}
-                />
-
-                {teacherData.salary && (
-                  <InfoItem
-                    icon={<DollarSign className="h-4 w-4" />}
-                    label={t('teacher.salary')}
-                    value={`${parseFloat(teacherData.salary).toLocaleString()} MAD`}
-                  />
-                )}
               </CardContent>
             </Card>
+
+            {/* Contract Information */}
+            {contract && (
+              <Card className="border-border/50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <DollarSign className="h-5 w-5 text-primary" />
+                    {t('finance.payroll.contractDetails', 'Contract Information')}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    <Badge variant="outline" className="text-xs">
+                      {contract.contract_type_display || contract.contract_type}
+                    </Badge>
+                    <Badge
+                      className={contract.is_active ? "bg-emerald-500/10 text-emerald-600 border-none" : "bg-slate-100 text-slate-500 border-none"}
+                    >
+                      {contract.is_active ? t('common.active', 'Active') : t('common.inactive', 'Inactive')}
+                    </Badge>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <InfoItem
+                      icon={<Calendar className="h-4 w-4" />}
+                      label={t('finance.payroll.startDate', 'Start Date')}
+                      value={formatDate(contract.start_date)}
+                    />
+                    <InfoItem
+                      icon={<Calendar className="h-4 w-4" />}
+                      label={t('finance.payroll.endDate', 'End Date')}
+                      value={contract.end_date ? formatDate(contract.end_date) : t('common.ongoing', 'Ongoing')}
+                    />
+                    <InfoItem
+                      icon={<DollarSign className="h-4 w-4" />}
+                      label={t('finance.payroll.baseSalary', 'Base Salary')}
+                      value={`${parseFloat(contract.base_amount).toLocaleString()} ${contract.currency}`}
+                    />
+                    <InfoItem
+                      icon={<Briefcase className="h-4 w-4" />}
+                      label={t('finance.payroll.contractNumber', 'Contract Number')}
+                      value={contract.contract_number}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Classes Section */}
             <Card className="border-border/50">

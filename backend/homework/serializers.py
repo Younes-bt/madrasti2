@@ -525,16 +525,19 @@ class StudentHomeworkSerializerMixin:
     def _get_student_submission(self, obj):
         request = self.context.get('request')
         user = getattr(request, 'user', None) if request else None
-        if not user or getattr(user, 'is_authenticated', False) is False:
-            return None
-        if getattr(user, 'role', None) != 'STUDENT':
-            return None
+        
+        # Determine target student: either from context (for parents) or current user (for students)
+        student_id = self.context.get('student_id')
+        if not student_id:
+            if not user or not user.is_authenticated or user.role != 'STUDENT':
+                return None
+            student_id = user.id
 
-        cache_key = '_student_submission_cache'
+        cache_key = f'_student_submission_{student_id}_cache'
         if hasattr(obj, cache_key):
             return getattr(obj, cache_key)
 
-        submission = obj.submissions.filter(student=user).order_by('-attempt_number', '-created_at').first()
+        submission = obj.submissions.filter(student_id=student_id).order_by('-attempt_number', '-created_at').first()
         setattr(obj, cache_key, submission)
         return submission
 

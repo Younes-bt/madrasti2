@@ -2,7 +2,7 @@
 Custom FilterSets for advanced filtering in the finance app.
 """
 from django_filters import FilterSet, CharFilter, DateFilter, NumberFilter
-from .models import FinancialTransaction, ExpenseRecord
+from .models import FinancialTransaction, ExpenseRecord, Payment
 
 
 class FinancialTransactionFilter(FilterSet):
@@ -81,3 +81,16 @@ class ExpenseRecordFilter(FilterSet):
             'requested_by': ['exact'],
             'approved_by': ['exact'],
         }
+
+
+class PaymentFilter(FilterSet):
+    """
+    Advanced filtering for Payment model.
+    """
+    date_after = DateFilter(field_name='date', lookup_expr='gte')
+    date_before = DateFilter(field_name='date', lookup_expr='lte')
+    student = NumberFilter(field_name='invoice__student')
+
+    class Meta:
+        model = Payment
+        fields = ['invoice', 'method', 'student']

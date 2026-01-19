@@ -27,6 +27,7 @@ const EditTeacherPage = () => {
     school_subject: '',
     teachable_grades: [],
     phone: '',
+    gender: '',
     date_of_birth: '',
     address: '',
     bio: '',
@@ -53,9 +54,9 @@ const EditTeacherPage = () => {
     setInitialLoading(true);
     try {
       const response = await apiMethods.get(`users/users/${teacherId}/`);
-      
+
       let teacherData = response.data || response;
-      
+
       // Set form data from user and profile
       // Handle school_subject which can be either an ID or an object with an id property
       let subjectId = '';
@@ -76,6 +77,7 @@ const EditTeacherPage = () => {
         school_subject: subjectId,
         teachable_grades: teacherData.teachable_grades?.map(grade => grade.id) || teacherData.profile?.teachable_grades?.map(grade => grade.id) || [],
         phone: teacherData.phone || teacherData.profile?.phone || '',
+        gender: teacherData.gender || teacherData.profile?.gender || '',
         date_of_birth: teacherData.date_of_birth || teacherData.profile?.date_of_birth || '',
         address: teacherData.address || teacherData.profile?.address || '',
         bio: teacherData.bio || teacherData.profile?.bio || '',
@@ -86,10 +88,10 @@ const EditTeacherPage = () => {
         linkedin_url: teacherData.linkedin_url || teacherData.profile?.linkedin_url || '',
         twitter_url: teacherData.twitter_url || teacherData.profile?.twitter_url || ''
       });
-      
+
       setOriginalEmail(teacherData.email || '');
       setProfilePictureUrl(teacherData.profile_picture_url || teacherData.profile?.profile_picture_url || '');
-      
+
     } catch (error) {
       console.error('Failed to fetch teacher data:', error);
       toast.error(t('error.failedToLoadTeacherData'));
@@ -205,9 +207,13 @@ const EditTeacherPage = () => {
       newErrors.ar_last_name = t('validation.arabicLastNameRequired');
     }
 
+    if (!formData.gender) {
+      newErrors.gender = t('validation.genderRequired');
+    }
+
 
     // Phone validation (if provided)
-    if (formData.phone && !/^[\+]?[0-9\-\(\)\s]+$/.test(formData.phone)) {
+    if (formData.phone && !/^[+]?[0-9\-()\s]+$/.test(formData.phone)) {
       newErrors.phone = t('validation.phoneInvalid');
     }
 
@@ -225,7 +231,7 @@ const EditTeacherPage = () => {
     }
 
     // URL validations (if provided)
-    const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
+    const urlPattern = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$/;
     if (formData.linkedin_url && !urlPattern.test(formData.linkedin_url)) {
       newErrors.linkedin_url = t('validation.urlInvalid');
     }
@@ -250,11 +256,11 @@ const EditTeacherPage = () => {
     try {
       // Prepare form data for multipart/form-data if profile picture is uploaded
       const formDataToSend = new FormData();
-      
+
       // User data
       formDataToSend.append('first_name', formData.first_name);
       formDataToSend.append('last_name', formData.last_name);
-      
+
       // Profile data
       formDataToSend.append('ar_first_name', formData.ar_first_name || '');
       formDataToSend.append('ar_last_name', formData.ar_last_name || '');
@@ -268,6 +274,7 @@ const EditTeacherPage = () => {
       }
 
       formDataToSend.append('phone', formData.phone || '');
+      formDataToSend.append('gender', formData.gender || '');
       formDataToSend.append('date_of_birth', formData.date_of_birth || '');
       formDataToSend.append('address', formData.address || '');
       formDataToSend.append('bio', formData.bio || '');
@@ -277,7 +284,7 @@ const EditTeacherPage = () => {
       formDataToSend.append('salary', formData.salary || '');
       formDataToSend.append('linkedin_url', formData.linkedin_url || '');
       formDataToSend.append('twitter_url', formData.twitter_url || '');
-      
+
       // Add profile picture if uploaded
       if (profilePictureFile) {
         formDataToSend.append('profile_picture', profilePictureFile);
@@ -289,10 +296,10 @@ const EditTeacherPage = () => {
         },
       });
 
-      toast.success(t('teacher.updateSuccess', { 
+      toast.success(t('teacher.updateSuccess', {
         name: `${formData.first_name} ${formData.last_name}`
       }));
-      
+
       // Navigate back to teachers management page
       navigate('/admin/school-management/teachers');
 
@@ -300,11 +307,11 @@ const EditTeacherPage = () => {
       console.error('Failed to update teacher:', error);
       console.error('Error response:', error.response);
       console.error('Error data:', error.response?.data);
-      
+
       if (error.response?.data) {
         const errorData = error.response.data;
         console.error('Backend validation errors:', errorData);
-        
+
         if (typeof errorData === 'object') {
           // Handle field-specific errors
           const newErrors = {};
@@ -335,15 +342,15 @@ const EditTeacherPage = () => {
         toast.error(t('validation.invalidImageType'));
         return;
       }
-      
+
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         toast.error(t('validation.fileTooLarge'));
         return;
       }
-      
+
       setProfilePictureFile(file);
-      
+
       // Create preview URL
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -623,6 +630,28 @@ const EditTeacherPage = () => {
                 </div>
                 {errors.date_of_birth && (
                   <p className="text-sm text-destructive">{errors.date_of_birth}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="gender" className="required">
+                  {t('common.gender')}
+                </Label>
+                <Select
+                  value={formData.gender}
+                  onValueChange={(value) => handleInputChange('gender', value)}
+                  disabled={loading}
+                >
+                  <SelectTrigger className={errors.gender ? 'border-destructive' : ''}>
+                    <SelectValue placeholder={t('common.selectGender')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="MALE">{t('common.male')}</SelectItem>
+                    <SelectItem value="FEMALE">{t('common.female')}</SelectItem>
+                  </SelectContent>
+                </Select>
+                {errors.gender && (
+                  <p className="text-sm text-destructive">{errors.gender}</p>
                 )}
               </div>
             </CardContent>

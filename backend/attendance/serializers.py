@@ -1,6 +1,7 @@
 # attendance/serializers.py
 
 from rest_framework import serializers
+from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.utils import timezone
@@ -113,11 +114,88 @@ class TimetableSessionCreateSerializer(serializers.ModelSerializer):
             'timetable', 'subject', 'teacher', 'day_of_week', 'start_time',
             'end_time', 'session_order', 'room', 'is_active', 'notes'
         ]
+        # Disable default validators so our custom validation handles conflicts first
+        validators = []
     
     def validate(self, attrs):
         """Validate session data"""
-        if attrs['start_time'] >= attrs['end_time']:
+        start_time = attrs.get('start_time')
+        end_time = attrs.get('end_time')
+        
+        if start_time >= end_time:
             raise serializers.ValidationError("Start time must be before end time")
+            
+        timetable = attrs.get('timetable')
+        session_order = attrs.get('session_order')
+        day_of_week = attrs.get('day_of_week')
+        teacher = attrs.get('teacher')
+        room = attrs.get('room')
+        
+        # 1. Check for Class Schedule Conflict (Same class, same period)
+        if timetable and day_of_week and session_order:
+            class_conflicts = TimetableSession.objects.filter(
+                timetable=timetable,
+                day_of_week=day_of_week,
+                session_order=session_order
+            ).exclude(pk=self.instance.pk if self.instance else None)
+            
+            if class_conflicts.exists():
+                raise serializers.ValidationError(
+                    f"This class already has a session in this period ({day_of_week}, P{session_order})."
+                )
+
+        # 2. Check for Teacher conflicts (overlap)
+        if teacher and day_of_week and start_time and end_time:
+            conflicts = TimetableSession.objects.filter(
+                teacher=teacher,
+                day_of_week=day_of_week,
+                is_active=True
+            ).filter(
+                Q(start_time__lt=end_time) & Q(end_time__gt=start_time)
+            ).exclude(pk=self.instance.pk if self.instance else None)
+            
+            if conflicts.exists():
+                conflict = conflicts.first()
+                raise serializers.ValidationError({
+                    "conflict_error": True,
+                    "type": "teacher_conflict",
+                    "message": f"Teacher {teacher.full_name} has a conflict.",
+                    "details": {
+                        "teacher_name": teacher.full_name,
+                        "day": conflict.get_day_of_week_display(),
+                        "conflict_class": conflict.timetable.school_class.name,
+                        "conflict_subject": conflict.subject.name,
+                        "conflict_start": conflict.start_time.strftime("%H:%M"),
+                        "conflict_end": conflict.end_time.strftime("%H:%M")
+                    }
+                })
+
+        # 3. Check for Room conflicts (overlap)
+        if room and day_of_week and start_time and end_time:
+            conflicts = TimetableSession.objects.filter(
+                room=room,
+                day_of_week=day_of_week,
+                is_active=True
+            ).filter(
+                Q(start_time__lt=end_time) & Q(end_time__gt=start_time)
+            ).exclude(pk=self.instance.pk if self.instance else None)
+            
+            if conflicts.exists():
+                conflict = conflicts.first()
+                raise serializers.ValidationError({
+                    "conflict_error": True,
+                    "type": "room_conflict",
+                    "message": f"Room {room.name} is already occupied.",
+                    "details": {
+                        "room_name": room.name,
+                        "day": conflict.get_day_of_week_display(),
+                        "conflict_class": conflict.timetable.school_class.name,
+                        "conflict_subject": conflict.subject.name,
+                        "conflict_start": conflict.start_time.strftime("%H:%M"),
+                        "conflict_end": conflict.end_time.strftime("%H:%M")
+                    }
+                })
+
         return attrs
 
 # =====================================

@@ -1,0 +1,602 @@
+{
+    "settings": {
+        "title": "Paramètres",
+        "subtitle": "Configurez votre système de gestion scolaire",
+        "equipmentSection": {
+            "title": "Équipement assigné",
+            "subtitle": "Articles actuellement assignés à cette salle",
+            "manage": "Gérer l'équipement",
+            "loading": "Chargement de l'équipement...",
+            "view": "Voir",
+            "empty": "Aucun équipement assigné à cette salle pour le moment"
+        },
+        "appearance": {
+            "title": "Apparence",
+            "theme": "Thème",
+            "light": "Clair",
+            "dark": "Sombre",
+            "system": "Système"
+        },
+        "language": {
+            "title": "Langue",
+            "select": "Sélectionner la langue",
+            "english": "English",
+            "arabic": "العربية",
+            "french": "Français"
+        },
+        "account": {
+            "title": "Compte",
+            "signOut": "Se déconnecter",
+            "signOutConfirm": "Êtes-vous sûr de vouloir vous déconnecter ?"
+        }
+    },
+    "auth": {
+        "welcome": "Gestion Scolaire Professionnelle",
+        "emailPlaceholder": "nom@exemple.com",
+        "passwordPlaceholder": "••••••••",
+        "forgotPassword": "Mot de passe oublié ?",
+        "login": "Se connecter",
+        "loginFailed": "Échec de connexion",
+        "error": {
+            "missingCredentials": "Veuillez entrer l'email et le mot de passe",
+            "loginFailed": "Échec de la connexion. Veuillez vérifier vos identifiants.",
+            "error": "Erreur",
+            "createStaffFailed": "Échec de la création du membre",
+            "pleaseFixErrors": "Veuillez corriger les erreurs dans le formulaire"
+        },
+        "firstLoginTitle": "Bienvenue sur {{appName}} !",
+        "firstLoginDescription": "Nous sommes ravis de vous accueillir. Pour garantir la sécurité de votre compte et permettre à vos collègues de vous reconnaître, prenons un court instant pour personnaliser votre profil et mettre à jour votre mot de passe.",
+        "securityFirst": "Sécurité d'Abord",
+        "firstLoginWhySecurity": "Les mots de passe par défaut ne sont pas sécurisés. Protégez votre compte avec un mot de passe fort.",
+        "completeProfile": "Complétez Votre Profil",
+        "firstLoginWhatDo": "Ajoutez vos informations personnelles pour personnaliser votre expérience.",
+        "getStarted": "C'est Parti",
+        "firstLoginAfter": "Une fois terminé, vous serez redirigé vers votre tableau de bord.",
+        "setupProgress": "Progression de l'Installation",
+        "profileCompleted": "Profil Complété",
+        "passwordChanged": "Mot de Passe Changé",
+        "passwordChangedSuccess": "Mot de passe modifié avec succès. Veuillez vous connecter avec votre nouveau mot de passe.",
+        "currentPassword": "Mot de passe actuel",
+        "newPassword": "Nouveau mot de passe",
+        "confirmPassword": "Confirmer le nouveau mot de passe"
+    },
+    "admin": {
+        "dashboard": {
+            "title": "Accueil",
+            "search": "Rechercher",
+            "administrator": "Administrateur",
+            "modules": {
+                "mySchool": {
+                    "title": "Mon École",
+                    "description": "Infos école & personnel"
+                },
+                "academic": {
+                    "title": "Académique",
+                    "description": "Emplois du temps & notes"
+                },
+                "education": {
+                    "title": "Éducation",
+                    "description": "Leçons & examens"
+                },
+                "lab": {
+                    "title": "Labo",
+                    "description": "Expériences virtuelles"
+                },
+                "reports": {
+                    "title": "Rapports",
+                    "description": "Stats & analyses"
+                },
+                "finance": {
+                    "title": "Finance",
+                    "description": "Frais & salaires"
+                }
+            }
+        },
+        "school": {
+            "title": "Mon École",
+            "description": "Infos école & personnel",
+            "modules": {
+                "details": "Détails de l'école",
+                "staff": "Équipe/Staff",
+                "teachers": "Enseignants",
+                "students": "Étudiants",
+                "parents": "Parents",
+                "rooms": "Salles",
+                "transport": "Transport",
+                "equipment": "Équipement"
+            },
+            "detailsPage": {
+                "verified": "Institution Vérifiée",
+                "established": "Établi le",
+                "contact": "Contact & Découverte",
+                "phone": "Téléphone",
+                "fixPhone": "Ligne Fixe",
+                "whatsapp": "WhatsApp",
+                "email": "Email",
+                "website": "Site Web",
+                "address": "Adresse",
+                "legal": "Juridique & Conformité",
+                "schoolCode": "Code École",
+                "rcCode": "Code RC",
+                "pattent": "Numéro Patente",
+                "academic": {
+                    "title": "Infos Académiques",
+                    "year": "Année Scolaire",
+                    "director": "Directeur",
+                    "capacity": "Capacité",
+                    "students": "Étudiants"
+                },
+                "social": "Réseaux Sociaux"
+            }
+        }
+    },
+    "adminHome": {
+        "welcomeUser": "Bienvenue, {{name}}",
+        "schoolName": "École",
+        "quickActions": "Actions Rapides",
+        "online": "En ligne",
+        "offline": "Hors ligne"
+    },
+    "teacherHome": {
+        "teacherLabel": "Enseignant",
+        "myProfile": "Mon Profil",
+        "profileDesc": "Gérer vos infos personnelles",
+        "myStudents": "Mes Étudiants",
+        "studentsDesc": "Voir et gérer les étudiants",
+        "myClasses": "Mes Classes",
+        "classesDesc": "Aperçu de vos classes",
+        "myLessons": "Mes Leçons",
+        "lessonsDesc": "Matériel de cours & plans",
+        "myHomework": "Devoirs",
+        "homeworkDesc": "Devoirs & notation",
+        "myExercises": "Exercices",
+        "exercisesDesc": "Questions pratiques & tests",
+        "myTimetable": "Emploi du temps",
+        "timetableDesc": "Votre horaire hebdomadaire",
+        "myAttendance": "Présence",
+        "attendanceDesc": "Suivi de présence",
+        "myMessages": "Messages",
+        "messagesDesc": "Discuter avec étudiants/parents",
+        "myAnnouncements": "Annonces",
+        "announcementsDesc": "Diffuser des mises à jour",
+        "readyToTeach": "Prêt à Enseigner",
+        "open": "Ouvrir",
+        "tapToStart": "Appuyez pour commencer"
+    },
+    "studentHome": {
+        "studentLabel": "Étudiant",
+        "myProfile": "Mon Profil",
+        "profileDesc": "Voir vos infos personnelles",
+        "myTimetable": "Mon Emploi du Temps",
+        "timetableDesc": "Voir votre horaire hebdomadaire",
+        "myAttendance": "Ma Présence",
+        "attendanceDesc": "Suivre votre assiduité",
+        "myLessons": "Mes Leçons",
+        "lessonsDesc": "Accéder au matériel de cours",
+        "myHomework": "Mes Devoirs",
+        "homeworkDesc": "Voir devoirs & notes",
+        "tabs": {
+            "home": "Accueil",
+            "study": "Études",
+            "social": "Social",
+            "profile": "Profil"
+        }
+    },
+    "studentAttendanceReport": {
+        "subtitle": "Suivez votre assiduité, identifiez les tendances et respectez vos engagements.",
+        "absenceFlagTitle": "Badge d'absence en attente détecté",
+        "noAbsenceFlagTitle": "Aucun badge d'absence en attente",
+        "absenceFlagDescription": "Veuillez contacter l'administration dès que possible pour justifier votre absence.",
+        "noAbsenceFlagDescription": "Excellent travail ! Il n'y a aucun badge en attente sur votre dossier d'assiduité.",
+        "distributionTitle": "Distribution de l'assiduité",
+        "distributionSubtitle": "Aperçu de la fréquence à laquelle vous étiez présent, en retard, absent ou excusé.",
+        "momentumTitle": "Rythme mensuel",
+        "momentumSubtitle": "Performance d'assiduité au cours des six derniers mois.",
+        "subjectBreakdownTitle": "Répartition par matière",
+        "subjectBreakdownSubtitle": "Où vous excellez et où vous devrez peut-être vous rattraper.",
+        "recentActivityTitle": "Activité récente",
+        "recentActivitySubtitle": "Vos dernières séances enregistrées et leurs statuts.",
+        "noMonthlyData": "Nous avons besoin de plus de données pour afficher votre tendance mensuelle.",
+        "noSubjectData": "Les informations par matière apparaîtront une fois que plus d'assiduité sera enregistrée.",
+        "noRecentActivity": "Une fois que vous assistez aux séances, elles apparaîtront ici."
+    },
+    "attendance": {
+        "present": "Présent",
+        "absent": "Absent",
+        "late": "En retard",
+        "excused": "Excusé",
+        "presenceRate": "Taux de présence",
+        "absenceRate": "Taux d'absence",
+        "lateRate": "Taux de retard",
+        "attendanceRate": "Taux d'assiduité",
+        "totalSessions": "Total des séances",
+        "sessions": "séances",
+        "markedSessions": "séances marquées",
+        "pendingFlags": "Badges en attente"
+    },
+    "parentHome": {
+        "parentLabel": "Parent",
+        "myProfile": "Mon Profil",
+        "profileDesc": "Voir vos infos personnelles",
+        "myKids": "Mes Enfants",
+        "kidsDesc": "Surveiller vos enfants",
+        "communication": "Communication",
+        "communicationDesc": "Messages & annonces",
+        "payments": "Paiements",
+        "paymentsDesc": "Frais & factures",
+        "events": "Événements",
+        "eventsDesc": "Calendrier & événements scolaires",
+        "tabs": {
+            "home": "Accueil",
+            "kids": "Enfants",
+            "messages": "Messages",
+            "settings": "Paramètres"
+        }
+    },
+    "common": {
+        "cancel": "Annuler",
+        "confirm": "Confirmer",
+        "save": "Enregistrer",
+        "search": "Rechercher",
+        "all": "Tous",
+        "noResults": "Aucun résultat trouvé",
+        "call": "Appeler",
+        "password": "Mot de passe",
+        "email": "Email",
+        "phone": "Téléphone",
+        "address": "Adresse",
+        "joined": "Rejoint",
+        "firstName": "Prénom",
+        "lastName": "Nom",
+        "arabicFirstName": "Prénom (Arabe)",
+        "arabicLastName": "Nom (Arabe)",
+        "dateOfBirth": "Date de Naissance",
+        "bio": "Biographie",
+        "success": "Succès",
+        "goBack": "Retour",
+        "dob": "Date de Naissance",
+        "next": "Suivant",
+        "skip": "Passer",
+        "select": "Sélectionner",
+        "ok": "OK",
+        "filters": "Filtres",
+        "apply": "Appliquer",
+        "clearAll": "Tout effacer",
+        "active": "actif",
+        "status": "Statut",
+        "level": "Niveau Scolaire",
+        "grade": "Classe",
+        "class": "Groupe",
+        "selectLevel": "Sélectionner le niveau",
+        "selectGrade": "Sélectionner la classe",
+        "selectClass": "Sélectionner le groupe",
+        "noClass": "Aucune classe",
+        "unknown": "Inconnu",
+        "viewProfile": "Voir Profil",
+        "fullName": "Nom Complet",
+        "seats": "Places",
+        "totalClasses": "Total Classes",
+        "week": "Semaine",
+        "noNotes": "Aucune note disponible",
+        "additionalInfo": "Informations supplémentaires"
+    },
+    "status": {
+        "active": "Actif",
+        "inactive": "Inactif"
+    },
+    "students": {
+        "subtitle": "Gérez votre liste d'étudiants",
+        "totalStudents": "Total Étudiants",
+        "genderDistribution": "Distribution par Genre",
+        "byLevel": "Étudiants par Niveau",
+        "byGrade": "Étudiants par Classe",
+        "boys": "Garçons",
+        "girls": "Filles",
+        "profile": "Profil Étudiant",
+        "academicInfo": "Infos Académiques",
+        "studentNumber": "Matricule",
+        "enrollmentDate": "Date d'Inscription",
+        "personalInfo": "Infos Personnelles",
+        "birthDate": "Date de Naissance",
+        "student": "Étudiant"
+    },
+    "parent": {
+        "profile": "Profil Parent",
+        "children": "Enfants",
+        "noChildren": "Aucun enfant associé à ce parent",
+        "noKidsTitle": "Aucun enfant lié",
+        "noKidsMessage": "Nous n'avons trouvé aucun étudiant lié à votre compte. Veuillez contacter l'école pour lier vos enfants."
+    },
+    "parentHome": {
+        "parentLabel": "Parent",
+        "myProfile": "Mon Profil",
+        "profileDesc": "Voir vos infos personnelles",
+        "myKids": "Mes Enfants",
+        "kidsDesc": "Surveiller vos enfants",
+        "communication": "Communication",
+        "communicationDesc": "Messages & annonces",
+        "payments": "Paiements",
+        "paymentsDesc": "Frais & factures",
+        "events": "Événements",
+        "eventsDesc": "Calendrier & événements scolaires",
+        "tabs": {
+            "home": "Accueil",
+            "kids": "Enfants",
+            "messages": "Messages",
+            "settings": "Paramètres"
+        }
+    },
+    "fields": {
+        "firstName": "Prénom",
+        "lastName": "Nom",
+        "arabicFirstName": "Prénom (Arabe)",
+        "arabicLastName": "Nom (Arabe)",
+        "dateOfBirth": "Date de Naissance",
+        "bio": "À propos / Bio",
+        "phone": "Numéro de Téléphone",
+        "email": "Adresse Email",
+        "address": "Adresse",
+        "emergencyName": "Nom du Contact d'Urgence",
+        "emergencyPhone": "Téléphone du Contact d'Urgence"
+    },
+    "section": {
+        "identity": "Informations d'Identité",
+        "communication": "Communication & Social",
+        "emergency": "Contact d'Urgence",
+        "personalInfo": "Informations Personnelles",
+        "academicDetails": "Détails Académiques",
+        "emergencyInfo": "Informations d'Urgence"
+    },
+    "tabs": {
+        "overview": "Aperçu",
+        "students": "Étudiants",
+        "personalInfo": "Infos Personnelles",
+        "contactDetails": "Coordonnées",
+        "linkedChildren": "Enfants",
+        "academic": "Académique",
+        "teachers": "Enseignants"
+    },
+    "roles": {
+        "parent": "Parent",
+        "student": "Étudiant",
+        "teacher": "Enseignant",
+        "admin": "Admin",
+        "staff": "Personnel"
+    },
+    "status": {
+        "active": "Actif",
+        "inactive": "Inactif"
+    },
+    "errors": {
+        "failedToLoadProfile": "Impossible de charger les informations du profil"
+    },
+    "filters": {
+        "moreComingSoon": "Plus d'options de filtrage bientôt..."
+    },
+    "kids": {
+        "profile": "Profil",
+        "profileDesc": "Voir les détails",
+        "timetable": "Emploi du temps",
+        "timetableDesc": "Horaire hebdomadaire",
+        "attendance": "Présence",
+        "attendanceDesc": "Suivi de présence",
+        "homework": "Devoirs",
+        "homeworkDesc": "Devoirs & notes",
+        "report": "Bulletin",
+        "reportDesc": "Progrès académique"
+    },
+    "staff": {
+        "profile": "Profil du Staff",
+        "contactInfo": "Informations de Contact",
+        "professionalInfo": "Détails Professionnels",
+        "employeeId": "ID Employé",
+        "role": "Rôle Système",
+        "position": {
+            "unknown": "Position inconnue",
+            "DIRECTOR": "Directeur",
+            "ASSISTANT": "Assistant",
+            "IT_SUPPORT": "Spécialiste support informatique",
+            "ACCOUNTANT": "Comptable",
+            "HR_COORDINATOR": "Coordinateur RH",
+            "COUNSELOR": "Conseiller scolaire",
+            "LIBRARIAN": "Bibliothécaire",
+            "NURSE": "Infirmier scolaire",
+            "SECURITY": "Agent de sécurité",
+            "MAINTENANCE": "Équipe de maintenance",
+            "SUPPORT": "Personnel de soutien",
+            "DRIVER": "Chauffeur",
+            "GENERAL_SUPERVISOR": "Surveillant Général",
+            "OTHER": "Autre",
+            "UNKNOWN": "Personnel"
+        },
+        "addNewStaff": "Ajouter un membre",
+        "addNewStaffDescription": "Créer un nouveau compte staff",
+        "basicInformation": "Informations de Base",
+        "accountInformation": "Informations du Compte",
+        "additionalInformation": "Informations Supplémentaires",
+        "accountDetails": "Détails du Compte",
+        "passwordChangeInfo": "L'utilisateur pourra changer ce mot de passe à la première connexion.",
+        "selectPosition": "Sélectionner la Position",
+        "generatedEmail": "Email Généré",
+        "emailGeneratedInfo": "Cet email sera utilisé pour la connexion",
+        "emailWillBeGenerated": "L'email sera généré automatiquement...",
+        "emergencyContactName": "Contact d'Urgence (Nom)",
+        "emergencyContactPhone": "Contact d'Urgence (Tél)",
+        "createSuccess": "Membre du personnel créé avec succès",
+        "placeholders": {
+            "firstName": "Entrer le prénom",
+            "lastName": "Entrer le nom",
+            "arabicFirstName": "الاسم الشخصي",
+            "arabicLastName": "الاسم العائلي",
+            "phone": "+1234567890",
+            "address": "Adresse complète",
+            "bio": "Courte biographie...",
+            "emergencyContactName": "Nom du contact d'urgence",
+            "emergencyContactPhone": "Téléphone du contact d'urgence"
+        }
+    },
+    "teachers": {
+        "profile": "Profil Enseignant",
+        "teacher": "Enseignant",
+        "contactInfo": "Informations de Contact",
+        "professionalInfo": "Détails Professionnels",
+        "employeeId": "ID Employé",
+        "role": "Rôle Système",
+        "subject": "Matière",
+        "filterBySubject": "Filtrer par Matière",
+        "teachableGrades": "Niveaux enseignés",
+        "myClasses": "Mes Classes",
+        "emergencyContact": "Contact d'Urgence",
+        "emergencyContactName": "Nom du Contact",
+        "emergencyContactPhone": "Tél du Contact",
+        "salary": "Salaire",
+        "hireDate": "Date d'embauche",
+        "students": "Étudiants",
+        "subjects": "Matières",
+        "weeklyHours": "Heures Hebdo",
+        "subjectsTaught": "Matières Enseignées",
+        "noClassesAssigned": "Aucune classe assignée",
+        "socialMediaLinks": "Réseaux Sociaux",
+        "contract": "Informations Contractuelles",
+        "contractType": "Type de Contrat",
+        "contractNumber": "N° de Contrat",
+        "startDate": "Date de Début",
+        "endDate": "Date de Fin",
+        "baseSalary": "Salaire de Base",
+        "transportationAllowance": "Indemnité de Transport",
+        "housingAllowance": "Indemnité de Logement",
+        "otherAllowances": "Autres Indemnités",
+        "noContract": "Aucun contrat actif trouvé",
+        "noClassesFound": "Aucune classe trouvée",
+        "noClassesMessage": "Vous n'avez aucune classe assignée dans l'emploi du temps actuel."
+    },
+    "validation": {
+        "firstNameRequired": "Le prénom est requis",
+        "lastNameRequired": "Le nom est requis",
+        "arabicFirstNameRequired": "Le prénom en arabe est requis",
+        "arabicLastNameRequired": "Le nom en arabe est requis",
+        "positionRequired": "La position est requise",
+        "phoneInvalid": "Format de téléphone invalide",
+        "dateOfBirthInvalid": "Date de naissance invalide"
+    },
+    "teacher": {
+        "profile": {
+            "title": "Mon Profil",
+            "personalInfo": "Informations Personnelles",
+            "professionalInfo": "Informations Professionnelles",
+            "position": "Poste",
+            "department": "Département",
+            "employeeId": "Matricule",
+            "status": "Statut"
+        },
+        "tabs": {
+            "home": "Accueil",
+            "schedule": "Agenda",
+            "messages": "Messages",
+            "settings": "Paramètres"
+        },
+        "addNewTeacher": "Ajouter un Enseignant",
+        "basicInformation": "Informations de Base",
+        "basicInfo": "Infos de Base",
+        "schoolSubject": "Matière Scolaire",
+        "teachableGrades": "Niveaux Enseignables"
+    },
+    "finance": {
+        "contractType": "Type de Contrat",
+        "contractNumber": "Numéro de Contrat",
+        "startDate": "Date de Début",
+        "endDate": "Date de Fin",
+        "baseSalary": "Salaire de Base (MAD)",
+        "transportation": "Transport",
+        "housing": "Logement",
+        "others": "Autres"
+    },
+    "rooms": {
+        "title": "Gestion des Salles",
+        "subtitle": "Gérer les salles de classe et labos",
+        "totalRooms": "Total Salles",
+        "classrooms": "Salles de classe",
+        "labs": "Laboratoires",
+        "capacity": "Capacité Totale",
+        "roomCode": "Code Salle",
+        "search": "Rechercher des salles...",
+        "types": {
+            "classroom": "Salle de classe",
+            "lab": "Laboratoire",
+            "computer": "Salle Informatique",
+            "library": "Bibliothèque",
+            "gym": "Gymnase",
+            "art": "Salle d'Art",
+            "music": "Salle de Musique",
+            "other": "Autre"
+        },
+        "stats": {
+            "total": "Total Salles",
+            "capacity": "Capacité",
+            "classrooms": "Salles de classe"
+        },
+        "noRooms": "Aucune salle trouvée",
+        "filterType": "Filtrer par Type",
+        "name": "Nom de la Salle",
+        "note": "Note",
+        "isClassroom": "Salle de classe",
+        "information": "Informations"
+    },
+    "media": {
+        "roomImages": "Images de la salle",
+        "gallery": "Galerie",
+        "addImages": "Ajouter des images",
+        "noImages": "Aucune image disponible",
+        "loading": "Chargement des images...",
+        "imageOptions": "Options de l'image",
+        "setAsFeatured": "Définir comme image principale",
+        "download": "Télécharger",
+        "delete": "Supprimer",
+        "featured": "En vedette",
+        "failedToSetFeatured": "Échec de la définition comme image principale"
+    },
+    "classes": {
+        "viewClass": "Détails de la classe",
+        "basicInformation": "Informations de Base",
+        "className": "Nom de la Classe",
+        "section": "Groupe/Section",
+        "grade": "Niveau",
+        "enrollment": "Inscriptions",
+        "noStudentsEnrolled": "Aucun élève inscrit dans cette classe",
+        "class": "Classe"
+    },
+    "timetables": {
+        "mySchedule": "Mon emploi du temps",
+        "pdfGenerated": "PDF généré",
+        "generatingPdf": "Génération du PDF...",
+        "noSessionsTitle": "Pas de cours aujourd'hui",
+        "noSessionsDescription": "Profitez de votre temps libre ! Vérifiez les autres jours pour votre prochain horaire.",
+        "period": "Période",
+        "totalSessions": "Sessions totales",
+        "weeklyHours": "Heures hebdomadaires",
+        "subjects": "Matières",
+        "rooms": "Salles"
+    },
+    "calendar": {
+        "monday": "Lundi",
+        "tuesday": "Mardi",
+        "wednesday": "Mercredi",
+        "thursday": "Jeudi",
+        "friday": "Vendredi",
+        "saturday": "Samedi",
+        "sunday": "Dimanche",
+        "day": "Jour",
+        "short": {
+            "monday": "Lun",
+            "tuesday": "Mar",
+            "wednesday": "Mer",
+            "thursday": "Jeu",
+            "friday": "Ven",
+            "saturday": "Sam",
+            "sunday": "Dim"
+        }
+    },
+    "error": {
+        "failedToExport": "Échec de l'exportation du PDF"
+    }
+}

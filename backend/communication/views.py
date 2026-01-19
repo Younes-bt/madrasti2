@@ -23,8 +23,10 @@ class ConversationViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'])
     def start_direct(self, request):
-        """Start or get existing direct conversation with a user"""
+        """Start or get existing direct conversation with a user, optionally related to a student"""
         other_user_id = request.data.get('user_id')
+        related_student_id = request.data.get('related_student_id')
+        
         if not other_user_id:
             return Response({'error': 'user_id is required'}, status=status.HTTP_400_BAD_REQUEST)
         
@@ -32,23 +34,37 @@ class ConversationViewSet(viewsets.ModelViewSet):
             other_user = User.objects.get(id=other_user_id)
         except User.DoesNotExist:
             return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        related_student = None
+        if related_student_id:
+            try:
+                related_student = User.objects.get(id=related_student_id)
+            except User.DoesNotExist:
+                return Response({'error': 'Student not found'}, status=status.HTTP_404_NOT_FOUND)
 
         if request.user.id == other_user.id:
             return Response({'error': 'Cannot start conversation with yourself'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Check if conversation already exists
-        # This is a bit complex with M2M, simplified for now
-        # We look for a DIRECT conversation where both are participants
+        # We look for a DIRECT conversation where both are participants and matches the related_student
         conversations = Conversation.objects.filter(
             conversation_type='DIRECT',
             participants=request.user
         ).filter(participants=other_user)
+        
+        if related_student:
+            conversations = conversations.filter(related_student=related_student)
+        else:
+            conversations = conversations.filter(related_student__isnull=True)
 
         if conversations.exists():
             return Response(ConversationSerializer(conversations.first(), context={'request': request}).data)
         
         # Create new
-        conversation = Conversation.objects.create(conversation_type='DIRECT')
+        conversation = Conversation.objects.create(
+            conversation_type='DIRECT',
+            related_student=related_student
+        )
         conversation.participants.add(request.user, other_user)
         return Response(ConversationSerializer(conversation, context={'request': request}).data)
 
